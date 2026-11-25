@@ -181,9 +181,9 @@ extension Runtime {
     /// `{"dev":"along",…}`: `scroll_idle_ms`, `click_idle_ms`, `pointer`
     /// ([x, y]) and its `display` ([x, y, w, h]), `sound` (who plays it:
     /// "front", the frontmost app, "other", another, or "none"), `front` (a
-    /// bundle id, or "" for none), `camera` and `mic` (another app records:
-    /// true or false), and `copy` (true: one copy). Each stays as set until
-    /// the next says otherwise.
+    /// bundle id, or "" for none), and `camera` and `mic` (another app
+    /// records: true or false). Each stays as set until the next says
+    /// otherwise.
     func alongLine(_ object: [String: Any]) {
         var r = devAlong
         if let ms = (object["scroll_idle_ms"] as? NSNumber)?.int64Value { r.scrollIdleMs = max(0, ms) }

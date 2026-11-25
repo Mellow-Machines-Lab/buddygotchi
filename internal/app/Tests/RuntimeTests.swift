@@ -311,6 +311,41 @@ final class RuntimeTests: XCTestCase {
         eventually("the status carries the notes") { runtime.home.sync { statuses.last?.notes.count == 2 } }
     }
 
+    /// With their own timer, your hands are read on it alone, 4 a second:
+    /// the 1 s tick doesn't read them again.
+    func testYourHandsAreReadOnTheirOwnTimerAlone() throws {
+        var options = try options(FakeTransport())
+        let reads = Lines()
+        options.readsHandsOften = true
+        options.along = { reads.add("read"); return Along.Facts() }
+        let runtime = try Runtime(options)
+        try runtime.start()
+        defer { runtime.stop() }
+        let before = runtime.home.sync { for _ in 0..<3 { runtime.tick() }; return reads.all.count }
+        XCTAssertEqual(before, 0, "the hands' timer starts a second in, and the tick leaves them to it")
+        eventually("the hands' timer reads them") { !reads.all.isEmpty }
+    }
+
+    /// A burst of changes, as a board's lines and an agent's calls make,
+    /// builds one status, within `statusEveryMs`; opening the popover asks
+    /// for one at once.
+    func testABurstOfChangesBuildsOneStatus() throws {
+        XCTAssertEqual(Runtime.statusEveryMs, 100)
+        let runtime = try makeRuntime(FakeTransport())
+        var statuses = 0  // on `home`
+        try runtime.start()
+        defer { runtime.stop() }
+        Thread.sleep(forTimeInterval: 0.3)
+        runtime.home.sync { runtime.onChange = { _ in statuses += 1 } }
+        runtime.home.sync { for _ in 0..<20 { runtime.changed() } }
+        XCTAssertEqual(runtime.home.sync { statuses }, 0, "not yet")
+        eventually("one status") { runtime.home.sync { statuses == 1 } }
+        Thread.sleep(forTimeInterval: 0.3)
+        XCTAssertEqual(runtime.home.sync { statuses }, 1, "one for all twenty")
+        runtime.refresh()
+        XCTAssertEqual(runtime.home.sync { statuses }, 2, "the popover's, at once")
+    }
+
     /// Why the link can't look for the device
     /// (Bluetooth off), its cause and its words, reaches the popover's
     /// status by the next tick, and leaves it the same way.
@@ -324,10 +359,10 @@ final class RuntimeTests: XCTestCase {
         let off = TransportTrouble(.off, "Bluetooth is off.")
         transport.lock.withLock { transport.why = off }
         runtime.home.sync { runtime.tick() }
-        XCTAssertEqual(runtime.home.sync { statuses.last?.linkTrouble }, off)
+        eventually("the trouble") { runtime.home.sync { statuses.last?.linkTrouble == off } }
         transport.lock.withLock { transport.why = nil }
         runtime.home.sync { runtime.tick() }
-        XCTAssertNil(runtime.home.sync { statuses.last?.linkTrouble })
+        eventually("none") { runtime.home.sync { statuses.last?.linkTrouble == nil } }
     }
 
     /// linkkit/SPEC.md §6: firmware too old for the kit (a `hello` with
@@ -402,8 +437,7 @@ final class RuntimeTests: XCTestCase {
         eventually("a status") { crashed.home.sync { !statuses.isEmpty } }
         XCTAssertEqual(crashed.home.sync { statuses.last?.uncleanExit }, true)
         crashed.dismissUncleanExit()
-        crashed.home.sync {}
-        XCTAssertEqual(crashed.home.sync { statuses.last?.uncleanExit }, false)
+        eventually("dismissed") { crashed.home.sync { statuses.last?.uncleanExit == false } }
     }
 
     /// A start that fails (the hook socket can't listen) leaves no
@@ -492,7 +526,7 @@ final class RuntimeTests: XCTestCase {
         runtime.home.sync { runtime.device(Self.press) }
         XCTAssertEqual(AppSettings.load(from: dir).board, "b00p-54fe")
         XCTAssertEqual(chosen.all, ["Boop-54FE"])
-        XCTAssertEqual(runtime.home.sync { statuses.last?.board }, "b00p-54fe")
+        eventually("the board") { runtime.home.sync { statuses.last?.board == "b00p-54fe" } }
         runtime.home.sync {
             runtime.device(FakeTransport.hello.replacingOccurrences(of: "b00p-54fe", with: "b00p-0001"))
             runtime.device(Self.tap)
@@ -503,7 +537,7 @@ final class RuntimeTests: XCTestCase {
         runtime.home.sync {}
         XCTAssertNil(AppSettings.load(from: dir).board)
         XCTAssertEqual(chosen.all, ["Boop-54FE", "any"])
-        XCTAssertNil(runtime.home.sync { statuses.last?.board })
+        eventually("no board") { runtime.home.sync { statuses.last != nil && statuses.last?.board == nil } }
     }
 
     func testNothingIsRememberedOverUSB() throws {
@@ -956,6 +990,41 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(runtime.home.sync { states().logged }, 1)
     }
 
+    /// Outside debug mode too, a `state` that changed only its pointer goes
+    /// to the board and never to a bug report's lines: they keep no
+    /// timeline of your mouse.
+    func testABugReportKeepsNoTimelineOfThePointer() throws {
+        let transport = FakeTransport()
+        var options = try options(transport)
+        let clock = VirtualClock(harnessT0)
+        options.clock = { clock.now }
+        options.wallClock = { clock.now }
+        options.advance = { clock.now += $0 }
+        let runtime = try Runtime(options)
+        try runtime.start()
+        defer { runtime.stop() }
+        func dev(_ json: String) { runtime.home.sync { runtime.dev(Data(json.utf8)) } }
+        func reported() -> Int {
+            runtime.home.sync {
+                String(decoding: runtime.recent.bytes, as: UTF8.self).split(separator: "\n")
+                    .filter { $0.hasPrefix(#"{"sent":{"t":"state""#) }.count
+            }
+        }
+        transport.onConnection?(true)
+        eventually("connected") { runtime.home.sync { runtime.link.hello != nil } }
+        dev(#"{"dev":"anchor","at":[0,500]}"#)
+        dev(#"{"dev":"along","pointer":[700,500],"display":[0,0,1500,1000]}"#)
+        dev(#"{"dev":"advance","ms":250}"#)
+        let before = (reported(), transport.sent.count)
+        for y in [100, 900, 300] {
+            dev(#"{"dev":"along","pointer":[700,\#(y)]}"#)
+            dev(#"{"dev":"advance","ms":250}"#)
+        }
+        let moved = transport.sent.dropFirst(before.1).filter { $0.hasPrefix(#"{"t":"state""#) && $0.contains(#""ptr":"#) }
+        XCTAssertGreaterThanOrEqual(Set(moved).count, 3, "the board follows the pointer")
+        XCTAssertEqual(reported(), before.0, "the report doesn't")
+    }
+
     /// Each launch keeps the last one's lines as
     /// debug.1.jsonl and moves the older ones up, keeping 10 launches in
     /// all; an empty file (a launch that wrote nothing) isn't kept.
@@ -1120,6 +1189,7 @@ final class RuntimeTests: XCTestCase {
         eventually("the brain") { runtime.home.sync { runtime.harness.brain != nil } }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
         eventually("a mumble") { runtime.home.sync { sentLines.all.contains { $0.contains(#""say":"#) } } }
+        eventually("the brain's status") { debugLines().contains { ($0["status"] as? [String: Any])?["brain"] as? String == "scripted" } }
         runtime.home.sync {}
 
         let text = try String(contentsOf: dir.appendingPathComponent(DebugLog.fileName), encoding: .utf8)

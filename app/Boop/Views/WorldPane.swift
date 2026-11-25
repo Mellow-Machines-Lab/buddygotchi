@@ -17,6 +17,8 @@ struct WorldPane: View {
         VStack(alignment: .leading, spacing: Theme.gapSection) {
             if let world = model.status?.world {
                 content(world)
+            } else if model.status == nil {
+                NoteCard("\(model.name) isn't running, so there's nothing to show yet.")
             } else {
                 NoteCard("The world isn't reachable from here.")
             }
@@ -59,10 +61,11 @@ struct WorldPane: View {
         }
     }
 
-    /// Joining, or the world not answering with an older league on show.
+    /// The world not answering with an older league on show, or joining.
+    /// Not answering with none, the note under it says so, once.
     private func statusNote(_ world: Runtime.WorldStatus) -> String? {
+        if world.link.trouble != nil { return world.link.league != nil ? "The world isn't answering, so this may be out of date." : nil }
         if world.on, !world.inWorld { return "Joining the world…" }
-        if world.link.league != nil, world.link.trouble != nil { return "The world isn't answering, so this may be out of date." }
         return nil
     }
 
@@ -139,13 +142,13 @@ struct WorldPane: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Capsule().fill(Theme.hairlineStrong).frame(width: 44, height: 5)
                     .overlay(alignment: .leading) {
-                        Capsule().fill(Theme.care).frame(width: 44 * CGFloat(row.xpWeek) / CGFloat(most), height: 5)
+                        Capsule().fill(Theme.careSignal).frame(width: 44 * CGFloat(row.xpWeek) / CGFloat(most), height: 5)
                     }
                 Text(row.xpWeek.formatted()).font(.bodyStrong).monospacedDigit()
                 Image(systemName: "chevron.right").caption()
             }
             .padding(.horizontal, Theme.gap).padding(.vertical, Theme.gapSnug)
-            .background(you ? Theme.care.opacity(0.12) : .clear)
+            .background(you ? Theme.blush.opacity(0.12) : .clear)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -156,7 +159,7 @@ struct WorldPane: View {
     static func dot(_ activity: World.Activity) -> Color {
         switch activity {
         case .coding: Theme.ring
-        case .testing: Color(hex: "#A97BD6")
+        case .testing: Theme.testing
         case .shipping: Theme.sageSignal
         case .waiting: Theme.inkSoft
         case .idle, .asleep: Theme.hairlineStrong
@@ -217,9 +220,9 @@ struct WorldPane: View {
                 }
             }
             Card {
-                TimelineView(.everyMinute) { context in
+                Ticking(.everyMinute) { date in
                     (Text(Self.doing(activity).prefix(1).uppercased() + Self.doing(activity).dropFirst() + " now.").font(.bodyStrong)
-                        + Text(Self.where_(p?.region, offset: p?.utcOffset, now: context.date).map { " " + $0 } ?? "").font(.body))
+                        + Text(Self.where_(p?.region, offset: p?.utcOffset, now: date).map { " " + $0 } ?? "").font(.body))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -227,7 +230,7 @@ struct WorldPane: View {
             if let p {
                 Card(padding: Card<EmptyView>.rows) {
                     VStack(alignment: .leading, spacing: 0) {
-                        numberRow("This week", "\(p.week.xp.formatted()) XP · \(Self.ordinal(p.week.place))")
+                        numberRow("This week", "\(p.week.xp.formatted()) XP · \(p.week.place.formatted())\(World.ordinalSuffix(p.week.place))")
                         Hairline().padding(.horizontal, Theme.gap)
                         numberRow("Today", "\(p.today.turns) turns · \(p.today.ships) \(p.today.ships == 1 ? "ship" : "ships")")
                         Hairline().padding(.horizontal, Theme.gap)
@@ -290,13 +293,6 @@ struct WorldPane: View {
         "Level \(level.formatted())" + (BoopPane.inARow(days).map { " · " + $0 } ?? "")
     }
 
-    /// "1st", "2nd", "3rd", "4th".
-    static func ordinal(_ n: Int) -> String {
-        let tens = n % 100, ones = n % 10
-        let suffix = (11...13).contains(tens) ? "th" : ones == 1 ? "st" : ones == 2 ? "nd" : ones == 3 ? "rd" : "th"
-        return "\(n.formatted())\(suffix)"
-    }
-
     /// The buttons: Boop, Wave, Heart, and Cheer the ship while it ships; beside them how it went.
     private func actions(_ id: String, name: String, activity: World.Activity, world: Runtime.WorldStatus) -> some View {
         let sent = model.worldSent[id] ?? .init()
@@ -305,7 +301,7 @@ struct WorldPane: View {
                 ForEach(Self.gestures(for: activity).filter { $0 != .cheer }, id: \.self) { kind in
                     let done = sent.sent.contains(kind)
                     Button { model.sendGesture(kind, to: id) } label: {
-                        Label(done ? "Sent" : kind == .cheer ? "Cheer the ship" : Self.verb(kind),
+                        Label(done ? "Sent" : Self.verb(kind),
                               systemImage: done ? "checkmark" : Self.symbol(kind))
                     }
                     .buttonStyle(.row)
@@ -358,14 +354,14 @@ struct WorldPane: View {
 
     /// "today", "yesterday", "3 days ago".
     static func ago(_ iso: String, now: Date) -> String {
-        guard let at = ISO8601DateFormatter().date(from: iso) else { return "lately" }
+        guard let at = World.iso.date(from: iso) else { return "lately" }
         let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: at), to: Calendar.current.startOfDay(for: now)).day ?? 0
         return days <= 0 ? "today" : days == 1 ? "yesterday" : "\(days) days ago"
     }
 
     /// "last week", "2 weeks ago", for a week's Monday.
     static func weeksAgo(_ monday: String, now: Date) -> String {
-        guard let at = ISO8601DateFormatter().date(from: monday + "T00:00:00Z") else { return "lately" }
+        guard let at = World.iso.date(from: monday + "T00:00:00Z") else { return "lately" }
         let weeks = Int(now.timeIntervalSince(at) / (7 * 86_400))
         return weeks <= 1 ? "last week" : "\(weeks) weeks ago"
     }
@@ -481,9 +477,9 @@ struct MedalsRow: View {
 
     var body: some View {
         HStack(spacing: Theme.gapSnug) {
-            ForEach([(medals.gold, "#E9BD5A"), (medals.silver, "#CFD5DC"), (medals.bronze, "#D39A6A")].filter { $0.0 > 0 }, id: \.1) { n, hex in
+            ForEach([(medals.gold, 0), (medals.silver, 1), (medals.bronze, 2)].filter { $0.0 > 0 }, id: \.1) { n, place in
                 HStack(spacing: Theme.gapTight) {
-                    Circle().fill(Color(hex: hex)).frame(width: 12, height: 12)
+                    Circle().fill(Theme.medal(place)).frame(width: 12, height: 12)
                     Text("\(n)").font(.detailStrong).monospacedDigit()
                 }
             }

@@ -72,7 +72,7 @@ struct BoopPane: View {
                             ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
                                 if i > 0 { Hairline().padding(.horizontal, Theme.gap) }
                                 HStack(spacing: Theme.gapSnug) {
-                                    Circle().fill(r.care ? Theme.care : Theme.ring).frame(width: 7, height: 7)
+                                    Circle().fill(r.care ? Theme.careSignal : Theme.ring).frame(width: 7, height: 7)
                                     Text(r.words).font(.body)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                     Text("\(r.xp)").font(.bodyStrong).monospacedDigit()
@@ -298,7 +298,7 @@ struct TwoTintRing: View {
                     }
                     if c > 0 {
                         Circle().trim(from: cap + w, to: cap + (w + c) * (1 - 2 * cap))
-                            .stroke(Theme.care, style: StrokeStyle(lineWidth: width, lineCap: .round))
+                            .stroke(Theme.careSignal, style: StrokeStyle(lineWidth: width, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                     }
                 }

@@ -70,9 +70,8 @@ public final class Runtime: @unchecked Sendable {
         public var keyIdleMs: (@Sendable () -> Int64)?
         /// The rest of what Boop notices of you at the Mac (`Along`): the
         /// scroll's and the click's idle times, the pointer, whether sound,
-        /// a camera or the mic runs, the frontmost app, the pasteboard's
-        /// change count. Never content. Nil (headless): `{"dev":"along"}`
-        /// lines stand in.
+        /// a camera or the mic runs, the frontmost app. Never content. Nil
+        /// (headless): `{"dev":"along"}` lines stand in.
         public var along: (@Sendable () -> Along.Facts)?
         /// The Mac's displays now, to tell whether the anchor's is still
         /// there (`displaysChanged`). Nil (headless): it always is.
@@ -217,6 +216,8 @@ public final class Runtime: @unchecked Sendable {
     /// logged, and whether the XP changed since the last status.
     let growth: GrowthStore
     var grew = false
+    /// A status is asked for and not built yet (`changed`).
+    var statusDue = false
     /// The XP moved during an input, which its step still has to carry out.
     var xpMoved = false
     /// A level or the ring was reached during an input: its moment plays
@@ -238,7 +239,8 @@ public final class Runtime: @unchecked Sendable {
     /// the file and printed readably, and otherwise kept in `recent`.
     let emit: (String) -> Void
 
-    /// After every change the menu bar might show. Called on `home`.
+    /// After changes the menu bar might show, at most every
+    /// `statusEveryMs`. Called on `home`.
     public var onChange: ((Status) -> Void)?
     /// The first buddy's board, for the Mac's mirror of it, which never
     /// completes a handle. On `home`, in order:
@@ -376,7 +378,7 @@ public final class Runtime: @unchecked Sendable {
                 mirror(line)
                 // The logs and a bug report keep no timeline of you at the
                 // Mac: a `state` is logged without its pointer and the tags
-                // of what you play, record or copy, and one that changed
+                // of what you scroll, play or record, and one that changed
                 // only those isn't logged again.
                 // A show's picture goes to the board and its mirror, never to
                 // a log: its parts are logged without their bytes.
@@ -387,21 +389,21 @@ public final class Runtime: @unchecked Sendable {
                 }
                 let kept = StateSnapshot.unnoticed(line)
                 let isState = line.hasPrefix(#"{"t":"state""#)
-                if isState, kept == lastState, line != lastSent { return lastSent = line }
-                if isState { lastSent = line }
+                let changed = kept != lastState
+                if isState, !changed, line != lastSent { return lastSent = line }
+                if isState { (lastSent, lastState) = (line, kept) }
                 emit(DebugLog.sent(kept, by: sender, at: clock()))
-                guard debugLog != nil, kept != lastState else { return }
-                if isState { lastState = kept }
+                guard debugLog != nil, changed else { return }
                 log("link \(sender == .brain ? "brain" : "rules") → " + kept)
             }
             for over in rig.steering.overBudget(in: buddy.pack) { log("steering: over budget: \(over)") }
         }
-        // The core. The launch's read-back prunes the transcript, so today
-        // isn't a new day.
+        // The core. The transcript prunes itself, at launch and on each
+        // new day's first event.
         var config = Core.Config(volume: settings.volume, time: options.time, pack: buddy.pack, hatched: longTerm.hatched)
         config.color = settings.color
         config.firstAsk = SessionTracker.randomFirstRequest()
-        let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
+        let core = Core(config: config, place: places.place, isRunning: Runtime.agentRuns)
         core.macSide = settings.anchor?.side
         if let displays = options.displays, let anchor = settings.anchor { anchorGone = !displays().contains(anchor.display) }
         if anchorGone { core.macSide = nil }
@@ -429,14 +431,10 @@ public final class Runtime: @unchecked Sendable {
                         reactions: rig.reactions, queue: { queued($0, $1) },
                         speaks: { (link.hello.map { DeviceInfo($0).hasTheVoice } ?? true) && !core.along.onCall && !core.along.speaking },
                         talk: { talkNow() }, effects: { effected($0) },
-                        memory: { memoryNow() },
-                        askable: { now, questions in
-                            Asks.due(questions, core: core, memory: remembersNow(), at: now, wall: wallNow())
-                        }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
-                        company: { remembersNow()?.today })
+                        memory: { memoryNow() })
+        mind.remember({ remembersNow() }, core: core, wall: wallNow)
         mind.swears = { swearsNow() }
         mind.earned = { earnedNow($0) }
-        mind.felt = { remembersNow()?.felt(at: $0) ?? [] }
         // A skit's invite: only to a board that plays them, by the
         // memory's ledger, and with the XP care would add now.
         let time = options.time
@@ -447,8 +445,6 @@ public final class Runtime: @unchecked Sendable {
         // A skit's remark: against your usual, the memory's.
         mind.remarking = MomentOutput.Remarking(normals: { remembersNow()?.normals.state },
                                                 minutes: { time.minutesIntoBoopDay(core.wall($0)) })
-        mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
-                                      onLately: { remembersNow()?.onLately($0) ?? false })
         rig.mood = Runtime.brain(pipeline, mind)
         // The questions line is debug.jsonl's first, before the read-back's
         // lines, the socket or the link can add one, so a changed first line
@@ -574,19 +570,13 @@ public final class Runtime: @unchecked Sendable {
                                memory: @escaping () -> String? = { nil }, remembers: Memory? = nil, seed: UInt64? = nil,
                                felt: ((Int64) -> [Memory.Felt])? = nil, digests: (() -> [DayDigest])? = nil,
                                wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
-        let core = pipeline.core
         var mind = Mind(buddy: pipeline.buddy, steering: steering, reactions: reactions,
-                        queue: queue, speaks: speaks, talk: talk, memory: memory,
-                        askable: { now, questions in
-                            Asks.due(questions, core: core, memory: remembers, at: now, wall: wall())
-                        }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
-                        company: { remembers?.today })
+                        queue: queue, speaks: speaks, talk: talk, memory: memory)
+        mind.remember({ remembers }, core: pipeline.core, wall: wall, notices: remembers != nil)
         if let seed { mind.seed = seed }
         mind.swears = swears
-        mind.felt = felt ?? { remembers?.felt(at: $0) ?? [] }
-        if let remembers {
-            mind.noticing = Mind.Noticing(digests: digests ?? { remembers.digests }, shown: { remembers.noticesShown() }, onLately: { remembers.onLately($0) })
-        }
+        if let felt { mind.felt = felt }
+        if let digests { mind.noticing?.digests = digests }
         return (pipeline.harness, brain(pipeline, mind))
     }
 
@@ -881,12 +871,12 @@ public final class Runtime: @unchecked Sendable {
         // The core follows the Mac's clock, set or moved.
         let now = options.clock(), wall = options.wallClock()
         core.setWallClock(wall, at: now)
-        if showBlobs.due(at: now), !rig.link.sendingBlob, let latest = rig.latest { show(latest) }
         // When you last touched the Mac, for Doing with no agent open.
         if let idle = options.idleMs?() ?? (devIdleSet ? devIdleMs : nil) {
             core.lastInputAt = max(core.lastInputAt ?? .min, now - max(0, idle))
         }
-        handsTick()
+        // Your hands and a show's parts, unless their own timer reads them.
+        if handsTimer == nil { handsTick() }
         run(pipeline.tick(at: now))
         worldTick(at: now)
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
@@ -954,8 +944,6 @@ public final class Runtime: @unchecked Sendable {
                 stateChanged = true
             case .record:
                 break
-            case .newDay:
-                pipeline.transcript.prune(now: options.clock())
             case .listen(let on, let by):
                 mic(on, by: by)
                 stateChanged = true
@@ -1255,9 +1243,9 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    /// A fresh status, on `home`.
+    /// A fresh status, on `home`, at once.
     public func refresh() {
-        home.async { [self] in changed() }
+        home.async { [self] in status() }
     }
 }
 

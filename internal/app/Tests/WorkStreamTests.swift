@@ -168,6 +168,23 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(run(rig, "7", program: "swift", failed: true, error: "exit_code"), ["swift bonk"], "2 minutes on")
     }
 
+    /// A session that ended takes its failures in a row and its turn's
+    /// work with it: a launch that runs for days keeps none of the
+    /// sessions gone.
+    func testAGoneSessionLeavesNothingBehind() throws {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        let key = try XCTUnwrap(rig.core.sessions.keys.first)
+        rig.now += 9000
+        run(rig, "1", program: "make", failed: true, error: "exit_code")
+        XCTAssertNotNil(rig.core.stream.failures[key])
+        XCTAssertNotNil(rig.core.turnWork[key])
+        rig.send(.sessionEnd)
+        XCTAssertNil(rig.core.sessions[key])
+        XCTAssertNil(rig.core.stream.failures[key])
+        XCTAssertNil(rig.core.turnWork[key])
+    }
+
     /// A lookup that exits 1 found nothing: a shrug. A timeout, a request
     /// you denied, a check: each its own.
     func testEachFailuresStyle() {

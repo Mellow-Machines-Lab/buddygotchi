@@ -33,6 +33,10 @@ final class SlimeFeed: NSObject, WKNavigationDelegate, ObservableObject {
     private var zoomed = false
     /// The latest `state` sent, the page's first message when it loads.
     private var state: String?
+    /// A board's mirror off screen draws nothing, so it's sent no `state`:
+    /// the latest waits, and goes before the next other line or as it's
+    /// shown.
+    private(set) var stateHeld = false
     /// A board's mirror has had a line from the board's link. Until then
     /// (no runtime yet) it shows its views' snapshot.
     private var heardBoard = false
@@ -134,10 +138,18 @@ final class SlimeFeed: NSObject, WKNavigationDelegate, ObservableObject {
     private func post(_ line: String) {
         let isState = line.hasPrefix(#"{"t":"state""#)
         if isState { state = line }
+        if isState, mirrorsBoard, drawn, !visible { return stateHeld = true }
+        if isState { stateHeld = false } else { sendHeld() }
         // The first state powers the board, which draws its frame before
         // the promise settles.
         call(isState && !drawn ? "await window.BoopMirror.send(line)" : "window.BoopMirror.send(line)", ["line": line],
              then: isState && !drawn ? { [weak self] in self?.reveal() } : nil)
+    }
+
+    private func sendHeld() {
+        guard stateHeld, let state else { return }
+        stateHeld = false
+        call("window.BoopMirror.send(line)", ["line": state])
     }
 
     /// The board's first frame is drawn: the page fades in over the glass.
@@ -173,6 +185,7 @@ final class SlimeFeed: NSObject, WKNavigationDelegate, ObservableObject {
     func show(_ on: Bool) {
         guard visible != on else { return }
         visible = on
+        if on { sendHeld() }
         call("window.BoopMirror.shown(visible)", ["visible": on])
         if mirrorsBoard { followPassing() }
     }

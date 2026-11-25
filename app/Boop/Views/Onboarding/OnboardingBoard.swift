@@ -66,7 +66,7 @@ struct BodyAct: View {
         switch model.body {
         case .intro, .skipped: PlugIn(model: model)
         case .looking:
-            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: model.stuck ? .stopped : .happy)
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: model.stuck ? .stopped : .idle)
                 // Rings while looking; none while something stops it.
                 .background { if !model.stuck { Ripples().frame(width: Ripples.frame.width, height: Ripples.frame.height) } }
                 .overlay(alignment: .bottom) {
@@ -187,7 +187,7 @@ struct BodyAct: View {
                 switch app.firmwareWrite {
                 case .idle, .failed: Button("Update") { app.updateFirmware() }.buttonStyle(ActControlStyle())
                 case .writing: ProgressView().controlSize(.small).frame(width: ActSize.controls)
-                case .done: Image(systemName: "checkmark.circle.fill").font(.boopTitle).foregroundStyle(Theme.sage)
+                case .done: Image(systemName: "checkmark.circle.fill").font(.boopTitle).foregroundStyle(Theme.sageSignal)
                         .frame(width: ActSize.controls)
                 }
             }

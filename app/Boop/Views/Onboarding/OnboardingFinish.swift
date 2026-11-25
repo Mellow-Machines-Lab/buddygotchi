@@ -21,7 +21,7 @@ struct AgentsAct: View {
         ActFrame(kind: .list, title: model.connected ? "Say hi from your agent" : "Which agents should I watch?",
                  lead: model.connected ? nil : "I listen through their hooks. I never approve, deny or block anything.",
                  faced: !model.connected, bar: bar) {
-            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.side, face: .happy)
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.side, face: .idle)
         } content: {
             if model.connected {
                 hello
@@ -329,7 +329,7 @@ struct SmallThingsAct: View {
 
     var body: some View {
         ActFrame(kind: .list, title: "A few small things", bar: ActBar(model: model)) {
-            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.side, face: .happy)
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.side, face: .idle)
         } content: {
             VStack(spacing: Theme.gapSnug) {
                 login
@@ -374,7 +374,7 @@ struct SmallThingsAct: View {
             switch model.mic {
             case .notAsked: Button("Allow") { model.askForMic() }.buttonStyle(ActControlStyle())
             case .asking: ProgressView().controlSize(.small)
-            case .allowed: Image(systemName: "checkmark.circle.fill").font(.boopTitle).foregroundStyle(Theme.sage)
+            case .allowed: Image(systemName: "checkmark.circle.fill").font(.boopTitle).foregroundStyle(Theme.sageSignal)
             case .refused: Color.clear
             }
         }

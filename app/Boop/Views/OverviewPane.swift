@@ -60,8 +60,8 @@ struct OverviewPane: View {
                 ReasonLines(feed: model.slime, name: model.name, mood: status.snapshot.mood, wish: status.wishing,
                             why: moodWhy, doing: status.doingReason?.cause,
                             energy: Narration.energy(status.snapshot.energy, name: model.name))
-                if !status.dressing.isEmpty {
-                    PaneSection("Why it looks like this") { dressingCard(status.dressing) }
+                if !status.celebrating.isEmpty {
+                    PaneSection("Today") { celebratingCard(status.celebrating) }
                 }
             } else if model.startError == nil {
                 NoteCard("Waking up… Your agents show here in a moment.")
@@ -263,8 +263,8 @@ struct OverviewPane: View {
     /// again, counting down; a click ends it now.
     private func quietButton(_ until: Date, compact: Bool) -> some View {
         Button { model.runtime?.quietForAWhile(false) } label: {
-            TimelineView(.periodic(from: .now, by: 15)) { context in
-                let minutes = max(1, Int((until.timeIntervalSince(context.date) / 60).rounded(.up)))
+            Ticking(.periodic(from: .now, by: 15)) { date in
+                let minutes = max(1, Int((until.timeIntervalSince(date) / 60).rounded(.up)))
                 HStack(spacing: Theme.gapTight) {
                     Image(systemName: "mouth.fill")
                     Text(compact ? "\(minutes)m" : "Quiet \(minutes)m")
@@ -322,7 +322,7 @@ struct OverviewPane: View {
         return switch FaceMood(model.status) {
         case .needsYou: Theme.amberSignal
         case .working: Theme.inkSoft
-        case .idle, .happy, .asleep, .stopped, .waking: Theme.inkFaint
+        case .idle, .asleep, .stopped, .waking: Theme.inkFaint
         }
     }
 
@@ -331,10 +331,10 @@ struct OverviewPane: View {
         return model.listening || mood == .working || mood == .needsYou
     }
 
-    // MARK: Why it looks like this
+    // MARK: Today
 
     /// What Boop is celebrating today: each reason.
-    private func dressingCard(_ reasons: [Narration.Dressing]) -> some View {
+    private func celebratingCard(_ reasons: [Narration.Celebrating]) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(reasons) { reason in
@@ -813,8 +813,8 @@ struct SessionRow: View {
                         .lineLimit(1).truncationMode(.middle)  // cut: whole in .help
                 }
                 // The time moves on as the row shows, a tick a half-minute.
-                TimelineView(.periodic(from: .now, by: 30)) { context in
-                    Text(doing(at: context.date))
+                Ticking(.periodic(from: .now, by: 30)) { date in
+                    Text(doing(at: date))
                         .font(.mono).foregroundStyle(Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }

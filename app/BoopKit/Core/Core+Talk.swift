@@ -124,7 +124,6 @@ extension Core {
     private func talkInput(_ now: Int64, _ body: (inout [CoreEffect]) -> Void) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
-        startDayIfNew(now, &fx)
         body(&fx)
         publish(now, &fx)
         return fx

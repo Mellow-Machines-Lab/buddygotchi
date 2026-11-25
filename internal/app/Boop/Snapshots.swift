@@ -57,6 +57,7 @@ enum Snapshots {
             if SlimeFeed.folder != nil {
                 checkSlimeHandOver()
                 try checkSlimeFadesIn()
+                try checkSlimeHiddenHoldsState()
                 onboardingGel = try SlimeSnapshots.image(.onboarding(mood: "happy"), to: out.appendingPathComponent("slime-onboarding.png"))
                 // Every look onboarding uses, through the board's engine:
                 // one it doesn't show as asked fails here.
@@ -165,6 +166,11 @@ enum Snapshots {
                 joining.world?.inWorld = false
                 joining.world?.link.joined = false
                 shot("world-joining", model(installer, status: joining), pane: .overview, tab: .world)
+                // On, never joined, and the Mac offline: the trouble, said once.
+                joining.world?.link.league = nil
+                joining.world?.link.today = []
+                joining.world?.link.trouble = "the world didn't answer"
+                shot("world-joining-trouble", model(installer, status: joining), pane: .overview, tab: .world)
                 var away = status()
                 away.world?.on = false
                 away.world?.link.joined = false
@@ -182,6 +188,7 @@ enum Snapshots {
                 var nowhere = status()
                 nowhere.world = nil
                 shot("world-unreachable", model(installer, status: nowhere), pane: .overview, tab: .world)
+                shot("world-not-running", model(installer, status: nil), pane: .overview, tab: .world)
                 // What Boop knows: with notes, with a section still empty, with none.
                 shot("memory", model(installer, status: status()), pane: .memory)
                 var partly = status()
@@ -221,6 +228,10 @@ enum Snapshots {
                 var swearing = status()
                 swearing.swearing = true
                 shot("settings-swearing-on", model(installer, status: swearing), pane: .settings)
+                // Noticing off: where Boop sits can't be shown, and the row says why.
+                var unnoticing = status()
+                unnoticing.noticesYou = false
+                shot("settings-notices-off", model(installer, status: unnoticing), pane: .settings)
                 // Out of the world, and shown as "a buddy".
                 var privately = status()
                 privately.world?.on = false
@@ -663,6 +674,33 @@ enum Snapshots {
         print("slime: clear until the board's first frame, then fades in")
     }
 
+    /// The popover's mirror, off screen, is sent no `state`, the pointer's
+    /// up to 4 a second: the latest waits, and goes before the next `do`
+    /// or as the popover opens.
+    static func checkSlimeHiddenHoldsState() throws {
+        let feed = SlimeFeed(mirrorsBoard: true), container = NSView(frame: NSRect(x: 0, y: 0, width: 46, height: 46))
+        let window = NSWindow(contentRect: NSRect(x: -2000, y: 0, width: 46, height: 46), styleMask: .borderless,
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = container
+        defer { feed.close(); window.close() }
+        feed.place(in: container)
+        guard let page = feed.webView else { fail("snapshots: the mirror has no page") }
+        feed.update(.onboarding(), visible: true, zoomed: true, from: container)
+        let deadline = Date().addingTimeInterval(SlimeSnapshots.timeout)
+        while page.alphaValue < 1, Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.01)) }
+        guard page.alphaValue == 1 else { fail("snapshots: the popover's mirror never drew") }
+        feed.show(false)
+        feed.send(StateSnapshot.onboarding().jsonLine)
+        guard feed.stateHeld else { fail("snapshots: the popover's mirror off screen was sent a state") }
+        feed.send(Wire.do(id: 1, name: "react", play: .next, ttl: 5000, args: [:]))
+        guard !feed.stateHeld else { fail("snapshots: a do went to the mirror before the state it plays on") }
+        feed.send(StateSnapshot.onboarding().jsonLine)
+        feed.show(true)
+        guard !feed.stateHeld else { fail("snapshots: the popover opened on the mirror's old state") }
+        print("slime: off screen, the popover's mirror holds its latest state")
+    }
+
     /// The live dot's ring: 2.2 times the dot, gone in 1.6 s, again and
     /// again, run by Core Animation; none while still.
     static func checkPulse() {
@@ -906,7 +944,7 @@ enum Snapshots {
             // Its 50th day.
             ("celebrating", {
                 var s = status(sessions: [["claude", "jetpack", "work"]])
-                s.dressing = [Narration.Dressing(why: "Mochi is 50 days old today")]
+                s.celebrating = [Narration.Celebrating(why: "Mochi is 50 days old today")]
                 return model(installer, status: s)
             }()),
             // An agent showed a picture of its result (the show).
@@ -1079,7 +1117,7 @@ enum Snapshots {
         s.wishing = "\(Long.name) wishes for \(Core.WishKind.work.words) (3 h 20 min)."
         s.moodReason = Long.told
         s.doingReason = Long.act
-        s.dressing = [Narration.Dressing(why: "\(Long.name) became a Buddy today, and it's its birthday")]
+        s.celebrating = [Narration.Celebrating(why: "\(Long.name) became a Buddy today, and it's its birthday")]
         s.growth = Growth(xp: 123_456)
         s.daysOld = 1_041
         s.notes = longNotes
@@ -1126,7 +1164,7 @@ enum Snapshots {
                 OpenDetails.shared.show(words(n))  // its words are behind Details
                 return s
             }),
-            ("a dressing's reason", { n in var s = bare(); s.dressing = [.init(why: words(n))]; return s }),
+            ("a special day's reason", { n in var s = bare(); s.celebrating = [.init(why: words(n))]; return s }),
         ]
         for (what, status) in values where height(status(20)) >= height(status(40)) {
             fail("snapshots: \(what) is cut off: twice the words leave the Overview no taller")
@@ -1266,12 +1304,17 @@ enum Snapshots {
                   ("needs you on a dark menu bar", Palette.amber, "#2A2A2A", 3)]
         // Shapes that carry meaning, 3:1 on each surface they're drawn on
         // (WCAG 1.4.11): needs you's dot and bar, the lanes' bars, the
-        // ring and a full one, a switch on and off, a slider's groove.
+        // ring and a full one (and a done step's circle), a switch on and
+        // off, a slider's groove, your time's part of the ring, the world's
+        // dots and medals.
         let shapes = [("needs you's dot", Palette.menuAmberLight, Palette.amber),
                       ("the ring", Palette.ringLight, Palette.ringDark),
                       ("a full ring or a switch that's on", Palette.sageSignalLight, Palette.sage),
-                      ("a switch that's off", Palette.controlOffLight, Palette.controlOffDark)]
+                      ("a switch that's off", Palette.controlOffLight, Palette.controlOffDark),
+                      ("your time's arc, dot and bar", Palette.careSignalLight, Palette.blush),
+                      ("the world's testing dot", Palette.testingLight, Palette.testing)]
             + Palette.lanes.indices.map { ("lane \($0)'s bar", Palette.lanesLight[$0], Palette.lanes[$0]) }
+            + Palette.medals.indices.map { ("medal \($0)", Palette.medalsLight[$0], Palette.medals[$0]) }
         for (i, (look, paper, card, _, _, _, _)) in looks.enumerated() {
             for (name, light, dark) in shapes {
                 let shape = i == 0 ? light : dark

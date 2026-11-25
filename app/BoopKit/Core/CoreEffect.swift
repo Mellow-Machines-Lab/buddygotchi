@@ -20,9 +20,6 @@ public enum CoreEffect: Equatable, Sendable {
     /// `needs_you_start` and `needs_you_end`, for the transcript:
     /// recorded after the event that caused it.
     case record(Event)
-    /// The first activity of a new day: the transcript deletes its files
-    /// past `Transcript.keptDays`.
-    case newDay(date: String)
     /// Push-to-talk: turn the Mac's mic on or off, after `by`'s button.
     case listen(Bool, by: Core.Talker)
     /// A rule's reaction for the device, after the
@@ -48,7 +45,6 @@ public enum CoreEffect: Equatable, Sendable {
         case .state(let s): "state " + s.jsonLine
         case .sessions: "sessions"
         case .record(let e): "record " + e.summary
-        case .newDay(let date): "new-day \(date)"
         case .listen(let on, let by): "listen \(on ? "on" : "off") (\(by.rawValue))"
         case .reaction(let m): "do " + JSONObject([("name", .string(m.name)), ("args", .object(m.args))]).json
         case .call(let args): "do " + JSONObject([("name", .string(WorkStream.action)), ("args", .object(args))]).json

@@ -186,8 +186,8 @@ final class FakeBootloader: SerialLine {
         }
         let wraps = Flasher.Board(chip: .esp32, mac: [0, 0, 0, 0, 0x54, 0xFF])
         #expect(wraps.isDevice("lamp-5401"), "the last byte wraps, and the one before it stays")
-        // Read off the two boards themselves: the CYD (ESP32) and the AMOLED
-        // (ESP32-S3), each advertising the name its own firmware gives it.
+        // Read off two boards themselves, an ESP32 board and an ESP32-S3
+        // board, each advertising the name its own firmware gives it.
         #expect(Flasher.Board(chip: .esp32, mac: [0x8C, 0x94, 0xDF, 0x4E, 0x54, 0xFC]).advertised("Boop") == "Boop-54FE")
         #expect(Flasher.Board(chip: .esp32s3, mac: [0x28, 0x84, 0x85, 0xB5, 0x01, 0xDC]).advertised("Boop") == "Boop-01DD")
     }

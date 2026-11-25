@@ -335,7 +335,7 @@ The rules that are easy to break, in full in
   only while Settings lets the agent help.
 - Your hands and what else Boop notices of you at the Mac reach the board
   as tags and `ptr` and nothing else (`Hands`, `Along`): that you type,
-  scroll, copy or listen, never what, with no event, nothing in the
+  scroll or listen, never what, with no event, nothing in the
   transcript and nothing for the brain, the world or the daily counts.
 - The world gets only `World.State`'s fields (`WorldTests` pins them): the
   buddy's name and level, its UTC offset, one of six activities,

@@ -240,7 +240,7 @@ public enum World {
         }
 
         /// When the week ends, as a date.
-        public var ends: Date? { ISO8601DateFormatter().date(from: endsAt) }
+        public var ends: Date? { World.iso.date(from: endsAt) }
     }
 
     /// A buddy's place in a closed week: its Monday, the place, the XP and how many had a place.
@@ -339,11 +339,17 @@ extension World {
     }
 
     /// "1st", "2nd", "23rd".
-    public static func ordinal(_ n: Int) -> String {
+    public static func ordinal(_ n: Int) -> String { "\(n)\(ordinalSuffix(n))" }
+
+    /// "st", "nd", "rd" or "th", for `n`.
+    public static func ordinalSuffix(_ n: Int) -> String {
         let tens = n % 100, ones = n % 10
-        let suffix = (11...13).contains(tens) ? "th" : ones == 1 ? "st" : ones == 2 ? "nd" : ones == 3 ? "rd" : "th"
-        return "\(n)\(suffix)"
+        return (11...13).contains(tens) ? "th" : ones == 1 ? "st" : ones == 2 ? "nd" : ones == 3 ? "rd" : "th"
     }
+
+    /// The world's times, made once: a formatter is slow to make, and the
+    /// popover's views read them on every render. It's thread-safe.
+    nonisolated(unsafe) public static let iso = ISO8601DateFormatter()
 
     /// What Boop holds low in gold for last week: "2nd, 512 XP last week".
     public static func leagueSign(place: Int, xp: Int) -> String { "\(ordinal(place)), \(xp) XP last week" }

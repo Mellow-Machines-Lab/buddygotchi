@@ -103,8 +103,8 @@ public final class Flasher {
     static let blockSize = 0x400
     /// Where every chip keeps the register that says which it is.
     static let chipMagicRegister: UInt32 = 0x4000_1000
-    /// The rate the CYD's CH340 takes on macOS's own driver; the S3's own
-    /// USB has none to change.
+    /// The rate a CH340 USB-serial chip takes on macOS's own driver; the
+    /// S3's own USB has none to change.
     public static let fastBaud = 460_800
 
     let line: SerialLine
@@ -187,7 +187,7 @@ public final class Flasher {
 
     /// Resets the chip into its bootloader through DTR and RTS, and syncs
     /// with it: the S3's own USB (USB-Serial/JTAG) takes one sequence, a
-    /// USB-serial chip's auto-reset circuit (the CYD's CH340) another. Each
+    /// USB-serial chip's auto-reset circuit (a CH340's) another. Each
     /// is tried, its own first.
     func enterBootloader() throws {
         let ways: [() -> Void] = line.usbJTAG ? [usbJTAGReset, classicReset] : [classicReset, usbJTAGReset]

@@ -293,37 +293,11 @@ final class PresenceTests: XCTestCase {
 /// The runtime's side: headless reads none of the
 /// Mac's signals, so dev lines stand in, and a relaunch picks up an away
 /// from the transcript.
-final class PresenceRuntimeTests: XCTestCase {
+final class PresenceRuntimeTests: XCTestCase, HeadlessRig {
     var dir: URL!
 
-    override func setUpWithError() throws {
-        try requirePack("boop")
-        dir = URL(fileURLWithPath: "/tmp/boop-presence-\(UUID().uuidString.prefix(8))")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-    }
-
-    override func tearDownWithError() throws {
-        if let dir { try? FileManager.default.removeItem(at: dir) }
-    }
-
-    func makeRuntime(clock: VirtualClock) throws -> Runtime {
-        if !FileManager.default.fileExists(atPath: dir.appendingPathComponent("long-term.md").path) {
-            try Runtime.setUp(stateDir: dir, name: "Pip")
-        }
-        var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("boop.sock").path, link: nil,
-                                      steering: RuntimeTests.steering)
-        options.alone = true
-        options.devLines = true
-        options.clock = { clock.now }
-        options.wallClock = { clock.now }
-        options.advance = { clock.now += $0 }
-        options.readJevKey = { _ in nil }
-        return try Runtime(options)
-    }
-
-    func dev(_ runtime: Runtime, _ json: String) {
-        runtime.home.sync { runtime.dev(Data(json.utf8)) }
-    }
+    override func setUpWithError() throws { try makeDir("presence") }
+    override func tearDownWithError() throws { removeDir() }
 
     /// The `presence` events in the transcript's files, as `start locked`.
     func presence(_ runtime: Runtime) -> [String] {

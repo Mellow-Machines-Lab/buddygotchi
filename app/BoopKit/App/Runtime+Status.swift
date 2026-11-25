@@ -63,8 +63,8 @@ extension Runtime {
         public var doingReason: Narration?
         /// The wish waiting, for the popover: "Boop wishes for a pet (40 min)."
         public var wishing: String?
-        /// Why the board looks as it does: what Boop celebrates today.
-        public var dressing: [Narration.Dressing] = []
+        /// What Boop celebrates today.
+        public var celebrating: [Narration.Celebrating] = []
         /// The latest picture an agent showed, for the popover to hold up.
         public var show: Core.Shown?
 
@@ -155,7 +155,23 @@ extension Runtime {
         }
     }
 
+    /// The most often a status is built: every board line and many hooks
+    /// change something it shows, nearly always while nothing shows it.
+    static let statusEveryMs = 100
+
+    /// Something the status shows changed: one is built within
+    /// `statusEveryMs`, with every change until then.
     func changed() {
+        guard !statusDue else { return }
+        statusDue = true
+        home.asyncAfter(deadline: .now() + .milliseconds(Self.statusEveryMs)) { [weak self] in
+            if self?.statusDue == true { self?.status() }
+        }
+    }
+
+    /// The status now, to the menu bar and the popover.
+    func status() {
+        statusDue = false
         let now = options.clock()
         var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: core.sessionList(at: now),
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
@@ -176,7 +192,7 @@ extension Runtime {
         status.doingReason = core.doingReason(at: now)
         let config = core.config
         status.show = core.shown(at: now)
-        status.dressing = Narration.Dressing.now(specialDays: Days.special(at: wall, hatched: config.hatched, name: name, time: options.time))
+        status.celebrating = Narration.Celebrating.now(specialDays: Days.special(at: wall, hatched: config.hatched, name: name, time: options.time))
         status.talk = talk
         // To the second: the wall and the monotonic clock are read apart, and a
         // millisecond's wobble would make every status a new one.

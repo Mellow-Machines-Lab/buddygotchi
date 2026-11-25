@@ -26,12 +26,6 @@ final class BoardWindow: NSObject, WKScriptMessageHandler, WKURLSchemeHandler, W
               FileManager.default.fileExists(atPath: folder.appendingPathComponent("app.html").path) else { return nil }
         return folder
     }()
-    /// The face the board draws: the one the character pack gives the
-    /// AMOLED board, which `make bundle` writes beside the page.
-    nonisolated static var face: String {
-        folder.flatMap { try? String(contentsOf: $0.appendingPathComponent("face"), encoding: .utf8) }?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? "gel"
-    }
     static let scheme = "boop-board"
 
     /// The window's title, Boop's name.
@@ -137,7 +131,7 @@ final class BoardWindow: NSObject, WKScriptMessageHandler, WKURLSchemeHandler, W
     static let autosave = "BoopBoardWindow"
 
     private func load() {
-        guard let webView, let url = URL(string: "\(Self.scheme)://board/app.html?face=\(Self.face)") else { return }
+        guard let webView, let url = URL(string: "\(Self.scheme)://board/app.html") else { return }
         webView.load(URLRequest(url: url))
     }
 

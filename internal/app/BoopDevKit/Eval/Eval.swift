@@ -813,7 +813,7 @@ public struct Eval {
         let rules = steering.rules(talk: scenario.talk)
         // Its agents are made up, and run all through it, their threads
         // never archived.
-        let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
+        let core = Core(config: .init(time: time, hatched: scenario.hatched),
                         isRunning: { _ in true }, archive: { _ in .open })
         core.setWallClock(start, at: start)
         let view = TranscriptView(rules: rules, seed: scenario.seed)

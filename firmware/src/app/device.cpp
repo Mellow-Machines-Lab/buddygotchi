@@ -1222,11 +1222,10 @@ void Device::followSound(uint32_t t) {
 
 // ---- Drawing ---------------------------------------------------------------
 
-// Draws the frame for t, unless nothing on it can have changed since the
-// last one: no message or input since (dirty_), the face's
-// design on the same steps with the same additions, and the bubble still
-// up or still down. The designs step a few times a second, so most passes
-// find the picture unchanged.
+// Draws the frame for t. The face may skip one when nothing on it can have
+// changed since the last (dirty_ says a message or input came since): the
+// stub face does. The gel draws on every due pass (kFrameMs), so each is a
+// frame.
 void Device::render(uint32_t t) {
   live_.drawnT = t;
   drawnReal_ = hal_.realMs();

@@ -431,8 +431,8 @@ accepted; the mirror's shots, every one, are the simulator's.
    next), at
    least 60 KB minimum free heap (not checked on the simulator, whose
    `sha` is `sim` and which has no heap), and no reset (uptime keeps rising).
-   `fps` follows the design rather than the board: a frame is drawn only
-   when the picture changes.
+   The gel draws a frame on every due pass, so `fps` is the inverse of
+   the draw time, at most 62 (a frame every 16 ms at the least).
 4. When a change touches the loop, inputs or drawing speed:
    `internal/tools/boopctl latency`: every press, tap, mood change and
    `do` reaches the panel within its budget at the p95 and at worst, none

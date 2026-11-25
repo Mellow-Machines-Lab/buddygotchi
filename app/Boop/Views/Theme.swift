@@ -46,6 +46,14 @@ enum Palette {
     /// paper; on dark paper it's the other way round.
     static let glass = "#000000", glassPressed = "#2A2620", oat = "#E8DCC4", oatPressed = "#CFC2A8"
     static let blush = "#F1787D"
+    /// The blush as a shape on light paper (the ring's arc for your time
+    /// with Boop, its dot, the league's bar), where the face's is 2.3:1 on a card.
+    static let careSignalLight = "#D9536A"
+    /// The world's testing dot, and its partner on light paper.
+    static let testing = "#A97BD6", testingLight = "#9A66CF"
+    /// The medals' gold, silver and bronze, and their partners on light paper,
+    /// where silver is 1.3:1.
+    static let medals = ["#E9BD5A", "#CFD5DC", "#D39A6A"], medalsLight = ["#A57A1B", "#7A8899", "#B5713A"]
     /// The work stream's lanes, by slot (firmware `stream.h`'s kLaneInk,
     /// RGB565 widened): teal, rose, lilac, lime, never needs you's amber.
     /// Only bars wear them. On light paper each has a darker partner, as
@@ -77,8 +85,12 @@ enum Theme {
     /// Good as a shape: a full ring, a switch that's on.
     static let sageSignal = adaptive(Palette.sageSignalLight, Palette.sage)
     static let ring = adaptive(Palette.ringLight, Palette.ringDark)
-    /// Your time with Boop, in today's ring: the face's blush.
-    static let care = Color(hex: Palette.blush)
+    /// Your time with Boop as a shape, in today's ring and the league: the
+    /// face's blush.
+    static let careSignal = adaptive(Palette.careSignalLight, Palette.blush)
+    static let testing = adaptive(Palette.testingLight, Palette.testing)
+    /// Gold, silver and bronze, by place.
+    static func medal(_ place: Int) -> Color { adaptive(Palette.medalsLight[place], Palette.medals[place]) }
     static let controlOff = adaptive(Palette.controlOffLight, Palette.controlOffDark)
     static let lifted = adaptive(Palette.paperLight, Palette.liftedDark)
     static let amberInk = adaptive(Palette.amberInkLight, Palette.amberInkDark)
@@ -208,6 +220,28 @@ extension EnvironmentValues {
 }
 
 // MARK: - Building blocks
+
+/// Words that age with the clock ("3 min", "Quiet 12m"), drawn again on
+/// `schedule` while the popover is open. Still, nothing ticks: the words
+/// are drawn as of now, and the clock starts afresh when it opens.
+struct Ticking<Schedule: TimelineSchedule, Content: View>: View {
+    var schedule: Schedule
+    @ViewBuilder var content: (Date) -> Content
+    @Environment(\.stillMotion) private var still
+
+    init(_ schedule: Schedule, @ViewBuilder content: @escaping (Date) -> Content) {
+        self.schedule = schedule
+        self.content = content
+    }
+
+    var body: some View {
+        if still {
+            content(Date())
+        } else {
+            TimelineView(schedule) { context in content(context.date) }
+        }
+    }
+}
 
 /// A card with one soft line: what's not there yet, or why.
 struct NoteCard: View {

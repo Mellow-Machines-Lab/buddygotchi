@@ -65,16 +65,15 @@ final class CoreRig {
     /// unless a test says.
     /// The work stream is off unless a test turns it on (`workStream`):
     /// the other rules' tests read whole `state`s.
-    init(start: Int64 = CoreRig.start, newDay: Bool = false, seed: UInt64 = 1, rules: Personality.Rules = Personality.Rules(),
+    init(start: Int64 = CoreRig.start, seed: UInt64 = 1, rules: Personality.Rules = Personality.Rules(),
          workStream: Bool = false, isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning,
          archive: @escaping (ThreadRef) -> ThreadArchive.State = { _ in .open }) {
         now = start
-        let today = time.day(start)
         var config = Core.Config(time: time)
         config.workStream = workStream
-        let core = Core(config: config, lastActiveDay: newDay ? nil : today, isRunning: isRunning, archive: archive)
+        let core = Core(config: config, isRunning: isRunning, archive: archive)
         pipeline = Pipeline(core: core, view: TranscriptView(rules: rules, seed: seed))
-        if !newDay { core.tick(at: start) }  // the first snapshot has gone out
+        core.tick(at: start)  // the first snapshot has gone out
     }
 
     /// The mood output's change, as the runtime hands it on: the core
@@ -1549,7 +1548,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(Kind.of(asking: "input", tools: [""]), .question)
         XCTAssertEqual(Kind.of(asking: "permission", tools: ["AskUserQuestion"]), .question)
         XCTAssertEqual(Kind.of(asking: nil, tools: []), .approve)
-        XCTAssertTrue(Kind.allWords.allSatisfy { $0.count <= 16 }, "the board's card holds 16 characters")
+        XCTAssertTrue(Kind.allCases.map(\.words).allSatisfy { $0.count <= 16 }, "the board's card holds 16 characters")
         let rig = CoreRig()
         rig.send(.turnStart, session: "a")
         rig.send(.needsYou, session: "a", tool: "ExitPlanMode")
@@ -2028,15 +2027,6 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(woke(fx).count, 20, "no limit")
     }
 
-    /// The first activity of a new day is a new day, with no reaction: the
-    /// morning stretch and yawn were removed.
-    func testFirstActivityOfTheDayStartsTheDayQuietly() {
-        let rig = CoreRig(newDay: true)
-        let fx = rig.send(.sessionStart)
-        XCTAssertTrue(fx.contains(.newDay(date: "2026-10-14")))
-        XCTAssertFalse(rig.send(.turnStart).contains { if case .newDay = $0 { true } else { false } }, "only the first activity")
-    }
-
     /// Timers run on the steady time the core is
     /// given, and days and times of day on the wall clock the app reports.
     /// Setting the Mac's clock back an hour doesn't stretch the working
@@ -2048,8 +2038,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.core.setWallClock(rig.now - 3_600_000, at: rig.now)  // the Mac's clock set back an hour
         XCTAssertFalse(workCheckIns(rig.wait(120_000)).isEmpty, "the working check-in, on time")
         rig.core.setWallClock(rig.now + CoreRig.day, at: rig.now)
-        let fx = rig.send(.sessionStart)
-        XCTAssertTrue(fx.contains(.newDay(date: "2026-10-15")))
+        XCTAssertEqual(rig.core.config.time.day(rig.core.wall(rig.now)), "2026-10-15")
     }
 
     /// The runtime's steady clock starts at the wall clock's time and never
@@ -2066,15 +2055,13 @@ final class CoreYouAndBoopTests: XCTestCase {
         }
     }
 
-    /// A new day is only the effect the runtime prunes the transcript on;
-    /// nothing about it reaches the brain (the reflection was removed on
-    /// 2026-09-26).
+    /// Nothing about a new day reaches the brain (the reflection was
+    /// removed on 2026-09-26).
     func testANewDayReachesNoBrain() {
         let rig = CoreRig()
         rig.send(.sessionStart)
         rig.wait(24 * 3600 * 1000, every: 60_000)
         let fx = rig.send(.turnStart)
-        XCTAssertTrue(fx.contains(.newDay(date: "2026-10-15")))
         XCTAssertEqual(events(fx).map(\.name), ["turn start"])
     }
 }

@@ -341,7 +341,7 @@ struct MakeMeYoursAct: View {
     var body: some View {
         ActFrame(kind: .hero, title: "What should I be called?",
                  bar: ActBar(model: model, next: "That's me", enabled: draft.canContinueName) { model.saveName() }) {
-            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: .happy)
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: .idle)
                 .offset(y: hop ? -10 : 0)
                 // Off the tile's top corner and out of the layout, so a
                 // name of any length leaves the tile where it is: the

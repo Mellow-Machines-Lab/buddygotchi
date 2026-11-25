@@ -105,12 +105,11 @@ public struct Pointer: Equatable, Sendable {
 }
 
 /// What Boop notices of you at the Mac, besides your hands' typing and
-/// reading (`Hands`): typing fast, music or a video playing, on a call, a
-/// copy, and where your pointer is. Each is a plain fact read from the
-/// Mac's state, never content: key timing from idle times, never keys;
-/// which apps play or record sound and whether a camera runs, never what
-/// they play; the pasteboard's change count, never what's on it; the
-/// pointer's place. They go to the board as tags (`Tags.along`) and the
+/// reading (`Hands`): typing fast, music or a video playing, on a call,
+/// and where your pointer is. Each is a plain fact read from the Mac's
+/// state, never content: key timing from idle times, never keys; which
+/// apps play or record sound and whether a camera runs, never what they
+/// play; the pointer's place. They go to the board as tags (`Tags.along`) and the
 /// pointer as `state`'s `ptr`, and the board decides what the body does
 /// with them. No event, nothing in the transcript, nothing the brain, the
 /// world or the daily counts read.

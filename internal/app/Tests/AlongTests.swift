@@ -9,7 +9,7 @@ private let t0: Int64 = 1_790_000_000_000
 /// What Boop notices of you at the Mac (`Along`, `Anchor`): each rule's
 /// times and thresholds, and that its facts reach the board as tags and
 /// `ptr` and nothing else.
-final class AlongTests: XCTestCase {
+final class AlongTests: XCTestCase, HeadlessRig {
     /// A reading every quarter second from `from` to `to`, `each` making it.
     @discardableResult
     func run(_ along: inout Along, from: Int64, to: Int64, anchor: Anchor? = nil,
@@ -214,34 +214,8 @@ final class AlongTests: XCTestCase {
 
     var dir: URL!
 
-    override func setUpWithError() throws {
-        try requirePack("boop")
-        dir = URL(fileURLWithPath: "/tmp/boop-along-\(UUID().uuidString.prefix(8))")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-    }
-
-    override func tearDownWithError() throws {
-        if let dir { try? FileManager.default.removeItem(at: dir) }
-    }
-
-    func makeRuntime(clock: VirtualClock) throws -> Runtime {
-        if !FileManager.default.fileExists(atPath: dir.appendingPathComponent("long-term.md").path) {
-            try Runtime.setUp(stateDir: dir, name: "Pip")
-        }
-        var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("boop.sock").path, link: nil,
-                                      steering: RuntimeTests.steering)
-        options.alone = true
-        options.devLines = true
-        options.clock = { clock.now }
-        options.wallClock = { clock.now }
-        options.advance = { clock.now += $0 }
-        options.readJevKey = { _ in nil }
-        return try Runtime(options)
-    }
-
-    func dev(_ runtime: Runtime, _ json: String) {
-        runtime.home.sync { runtime.dev(Data(json.utf8)) }
-    }
+    override func setUpWithError() throws { try makeDir("along") }
+    override func tearDownWithError() throws { removeDir() }
 
     /// Every fact reaches the board as a tag or `ptr`, from the dev lines
     /// headless reads in the Mac's place, and nothing else: no event in the

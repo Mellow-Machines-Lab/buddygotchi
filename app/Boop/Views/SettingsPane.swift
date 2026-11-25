@@ -126,7 +126,7 @@ struct SettingsPane: View {
                     RowDivider()
                     SettingRow(icon: "keyboard", title: "Notices what you do at the Mac",
                                detail: "\(model.name) types and reads along, sways to your music and keeps still on a call. "
-                                   + "It goes by timing and what's on, never what you type, read or copy.") {
+                                   + "It goes by timing and what's on, never what you type or read.") {
                         Toggle("Notices what you do at the Mac",
                                isOn: Binding(get: { model.status?.noticesYou ?? true }, set: { model.setNoticesYou($0) }))
                             .toggleStyle(.boop).labelsHidden()
@@ -221,6 +221,7 @@ struct SettingsPane: View {
         let gone = status?.anchorGone == true
         let detail = status?.placing == true
             ? "Move your pointer to the spot on your screen nearest \(name), then tap \(name)."
+            : status?.noticesYou == false ? "Turn on Notices what you do at the Mac, and \(name) can follow your pointer."
             : gone ? "Your screens changed. Show \(name) where it sits again, and it follows your pointer."
             : "\(name) follows your pointer, and turns to your screen when an agent needs you."
         let title = gone ? "Show \(name) where it sits again" : "Show \(name) where it sits"
@@ -488,8 +489,9 @@ struct SettingsPane: View {
             firmwareRow
         }
         // The simulator's window is a body to choose, on or off, in the
-        // builds that have it.
-        if AppModel.offersSimulator {
+        // builds that have it; with no link (`--link none`) there's nothing
+        // to choose between.
+        if AppModel.offersSimulator, model.link != .none {
             RowDivider()
             SettingRow(icon: "macwindow", title: "Simulator", detail: simulatorDetail) {
                 HStack(spacing: Theme.gapSnug) {

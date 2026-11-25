@@ -44,11 +44,11 @@ extension Runtime {
         public var memory: () -> String?
         /// The questions due at a time, of the pack's (`Asks.due`); and the
         /// answers kept as tags at a time, for every sign's lines.
-        public var askable: (Int64, [Asks.Question]) -> [Asks.Question]
-        public var answerTags: (Int64) -> [String]
+        public var askable: (Int64, [Asks.Question]) -> [Asks.Question] = { _, _ in [] }
+        public var answerTags: (Int64) -> [String] = { _ in [] }
         /// Your company and the day so far, the memory reader's open day,
         /// for CONTEXT; nil with no memory.
-        public var company: () -> MemoryReader.Tallies?
+        public var company: () -> MemoryReader.Tallies? = { nil }
         /// What its picks of words start from: a launch's own, so no two
         /// launches say the same order. Evals give theirs.
         public var seed = Mind.launchSeed()
@@ -80,17 +80,24 @@ extension Runtime {
         }
         public static func launchSeed() -> UInt64 { .random(in: .min ... .max) }
 
+        /// Everything it reads from its memory, `remembers` (nil: none yet,
+        /// or none ever), the app's and the evals' alike: the questions due
+        /// on `core` at `wall`, the answers kept as tags, your company today,
+        /// what it may bring up and, if it `notices`, what it notices from.
+        public mutating func remember(_ remembers: @escaping () -> Memory?, core: Core, wall: @escaping () -> Int64, notices: Bool = true) {
+            askable = { now, questions in Asks.due(questions, core: core, memory: remembers(), at: now, wall: wall()) }
+            answerTags = { remembers()?.answerTags(at: $0) ?? [] }
+            company = { remembers()?.today }
+            felt = { remembers()?.felt(at: $0) ?? [] }
+            noticing = notices ? Noticing(digests: { remembers()?.digests ?? [] }, shown: { remembers()?.noticesShown() ?? [:] },
+                                          onLately: { remembers()?.onLately($0) ?? false }) : nil
+        }
+
         public init(buddy: Buddy, steering: Steering, reactions: Reactions,
                     queue: @escaping (Moment, Pending) -> Void, speaks: @escaping () -> Bool,
                     talk: @escaping () -> Talk = { .default }, effects: (([CoreEffect]) -> Void)? = nil,
-                    memory: @escaping () -> String? = { nil },
-                    askable: @escaping (Int64, [Asks.Question]) -> [Asks.Question] = { _, _ in [] },
-                    answerTags: @escaping (Int64) -> [String] = { _ in [] },
-                    company: @escaping () -> MemoryReader.Tallies? = { nil }) {
+                    memory: @escaping () -> String? = { nil }) {
             self.memory = memory
-            self.company = company
-            self.askable = askable
-            self.answerTags = answerTags
             self.effects = effects
             self.buddy = buddy
             self.steering = steering

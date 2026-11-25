@@ -61,7 +61,7 @@ public struct Replay {
         config.workStream = workStream
         // Its agents are made up, and run all through it, their threads
         // never archived: nothing on this Mac changes what it plays.
-        let core = Core(config: config, lastActiveDay: time.day(now), isRunning: { _ in true }, archive: { _ in .open })
+        let core = Core(config: config, isRunning: { _ in true }, archive: { _ in .open })
         let pipeline = Pipeline(core: core, view: TranscriptView())
         var out: [String] = []
 

@@ -7,13 +7,14 @@ import CoreMediaIO
 /// The Mac's facts for what Boop notices of you at the Mac (`Along`), read
 /// on the runtime's queue every hands tick. None asks for a permission and
 /// none is content: idle times, the pointer's place, which apps play or
-/// record sound and whether a camera runs, the frontmost app's bundle id
-/// and the pasteboard's change count, never what it holds.
+/// record sound and whether a camera runs, and the frontmost app's bundle
+/// id.
 ///
-/// The pointer, the keys, the scroll and the pasteboard are read every
-/// tick (4 a second); sound, the mic and the camera once a second, which
-/// they debounce over seconds anyway, so the Mac's devices aren't asked
-/// more often.
+/// The pointer, the keys and the scroll are read every tick (4 a second);
+/// sound, the mic and the camera once a second, which they debounce over
+/// seconds anyway, so the Mac's devices aren't asked more often. Which
+/// apps run sound at all is kept as Core Audio says it changes
+/// (`AudioWatch`), so only those are asked.
 final class AlongSignals: @unchecked Sendable {
     private let lock = NSLock()
     private var front: String?
@@ -22,6 +23,12 @@ final class AlongSignals: @unchecked Sendable {
     private var slow = Along.Facts()
     private var slowAt: Date?
     static let slowEvery: TimeInterval = 1
+    /// An `AudioWatch`, from macOS 14.2.
+    private let audio: AnyObject?
+
+    init() {
+        if #available(macOS 14.2, *) { audio = AudioWatch() } else { audio = nil }
+    }
 
     /// Keeps the frontmost app's bundle id as it changes, on the main
     /// thread, where NSWorkspace says so.
@@ -40,7 +47,7 @@ final class AlongSignals: @unchecked Sendable {
         let front = lock.withLock { self.front }
         if slowAt.map({ -$0.timeIntervalSinceNow >= Self.slowEvery }) ?? true {
             slowAt = Date()
-            slow = Self.readSlow(front: front)
+            slow = readSlow(front: front)
         }
         var f = slow
         f.front = front
@@ -72,14 +79,14 @@ final class AlongSignals: @unchecked Sendable {
     }
 
     /// Sound, the mic and the camera.
-    static func readSlow(front: String?) -> Along.Facts {
+    func readSlow(front: String?) -> Along.Facts {
         var f = Along.Facts()
-        f.camera = cameraRunning()
+        f.camera = Self.cameraRunning()
         // Which app plays or records sound is Core Audio's process objects,
         // from macOS 14.2; on 14.0 and 14.1 there are none, so no sound or
         // mic facts at all there (the camera still counts for a call).
-        if #available(macOS 14.2, *) {
-            for p in AudioProcess.all() where p.pid != getpid() {
+        if #available(macOS 14.2, *), let audio = audio as? AudioWatch {
+            for p in audio.processes() where p.pid != getpid() {
                 if p.output {
                     if p.belongs(to: front) { f.frontSound = true } else { f.otherSound = true }
                 }
@@ -138,30 +145,90 @@ struct AudioProcess {
         return front == "com.apple.Safari" && bundle.hasPrefix("com.apple.WebKit.")
     }
 
-    static func all() -> [AudioProcess] {
-        var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyProcessObjectList,
-                                                 mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
-        let system = AudioObjectID(kAudioObjectSystemObject)
+    static let system = AudioObjectID(kAudioObjectSystemObject)
+
+    /// Every process object Core Audio has now.
+    static func objects() -> [AudioObjectID] {
+        var address = Self.address(kAudioHardwarePropertyProcessObjectList)
         var size: UInt32 = 0
         guard AudioObjectGetPropertyDataSize(system, &address, 0, nil, &size) == noErr, size > 0 else { return [] }
         var ids = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
         guard AudioObjectGetPropertyData(system, &address, 0, nil, &size, &ids) == noErr else { return [] }
-        return ids.compactMap { id in
-            var out: UInt32 = 0, inp: UInt32 = 0, pid: pid_t = 0
-            guard get(id, kAudioProcessPropertyIsRunningOutput, &out), get(id, kAudioProcessPropertyIsRunningInput, &inp),
-                  out != 0 || inp != 0 else { return nil }
-            _ = get(id, kAudioProcessPropertyPID, &pid)
-            var bundle: Unmanaged<CFString>?
-            _ = get(id, kAudioProcessPropertyBundleID, &bundle)
-            let name = bundle?.takeRetainedValue() as String?
-            return AudioProcess(pid: pid, bundle: name?.isEmpty == true ? nil : name, output: out != 0, input: inp != 0)
-        }
+        return ids
+    }
+
+    static func address(_ selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
+        AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
     }
 
     static func get<T>(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector, _ value: inout T) -> Bool {
-        var address = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal,
-                                                 mElement: kAudioObjectPropertyElementMain)
+        var address = Self.address(selector)
         var size = UInt32(MemoryLayout<T>.size)
         return AudioObjectGetPropertyData(object, &address, 0, nil, &size, &value) == noErr
+    }
+}
+
+/// Which apps run sound now, kept as Core Audio says it changes: asking
+/// every process object each second was a message to coreaudiod for each,
+/// about 7 ms a time, all day. Core Audio tells of a process object coming
+/// and going, and of its sound starting and stopping (`IsRunning`), but
+/// not of which way it runs (tried on macOS 27: `IsRunningOutput` never
+/// tells), so only the processes running sound now are asked that.
+@available(macOS 14.2, *)
+final class AudioWatch: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "boop.audio-watch")
+    private let lock = NSLock()
+    /// The process objects running sound now, and whose they are.
+    private var running: [AudioObjectID: (pid: pid_t, bundle: String?)] = [:]
+    /// Each process object's listener, to remove when it goes. On `queue`.
+    private var listeners: [AudioObjectID: AudioObjectPropertyListenerBlock] = [:]
+
+    init() {
+        queue.async { [self] in
+            var address = AudioProcess.address(kAudioHardwarePropertyProcessObjectList)
+            AudioObjectAddPropertyListenerBlock(AudioProcess.system, &address, queue) { [weak self] _, _ in self?.listChanged() }
+            listChanged()
+        }
+    }
+
+    /// The apps playing or recording sound now.
+    func processes() -> [AudioProcess] {
+        lock.withLock { running }.compactMap { id, who in
+            var out: UInt32 = 0, inp: UInt32 = 0
+            guard AudioProcess.get(id, kAudioProcessPropertyIsRunningOutput, &out),
+                  AudioProcess.get(id, kAudioProcessPropertyIsRunningInput, &inp), out != 0 || inp != 0 else { return nil }
+            return AudioProcess(pid: who.pid, bundle: who.bundle, output: out != 0, input: inp != 0)
+        }
+    }
+
+    /// A process object came or went.
+    private func listChanged() {
+        let ids = Set(AudioProcess.objects())
+        for (id, block) in listeners where !ids.contains(id) {
+            var address = AudioProcess.address(kAudioProcessPropertyIsRunning)
+            AudioObjectRemovePropertyListenerBlock(id, &address, queue, block)
+            listeners[id] = nil
+            lock.withLock { running[id] = nil }
+        }
+        for id in ids where listeners[id] == nil {
+            let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.runningChanged(id) }
+            var address = AudioProcess.address(kAudioProcessPropertyIsRunning)
+            guard AudioObjectAddPropertyListenerBlock(id, &address, queue, block) == noErr else { continue }
+            listeners[id] = block
+            runningChanged(id)
+        }
+    }
+
+    /// A process's sound started or stopped.
+    private func runningChanged(_ id: AudioObjectID) {
+        var on: UInt32 = 0, pid: pid_t = 0
+        var bundle: Unmanaged<CFString>?
+        guard AudioProcess.get(id, kAudioProcessPropertyIsRunning, &on), on != 0 else {
+            return lock.withLock { running[id] = nil }
+        }
+        _ = AudioProcess.get(id, kAudioProcessPropertyPID, &pid)
+        _ = AudioProcess.get(id, kAudioProcessPropertyBundleID, &bundle)
+        let name = bundle?.takeRetainedValue() as String?
+        lock.withLock { running[id] = (pid, name?.isEmpty == true ? nil : name) }
     }
 }

@@ -147,7 +147,7 @@ final class InviteTests: XCTestCase {
     /// for its `ended`. One the board skipped late, or that was cut, is
     /// taken back, so the next is still the very first.
     func testOnlyAnInviteThatPlayedCounts() {
-        let reader = CountsReader { _ in }
+        let reader = CountsReader(time: LocalTime()) { _ in }
         var counts = reader.open(day: "2026-11-04", carry: nil)
         var l = InviteLedger()
         func read(_ events: [Event]) {
@@ -470,7 +470,7 @@ final class InviteTests: XCTestCase {
     /// The daily counts: invites asked, answered, late and missed; a cut is
     /// none of them; an answer is a touch.
     func testTheDailyCounts() {
-        let reader = CountsReader { _ in }
+        let reader = CountsReader(time: LocalTime()) { _ in }
         var s = reader.open(day: "2026-11-04", carry: nil)
         for e in [asked(.palm), ended(.answered), asked(.palm), ended(.missed), ended(.late), asked(.lean), ended(.cut, Self.back),
                   asked(.back), ended(.missed, Self.upset)] {

@@ -34,6 +34,8 @@ public final class Memory: @unchecked Sendable {
     public let invites: Checkpointed<InviteReader>
     /// Your usual, which remarks compare now with (`Normals`).
     public let normals: Checkpointed<NormalsReader>
+    /// When today's row was last looked at, and last written, and as what.
+    private var countsCheckedAt: Int64?
     private var countsWrittenAt: Int64?
     private var countsWritten: DayCounts?
     /// The digests as read, so a check-in doesn't decode the file each time
@@ -41,6 +43,9 @@ public final class Memory: @unchecked Sendable {
     private var digestsKept: [DayDigest]?
     /// Today's row goes to the file this often.
     public static let countsEveryMs: Int64 = 60_000
+    /// A row whose minutes alone moved, as they do every minute you're at
+    /// the Mac, goes no more often than this, or with the next other change.
+    public static let minutesEveryMs: Int64 = 600_000
     /// Whether Boop is asleep and no agent works: the pipeline's, once
     /// attached (`Pipeline.asleepAndIdle`).
     var asleep: () -> Bool = { false }
@@ -89,7 +94,7 @@ public final class Memory: @unchecked Sendable {
         runner = Checkpointed(reader, store: store, time: time, note: note)
         dreamReader = DreamReader(time: time)
         dreams = Checkpointed(dreamReader, store: store, time: time, note: note)
-        counts = Checkpointed(CountsReader { row in
+        counts = Checkpointed(CountsReader(time: time) { row in
             do { try files?.keep(row) } catch { note("memory: can't write the daily counts: \(error)") }
         }, store: store, time: time, note: note)
         invites = Checkpointed(InviteReader(), store: store, time: time, note: note)
@@ -458,13 +463,15 @@ public final class Memory: @unchecked Sendable {
                 $0.row.level = sample.level
             }
         }
-        if !now, let at = countsWrittenAt, wall - at < Self.countsEveryMs, wall >= at { return }
-        countsWrittenAt = wall
+        if !now, let at = countsCheckedAt, wall - at < Self.countsEveryMs, wall >= at { return }
+        countsCheckedAt = wall
         let row = (counts.state ?? state).counted
         guard row != countsWritten else { return }
+        if !now, let written = countsWritten, row.withoutMinutes == written.withoutMinutes,
+           let at = countsWrittenAt, wall - at < Self.minutesEveryMs, wall >= at { return }
         do {
             try files.keep(row)
-            countsWritten = row
+            (countsWritten, countsWrittenAt) = (row, wall)
         } catch { note("memory: can't write the daily counts: \(error)") }
     }
 

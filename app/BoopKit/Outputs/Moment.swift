@@ -191,11 +191,6 @@ public struct Moment: Equatable, Sendable {
         Tags.tiers.lastIndex { lengthMs >= $0.fromMs }.map { $0 + 1 } ?? 0
     }
 
-    /// The animations the Mac asks the device to play, each its design
-    /// state's name, besides `listening`, which only push-to-talk plays
-    /// (`BoopDevice.listening`). A tap's `poked` and `tap_spam` the device
-    /// plays itself.
-    public static let anims = ["task_complete", "reply_ready", "wake_up", "notice", Core.wishMet, Core.wishGone]
     /// A brain reaction with no animation: takes, a face, or both.
     public static let react = "react"
 

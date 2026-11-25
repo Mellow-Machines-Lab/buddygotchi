@@ -12,7 +12,7 @@ struct WorldAct: View {
         ActFrame(kind: .hero, title: "I live in a world of buddies",
                  lead: "Everyone's buddies are in it together. We can wave at each other, and send a boop or a heart.",
                  bar: ActBar(model: model, next: "Sounds good", quiet: ("Keep \(model.name) private", { model.keepPrivate() }))) {
-            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: .happy)
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: .idle)
         } content: {
             VStack(spacing: Theme.gap) {
                 HStack(alignment: .top, spacing: Theme.gap) {

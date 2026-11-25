@@ -154,12 +154,17 @@ final class GrowthTests: XCTestCase {
     /// closed.
     func testTheDailyCountsKeepTheXP() {
         var s = CountsReader.State(row: DayCounts(day: "2026-10-22"))
-        for seq in 1...11 { CountsReader.count(stroke(seq), into: &s) }
-        CountsReader.count(turnEnd(12), facts: Self.won, into: &s)
+        for seq in 1...11 { CountsReader.count(stroke(seq), time: LocalTime(), into: &s) }
+        CountsReader.count(turnEnd(12), facts: Self.won, time: LocalTime(), into: &s)
         XCTAssertEqual([s.row.xpCare, s.row.xpTurns, s.row.xpRefused], [30, 5, 3])
         let at = Int64(Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 22, hour: 15, minute: 30))!.timeIntervalSince1970 * 1000)
-        CountsReader.count(Core.growthEvent(level: nil, ring: true, at: at), into: &s)
+        CountsReader.count(Core.growthEvent(level: nil, ring: true, at: at), time: LocalTime(), into: &s)
         XCTAssertEqual(s.row.ringHour, 15)
+        // The pipeline's hour, not the Mac's: 23:30 at UTC+14 is 9:30 UTC.
+        let far = LocalTime(timeZone: TimeZone(identifier: "Pacific/Kiritimati")!)
+        var t = CountsReader.State(row: DayCounts(day: "2026-10-22"))
+        CountsReader.count(Core.growthEvent(level: nil, ring: true, at: 1_792_661_400_000), time: far, into: &t)
+        XCTAssertEqual(t.row.ringHour, 23)
     }
 
     /// The last 7 days' rings, oldest first, kept across opens; a day with

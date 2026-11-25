@@ -12,15 +12,23 @@ struct ShowCard: View {
     private var lane: String { Palette.lanes[(shown.slot ?? 0) % Palette.lanes.count] }
 
     /// The picture: the agent's SVG with `currentColor` as its lane colour
-    /// and Boop's mono face for its words, or its PNG.
+    /// and Boop's mono face for its words, or its PNG. Made once a show:
+    /// the Overview draws the card again at every status while it's up.
     private var picture: NSImage? {
+        if let kept = Self.kept, kept.shown == shown { return kept.image }
+        let image: NSImage?
         if let svg = shown.show.svg {
             let drawn = svg.replacingOccurrences(of: "currentColor", with: lane)
                 .replacingOccurrences(of: "<svg ", with: "<svg font-family=\"Menlo, monospace\" ")
-            return NSImage(data: Data(drawn.utf8))
+            image = NSImage(data: Data(drawn.utf8))
+        } else {
+            image = shown.show.image.flatMap(NSImage.init(contentsOfFile:))
         }
-        return shown.show.image.flatMap(NSImage.init(contentsOfFile:))
+        Self.kept = (shown, image)
+        return image
     }
+
+    @MainActor private static var kept: (shown: Core.Shown, image: NSImage?)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

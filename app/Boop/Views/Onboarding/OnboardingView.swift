@@ -275,7 +275,7 @@ struct OnboardingBuddy: View {
     /// For a 4:3 tile, its height (the slime only).
     var height: CGFloat?
     /// The face, for a pack without the slime.
-    var face: FaceMood = .happy
+    var face: FaceMood = .idle
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -328,7 +328,7 @@ struct StepRow: View {
         Card(padding: 0, tone: now ? tone : nil) {
             HStack(alignment: .top, spacing: Theme.gap) {
                 ZStack {
-                    Circle().fill(done ? Theme.sage : now ? Theme.ink : Theme.hairline)
+                    Circle().fill(done ? Theme.sageSignal : now ? Theme.ink : Theme.hairline)
                     if done {
                         Image(systemName: "checkmark").font(.bodyStrong).foregroundStyle(Theme.paper)
                     } else {

@@ -75,9 +75,6 @@ public final class Core {
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
     var sessions: [String: Session] { tracker.sessions }
-    /// The last day with any activity, or the day the app opened: the first
-    /// activity of a later one is a new day.
-    var lastActiveDay: String?
     var lastPublished: StateSnapshot?
     /// Onboarding's practice request (act 5's amber lesson): the needs-you
     /// screen, as an agent's request shows it, with no agent behind it,
@@ -225,19 +222,16 @@ public final class Core {
     /// What each session's turn has done, for its held pictures.
     var turnWork: [String: TurnWork] = [:]
 
-    /// `lastActiveDay` is the day the app opened, which the launch has
-    /// started already, or nil to make the first activity a new day.
     /// `place` names a working directory's project. `isRunning` says
     /// whether an agent's process still runs (evals and demos, whose agents
     /// are made up, say yes), and `archive` whether a thread was archived in
     /// its app (evals say none was).
-    public init(config: Config, lastActiveDay: String? = nil,
+    public init(config: Config,
                 place: @escaping (String) -> Place = { Place.at(cwd: $0) },
                 isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning,
                 archive: @escaping (ThreadRef) -> ThreadArchive.State = { ThreadArchive.state($0) }) {
         self.config = config
         mood = { config.pack.restingFace(config.pack.defaultMood) }
-        self.lastActiveDay = lastActiveDay
         let readingBack = Flag()
         self.readingBack = readingBack
         tracker = SessionTracker(firstRequest: config.firstAsk, place: place,
@@ -262,7 +256,6 @@ public final class Core {
             turnEndedElsewhere(agentEvent.key, chat: chat, at: now)
             boardShowsTurnEnded(agentEvent.key, at: now)
         }
-        startDayIfNew(now, &fx)
         let actEnded = streamAct(agentEvent, for: event.seq, now, &fx)
         let forward = actEnded ? nil : streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
@@ -451,7 +444,6 @@ public final class Core {
         touched(at: now)
         if touch { shownUp(at: now) }
         advance(to: now)
-        startDayIfNew(now, &fx)
         poked(now, seq: seq, finish: finish, touch: touch, &fx)
         publish(now, &fx)
         return fx
@@ -463,7 +455,6 @@ public final class Core {
     public func press(at now: Int64, seq: Int? = nil) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
-        startDayIfNew(now, &fx)
         pressed(now, seq: seq, &fx)
         publish(now, &fx)
         return fx
@@ -998,10 +989,6 @@ public final class Core {
     /// The wall clock at steady time `now`.
     func wall(_ now: Int64) -> Int64 { now + wallOffsetMs }
 
-    /// The date at steady time `now`, on the wall clock: the calendar never
-    /// sees steady time.
-    private func day(_ now: Int64) -> String { config.time.day(wall(now)) }
-
     /// Whether "needs you" shows: then no event's pass starts.
     public var needsYouShowing: Bool { sessions.values.contains { $0.needsSince != nil && !isDismissed($0) } }
 
@@ -1056,7 +1043,6 @@ public final class Core {
     public func pick(row id: Int, at now: Int64, seq: Int? = nil) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
-        startDayIfNew(now, &fx)
         if let key = rows.first(where: { $0.value == id })?.key, let s = sessions[key] {
             let thread = TranscriptView.Thread(s).name
             let message = "\(config.pack.name) handed you \(s.agent.rawValue) on "
@@ -1083,14 +1069,6 @@ public final class Core {
             rows[s.key] = next
             lastRow = next
         }
-    }
-
-    /// The first activity of a new day, for the transcript's pruning.
-    func startDayIfNew(_ now: Int64, _ fx: inout [CoreEffect]) {
-        let today = day(now)
-        guard today != lastActiveDay else { return }
-        lastActiveDay = today
-        fx.append(.newDay(date: today))
     }
 
     /// A poke: the device plays its poke (`poked`, `tap_spam` from the third
@@ -1268,11 +1246,21 @@ public final class Core {
         }
     }
 
+    /// What each turn did, and each session's failures in a row, only for
+    /// the sessions still here.
+    func tidyGone() {
+        if turnWork.keys.contains(where: { sessions[$0] == nil }) { turnWork = turnWork.filter { sessions[$0.key] != nil } }
+        if stream.failures.keys.contains(where: { sessions[$0] == nil }) {
+            stream.failures = stream.failures.filter { sessions[$0.key] != nil }
+        }
+    }
+
     func publish(_ now: Int64, _ fx: inout [CoreEffect]) {
         recordGone(now, &fx)
         recordNeeds(now, &fx)
         recordGrowth(now, &fx)
         tidyNotes()
+        tidyGone()
         updateActs(now)
         tidyCards(now)
         tidyBoardShows(at: now)

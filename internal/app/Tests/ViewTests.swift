@@ -6,6 +6,14 @@ import XCTest
 
 /// The view: raw events folded into what the brain hears.
 final class ViewTests: XCTestCase {
+    /// A pipeline whose transcript is kept in `dir`, on `time`, as a launch
+    /// makes it: one before a restart and one after share `dir`.
+    /// `running`: every agent's process still runs.
+    func pipeline(_ dir: URL, time: LocalTime, running: Bool = false) -> Pipeline {
+        let core = running ? Core(config: .init(time: time), isRunning: { _ in true }) : Core(config: .init(time: time))
+        return Pipeline(core: core, view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
+    }
+
     /// A turn that finishes while another agent's request shows wakes
     /// nothing then, as nothing does but talk; once nothing needs you, the
     /// request's clearing brings it back: the brain hears the finish, its
@@ -732,10 +740,7 @@ final class ViewTests: XCTestCase {
         let dir = tempDir("boop-tr")
         defer { try? FileManager.default.removeItem(at: dir) }
         let time = rig.time
-        func pipeline() -> Pipeline {
-            Pipeline(core: Core(config: .init(time: time)), view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
-        }
-        let first = pipeline()
+        let first = pipeline(dir, time: time)
         rig = CoreRig()
         first.agent(rig.event(.turnStart))
         let start = first.record(Event.action(at: rig.now, phase: .start, name: "react",
@@ -751,7 +756,7 @@ final class ViewTests: XCTestCase {
         XCTAssertTrue(lines[0].hasPrefix(#"{"seq":1,"at":"#), String(lines[0]))
         try (String(contentsOf: file, encoding: .utf8) + #"{"seq":4,"at":"#).write(to: file, atomically: true, encoding: .utf8)
 
-        let second = pipeline()
+        let second = pipeline(dir, time: time)
         var recorded: [Event] = []
         second.onRecord = { recorded.append($0) }
         XCTAssertEqual(second.readBack(now: rig.now), 3, "the torn line is skipped")
@@ -765,7 +770,7 @@ final class ViewTests: XCTestCase {
         rig.now += 5 * 60_000
         let next = second.agent(rig.event(.turnStart)).views
         XCTAssertEqual(next.map(\.line), [#"claude started turn 2 on "landing"."#])
-        let third = pipeline()
+        let third = pipeline(dir, time: time)
         XCTAssertEqual(third.readBack(now: rig.now), 5, "the torn line was ended, so the next launch's aren't glued to it")
     }
 
@@ -807,12 +812,8 @@ final class ViewTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
         let time = rig.time
         rig = CoreRig()
-        func pipeline() -> Pipeline {
-            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now)),
-                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
-        }
         func needs(_ step: Pipeline.Step) -> [Event] { step.recorded.filter { $0.specificType == Core.needsYou } }
-        let first = pipeline()
+        let first = pipeline(dir, time: time)
         first.agent(rig.event(.turnStart, session: "s2"))
         first.agent(rig.event(.turnStart, .codex, session: "c1"))
         first.agent(rig.event(.needsYou, .codex, session: "c1", tool: "shell"))
@@ -826,7 +827,7 @@ final class ViewTests: XCTestCase {
 
         // Codex's request has had 10 silent minutes, and Claude's not quite.
         rig.now += SessionFold.safetyNetMs - 2500
-        let second = pipeline()
+        let second = pipeline(dir, time: time)
         second.readBack(now: rig.now)
         let relaunched = needs(second.tick(at: rig.now))
         XCTAssertEqual(relaunched.map(\.phase), [.end], "Codex's request ends, and no request starts again")
@@ -855,21 +856,17 @@ final class ViewTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
         let time = rig.time
         rig = CoreRig()
-        func pipeline() -> Pipeline {
-            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now)),
-                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
-        }
         func needs(_ step: Pipeline.Step) -> [Event] { step.recorded.filter { $0.specificType == Core.needsYou } }
-        let first = pipeline()
+        let first = pipeline(dir, time: time)
         first.agent(rig.event(.turnStart))
         first.agent(rig.event(.activity, tool: "Bash", id: "t1"))
         XCTAssertEqual(needs(first.agent(rig.event(.needsYou, tool: "Bash"))).map(\.phase), [.start])
         rig.now += 1000
-        let emptyCore = pipeline()  // the log read back, but not into the core or the view
+        let emptyCore = pipeline(dir, time: time)  // the log read back, but not into the core or the view
         emptyCore.transcript.load(now: rig.now)
         XCTAssertEqual(needs(emptyCore.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))), [])
         rig.now += 1000
-        let third = pipeline()
+        let third = pipeline(dir, time: time)
         third.readBack(now: rig.now)
         XCTAssertNil(third.threads["claude/s1"]?.needsSince, "the view folds the answer, with no end in the transcript")
         let ended = needs(third.tick(at: rig.now))
@@ -888,12 +885,8 @@ final class ViewTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
         let time = rig.time
         rig = CoreRig()
-        func pipeline() -> Pipeline {
-            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now)),
-                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
-        }
         func needs(_ step: Pipeline.Step) -> [Event] { step.recorded.filter { $0.specificType == Core.needsYou } }
-        let first = pipeline()
+        let first = pipeline(dir, time: time)
         first.agent(rig.event(.turnStart))
         first.agent(rig.event(.activity, tool: "Bash", id: "t1"))
         first.agent(rig.event(.needsYou, tool: "Bash"))
@@ -902,7 +895,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(needs(first.dismiss(SessionFold.key(.claude, "s1"), request: card, at: rig.now)).map { $0["why"]?.string },
                        [Core.Why.dismissed.rawValue])
         rig.now += 60_000
-        let second = pipeline()
+        let second = pipeline(dir, time: time)
         second.readBack(now: rig.now)
         XCTAssertEqual(needs(second.tick(at: rig.now)), [], "nothing missing to record")
         XCTAssertNil(second.core.snapshot(at: rig.now).attn, "still dismissed")
@@ -913,7 +906,7 @@ final class ViewTests: XCTestCase {
         second.agent(rig.event(.activity, tool: "Bash", id: "t2"))
         XCTAssertEqual(needs(second.agent(rig.event(.needsYou, tool: "Bash"))).map(\.phase), [.start], "its next request shows")
         rig.now += 1000
-        let third = pipeline()
+        let third = pipeline(dir, time: time)
         third.readBack(now: rig.now)
         XCTAssertEqual(needs(third.tick(at: rig.now)), [])
         XCTAssertNotNil(third.core.snapshot(at: rig.now).attn, "and shows after another relaunch")
@@ -930,21 +923,17 @@ final class ViewTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
         let time = rig.time
         rig = CoreRig()
-        func pipeline() -> Pipeline {
-            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now)),
-                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
-        }
         func needs(_ step: Pipeline.Step) -> [Event] { step.recorded.filter { $0.specificType == Core.needsYou } }
-        let first = pipeline()
+        let first = pipeline(dir, time: time)
         first.agent(rig.event(.turnStart))
         first.agent(rig.event(.activity, tool: "Bash", id: "t1"))
         XCTAssertEqual(needs(first.agent(rig.event(.needsYou, tool: "Bash"))).map(\.phase), [.start])
         rig.now += SessionFold.safetyNetMs + 1000
-        let emptyCore = pipeline()  // the log read back, but not into the core or the view
+        let emptyCore = pipeline(dir, time: time)  // the log read back, but not into the core or the view
         emptyCore.transcript.load(now: rig.now)
         XCTAssertEqual(needs(emptyCore.agent(rig.event(.turnStart, session: "s2"))), [])
         rig.now += 1000
-        let third = pipeline()
+        let third = pipeline(dir, time: time)
         third.readBack(now: rig.now)
         let ended = needs(third.tick(at: rig.now))
         XCTAssertEqual(ended.map(\.phase), [.end])
@@ -966,11 +955,7 @@ final class ViewTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
         let time = rig.time
         rig = CoreRig()
-        func pipeline() -> Pipeline {
-            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now)),
-                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
-        }
-        let first = pipeline()
+        let first = pipeline(dir, time: time)
         func hook(_ kind: Hook, tool: String? = nil, done: Bool? = nil) {
             var e = rig.event(kind, tool: tool, done: done, mode: "default", app: "com.anthropic.claudefordesktop",
                               appSession: "local_s1")
@@ -987,7 +972,7 @@ final class ViewTests: XCTestCase {
         let files = try FileManager.default.contentsOfDirectory(atPath: dir.path)
         XCTAssertEqual(files.count, 3, "three days' files")
         rig.now += 60_000
-        let second = pipeline()
+        let second = pipeline(dir, time: time)
         second.readBack(now: rig.now)
         XCTAssertEqual(second.core.sessions["claude/s1"]?.name, "Fix the nav")
         XCTAssertEqual(opened(Fx(second.poke(at: rig.now))),
@@ -1004,11 +989,7 @@ final class ViewTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
         let time = rig.time
         rig = CoreRig()
-        func pipeline() -> Pipeline {
-            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now), isRunning: { _ in true }),
-                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
-        }
-        let first = pipeline()
+        let first = pipeline(dir, time: time, running: true)
         func hook(_ kind: Hook, tool: String? = nil) {
             var e = rig.event(kind, tool: tool, app: "com.mitchellh.ghostty")
             e.data["process"] = .object(["pid": 4242, "started": 1])
@@ -1020,7 +1001,7 @@ final class ViewTests: XCTestCase {
         hook(.activity, tool: "Bash")
         hook(.needsYou, tool: "Bash")  // 20:00
         rig.now += 18 * 3600 * 1000 + 60_000  // 14:01 the next day: the turn's start is over a day old
-        let second = pipeline()
+        let second = pipeline(dir, time: time, running: true)
         second.readBack(now: rig.now)
         second.tick(at: rig.now)
         XCTAssertNotNil(second.core.snapshot(at: rig.now).attn, "its agent's process is known: it waits")
@@ -1037,12 +1018,8 @@ final class ViewTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
         let time = rig.time
         rig = CoreRig()
-        func pipeline() -> Pipeline {
-            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now), isRunning: { _ in true }),
-                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
-        }
         func needs(_ step: Pipeline.Step) -> [Event] { step.recorded.filter { $0.specificType == Core.needsYou } }
-        let first = pipeline()
+        let first = pipeline(dir, time: time, running: true)
         for var e in [rig.event(.turnStart), rig.event(.needsYou, tool: "Bash")] {
             e.data["process"] = .object(["pid": 4242, "started": 1])
             first.agent(e)
@@ -1051,7 +1028,7 @@ final class ViewTests: XCTestCase {
         rig.now = asked + SessionFold.forgetMs - 60_000
         XCTAssertEqual(needs(first.tick(at: rig.now)), [])
         XCTAssertNotNil(first.core.snapshot(at: rig.now).attn, "a day less a minute")
-        let before = pipeline()
+        let before = pipeline(dir, time: time, running: true)
         before.readBack(now: rig.now)
         XCTAssertEqual(needs(before.tick(at: rig.now)), [])
         XCTAssertNotNil(before.core.snapshot(at: rig.now).attn, "a relaunch then shows it too")
@@ -1059,7 +1036,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(needs(first.tick(at: rig.now)).map { $0["why"]?.string }, [Core.Why.forgotten.rawValue])
         XCTAssertNil(first.core.snapshot(at: rig.now).attn)
         rig.now += 60_000
-        let after = pipeline()
+        let after = pipeline(dir, time: time, running: true)
         after.readBack(now: rig.now)
         XCTAssertEqual(needs(after.tick(at: rig.now)), [])
         XCTAssertNil(after.core.snapshot(at: rig.now).attn, "nor a relaunch after")

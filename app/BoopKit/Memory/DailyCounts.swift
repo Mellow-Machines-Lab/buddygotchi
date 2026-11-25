@@ -98,6 +98,15 @@ public struct DayCounts: Codable, Equatable, Sendable {
     }
 }
 
+extension DayCounts {
+    /// The row but its minutes, which move every minute you're at the Mac.
+    var withoutMinutes: DayCounts {
+        var r = self
+        (r.hereMinutes, r.unpluggedMinutes) = (0, 0)
+        return r
+    }
+}
+
 /// The day's counts, a reader of the transcript (`TranscriptReader`), so a
 /// launch catches up on what it missed. Each day's row goes to the file when
 /// it closes, and today's as it goes (`Memory.tick`).
@@ -140,8 +149,13 @@ public final class CountsReader: TranscriptReader {
 
     /// Where a closed day's row goes.
     let keep: (DayCounts) -> Void
+    /// The pipeline's clock face, for the hour the ring closed.
+    let time: LocalTime
 
-    public init(keep: @escaping (DayCounts) -> Void) { self.keep = keep }
+    public init(time: LocalTime, keep: @escaping (DayCounts) -> Void) {
+        self.time = time
+        self.keep = keep
+    }
 
     /// A day starts counting afresh, but for what runs across 5:00.
     public func open(day: String, carry: State?) -> State {
@@ -158,13 +172,13 @@ public final class CountsReader: TranscriptReader {
 
     public func read(_ e: Event, line: Line?, into s: inout State) -> Bool {
         let before = s
-        Self.count(e, facts: line?.facts, into: &s)
+        Self.count(e, facts: line?.facts, time: time, into: &s)
         let changed = s != before
         s.lastAt = e.at
         return changed
     }
 
-    static func count(_ e: Event, facts: [String: JSONValue]? = nil, into s: inout State) {
+    static func count(_ e: Event, facts: [String: JSONValue]? = nil, time: LocalTime, into s: inout State) {
         if let source = Growth.source(of: e, facts: facts) {
             let day = s.growth ?? Growth()
             let added = day.adds(source)
@@ -229,7 +243,7 @@ public final class CountsReader: TranscriptReader {
         case .growth?:
             s.row.level = e["level"]?.int.map(Int.init) ?? s.row.level
             if e["ring"]?.bool == true, s.row.ringHour == nil {
-                s.row.ringHour = Calendar.current.component(.hour, from: Date(timeIntervalSince1970: Double(e.at) / 1000))
+                s.row.ringHour = time.components(e.at).hour
             }
         case .presence?:
             var away = AwayAndBack(since: s.away)

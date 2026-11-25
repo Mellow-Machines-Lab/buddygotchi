@@ -23,9 +23,6 @@ public struct StateSnapshot: Equatable, Sendable {
         public enum Kind: String, Sendable, CaseIterable {
             case approve, question, plan
 
-            /// Every kind's words, for a test of their length.
-            public static var allWords: [String] { allCases.map(\.words) }
-
             /// The words for it, after "needs you": short enough for the
             /// board's card (16 characters at most).
             public var words: String {
@@ -478,11 +475,11 @@ public struct StateSnapshot: Equatable, Sendable {
     }
 
     /// The tags of you at the Mac that the logs and a bug report don't keep
-    /// (`unnoticed`): what you scroll, play, record or copy.
+    /// (`unnoticed`): what you scroll, play or record.
     public static let unloggedTags = Tags.along
 
     /// `line`, a `state`, as the logs keep it: without the pointer (`ptr`)
-    /// and the tags of what you scroll, play, record or copy, so no log or
+    /// and the tags of what you scroll, play or record, so no log or
     /// bug report holds a timeline of you at the Mac. Any other line as it is.
     public static func unnoticed(_ line: String) -> String {
         guard line.hasPrefix(#"{"t":"state""#), line.contains(#""ptr":"#) || unloggedTags.contains(where: { line.contains("\"\($0)\"") })

@@ -176,10 +176,12 @@ public final class TranscriptView {
         /// (`Notices.whileAway`).
         var whileAway: [(agent: String, thread: String, failed: Bool)] = []
         /// When things failed lately (a check, a turn), your last sharp
-        /// prompt, and the day each thread last had a prompt: for `Notices`.
+        /// prompt, and the threads with a prompt on Boop's day
+        /// `promptedDay`: for `Notices`.
         var failures: [Int64] = []
         var sharpAt: Int64?
-        var promptedDay: [String: String] = [:]
+        var promptedDay: String?
+        var promptedToday: Set<String> = []
         /// Each session's latest check or finished turn, by how it came
         /// out, for what Boop says when you ask (`StatusReply`).
         var results: [String: StatusReply.Result] = [:]
@@ -615,6 +617,9 @@ public final class TranscriptView {
             fold.unread = fold.unread.filter { fold.sessions.sessions[$0.key] != nil }
             fold.results = fold.results.filter { fold.sessions.sessions[$0.key] != nil }
         }
+        if fold.asked.keys.contains(where: { fold.sessions.sessions[$0] == nil }) {
+            fold.asked = fold.asked.filter { fold.sessions.sessions[$0.key] != nil }
+        }
     }
 
     func agentEvent(_ a: AgentEvent) -> Line? {
@@ -865,9 +870,9 @@ public final class TranscriptView {
         if reading.tone == .frustrated || reading.tone == .shouting { fold.sharpAt = e.at }
         var facts = e.data.merging(["thread": t.map(threadFacts) ?? .null]) { a, _ in a }
         if let t {
-            let thread = t.workspace ?? t.project, today = time.boopDay(e.at)
-            if fold.promptedDay[thread] != today { facts[Self.firstHereTodayFact] = true }
-            fold.promptedDay[thread] = today
+            let today = time.boopDay(e.at)
+            if fold.promptedDay != today { (fold.promptedDay, fold.promptedToday) = (today, []) }
+            if fold.promptedToday.insert(t.workspace ?? t.project).inserted { facts[Self.firstHereTodayFact] = true }
         }
         return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: t.map(threadLine)),
                     notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [], facts: facts)

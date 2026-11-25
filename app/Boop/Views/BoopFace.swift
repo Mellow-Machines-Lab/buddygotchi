@@ -6,7 +6,7 @@ import SwiftUI
 /// this is just enough of the device's face that the popover and the menu
 /// bar read as the same creature.
 enum FaceMood: Hashable {
-    case asleep, idle, working, needsYou, happy
+    case asleep, idle, working, needsYou
     /// Boop is starting, before its first status: eyes open, faint, so it
     /// never passes for napping.
     case waking

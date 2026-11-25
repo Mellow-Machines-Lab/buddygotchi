@@ -118,7 +118,7 @@ final class DaysTests: XCTestCase {
     /// gold behind a full ring, `100 XP today` and the days in a row; with a
     /// level at once, one moment shows both.
     func testALevelUpIsTheRulesMoment() {
-        let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
+        let core = Core(config: .init(time: utc))
         let now = ms(2026, 10, 22, 10)
         core.setWallClock(now, at: now)
         core.growth = { Growth(xp: 1_150, today: 50) }
@@ -146,7 +146,7 @@ final class DaysTests: XCTestCase {
     /// two, and neither is lost: the ring's words low in gold, and the
     /// level held up; one `growth` event says both.
     func testTheRingAndALevelAreOneMoment() {
-        let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
+        let core = Core(config: .init(time: utc))
         let now = ms(2026, 10, 22, 10)
         core.setWallClock(now, at: now)
         core.growth = { Growth(xp: 6_000, today: 100) }
@@ -216,10 +216,10 @@ final class DaysTests: XCTestCase {
     /// The popover's reasons are the special days. The gel wears nothing,
     /// night or day (its energy says the night), and has nothing in the sky
     /// or the air (its screen's rule), so the night is none.
-    func testTheReasonsAreTheBoards() {
+    func testTheReasonsAreTheSpecialDays() {
         func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12) -> [String] {
             let specialDays = Days.special(at: ms(y, mo, d, h), hatched: "2026-09-01", name: "Pip", time: utc)
-            return Narration.Dressing.now(specialDays: specialDays).map(\.why)
+            return Narration.Celebrating.now(specialDays: specialDays).map(\.why)
         }
         XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today"])
         XCTAssertEqual(reasons(2026, 10, 21, 23), ["Pip is 50 days old today"])
@@ -234,7 +234,7 @@ final class DaysTests: XCTestCase {
     /// party hat or confetti, no greeting and nothing in the popover. New
     /// Year's Day is still a party.
     func testTheDayItHatchedIsNoParty() {
-        let core = Core(config: .init(time: utc, hatched: "2026-10-22"), lastActiveDay: "2026-10-22")
+        let core = Core(config: .init(time: utc, hatched: "2026-10-22"))
         let now = ms(2026, 10, 22, 10)
         core.setWallClock(now, at: now)
         XCTAssertFalse(core.snapshot(at: now).when.contains("party"))
@@ -311,7 +311,7 @@ final class DaysTests: XCTestCase {
 
     /// Boop is one size at every level: its level puts no tag on.
     func testALevelIsNoTag() {
-        let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
+        let core = Core(config: .init(time: utc))
         core.growth = { Growth(xp: 500) }
         let young = core.snapshot(at: ms(2026, 10, 22)).when
         core.growth = { Growth(xp: 2_900) }

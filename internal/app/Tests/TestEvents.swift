@@ -1,5 +1,7 @@
 import Foundation
 import MellowHarness
+import XCTest
+@testable import BoopDevKit
 @testable import BoopKit
 
 /// When the harness tests start, in unix milliseconds.
@@ -68,4 +70,43 @@ extension Pipeline {
 
     /// Every event with a line in the log, oldest first.
     var views: [ViewEvent] { transcript.events.compactMap { viewEvent($0.seq) } }
+}
+
+/// A test case that runs the whole runtime headless on a state directory
+/// of its own under /tmp, on a virtual clock, with dev lines standing in
+/// for the Mac's signals and no link, brain or Jev key.
+@MainActor protocol HeadlessRig: AnyObject {
+    var dir: URL! { get set }
+}
+
+extension HeadlessRig {
+    /// A new state directory, `/tmp/boop-NAME-…`: short, for the socket.
+    func makeDir(_ name: String) throws {
+        try requirePack("boop")
+        dir = URL(fileURLWithPath: "/tmp/boop-\(name)-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+
+    func removeDir() {
+        if let dir { try? FileManager.default.removeItem(at: dir) }
+    }
+
+    func makeRuntime(clock: VirtualClock) throws -> Runtime {
+        if !FileManager.default.fileExists(atPath: dir.appendingPathComponent("long-term.md").path) {
+            try Runtime.setUp(stateDir: dir, name: "Pip")
+        }
+        var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("boop.sock").path, link: nil,
+                                      steering: RuntimeTests.steering)
+        options.alone = true
+        options.devLines = true
+        options.clock = { clock.now }
+        options.wallClock = { clock.now }
+        options.advance = { clock.now += $0 }
+        options.readJevKey = { _ in nil }
+        return try Runtime(options)
+    }
+
+    func dev(_ runtime: Runtime, _ json: String) {
+        runtime.home.sync { runtime.dev(Data(json.utf8)) }
+    }
 }

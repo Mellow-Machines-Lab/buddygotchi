@@ -374,10 +374,10 @@ extension Narration {
 }
 
 extension Narration {
-    /// Why the board looks as it does now, for the popover: every special
-    /// day Boop is celebrating today. The gel wears nothing for one and has
-    /// nothing in the air, and its energy says the night (`energy`).
-    public struct Dressing: Equatable, Sendable, Identifiable {
+    /// What Boop is celebrating today, for the popover: every special day.
+    /// Only the popover says it: the gel wears nothing for one and has
+    /// nothing in the air.
+    public struct Celebrating: Equatable, Sendable, Identifiable {
         /// `Pip is 50 days old today`.
         public var why: String
         public var id: String { why }
@@ -387,8 +387,8 @@ extension Narration {
         }
 
         /// The reasons on for today's `specialDays`.
-        public static func now(specialDays: [Days.SpecialDay]) -> [Narration.Dressing] {
-            specialDays.map { Narration.Dressing(why: $0.why) }
+        public static func now(specialDays: [Days.SpecialDay]) -> [Narration.Celebrating] {
+            specialDays.map { Narration.Celebrating(why: $0.why) }
         }
     }
 }

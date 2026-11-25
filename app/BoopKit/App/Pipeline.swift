@@ -388,7 +388,8 @@ public final class Pipeline {
     /// dozed off (asleep with agents to watch, not merely none yet).
     /// When the memory dreams by itself.
     public func asleepAndIdle(at now: Int64) -> Bool {
-        let doing = core.snapshot(at: now).doing
+        // The board's as last sent, which the tick keeps up to the second.
+        let doing = core.lastPublished?.doing ?? core.snapshot(at: now).doing
         guard doing != "working" else { return false }
         return view.away || (!core.sessions.isEmpty && doing == "asleep")
     }

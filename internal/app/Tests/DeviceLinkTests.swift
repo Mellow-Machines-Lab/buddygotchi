@@ -246,7 +246,11 @@ final class DeviceLinkTests: XCTestCase {
             .map { String(body[Range($0.range(at: 1), in: body)!]) }
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
         XCTAssertEqual(hello.does, firmware, "the fake device plays what the firmware does")
-        let sent = Moment.anims + [Moment.react, BoopDevice.listening, BoopDevice.stopListening, WorkStream.action]
+        // The animations the Mac asks the device to play, each its design
+        // state's name, besides `listening`, which only push-to-talk plays.
+        // A tap's `poked` and `tap_spam` the device plays itself.
+        let anims = ["task_complete", "reply_ready", "wake_up", "notice", Core.wishMet, Core.wishGone]
+        let sent = anims + [Moment.react, BoopDevice.listening, BoopDevice.stopListening, WorkStream.action]
         XCTAssertEqual(Set(sent).subtracting(firmware), [], "every name the Mac sends is one the firmware plays")
     }
 

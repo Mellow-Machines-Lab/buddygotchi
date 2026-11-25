@@ -49,7 +49,7 @@ final class DailyCountsTests: XCTestCase {
     }
 
     func testAWholeDay() {
-        let reader = CountsReader { _ in }
+        let reader = CountsReader(time: LocalTime()) { _ in }
         var s = reader.open(day: "2026-11-04", carry: nil)
         for e in day(from: t0) { _ = reader.read(e, line: nil, into: &s) }
         let r = s.counted
@@ -172,10 +172,42 @@ final class DailyCountsTests: XCTestCase {
         XCTAssertEqual(MemoryStore.counts(in: dir).last?.volume, 5, "the volume changed")
     }
 
+    /// Half an hour at the Mac with nothing else counted: your minutes go
+    /// to the file every 10 minutes, not every minute, and any other change
+    /// takes them along at once.
+    func testYourMinutesAloneAreWrittenEveryTenMinutes() throws {
+        XCTAssertEqual(Memory.minutesEveryMs, 10 * minute)
+        let dir = try temp()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: time, files: try MemoryStore(directory: dir, today: "2026-11-04"))
+        memory.countsSample = { (false, 4, 2) }
+        var seq = 0
+        func feed(_ m: Int64, _ type: Event.Kind, _ specificType: String, source: Event.Source) {
+            seq += 1
+            var e = Event(at: t0 + m * minute, source: source, type: type, specificType: specificType)
+            e.seq = seq
+            memory.counts.feed(e, line: nil)
+        }
+        feed(0, .gesture, "stroke", source: .device)
+        let file = dir.appendingPathComponent(MemoryStore.countsFile)
+        memory.keepCounts(wall: t0, now: true)
+        var writes = 0
+        for m in Int64(1)...30 {
+            try? FileManager.default.removeItem(at: file)
+            feed(m, .prompt, "reading", source: .claude)
+            memory.keepCounts(wall: t0 + m * minute)
+            if FileManager.default.fileExists(atPath: file.path) { writes += 1 }
+        }
+        XCTAssertEqual(writes, 3)
+        XCTAssertEqual(MemoryStore.counts(in: dir).last?.hereMinutes, memory.counts.state?.counted.hereMinutes)
+        feed(31, .gesture, "stroke", source: .device)
+        memory.keepCounts(wall: t0 + 31 * minute)
+        XCTAssertEqual(MemoryStore.counts(in: dir).last?.hereMinutes, memory.counts.state?.counted.hereMinutes, "a touch takes them along")
+    }
+
     /// Your time at the Mac runs across 5:00: the closed day has it up to
     /// its last event, the new day from there, with none counted twice.
     func testHereRunsAcross5() {
-        let reader = CountsReader { _ in }
+        let reader = CountsReader(time: LocalTime()) { _ in }
         var s = reader.open(day: "2026-11-04", carry: nil)
         let word = Event(at: t0, source: .mic, type: .said, specificType: "words")
         _ = reader.read(word, line: nil, into: &s)
@@ -232,7 +264,7 @@ final class DailyCountsTests: XCTestCase {
     /// break, whatever explains it, and shorter isn't. Reading on past it
     /// saves nothing new.
     func testALongGapBreaksYourTimeAtTheMac() throws {
-        let counts = CountsReader { _ in }, memory = MemoryReader(store: try KeyValueStore(directory: nil), time: time)
+        let counts = CountsReader(time: LocalTime()) { _ in }, memory = MemoryReader(store: try KeyValueStore(directory: nil), time: time)
         var s = counts.open(day: "2026-11-04", carry: nil), t = memory.open(day: "2026-11-04", carry: nil)
         func read(_ e: Event) -> [Bool] { [counts.read(e, line: nil, into: &s), memory.read(e, line: nil, into: &t)] }
         let checkIn = { (at: Int64) in Event(at: at, source: .boop, type: .checkIn, specificType: "idle") }

@@ -26,8 +26,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// kept from launch to launch. Off, the board, unless chosen.
     public var simulator = false
     /// Boop notices what you do at the Mac (`Hands`, `Along`): it types
-    /// along, reads along, follows your pointer, hears music, keeps quiet on
-    /// a call and holds a copy. On unless you turn it off. Off, none of the
+    /// along, reads along, follows your pointer, hears music and keeps quiet
+    /// on a call. On unless you turn it off. Off, none of the
     /// Mac's facts for it is read or sent.
     public var noticesYou = true
     /// Where Boop sits beside your screen, shown once in Settings: where it
