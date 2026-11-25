@@ -176,11 +176,14 @@ judges nothing, so it says only that the musts hold.
 
 **Which to run.**
 
-- A code-only change that leaves prompts unchanged: no Jev run.
-- While working: `--only` on the scenarios the change touches.
-- A change that touches steering or prompts broadly: quick.
-- Before a branch merges: standard.
-- Only when the owner asks, or before a release: full (`make eval`).
+No merge needs a paid run. The rules answer by default and Jev is an
+optional upgrade, so the free run is the gate.
+
+- Every change: `boopdev eval --scripted`, which is free.
+- A change to steering or prompts: `--only` on the scenarios it touches,
+  or quick when it is broad.
+- Only when the owner asks, or before a release: standard or full
+  (`make eval`).
 
 **The daily limit.** Evals may send Jev `JevAllowance.dailyLimit` real
 requests a local day, across every command and worktree. The count is in
