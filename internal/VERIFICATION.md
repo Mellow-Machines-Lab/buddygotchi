@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-16. How we check that Boop works, including what's on its
+Updated 2026-11-24. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -316,7 +316,11 @@ simulator does.
 Every screen and state the board draws
 gets at least one scenario. Their pictures are the golden images in
 `internal/firmware/test/golden/<scenario>/` for pixel and
-`characters/boop/tests/golden-gel/<scenario>/` for gel.
+`characters/boop/tests/golden-gel/<scenario>/` for gel. The gel's
+invite has four, one for each way it ends: `invite-answered`,
+`invite-missed`, `invite-late` and `invite-cut`, which `expect` the
+stage `dbg.state`'s `invite` says. The engine's own rules for it, with a
+face that draws invites, are `test_device`'s invite tests.
 
 ## 5. The levels in detail
 

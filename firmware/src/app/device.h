@@ -372,6 +372,8 @@ class Device : public linkkit::App {
   // it leaned into, let go.
   void followLean(bool touching, uint32_t t);
   void leaned(uint32_t t, bool injected);
+  // A touch let go as `kind` (a gesture `g`): true when it was the invite's.
+  bool invited(TouchGesture::Kind kind, render::Gesture g, uint32_t t, bool injected);
   void readMotion(uint32_t t);
   // Whether the needs-you screen shows: something needs you, and the
   // app is there to say so.

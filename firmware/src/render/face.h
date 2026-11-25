@@ -5,6 +5,7 @@
 // makeFace is the one place that chooses.
 #pragma once
 #include <cstddef>
+#include <cstring>
 #include <memory>
 #include "linkkit/clock.h"
 #include "render/types.h"
@@ -146,6 +147,43 @@ inline int signLift(uint32_t ms, int rise, int bob) {
   const int n = int((ms - kSignRiseMs) % kSignBobEveryMs);
   return n < int(kSignBobMs) ? -4 * bob * n * (int(kSignBobMs) - n) / int(kSignBobMs * kSignBobMs) : 0;
 }
+// An invite (the `do`'s `invite`, app/behaviour.h): after a skit, Boop turns
+// to you, comes up to the glass and holds a pose, the place to touch
+// glowing, and waits for one touch; it pays off, or Boop shrugs and turns
+// back. The pose, what it plays when the touch comes, and how far along it
+// is. A face that draws none (drawsInvites) keeps every default and is never
+// sent one.
+enum class InvitePose : uint8_t { kNone, kPalm, kLean, kBack };
+enum class InvitePayoff : uint8_t { kNone, kHighFive, kPurr, kSigh };
+// By their names on the wire ("palm", "highfive"): kNone for one it doesn't know.
+inline constexpr const char* kInvitePoseNames[] = {nullptr, "palm", "lean", "back"};
+inline constexpr const char* kInvitePayoffNames[] = {nullptr, "highfive", "purr", "sigh"};
+inline InvitePose invitePoseFromName(const char* name) {
+  for (int i = 1; name && i < 4; ++i)
+    if (!std::strcmp(name, kInvitePoseNames[i])) return InvitePose(i);
+  return InvitePose::kNone;
+}
+inline InvitePayoff invitePayoffFromName(const char* name) {
+  for (int i = 1; name && i < 4; ++i)
+    if (!std::strcmp(name, kInvitePayoffNames[i])) return InvitePayoff(i);
+  return InvitePayoff::kNone;
+}
+inline const char* invitePoseName(InvitePose p) { return kInvitePoseNames[int(p) < 4 ? int(p) : 0]; }
+struct InviteShow {
+  // kPose: it holds the pose and waits; kPayoff: the touch came; kShrug:
+  // none came, and it turns back; kLate: one came after, and it turns
+  // round, pleased (kTurnMs), into the payoff.
+  enum Phase : uint8_t { kNone, kPose, kPayoff, kShrug, kLate };
+  // How long each lasts, the same on every face: Behaviour times them.
+  static constexpr uint32_t kPayoffMs = 2400, kShrugMs = 1200, kTurnMs = 600, kLateMs = kTurnMs + kPayoffMs;
+  Phase phase = kNone;
+  InvitePose pose = InvitePose::kNone;
+  InvitePayoff payoff = InvitePayoff::kNone;
+  const char* label = nullptr;  // the word by the glow (`label`); null for the glow alone
+  int xp = 0;                   // what the touch earns, "+3 XP" in the payoff; 0 for none
+  uint32_t ms = 0;              // since its phase began
+  bool shows() const { return phase != kNone; }
+};
 // What the Mac last said, as far as a face may use it.
 // Boop's energy, the Mac's rule (`state.energy`, documentation/design/
 // screen-guide.md, "Energy"): a face draws it on its lids and in its tempo,
@@ -185,6 +223,8 @@ struct FaceContext {
   int pointerX = 0, pointerY = 0;
   // Boop's energy; normal with no Mac.
   Energy energy = Energy::kNormal;
+  // The invite showing, if any: a face that draws invites follows it.
+  InviteShow invite;
 };
 class Face {
  public:
@@ -268,6 +308,9 @@ class Face {
   // Whether the board's own touches say why themselves, in the caption, before
   // the Mac has heard of them (Behaviour::touchCaption).
   virtual bool captionsTouches() const { return false; }
+  // Whether it draws invites (FaceContext::invite), which hello says
+  // (`invites`): with none, the board plays a `do`'s invite not at all.
+  virtual bool drawsInvites() const { return false; }
   // What it's doing to pass the time at t, by its name in the pack's
   // mac/passing.tsv, for the popover alone; null for nothing.
   virtual const char* passing(uint32_t t) const { return (void)t, nullptr; }

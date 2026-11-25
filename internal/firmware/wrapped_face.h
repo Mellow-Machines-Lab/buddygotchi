@@ -2,9 +2,10 @@
 // it passes everything on to, and on top what a test needs that the pixel
 // face hasn't: the context it was last synced to (FaceContext), and an
 // agents' drawer as the gel's works, rows kRowH tall from canvas y kRowsTop
-// down, pulled kTravel canvas px from shut to open; and, with `native`, a
-// face that draws natively, as the gel does, drawing nothing at all. The
-// gel's own drawer is tested with its pack.
+// down, pulled kTravel canvas px from shut to open; with `native`, a
+// face that draws natively, as the gel does, drawing nothing at all; and
+// with `invites`, one that draws invites, as the gel does. The gel's own
+// drawer and invites are tested with its pack.
 #pragma once
 #include <memory>
 
@@ -18,6 +19,7 @@ struct WrappedFace : render::Face {
   render::FaceContext context;  // the last sync's
   bool drawers = true;          // it has a drawer
   bool native = false;          // it draws natively, and draws nothing
+  bool invites = false;         // it draws invites (render::InviteShow)
 
   const char* name() const override { return f->name(); }
   bool drawsNative() const override { return native || f->drawsNative(); }
@@ -42,6 +44,7 @@ struct WrappedFace : render::Face {
   void finger(bool down, int x, int y) override { f->finger(down, x, y); }
   void letGo(int vx, int vy) override { f->letGo(vx, vy); }
   bool playsSwipe() const override { return f->playsSwipe(); }
+  bool drawsInvites() const override { return invites || f->drawsInvites(); }
 
   bool hasDrawer() const override { return drawers; }
   // A card held across canvas y kCardTop to kCardBottom, while it's on.
