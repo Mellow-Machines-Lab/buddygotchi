@@ -215,8 +215,11 @@ place; the body no longer dips.
 
 `dbg.clip` plays one of the pack's rig clips by its id over what shows
 (`{"t":"dbg.clip","name":"flop"}`), for scenarios and the Studio: the
-gel's flop of relief, which no Moment names yet, and its meme faces'
-moves (`face-deadpan`…).
+gel's flop of relief, which a fix's Moment plays by its `clip`, and its
+meme faces' moves (`face-deadpan`…). A clip may be another's move at a
+size and a pace (`of`, `size` and its own `ms`, characters/CHARACTER.md
+§15): the mixer and the gel's moves read a track through `Clip::value`,
+which scales its values and its time, and `rig::crossed` its cues.
 
 The gel runs a motion layer under every clip (motion V2: the slime's
 `CONTINUITY.md`, The motion layer): stretch with speed, overshoot and

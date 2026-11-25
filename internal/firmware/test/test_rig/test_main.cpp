@@ -54,6 +54,15 @@ constexpr Cue kTicks[] = {{0, "tick"}, {400, "tock"}};
 constexpr Clip kTicking = {"ticking", 1000, true, true, {}, {kTicks, 2}};
 constexpr Clip kOnce = {"once", 1000, false, true, {}, {kTicks, 2}};
 
+// The ramp as another clip's move: a sway at its own size and pace, then
+// at half its size over half its time, and at twice its size over twice.
+constexpr Track kSwayTracks[] = {kRampTrack};
+constexpr Clip kSway = {"sway", 200, false, true, {kSwayTracks, 1}, {kTicks, 1}};
+constexpr Clip kSwaySmall = {"sway-small", 100, false, true, {kSwayTracks, 1}, {kTicks, 1}, 500, 200};
+constexpr Clip kSwayBig = {"sway-big", 400, false, true, {kSwayTracks, 1}, {kTicks, 1}, 2000, 200};
+constexpr Cue kHalfway[] = {{100, "top"}};
+constexpr Clip kSwayTicking = {"sway-ticking", 1000, true, true, {kSwayTracks, 1}, {kHalfway, 1}, 1000, 200};
+
 // A channel's value each frame of `frames` frames, `ms` apart.
 std::vector<int> record(Mixer& m, Channel c, int frames, uint32_t ms = 16) {
   std::vector<int> out;
@@ -108,6 +117,36 @@ static void test_a_clip_loops_or_holds_its_end() {
   TEST_ASSERT_EQUAL_UINT32(0, kLeanLoop.local(3000));
   TEST_ASSERT_EQUAL_UINT32(1000, kLean.local(2500));
   TEST_ASSERT_EQUAL_UINT32(250, kLean.local(250));
+}
+
+// A clip may be another's move at a size and a pace (a clip file's `of`):
+// its values are that one's times size / 1000, its time runs over its own
+// ms, and its cues come at their place in it. Its own, 1000 and its ms.
+static void test_a_clip_plays_another_at_a_size_and_a_pace() {
+  for (uint32_t t : {0u, 50u, 100u, 150u, 200u}) TEST_ASSERT_EQUAL_INT(sample(kRampTrack, t), kSway.value(kRampTrack, t));
+  TEST_ASSERT_EQUAL_INT(500, kSwaySmall.value(kRampTrack, 50));  // the ramp's top, half as high, half as soon
+  TEST_ASSERT_EQUAL_INT(250, kSwaySmall.value(kRampTrack, 25));
+  TEST_ASSERT_EQUAL_INT(0, kSwaySmall.value(kRampTrack, 100));
+  TEST_ASSERT_EQUAL_INT(2000, kSwayBig.value(kRampTrack, 200));
+  TEST_ASSERT_EQUAL_INT(1000, kSwayBig.value(kRampTrack, 100));
+  TEST_ASSERT_EQUAL_UINT32(100, kSwaySmall.local(900));  // held at its own end
+  TEST_ASSERT_EQUAL_UINT32(100, kSwayBig.keyed(200));
+  TEST_ASSERT_EQUAL_UINT32(200, kSwayBig.played(100));
+  TEST_ASSERT_EQUAL_UINT32(4, kSwaySmall.played(7));  // 3.5: the first ms at or after
+  const char* out[4];
+  TEST_ASSERT_EQUAL_INT(0, crossed(kSwayTicking, 0, 500, out, 4));  // its cue at 100 of 200 comes at 500 of 1000
+  TEST_ASSERT_EQUAL_INT(1, crossed(kSwayTicking, 500, 501, out, 4));
+  TEST_ASSERT_EQUAL_STRING("top", out[0]);
+  TEST_ASSERT_EQUAL_INT(2, crossed(kSwayTicking, 400, 1600, out, 4));
+  // On the mixer, at its size and pace: half the ramp's top, ten times
+  // later.
+  constexpr Clip kSwaySlow = {"sway-slow", 2000, false, true, {kSwayTracks, 1}, {}, 500, 200};
+  Mixer m = still();
+  m.play(kSwaySlow);
+  m.advance(500);
+  TEST_ASSERT_EQUAL_INT(250, m.channels()[Channel::kLean]);
+  m.advance(500);
+  TEST_ASSERT_EQUAL_INT(500, m.channels()[Channel::kLean]);
 }
 
 // ---- The mixer ---------------------------------------------------------------
@@ -527,8 +566,8 @@ static void test_the_staged_rig_is_whole() {
     TEST_ASSERT_EQUAL_PTR(&clip, kRig.clip(clip.id));
     for (const Track& t : clip.tracks) {
       for (int i = 1; i < t.keys.count; ++i) TEST_ASSERT_TRUE(t.keys[i].ms > t.keys[i - 1].ms);
-      TEST_ASSERT_TRUE(t.keys[t.keys.count - 1].ms <= clip.ms);
-      if (clip.loop) TEST_ASSERT_EQUAL_INT(sample(t, 0), sample(t, clip.ms));
+      TEST_ASSERT_TRUE(t.keys[t.keys.count - 1].ms <= (clip.own ? clip.own : clip.ms));
+      if (clip.loop) TEST_ASSERT_EQUAL_INT(clip.value(t, 0), clip.value(t, clip.ms));
     }
   }
   for (const Look& look : kRig.looks) {
@@ -575,6 +614,7 @@ int main() {
   RUN_TEST(test_a_track_eases_between_its_keys_and_holds_its_ends);
   RUN_TEST(test_a_clip_loops_or_holds_its_end);
   RUN_TEST(test_cues_crossed_on_every_loop);
+  RUN_TEST(test_a_clip_plays_another_at_a_size_and_a_pace);
   RUN_TEST(test_a_reactions_weight_eases_in_and_out);
   RUN_TEST(test_a_stopped_clip_fades_out);
   RUN_TEST(test_a_looks_occasions_fit_by_their_tags_and_wait);

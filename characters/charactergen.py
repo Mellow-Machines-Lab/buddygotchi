@@ -274,10 +274,23 @@ def read_rig(pack: Path, states: list[str] | None = None) -> tuple[dict, list[st
     clips = sorted((folder / "clips").glob("*.json")) if (folder / "clips").is_dir() else []
     if len(clips) > MOST:
         problems.append(f"rig/clips: more than {MOST} clips")
+    moves = []  # (rel, id, the clip it's a move of, its size, its ms)
     for path in clips:
         rel = f"clips/{path.name}"
         if not NAME.fullmatch(path.stem):
             fail(rel, "", "its name, the clip's id, isn't lower case, digits, - and _")
+        # Another clip's move at a size and a pace: its keys and cues are
+        # that one's, its values times size / 1000, played over its ms.
+        try:
+            given = json.loads((folder / rel).read_text())
+        except ValueError:
+            given = None
+        if isinstance(given, dict) and "of" in given:
+            move = read(rel, {"about": str, "group": MOVE_GROUPS, "of": str, "size": (1, 4000), "ms": (1, 60000)}, required=("of", "ms"))
+            if {"of", "ms"} <= move.keys():
+                moves.append((rel, path.stem, move["of"], move.get("size", 1000), move["ms"], move.get("group"),
+                              move.get("about", "")))
+            continue
         clip = read(rel, {"about": str, "group": MOVE_GROUPS, "ms": (1, 60000), "loop": bool, "additive": bool, "tracks": dict,
                           "cues": list}, required=("ms",))
         if "ms" not in clip:
@@ -318,6 +331,17 @@ def read_rig(pack: Path, states: list[str] | None = None) -> tuple[dict, list[st
                 cues.append((cue[0], cue[1]))
         rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop, "additive": additive, "tracks": tracks,
                              "cues": sorted(cues), "group": clip.get("group"), "about": clip.get("about", "")})
+    own = {c["id"]: c for c in rig["clips"]}
+    for rel, id, of, size, ms, group, about in moves:
+        base = own.get(of)
+        if base is None:
+            fail(rel, "of", f"{of!r} isn't a clip in rig/clips/ with keys of its own")
+        elif size != 1000 and not base["additive"]:
+            fail(rel, "size", f"{of} is absolute, so it has no size but 1000")
+        else:
+            rig["clips"].append({**base, "id": id, "ms": ms, "of": of, "size": size, "group": group, "about": about})
+    # In the files' order, as looks.json's indices count them.
+    rig["clips"].sort(key=lambda c: c["id"] + ".json")
 
     rel, ids, tags = "looks.json", [c["id"] for c in rig["clips"]], tag_names()
     a_clip = Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids)
@@ -384,15 +408,27 @@ def rig_h(pack: Path, rig: dict) -> str:
     def run(name, start, count):
         return f"{{{name} + {start}, {count}}}" if count else "{}"
 
+    # Each clip's tracks and cues, where they start in their tables: a move
+    # of another's is that one's.
+    runs = {}
     for c in rig["clips"]:
-        first, cue = len(tracks), len(cues)
+        if "of" in c:
+            continue
+        runs[c["id"]] = len(tracks), len(cues)
         for channel, rows in c["tracks"]:
             tracks.append(f"{{Channel::k{channel[0].upper()}{channel[1:]}, {run('kKeys', len(keys), len(rows))}}}")
             keys += [f"{{{t}, {v}, Ease::{EASES[e]}}}" for t, v, e in rows]
         cues += [f"{{{t}, {json.dumps(name)}}}" for t, name in c["cues"]]
-        clips.append(f"{{{json.dumps(c['id'])}, {c['ms']}, {str(c['loop']).lower()}, {str(c['additive']).lower()}, "
-                     f"{run('kTracks', first, len(c['tracks']))}" + (f", {run('kCues', cue, len(c['cues']))}" if c["cues"] else "")
-                     + "}")
+    by_id = {c["id"]: c for c in rig["clips"]}
+    for c in rig["clips"]:
+        first, cue = runs[c.get("of", c["id"])]
+        row = (f"{{{json.dumps(c['id'])}, {c['ms']}, {str(c['loop']).lower()}, {str(c['additive']).lower()}, "
+               f"{run('kTracks', first, len(c['tracks']))}")
+        if "of" in c:
+            row += f", {run('kCues', cue, len(c['cues']))}, {c['size']}, {by_id[c['of']]['ms']}"
+        elif c["cues"]:
+            row += f", {run('kCues', cue, len(c['cues']))}"
+        clips.append(row + "}")
     occasions, tiers, acts, looks = [], [], [], []
     for l in rig["looks"]:
         first, tier, act = len(occasions), len(tiers), len(acts)

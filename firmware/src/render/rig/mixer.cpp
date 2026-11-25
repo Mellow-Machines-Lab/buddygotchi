@@ -144,7 +144,7 @@ void Mixer::mix() {
       const uint32_t t = p.clip->local(p.age);
       for (const Track& track : p.clip->tracks) {
         int& to = v[int(track.channel)];
-        const int value = sample(track, t);
+        const int value = p.clip->value(track, t);
         to += (p.clip->additive ? value : value - to) * w / 1024;
       }
     }

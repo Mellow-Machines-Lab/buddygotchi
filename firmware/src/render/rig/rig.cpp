@@ -25,6 +25,11 @@ int sample(const Track& track, uint32_t local) {
   return keys[keys.count - 1].value;
 }
 
+int Clip::value(const Track& track, uint32_t local) const {
+  const int v = sample(track, keyed(local));
+  return size == 1000 ? v : v * size / 1000;
+}
+
 int crossed(const Clip& clip, uint32_t from, uint32_t to, const char** out, int max) {
   int n = 0;
   if (!clip.cues.count || !after(to, from)) return 0;
@@ -32,7 +37,7 @@ int crossed(const Clip& clip, uint32_t from, uint32_t to, const char** out, int 
   // has only its first.
   for (uint32_t start = clip.loop ? from - from % clip.ms : 0; after(to, start); start += clip.ms) {
     for (const Cue& cue : clip.cues) {
-      const uint32_t at = start + cue.ms;
+      const uint32_t at = start + clip.played(cue.ms);
       if (!after(from, at) && after(to, at)) {
         if (n == max) return n;
         out[n++] = cue.name;
