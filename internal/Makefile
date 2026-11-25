@@ -168,16 +168,12 @@ e2e:
 # takes they read from the voice pack, and a reference cut into frames
 # with ffmpeg), the webcam recorder on synthetic video, charactergen's
 # staging and studio rules (internal/characters/), the studio's own logic
-# and server (with Node), and
-# each character pack's own (its tests/tools/), and that the gel slime's
-# generated tables are fresh.
+# and server (with Node), and that the gel slime's generated tables are
+# fresh.
 tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
 	cd $(ROOT) && node --test characters/studio/tests/*.test.cjs
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/session/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/characters
-	cd $(ROOT) && for tests in characters/*/tests/tools; do \
-	  [ -d $$tests ] || continue; python3 -m unittest discover -s $$tests || exit 1; \
-	done
 	cd $(ROOT)/characters/boop && node tools/slimegen/slimegen.mjs --check

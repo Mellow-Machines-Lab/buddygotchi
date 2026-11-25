@@ -34,12 +34,6 @@ test('the board is asked for each state as the Mac asks for it, for a review cli
   assert.deepEqual(finish[1][1].args,{outcome:'failure'});
   assert.deepEqual(wire({mood:'calm',state:'starting',context:'compacted'}).steps[1][1].args,{ctx:'compacted'});
   assert.equal(wire({mood:'calm',state:'wake_up'}).steps[0][1].base,'idle','waking up is over idle');
-  const over={base:'asleep'},asked=(cell,under)=>wire(cell,under).steps.map(([ms,m])=>[ms,m.t,m.name,m.args]);
-  assert.deepEqual(asked({mood:'calm',state:'notice'},over),[[0,'do','notice',{mood:'calm'}]],
-    'a transition\'s reaction plays over its start\'s look, its state left as it was, in its own mood');
-  assert.deepEqual(asked({mood:'excited',state:'task_complete'},{base:'working',busy:1}),[[0,'do','task_complete',{outcome:'success',mood:'excited'}]],
-    'a finish over working in its own mood');
-  assert.equal(wire({mood:'calm',state:'poked'},over).steps[0][1].base,'asleep','an input over its start\'s look');
   assert.deepEqual(wire({mood:'calm',state:'tap_spam'}).steps.slice(1).map(([ms,m])=>[ms,m.t]),[[0,'dbg.touch'],[200,'dbg.touch'],[400,'dbg.touch']],'the third tap within 3 s is tap spam');
   assert.deepEqual([wire({mood:'calm',state:'poked'}).steps[1][1].x,wire({mood:'calm',state:'poked'}).steps[1][1].y],TAP,'a tap where the simulator taps');
   assert.ok(wire({mood:'calm',state:'gesture'}).steps[1][1].to_x,'a stroke');
@@ -171,7 +165,7 @@ const serve=(characters,port,...args)=>{
 // A clip the studio saves for a pack's tools (--capture-dir): off unless
 // asked; then only from its own page with its token, a WebM by its header,
 // named by a pack's `captures`, at most 8 MiB, each a new file, and an
-// upload gone quiet for 15 s closed.
+// upload gone quiet closed (15 s, here 1 s by --upload-quiet).
 test('the studio\'s server saves only the review clips a pack names, from its own page, never over one', async t => {
   const http=require('node:http');
   const webm=Buffer.from('GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAAHzEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHWTbuMU6uEElTDZ1OsggEyTbuMU6uEHFO7a1OsggHd7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsCrXsYMPQkBNgIxMYXZmNjMuMS4xMDFXQYxMYXZmNjMuMS4xMDFEiYhAj0AAAAAAABZUrmvXrgEAAAAAAABO14EBc8WIUyNHVZLGuuucgQAitZyDdW5kiIEAhoVWX1ZQOIOBASPjg4Q7msoA4JCwgQK6gQKagQJVsIRVuYEBVe6BAOwBAAAAAAAAAgAAElTDZ/pzc59jwIBnyJlFo4dFTkNPREVSRIeMTGF2ZjYzLjEuMTAxc3PVY8CLY8WIUyNHVZLGuutnyKBFo4dFTkNPREVSRIeTTGF2YzYzLjEuMTAxIGxpYnZweGfIoUWjiERVUkFUSU9ORIeTMDA6MDA6MDEuMDAwMDAwMDAwAB9DtnWn54EAo6KBAACAEAIAnQEqAgACAAvHCIWFiJmEiD+CAAwNYAD+5rUAHFO7a5G7j7OBALeK94EB8YIBsfCBAw==','base64');
@@ -201,7 +195,7 @@ test('the studio\'s server saves only the review clips a pack names, from its ow
   let port=await start();
   assert.deepEqual(JSON.parse((await ask(port)).body),{enabled:false},'off unless asked, with no token');
   assert.equal((await ask(port,{route:'/review-captures/happy.working.webm',method:'POST',body:webm})).status,405);
-  port=await start('--capture-dir',clips);
+  port=await start('--capture-dir',clips,'--upload-quiet','1');
   const config=await ask(port),settings=JSON.parse(config.body),origin=`http://127.0.0.1:${port}`;
   assert.deepEqual([settings.enabled,/^[a-f0-9]{64}$/.test(settings.token),settings.directory,config.headers['cache-control']],[true,true,'clips','no-store']);
   assert.equal((await ask(port,{headers:{Host:`localhost:${port}`}})).status,403,'its config to its own address only');
@@ -221,7 +215,7 @@ test('the studio\'s server saves only the review clips a pack names, from its ow
   assert.equal((await ask(port,post('sad.working.webm',{body:large,chunked:true}))).status,413,'at most 8 MiB');
   const before=performance.now(),quiet=await ask(port,post('sad.working.webm',{stall:true}));
   const waited=performance.now()-before;
-  assert.ok((quiet.status===408||quiet.status==='reset')&&waited>=14500&&waited<19500,`an upload gone quiet is closed at 15 s, not ${Math.round(waited)} ms`);
+  assert.ok((quiet.status===408||quiet.status==='reset')&&waited>=900&&waited<4000,`an upload gone quiet is closed at 1 s, not ${Math.round(waited)} ms`);
   assert.deepEqual(fs.readdirSync(clips),[],'none of those saved');
   assert.equal((await ask(port,post('happy.working.webm',{headers:{...auth,'Content-Type':'video/webm;codecs=vp9'}}))).status,201);
   assert.deepEqual(fs.readFileSync(path.join(clips,'happy.working.webm')),webm,'as sent');

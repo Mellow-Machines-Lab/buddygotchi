@@ -40,10 +40,9 @@ MOODS = [m["id"] for m in _CHARACTER["moods"] + _CHARACTER.get("board_faces", []
 def lasting_moods(pack: Path | None = None) -> list[str]:
     """The lasting moods of `pack` (the one in use by default), in its
     order, which the mood output can move to: its character.json's
-    `lasting`, or for a pack from before it, its faces with a `meaning`
-    (characters/CHARACTER.md §5)."""
+    `lasting` (characters/CHARACTER.md §5)."""
     character = json.loads(((pack or chosen_pack()) / "character.json").read_text())
-    return [m["id"] for m in character.get("lasting") or [m for m in character["moods"] if "meaning" in m]]
+    return [m["id"] for m in character["lasting"]]
 
 
 # The animations a `do` plays by name:

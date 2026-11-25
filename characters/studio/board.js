@@ -7,7 +7,7 @@
 // clips. Both servers serve the build at /simulator/; from file:// it can't
 // load.
 (() => {
-  const SETTLE_MS = 2000;  // how long a recording's start plays before its end is asked for
+  const SETTLE_MS = 2000;  // how long a recording's cell plays before its frames count from
   const FRAME_MS = window.StudioData?.frame_ms;  // charactergen's: a reference's frames' interval too
   const FROM_FILE = 'The board runs from a server: python3 simulator/web/serve.py, then http://127.0.0.1:8206/characters/studio/.';
   let simulator = null;
@@ -54,17 +54,15 @@
     return {...kit, board};
   }
 
-  // Frames from one cell to another on the frozen clock: dbg.reset (which
-  // freezes it at 0), the start's messages, then the end's at the change,
-  // SETTLE_MS on (and no_app's window later); a frame every FRAME_MS,
-  // `before` of them before the change and `after` from it, each with its
-  // ms from the change and its picture (an ImageBitmap). Messages due by a
-  // frame go before it, as a scenario's lines before its {"clock"}. With no
-  // end, the start goes on. Null once `live()` says nobody wants it any more.
-  async function record(board, wire, {from, to = null, before = 5, after = 100, live = () => true}) {
-    const start = wire(from), end = to && wire(to, start.look);
-    const change = SETTLE_MS + start.after, shown = change + (end?.after || 0);
-    const due = [...start.steps, ...(end ? end.steps.map(([ms, m]) => [change + ms, m]) : [])].sort((a, b) => a[0] - b[0]);
+  // Frames of one cell on the frozen clock: dbg.reset (which freezes it at
+  // 0), then its messages; a frame every FRAME_MS, `before` of them before
+  // SETTLE_MS (and no_app's window) and `after` from it, each with its ms
+  // from then and its picture (an ImageBitmap). Messages due by a frame go
+  // before it, as a scenario's lines before its {"clock"}. Null once
+  // `live()` says nobody wants it any more.
+  async function record(board, wire, {from, before = 5, after = 100, live = () => true}) {
+    const start = wire(from), shown = SETTLE_MS + start.after;
+    const due = [...start.steps].sort((a, b) => a[0] - b[0]);
     board.send({t: 'dbg.reset'});
     const frames = [];
     for (let t = 0, next = 0; t <= shown + after * FRAME_MS; t += FRAME_MS) {
@@ -85,7 +83,7 @@
     canvas.getContext('2d').putImageData(frame, 0, 0);
   }
 
-  // The studio's adapter (README.md, "The board's calls") for one face: a
+  // The studio's adapter (README.md, "A pack's tools") for one face: a
   // board of its own on the stage, playing what the page asks from a reset.
   // The faces sheet's stills and a pack's tools (its entry's scripts, in the
   // Tools drawer) record on the same board, one at a time, so no other board
@@ -97,7 +95,7 @@
       canvas.className = 'board-screen';
       ctx.stage.append(canvas);
       const making = make(pack, face);
-      let kit = null, steps = null, look = null, paused = false, lent = false, gone = false, said = 'Starting the board…';
+      let kit = null, steps = null, look = null, paused = false, lent = false, said = 'Starting the board…';
       let timers = [], beat = 0, turn = making;
       const quiet = () => { timers.forEach(clearTimeout); clearInterval(beat); };
       const vol = () => ctx.sound ? Math.max(1, Math.round(ctx.volume * 10)) : 0;
@@ -129,7 +127,6 @@
         return turn = turn.catch(() => {}).then(() => making).then(then);
       }
       making.then(made => {
-        if (gone) return made.board.power(false);
         kit = made;
         kit.board.addEventListener('frame', e => { if (!lent) draw(canvas, e.detail); });
         kit.board.addEventListener('line', e => ctx.onLine?.(e.detail));
@@ -151,7 +148,6 @@
           steps = list;
           run();
         },
-        replay: run,
         // Sends [ms, message] pairs now, with no reset: a touch, a switch.
         send(list) {
           if (kit && !lent) later(list);
@@ -169,14 +165,14 @@
           else kit?.board.send(on ? {t: 'dbg.clock', step: 0} : {t: 'dbg.clock', run: true});
         },
         record(options) {
-          return lend(({board, wire}) => record(board, wire, {...options, live: () => !gone && (options.live?.() ?? true)}));
+          return lend(({board, wire}) => record(board, wire, options));
         },
         // Each face at rest, a still after the look settles, to `each(face,
         // picture)` as it comes; then the stage takes its board back.
         stills(faces, each) {
           return lend(async ({board, wire}) => {
             for (const mood of faces) {
-              const frames = await record(board, wire, {from: {mood, state: 'idle'}, before: 0, after: 0, live: () => !gone});
+              const frames = await record(board, wire, {from: {mood, state: 'idle'}, before: 0, after: 0});
               if (!frames) break;
               each(mood, frames[0].image);
             }
@@ -190,13 +186,6 @@
         status() {
           if (said === null) return '';  // the pane says why it can't run
           return said || `The ${face} face's firmware · ${paused ? 'paused' : 'running'} · ${kit.board.audible ? 'sound on' : 'silent'}`;
-        },
-        destroy() {
-          gone = true;
-          quiet();
-          kit?.board.power(false);
-          canvas.remove();
-          ctx.stage.querySelector('.board-note')?.remove();
         },
       };
     }};

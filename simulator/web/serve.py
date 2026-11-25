@@ -323,7 +323,7 @@ NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,15}")
 
 
 # The studio's one write: a review clip at most this (bounded local
-# evidence), and an upload gone quiet this long closed.
+# evidence), and an upload gone quiet this long closed (--upload-quiet).
 MAX_CAPTURE_BYTES = 8 * 1024 * 1024
 UPLOAD_QUIET_S = 15
 CLIP = re.compile(r"[a-z][a-z0-9_.-]{1,80}")
@@ -374,6 +374,8 @@ def main() -> int:
     parser.add_argument("--voice", default=str(chosen_voice()), help="the voice file on the board's card (the chosen character pack's, if it has one)")
     parser.add_argument("--characters", default=str(REPO / "characters"), help="the character packs and the studio, at /characters/ (characters/)")
     parser.add_argument("--capture-dir", help="lets the packs' studio tools save their named review clips here; never overwrites")
+    parser.add_argument("--upload-quiet", type=float, default=UPLOAD_QUIET_S, metavar="SECONDS",
+                        help=f"closes a clip's upload gone quiet this long ({UPLOAD_QUIET_S})")
     args = parser.parse_args()
     characters = Path(args.characters).resolve()
     try:
@@ -419,8 +421,8 @@ def main() -> int:
         def body(self, limit: int) -> bytes:
             """The request's body, whole or chunked; TooBig past `limit`,
             read to its end all the same so the answer reaches the sender;
-            TimeoutError once it goes quiet for UPLOAD_QUIET_S."""
-            self.connection.settimeout(UPLOAD_QUIET_S)
+            TimeoutError once it goes quiet for --upload-quiet."""
+            self.connection.settimeout(args.upload_quiet)
             data, over = bytearray(), False
 
             def take(n: int) -> None:

@@ -18,13 +18,14 @@ inventing yet another protocol. LinkKit is the whole conversation:
 
 ```mermaid
 flowchart LR
-    H["🖥️ Your Mac app<br/><i>LinkKit (Swift)</i>"] -- "state · do" --> D["🟨 Your device<br/><i>LinkKit device library (C++)</i>"]
+    H["🖥️ Your Mac app<br/><i>LinkKit (Swift)</i>"] -- "state · do · blob" --> D["🟨 Your device<br/><i>LinkKit device library (C++)</i>"]
     D -- "hello · ev" --> H
 ```
 
-- ✉️ **Four JSON messages.** The Mac says how things are (`state`) and
-  asks for things to play (`do`). The device says who it is (`hello`)
-  and what happened (`ev`).
+- ✉️ **Five JSON messages.** The Mac says how things are (`state`),
+  asks for things to play (`do`) and sends bytes too many for one
+  message, such as a picture, in parts (`blob`). The device says who it
+  is (`hello`) and what happened (`ev`).
 - 🎬 **The device decides when.** Each `do` waits in a queue behind
   whatever's playing, and every one gets exactly one answer: done, cut
   or skipped.

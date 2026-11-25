@@ -21,8 +21,10 @@ the character's moves, faces and moments. The studio's board is this
 `/simulator/`, where the studio looks for them
 ([characters/studio/README.md](../characters/studio/README.md), On the
 board). It is the studio's only server: with `--capture-dir DIR` it saves
-the review clips a pack's tools record, only from its own page;
-`--characters DIR` serves another folder of packs.
+the review clips a pack's tools record, only from its own page, and closes
+an upload gone quiet for 15 s (`--upload-quiet SECONDS`);
+`--characters DIR` serves another folder of packs, and `--voice FILE` puts
+another voice file on the board's card than the chosen pack's.
 
 **With the Mac app.** The app's body is the simulator in one way: a
 window of its own, in `make dev`'s debug build and the internal build.
@@ -143,7 +145,9 @@ whenever one changes) and `power`. The script knows nothing of what the
 board's messages mean: they pass through it. The script exports the
 rest of a page's hand: `SHAKE`, a shake as the motion sensor reads it,
 for `board.motion`; `TAP`, where a poke lands, beside the nose (on it is
-a nose boop), for `board.touch`; `LANE_Y`, the lane's middle, where an
+a nose boop), for `board.touch`; `STROKE`, a finger's path across the
+face, and `TICKLE`, a finger wiggling in one spot, each point for
+`board.touch` 60 ms apart; `LANE_Y`, the lane's middle, where an
 ask's answers are tapped; and `HEARTBEAT_MS`, how often a page that
 keeps a board company says its `state` again, as the demo player does.
 `Board.make` compiles a build's WebAssembly once for every board a page
@@ -171,7 +175,7 @@ long as the demo runs; `make -C internal demos` records several at once.
 To play, `demos.py` lays the recording out in `web/dist/demo/PACK/`, with
 `NAME-voice.bin`, a voice file with only the takes it says, cut from the
 pack's voice then (`tools/voice_subset.py`: about 70 KB for a minute's
-demo, where the whole voice is 29 MB).
+demo, where the whole voice is 32 MB).
 
 A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of Boop's
 `demo/recordings/demo.json`:

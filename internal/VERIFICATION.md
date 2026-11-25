@@ -35,10 +35,10 @@ where it says:
 - `make -C internal test`, on macOS 26.
 - The Python tests that need only the standard library, on the Mac's own
   Python 3.9: `python3 characters/charactergen.py --check`, and the
-  `unittest` suites in `internal/characters/`,
-  `internal/tools/session/tests/` and each pack's `tests/tools/` (the
-  part of `make -C internal tools-test` without boopctl's venv or the
-  webcam recorder).
+  `unittest` suites in `internal/characters/` and
+  `internal/tools/session/tests/` (with `BOOP_SLOW=1`), and the Studio's on Node (the part of
+  `make -C internal tools-test` without boopctl's venv or the webcam
+  recorder).
 - `make -C internal fw-test`, then the Mac's mirror of the board: its
   page's tests and `boopctl mirror` (the part of `make -C internal mirror`
   without Emscripten, which the runners don't have; they test the board.js
@@ -88,7 +88,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack (`simulator/web/build.sh`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`), each pack's `tests/tools/` and that the gel slime's tables are fresh (`slimegen.mjs --check`) |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's (its two that play a demo's project, 10 s of `npm test`, only with `BOOP_SLOW=1`), `charactergen.py`'s (`internal/characters/`) and that the gel slime's tables are fresh (`slimegen.mjs --check`) |
 
 **Tools.**
 
@@ -616,4 +616,4 @@ sure the finger lifted.
 | An `ended` | The link gives up on it at the `do`'s `ttl` plus 60 s | [linkkit/SPEC.md](../linkkit/SPEC.md) §5 |
 | An output's `run` | Logged if it takes over 300 ms | `outputSlowMs` in `mellowharness/Sources/MellowHarness/Harness.swift` |
 | `state` keepalive | Every 10 s; the device gives up on the app after 30 s | [linkkit/SPEC.md](../linkkit/SPEC.md) §9, `kNoAppMs` in `firmware/src/app/behaviour.h` |
-| Protocol message | At most 512 bytes; each text field has its own cap (`attn.project` 47 bytes, `who.thread` 50, …), so every `state` fits | [linkkit/SPEC.md](../linkkit/SPEC.md) §9 |
+| Protocol message | At most 512 bytes; Boop caps each text field (`attn.project` 47 bytes, `who.thread` 50, …), so every `state` fits | [linkkit/SPEC.md](../linkkit/SPEC.md) §9 for the 512; Boop's caps in `app/BoopKit/Core/StateSnapshot.swift` (`maxSignBytes`, `maxThreadBytes`) |

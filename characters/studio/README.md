@@ -106,13 +106,13 @@ redraw) and `selection`. The board's instance has:
 
 | Call | What it does |
 | --- | --- |
-| `play(steps)`, `replay()` | Plays `[ms, message]` pairs from a reset |
+| `play(steps)` | Plays `[ms, message]` pairs from a reset |
 | `send(steps)` | Sends them now, with no reset: a touch, a switch |
 | `ask(message)` | The board's answer to a message |
-| `record({from, to, before, after})` | Frames from one of the engine's states ([states.json](states.json)) to another, on the board's frozen clock, `StudioBoard.FRAME_MS` apart; the board is the recording's until it ends |
+| `record({from, before, after})` | Frames of one of the engine's states ([states.json](states.json)), on the board's frozen clock, `StudioBoard.FRAME_MS` apart; the board is the recording's until it ends |
 | `stills(faces, each)` | Each face at rest, a still to `each(face, picture)` |
 | `paused`, `setPaused(on)` | Pauses the board's clock; after a recording, gives the board back to the stage |
-| `setSound()`, `status()`, `destroy()` | Applies the sound, the line under the stage, and removes it all |
+| `setSound()`, `status()` | Applies the sound, and the line under the stage |
 
 A tool sets `busy()` on the instance while the page mustn't change.
 Boop's fills the drawer with review sets, recorded into silent WebM clips,

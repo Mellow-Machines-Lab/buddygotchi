@@ -41,6 +41,7 @@ class RepoTests(unittest.TestCase):
         """moods.h needs the pack's moods and its startup mood; whether they play is boopdev check's."""
         c = {"id": "x", "version": "1", "default_mood": "calm", "faces": {}, "moods": [{"id": "calm"}]}
         self.assertNotIn("isn't one of its moods", " ".join(gen.pack_problems(Path("/nowhere"), c)))
+        self.assertIn("lasting names no mood, so the app doesn't load it", gen.pack_problems(Path("/nowhere"), c))
         c["startup_mood"] = "giddy"
         self.assertIn("its startup_mood, else its default_mood, isn't one of its moods", gen.pack_problems(Path("/nowhere"), c))
         c["moods"] = []
@@ -82,7 +83,7 @@ class StudioRuleTests(unittest.TestCase):
     def pack(self, name, moods, studio=None, files=(), **extra):
         moods = [{**m, "face": m.get("face", "A face.")} for m in moods]
         character = {"id": name, "name": name.title(), "version": "0.1.0", "default_mood": moods[0]["id"], "moods": moods,
-                     "faces": {"amoled206": "face"}, **extra}
+                     "faces": {"amoled206": "face"}, "lasting": [{"id": moods[0]["id"], "meaning": "Settled."}], **extra}
         if studio is not None:
             character["studio"] = studio
         write(self.dir / name / "character.json", character)
@@ -125,7 +126,7 @@ class StudioRuleTests(unittest.TestCase):
         board = {"id": "board-face", "label": "Face on the board", "about": "its firmware, in WebAssembly", "icon": "board.svg",
                  "board": "face", "scripts": [], "styles": []}
         self.assertEqual(data["move_groups"], list(gen.MOVE_GROUPS))
-        self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
+        self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "meaning": "Settled.", "family": "settled"}],
                                                   "faces": [{"id": "calm", "family": "settled", "face": "A face."}], "moves": [],
                                                   "skits": [], "takes": [], "words": {}, "motion": [], "studio": [board]},
                          "only what the page shows: the moods' meanings and families, the faces, moves, skits and motion "
@@ -290,7 +291,7 @@ class GapTests(unittest.TestCase):
 
     def test_a_bare_pack_has_every_gap(self):
         pack = self.pack("bare", [{"id": "calm"}, {"id": "sad"}, {"id": "glum", "settles": "sad"}],
-                         [{"id": "art"}])
+                         [{"id": "art"}], lasting=[{"id": "calm"}, {"id": "sad"}])
         self.assertEqual(gen.gaps(pack, gen.load(pack)), [
             "2 of 2 lasting moods have no steering file, so they act as calm: calm, sad",
             "no signs (steering/signs.md), so it never holds one up",
@@ -301,7 +302,8 @@ class GapTests(unittest.TestCase):
         takes = "# a comment\nv1\nhi\tHi\tskit\twin\tword\tcalm\t\t100\nyo\tYo\treply\tok\tword\tsad\t\t100\n"
         files = [("steering/mood/calm.md", "Calm."), ("steering/mood/sad.md", "Sad."), ("mac/takes.tsv", takes),
                  ("steering/signs.md", "<!-- - not one -->\n- hello\n"), ("steering/dreams.md", "- [night] zzz\n")]
-        pack = self.pack("whole", [{"id": "calm"}, {"id": "sad"}, {"id": "glum", "settles": "sad"}], files=files)
+        pack = self.pack("whole", [{"id": "calm"}, {"id": "sad"}, {"id": "glum", "settles": "sad"}], files=files,
+                         lasting=[{"id": "calm"}, {"id": "sad"}])
         self.assertEqual(gen.gaps(pack, gen.load(pack)), ["2 of 3 moods have no voice takes: sad, glum"])
 
 

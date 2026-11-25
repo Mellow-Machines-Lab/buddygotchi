@@ -11,15 +11,7 @@ correct it here.
 
 ## Words
 
-This guide uses the repo's words (CLAUDE.md, "Words") and four new ones. Add
-them to that table when they are built.
-
-| Word | Means | Not |
-| --- | --- | --- |
-| held picture | A card that is a live picture of the work: plan, changes or helpers. It replaces the card's text status | status card |
-| show | A result as a picture the agent drew, held up full screen. It replaces the card's text result | result card |
-| pips | The row of marks on the strip's line, one for each agent, in its lane colour | dots, pager |
-| pill | A small round note about an agent you are not watching: finished, or waiting for you | tag (that's a fact sent to the board), alert |
+This guide uses the repo's words (CLAUDE.md, Words).
 
 ## The map
 

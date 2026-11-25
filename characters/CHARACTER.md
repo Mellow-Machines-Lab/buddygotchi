@@ -128,8 +128,7 @@ from there:
 differs: a changed file is replaced whole, so a build reading while another
 stages finds every file there. Staging also links the pack's firmware tests
 (`tests/firmware/test_*`) beside the engine's, so `make -C internal fw-test`
-runs both; `make -C internal tools-test` runs the Python tests in a pack's
-`tests/tools/`.
+runs both.
 
 `charactergen.py --firmware-to=DIR PACK` lays out one pack's `firmware/`
 alone in `DIR/firmware/`, and changes nothing staged

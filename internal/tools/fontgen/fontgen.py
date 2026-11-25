@@ -2,7 +2,7 @@
 
 Renders Geist Mono (SIL Open Font License 1.1, copyright Vercel) with
 Pillow into 4-bit coverage cells: printable ASCII plus a middle dot. The
-outputs are checked in: firmware/assets/fonts.h, which both boards build,
+outputs are checked in: firmware/assets/fonts.h, which the board builds,
 and fonts_gel.h, the gel face's own, in Boop's character pack, which
 only builds that draw the gel include. Rerun this only to change the fonts:
 

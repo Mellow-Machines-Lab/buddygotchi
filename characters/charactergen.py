@@ -759,7 +759,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
 
 def known_packs() -> dict[str, str]:
     """The packs the engine is tested with, each in a repository of its own
-    (characters/packs.json), which internal/tools/packs.sh fetches."""
+    (characters/packs.json), which internal/tools/packs.py fetches."""
     listed = CHARACTERS / "packs.json"
     return json.loads(listed.read_text()) if listed.is_file() else {}
 
@@ -798,6 +798,8 @@ def pack_problems(pack: Path, character: dict, reads: Reads | None = None) -> li
     drawn = board_moods(character)
     if not all(drawn) or len(drawn) != len(set(drawn)):
         problems.append("moods and board_faces name a face twice, or one without an id")
+    if not character.get("lasting"):
+        problems.append("lasting names no mood, so the app doesn't load it")
     lasting_ids = [m.get("id") for m in character.get("lasting", [])]
     for m in character.get("board_faces", []):
         if m.get("settles") not in lasting_ids:
@@ -834,8 +836,7 @@ def gaps(pack: Path, character: dict) -> list[str]:
     take for (its own mac/takes.tsv, a reply's words left out), and no signs
     or dream signs."""
     ids, out = [m["id"] for m in character["moods"]], []
-    # A pack's `lasting`, else (a pack from before it) its faces that settle into no other (§5).
-    lasting = [m["id"] for m in character.get("lasting") or [m for m in character["moods"] if "settles" not in m]]
+    lasting = [m["id"] for m in character["lasting"]]
     unsteered = [m for m in lasting if not (pack / "steering" / "mood" / f"{m}.md").is_file()]
     if unsteered:
         out.append(f"{len(unsteered)} of {len(lasting)} lasting moods have no steering file, so they act as "

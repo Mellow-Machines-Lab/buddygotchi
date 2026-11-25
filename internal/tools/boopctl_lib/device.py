@@ -97,6 +97,8 @@ class Link:
     # check flickers mid-shot. So a shot is asked for up to this many more
     # times even when `retries` is 0.
     shot_retries = 2
+    # The last screenshot's CRC, for `shot(unless=…)`.
+    shot_crc: int | None = None
     on_retry: Callable[[Exception], None] | None = None
     # Hears every message read while waiting for another, such as the
     # board's `hello` and `ev` (a tap, a request `ended`), which come
@@ -198,25 +200,30 @@ class Link:
         ping = self.request({"t": "dbg.ping"})
         return {k: ping[k] for k in ("up", "heap", "heap_min", "fps", "draw_us", "push_us")}
 
-    def shot(self) -> tuple[list[int] | None, bytes, tuple[int, int]]:
+    def shot(self, unless: int | None = None) -> tuple[list[int] | None, bytes, tuple[int, int]] | None:
         """The canvas: 256 RGB565 palette entries, one index per pixel, and
-        the (width, height) from the header, so a PNG has the device's shape."""
+        the (width, height) from the header, so a PNG has the device's shape.
+        None when its CRC is `unless` (a `shot_crc` from before): the same
+        picture, its data read past and not decoded."""
         retries = self.retries
         self.retries = max(retries, self.shot_retries)
         try:
-            return self._retrying(self._shot)
+            return self._retrying(lambda: self._shot(unless))
         finally:
             self.retries = retries
 
-    def _shot(self) -> tuple[list[int] | None, bytes, tuple[int, int]]:
+    def _shot(self, unless: int | None = None) -> tuple[list[int] | None, bytes, tuple[int, int]] | None:
         self.send({"t": "dbg.shot"})
         head = self.wait_for(lambda m: m.get("t") == "dbg.shot", 5)
         line = self.read_line(time.monotonic() + 10)
         if line is None:
             raise DeviceError(f"screenshot data never arrived from {self.name}")
+        if unless is not None and head["crc"] == unless:
+            return None
         raw = base64.b64decode(line)
         if len(raw) != head["bytes"] or zlib.crc32(raw) != head["crc"]:
             raise DeviceError(f"screenshot from {self.name} is corrupt ({len(raw)} of {head['bytes']} bytes)")
+        self.shot_crc = head["crc"]
         size = (int(head["w"]), int(head["h"]))
         area = size[0] * size[1]
         if area != 512 and len(raw) == area * 2:

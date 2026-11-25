@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-11-24. A demo is a short, scripted stretch of work that a
+Updated 2026-11-25. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to
 Boop, and it reacts. Use demos to record videos, to show
 Boop off, and to check that everything works end to end.
@@ -20,8 +20,8 @@ Claude in the desktop app. The script is the same in each.
 4. Record it: `make -C internal demos`. It records every demo whose
    script has changed since its recording, or has none, into
    `characters/<pack>/demo/recordings/<name>.json` (below, The same every
-   time). Commit the recording with the script:
-   `make -C internal tools-test` and CI fail until you do.
+   time). Commit the recording with the script. No check fails on a
+   stale one: `simulator/tools/demos.py check` lists them.
 5. Watch it: `make demo NAME=<name>`.
 
 This is all of Boop's `dismiss.jsonl`:
@@ -181,10 +181,10 @@ Where a demo plays, and what plays the agent:
   again, `make -C internal demos ALL=1`. The recording's format is in
   [simulator/README.md](../simulator/README.md), Demos.
 - **A recording keeps the hash of its script.** When the script changes,
-  the recording is out of date: `make -C internal tools-test` and CI
-  fail, and `make demo` records it before it plays. `make -C internal
-  demos` records every one that's out of date, several at once, each as
-  long as it runs.
+  the recording is out of date: `simulator/tools/demos.py check` lists
+  it, no check fails, and `make demo` records it before it plays.
+  `make -C internal demos` records every one that's out of date, several
+  at once, each as long as it runs.
 - **A recording's clock** starts at the script's `start`, else at 14:00
   on Tuesday 20 October 2026: an afternoon with no weekend or holiday to
   dress it, whenever it's recorded.
