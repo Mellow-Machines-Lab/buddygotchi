@@ -260,10 +260,13 @@ extension SeatedBrainTests {
         let never = Sleepy(answering: Self.last, for: .seconds(5))
         let call = SeatedBrain(rules: rules(), jev: never).reading(now: Self.end, log: Log().view(now: 0))
         let read = ContinuousClock.now
-        try await Task.sleep(for: .milliseconds(300))
+        try await Task.sleep(for: .milliseconds(600))
         _ = try await call.answer(state: "", questions: questions, deadline: .milliseconds(1500))
         let took = ContinuousClock.now - read
-        XCTAssertLessThan(took, .milliseconds(1500), "within the deadline from the pass's start")
+        // Timed from the call it would take 2000 ms. The bound leaves a busy
+        // machine (CI's) room to wake late; the harness test below holds
+        // the deadline itself.
+        XCTAssertLessThan(took, .milliseconds(1800), "from the pass's start, not from the call")
         XCTAssertGreaterThanOrEqual(took, .milliseconds(1400), "Jev had the time the pass gave it")
     }
 
