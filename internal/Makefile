@@ -82,7 +82,7 @@ SWIFT_PACKAGES := agent-hooks mellowharness linkkit
 
 test:
 	$(MAKE) build
-	cd $(ROOT) && CHARACTER=boop .build/debug/BoopTests
+	cd $(ROOT) && CHARACTER=boop internal/app/tools/run-tests.sh
 	for pkg in $(SWIFT_PACKAGES); do \
 	  cd $(ROOT)/$$pkg && mkdir -p .build && for try in 1 2 3 4 5 6 7 8; do \
 	    swift test --no-parallel --scratch-path .build/tests > .build/test.log 2>&1; status=$$?; cat .build/test.log; \
