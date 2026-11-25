@@ -287,7 +287,7 @@ class GapTests(unittest.TestCase):
 
     def test_a_whole_pack_has_none(self):
         """A face only (`settles`) needs no steering file; a reply's words don't count as a mood's take."""
-        takes = "# a comment\nv1\nhi\tHi\tabout\tstart\tword\tcalm\t\t100\nyo\tYo\treply\tok\tword\tsad\t\t100\n"
+        takes = "# a comment\nv1\nhi\tHi\tskit\twin\tword\tcalm\t\t100\nyo\tYo\treply\tok\tword\tsad\t\t100\n"
         files = [("steering/mood/calm.md", "Calm."), ("steering/mood/sad.md", "Sad."), ("mac/takes.tsv", takes),
                  ("steering/signs.md", "<!-- - not one -->\n- hello\n"), ("steering/dreams.md", "- [night] zzz\n")]
         pack = self.pack("whole", [{"id": "calm"}, {"id": "sad"}, {"id": "glum", "settles": "sad"}], files=files)

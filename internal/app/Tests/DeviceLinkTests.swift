@@ -174,15 +174,15 @@ final class DeviceLinkTests: XCTestCase {
     /// push-to-talk's listening. The longest one fits in a line.
     func testDoLinesMatchTheProtocol() throws {
         try requireVoice()
-        XCTAssertEqual(Moment(say: .go, mood: "proud", loops: 1).line(id: 558386700, play: .next),
-                       #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"},"mood":"proud","loops":1}}"#)
+        XCTAssertEqual(Moment(say: .done, mood: "proud", loops: 1).line(id: 558386700, play: .next),
+                       #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d03"},"mood":"proud","loops":1}}"#)
         XCTAssertEqual(Moment(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
         XCTAssertEqual(Moment(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
-        let finish = Moment(anim: "task_complete", say: .go, mood: "proud",
+        let finish = Moment(anim: "task_complete", say: .done, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),
-                       #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"say":{"take":"new.d02"},"mood":"proud"}}"#)
+                       #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"say":{"take":"new.d03"},"mood":"proud"}}"#)
         // A finish names whose turn it was, the thread cut as names are and
         // escaped; the thread it opens isn't sent.
         let quoted = Moment(anim: "reply_ready",
@@ -215,7 +215,7 @@ final class DeviceLinkTests: XCTestCase {
                        "sent into nothing, then the ask and the state on connect, then the state for the hello")
         XCTAssertEqual(transport.sent.last, sampleSnapshot(busy: 2).jsonLine)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.id, "b00p-54fe")
-        XCTAssertNotNil(link.do("react", args: Moment(say: .go).args, now: 300) { _ in })
+        XCTAssertNotNil(link.do("react", args: Moment(say: .done).args, now: 300) { _ in })
 
         link.receive(#"{"t":"hello","app":"boop","id":"b00p-7f3a","fw":"0.3.1","does":["react"]}"#, now: 400)
         XCTAssertEqual(link.trouble, .tooOld)

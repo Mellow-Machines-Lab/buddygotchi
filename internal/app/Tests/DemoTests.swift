@@ -216,7 +216,7 @@ final class DemoTests: XCTestCase {
 
     func testARecordingStartsWithHowThingsStood() {
         let clock = SoakClock(1000)
-        let takes = [Take(row: "t.go\tGo\tabout\tstart\tword\texcited\t\t400"), Take(row: "t.now\tnow\tabout\tstart\tword\texcited\t\t300")]
+        let takes = [Take(row: "t.go\tGo\tskit\twin\tword\texcited\t\t400"), Take(row: "t.now\tnow\tskit\twin\tword\texcited\t\t300")]
         let recorder = DemoRecorder(clock: { clock.now }, takes: takes)
         recorder.sent(#"{"t":"hello"}"#)
         recorder.sent(#"{"t":"state","base":"asleep","mood":"calm"}"#)
@@ -242,7 +242,7 @@ final class DemoTests: XCTestCase {
 
     /// Pins the words for what the creature does at each kind of step.
     func testWhatTheCreatureDoesIsRecordedInWords() {
-        let recorder = DemoRecorder(takes: [Take(row: "t.go\tGo\tabout\tstart\tword\texcited\t\t400")])
+        let recorder = DemoRecorder(takes: [Take(row: "t.go\tGo\tskit\twin\tword\texcited\t\t400")])
         recorder.begin(name: "Pip")
         for message in [
             #"{"t":"state","base":"working","mood":"calm","busy":1}"#,

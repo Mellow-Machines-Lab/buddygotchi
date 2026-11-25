@@ -20,6 +20,7 @@ import MellowHarness
 /// it, which may play back your words, and a status reply's the agents'
 /// facts, never guessed. At an idle check-in the one thing it may hold up
 /// is dealt by code (`IdleBeat`), and the sign's question is only whether.
+/// A skit's Moment plays the skit's clip as its face starts, if it has one.
 /// After a skit it may invite one touch, on the last Moment it queues, as
 /// the invite ledger allows (`invite(for:)`, `InviteLedger`). A skit
 /// may carry a remark too, as text: how now differs from your usual
@@ -866,6 +867,9 @@ public final class MomentOutput: Output {
             reaction.low = true
             reaction.clip = Self.rememberClip
         }
+        // A skit's own clip, as its face starts, when the Moment has none:
+        // any invite comes after it.
+        if reaction.clip == nil { reaction.clip = skit?.skit.clip }
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
             // Its scene and a finish's outcome, whose variation the device

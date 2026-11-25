@@ -642,8 +642,9 @@ extension InviteTests {
     var careRoom = true
     var facts: InviteTests.Facts = [:]
     var card: Card?
+    var pack: CharacterPack = .active
     lazy var react: MomentOutput = {
-        let react = MomentOutput(queue: { [unowned self] m, _ in sent.append(m) }, blocked: { [unowned self] in blocked },
+        let react = MomentOutput(queue: { [unowned self] m, _ in sent.append(m) }, blocked: { [unowned self] in blocked }, pack: pack,
                                  signs: RuntimeTests.steering.signs, line: { [unowned self] _ in Line("", facts: facts) })
         react.offered = { [unowned self] _ in card }
         return react

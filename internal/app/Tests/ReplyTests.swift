@@ -218,11 +218,11 @@ final class ReplyTests: XCTestCase {
 
     /// With every word of a meaning said lately, the one said longest ago.
     func testAllSaidLatelyTheOldestComesBack() throws {
-        let pool = Take.all.filter { $0.part == .about && $0.meaning == "quiet" && $0.moods.contains("calm") && $0.kind == .word }
+        let pool = Take.all.filter { $0.part == .reply && $0.meaning == "yes" && $0.moods.contains("calm") && $0.kind == .word }
         guard pool.count > 1 else { return }
         let texts = Array(Set(pool.map(\.text))).sorted()
         var rng = SplitMix64(seed: 1)
-        XCTAssertEqual(Voice.take(.about, meaning: "quiet", kind: .word, face: "calm", finish: nil, avoiding: texts, rng: &rng)?.text, texts.last)
+        XCTAssertEqual(Voice.take(.reply, meaning: "yes", kind: .word, face: "calm", finish: nil, avoiding: texts, rng: &rng)?.text, texts.last)
     }
 
     /// A word that claims a fix only after a failed check: "Fixed" on a turn
@@ -230,7 +230,7 @@ final class ReplyTests: XCTestCase {
     func testAWordThatClaimsAFixNeedsOne() throws {
         var rng = SplitMix64(seed: 3)
         for _ in 0..<60 {
-            XCTAssertNotEqual(Voice.take(.about, meaning: "done", kind: .word, face: "happy", finish: "success", never: ["Fixed"], rng: &rng)?.text, "Fixed")
+            XCTAssertNotEqual(Voice.take(.skit, meaning: "fix", kind: .word, face: "happy", finish: "success", never: ["Fixed"], rng: &rng)?.text, "Fixed")
         }
         guard CharacterPack.active.id == "boop" else { return }
         XCTAssertEqual(CharacterPack.active.claimsAFix, ["Fixed"])
