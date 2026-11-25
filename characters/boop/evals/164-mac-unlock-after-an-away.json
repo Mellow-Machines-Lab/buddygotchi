@@ -1,0 +1,39 @@
+{
+  "name": "Back from a long lock: one reaction, the welcome back",
+  "case": "The person locks the Mac, is gone three hours and unlocks it. Boop plays one reaction, the welcome back: the lock's wave when they left, and at the end only the back's, never another for the unlock itself. It wakes up for them.",
+  "why": "An unlock ending an away makes no line of its own, so no wave: the back's hello is the one reaction, and it's Jev's. The lock's bye is the rule's (MomentRule.bye).",
+  "scripted": true,
+  "checks": {
+    "reactions": "2"
+  },
+  "steps": [
+    {
+      "event": "session started",
+      "at": "0s"
+    },
+    {
+      "event": "lock",
+      "at": "1m",
+      "expect": {
+        "move": "bye",
+        "intensity": "medium"
+      }
+    },
+    {
+      "event": "away",
+      "at": "11m"
+    },
+    {
+      "event": "unlock",
+      "at": "3h1m"
+    },
+    {
+      "event": "back",
+      "at": "3h1m",
+      "expect": {
+        "react": "happy",
+        "move": "wake up"
+      }
+    }
+  ]
+}

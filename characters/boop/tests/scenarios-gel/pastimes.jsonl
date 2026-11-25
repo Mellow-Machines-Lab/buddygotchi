@@ -1,0 +1,73 @@
+// The gel's pastimes (render/gel/pastimes.h), each on a frozen clock after
+// a reset, 15 minutes into the tiers (tier3). At work: the desk and nothing
+// else, 20 s in and 48 s on; then a stretch, the only pastime at work, the
+// body's own with nothing beside it; idle: nothing beside it, however
+// long, a look around and a snooze's Zs; asleep, a snore's bubble; while
+// something needs you, no pastime at all. A state every 20 s keeps the
+// link alive.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day","tier3"]}
+{"clock":20000}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day","tier3"]}
+{"shot":"work-bare"}
+{"clock":40000}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day","tier3"]}
+{"clock":48000}
+{"shot":"work-later"}
+{"clock":54000}
+{"t":"dbg.pastime","name":"stretch"}
+{"clock":55200}
+{"shot":"work-stretch","pin":true}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["day","tier3"]}
+{"clock":3000}
+{"shot":"idle-bare"}
+{"clock":20000}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["day","tier3"]}
+{"t":"dbg.pastime","name":"look-around"}
+{"clock":23000}
+{"shot":"idle-look-around"}
+{"clock":30000}
+{"t":"dbg.pastime","name":"hopeful"}
+{"clock":31500}
+{"shot":"idle-hopeful"}
+{"clock":40000}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["day","tier3"]}
+{"t":"dbg.pastime","name":"hop"}
+{"clock":40700}
+{"shot":"idle-hop"}
+{"clock":50000}
+{"t":"dbg.pastime","name":"snooze"}
+{"clock":53000}
+{"shot":"idle-snooze"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"when":["day"]}
+{"clock":20000}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"when":["day"]}
+{"t":"dbg.pastime","name":"snore-bubble"}
+{"clock":23000}
+{"shot":"asleep-snore-bubble"}
+{"clock":30000}
+{"t":"dbg.pastime","name":"roll-over"}
+{"clock":32000}
+{"shot":"asleep-roll-over"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day"],"attn":{"agent":"claude","project":"api","id":3}}
+{"clock":20000}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day"],"attn":{"agent":"claude","project":"api","id":3}}
+{"clock":31500}
+{"shot":"needs-you-waiting"}
+{"clock":40000}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day"],"attn":{"agent":"claude","project":"api","id":3}}
+{"clock":60000}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day"],"attn":{"agent":"claude","project":"api","id":3}}
+{"clock":80000}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day"],"attn":{"agent":"claude","project":"api","id":3}}
+{"clock":100000}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day"],"attn":{"agent":"claude","project":"api","id":3}}
+{"clock":125000}
+{"shot":"needs-you-two-minutes"}

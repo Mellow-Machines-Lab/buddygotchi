@@ -1,0 +1,33 @@
+// Several agents (render/screens.h's Strip pips; the engine's
+// documentation/design/screen-guide.md, the map's 5, 7 and 9), each on a
+// frozen clock after a reset. The pips on the strip's line: the one the
+// screen follows long, working ones dots in their lane's colour, an idle
+// one hollow, one that wants you pulsing amber. The strip says what the
+// one followed is doing, and its name on a chip at the right. News from
+// another is a pill in its colour; one followed that rests says so. Every
+// agent has its colour, a resting one too. A swipe slides the strip's row
+// and the card in from the side it went to; when the set of agents
+// changes, two faint arrows at the strip's ends.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":2,"idle":1,"when":["day"],"calls":[[0,4,"searching TODO"],[1,2,"editing Api.ts +31"]],"pips":"w0w1i2","watch":0,"who":"web"}
+{"clock":200}
+{"shot":"arrows-as-agents-come"}
+{"clock":1500}
+{"shot":"three-agents","pin":true}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":2,"idle":1,"when":["day"],"calls":[[0,4,"searching TODO"],[1,2,"editing Api.ts +31"]],"pips":"w0w1i2","watch":1,"who":"api"}
+{"clock":1610}
+{"shot":"sliding-in-from-the-right"}
+{"clock":2500}
+{"shot":"swiped-to-api"}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":1,"idle":2,"when":["day"],"calls":[[0,5,"running the tests"]],"pips":"w0a1i2","watch":0,"who":"web","pill":[1,"api finished"]}
+{"clock":3500}
+{"shot":"a-pill"}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":1,"idle":2,"when":["day"],"calls":[[0,5,"running the tests"]],"pips":"w0a1i2","watch":0,"who":"web"}
+{"clock":4500}
+{"shot":"pulsing"}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":1,"idle":2,"when":["day"],"calls":[[0,5,"running the tests"]],"pips":"w0i1i2","watch":2,"who":"docs"}
+{"clock":5000}
+{"clock":5500}
+{"shot":"followed-rests"}
+{"t":"dbg.reset"}

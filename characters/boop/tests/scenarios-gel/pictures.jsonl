@@ -1,0 +1,18 @@
+// Held pictures (render/face.h's CardShow pic; the engine's
+// documentation/design/screen-guide.md, "Held pictures"), each on a frozen
+// clock after a reset: the agent's window, nearly the panel's width, with a
+// live picture of the work in place of words; Boop stands up behind it.
+// The plan with its guess; the changes, a row a file; the helpers, two
+// running and one done.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"tool_use","mood":"calm","vol":0,"busy":1,"when":["day"],"calls":[[0,3,"editing Nav.css +12"]],"pic":["p",0,"claude",2,5,"fix the overflow",4]}
+{"clock":1500}
+{"shot":"plan","pin":true}
+{"t":"state","base":"working","act":"tool_use","mood":"calm","vol":0,"busy":1,"when":["day"],"calls":[[0,6,"editing nav.test.ts +35"]],"pic":["c",0,"claude","nav.test.ts",35,0,"Nav.css",48,15,"Nav.tsx",22,4]}
+{"clock":3000}
+{"shot":"changes"}
+{"t":"state","base":"working","act":"terminal","mood":"calm","vol":0,"busy":1,"helpers":2,"when":["day"],"calls":[[1,2,"sending a helper"]],"pic":["h",1,"codex",2,1]}
+{"clock":4500}
+{"shot":"helpers"}
+{"t":"dbg.reset"}

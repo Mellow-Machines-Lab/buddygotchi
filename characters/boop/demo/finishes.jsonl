@@ -1,0 +1,25 @@
+// Thirty seconds: the finish ladder. Three turns, each held longer and
+// running longer than the last. A quick fix gets Little Win, a hop and a
+// little trophy; a bigger one held twice, confetti from the corners; and one
+// past fifteen minutes (the third tier) that finally worked after the tests
+// failed twice, held three times, the gold rush.
+{"demo": 1, "title": "The finish ladder"}
+{"agent": "prompt", "text": "Fix the typo in the README"}
+{"agent": "edit", "file": "README.md", "old": "Instal the app", "new": "Install the app", "takes": 1}
+{"agent": "reply", "text": "Fixed the typo.", "after": 1}
+{"brain": {"react.face": "pleased"}, "note": "Once: Little Win"}
+{"agent": "prompt", "text": "Add a dark mode toggle to the settings page"}
+{"agent": "edit", "file": "src/settings/Theme.tsx", "old": "theme: 'light'", "new": "theme: prefersDark ? 'dark' : 'light'", "takes": 2}
+{"you": "wait", "minutes": 3, "after": 1}
+{"agent": "reply", "text": "Settings has a dark mode toggle now, and it follows the system by default.", "after": 1}
+{"brain": {"react.face": "happy"}, "note": "Twice: confetti"}
+{"agent": "prompt", "text": "Find out why the checkout test is flaky"}
+{"agent": "run", "cmd": "npm test", "about": "Run the checkout tests", "fails": true, "takes": 2}
+{"brain": {"react.face": "annoyed"}, "mood": "cross"}
+{"agent": "run", "cmd": "npm test", "about": "Run the checkout tests again", "fails": true, "takes": 2}
+{"brain": {"react.face": "determined"}, "mood": "focused"}
+{"agent": "edit", "file": "test/checkout.test.js", "old": "await sleep(100)", "new": "await paymentMock.ready()", "takes": 2}
+{"agent": "run", "cmd": "npm test", "about": "Run the checkout tests", "takes": 2}
+{"you": "wait", "minutes": 16, "after": 1, "note": "Sixteen minutes in: the third tier"}
+{"agent": "reply", "text": "The checkout test waits for the payment mock now, and it passes every time.", "after": 1}
+{"brain": {"react.face": "proud"}, "mood": "proud", "note": "Hard-won, held three times: the gold rush"}

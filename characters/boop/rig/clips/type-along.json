@@ -1,0 +1,11 @@
+{
+  "about": "Typing along with you (GelFace::showAlong), looped while your hands are busy: a small sway over its keys, to one side and then the other, dipping a little onto each beat, eyes lowered. The paws carry the typing; the body only keeps time. A beat every 600 ms.",
+  "group": "with_you",
+  "ms": 1200,
+  "loop": true,
+  "tracks": {
+    "lean": [[0, -60], [600, 60], [1200, -60]],
+    "squash": [[0, 40], [220, -10], [600, 40], [820, -10], [1200, 40]],
+    "eyeOpen": [[0, -200], [1200, -200]]
+  }
+}

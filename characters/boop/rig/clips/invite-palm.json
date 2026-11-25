@@ -1,0 +1,12 @@
+{"about": "The win's invite: a hop, and up at the glass it holds one palm flat on it, beside its right eye, about 85 px across, its patch pale, and waits for your tap.", "group": "touch_answers", "ms": 900, "tracks": {
+    "squash": [[0, 0], [120, 170, "out"], [270, -160, "out"], [430, 130, "in"], [580, -40], [760, 0]],
+    "lift": [[0, 0], [140, 0], [300, 20, "out"], [440, 0, "in"], [900, 0]],
+    "glass": [[0, 0], [380, 0], [820, 1000, "out"]],
+    "lean": [[0, 0], [450, 0], [820, 110, "out"]],
+    "eyeSize": [[0, 0], [260, 160, "out"], [820, 120]],
+    "gazeY": [[0, 0], [700, -260]],
+    "handRSize": [[0, 0], [330, 0], [620, 870, "out"]],
+    "handRX": [[0, 92], [330, 92], [640, 84, "out"]],
+    "handRY": [[0, 6], [330, 6], [640, 30, "out"]],
+    "handRShape": [[0, 0], [420, 0], [680, 1000]],
+    "handRGlass": [[0, 0], [620, 0], [800, 1000, "out"]]}}

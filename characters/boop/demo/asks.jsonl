@@ -1,0 +1,20 @@
+// Boop's asks demo (DemoScript, characters/CHARACTER.md §13): in a quiet hour it asks your favourite snack, its two
+// answers in the lane, you tap one and it keeps the answer, and a day later, idle, it muses about a snack.
+{"demo": 1, "title": "Fav snack?"}
+{"agent": "prompt", "text": "Fix the login bug", "after": 2}
+{"brain": {"react.face": "curious"}}
+{"agent": "run", "cmd": "npm test", "about": "Run the tests", "after": 3}
+{"agent": "reply", "text": "Fixed the login bug; the tests pass.", "after": 4}
+{"brain": {"react.face": "happy"}}
+{"you": "wait", "minutes": 70, "after": 4, "note": "A quiet hour later"}
+{"brain": {"react.face": "curious", "react.sign": "fav snack?"}}
+{"you": "answer", "pick": "a", "after": 4}
+{"brain": {"react.face": "happy", "react.sign": "nom nom"}}
+{"you": "back", "minutes": 900, "after": 4, "note": "The next morning"}
+{"brain": {"react.face": "happy"}}
+{"agent": "prompt", "text": "Add a dark mode", "after": 4}
+{"brain": {"react.face": "curious"}}
+{"agent": "reply", "text": "Dark mode is in.", "after": 3}
+{"brain": {"react.face": "happy"}}
+{"you": "wait", "minutes": 31, "after": 4, "note": "A quiet half hour"}
+{"brain": {"react.face": "happy", "react.sign": "snack time?"}}

@@ -1,0 +1,52 @@
+// The card an agent handed Boop (render/gel/card.h), each on a frozen clock
+// after a reset. At work: a status with its step and its guess, Boop stood
+// up on it, the desk put away, the words still falling behind; the same
+// card with its guess run out; a status with no small line; one of three
+// cards, its dots under it. A result after the turn, with what it made. A
+// card gives way: to needs you, to a Moment's sign, to a finished turn's
+// low sign; and comes back. A swipe across it asks for the next, a tap
+// opens it, and under a work act, which hides it, a tap is Boop's.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"engaged","busy":1,"vol":0,"when":["day"],"calls":[[0,1,"grep"]],"card":{"a":0,"g":"claude","k":"s","t":"fixing the overflow","d":"2 of 5 · 4 min left","at":[1,1]}}
+{"clock":100}
+{"shot":"status-coming"}
+{"clock":1500}
+{"shot":"status","pin":true}
+{"t":"state","base":"working","act":"terminal","mood":"engaged","busy":1,"vol":0,"when":["day"],"calls":[[0,2,"npm test"]],"card":{"a":0,"g":"claude","k":"s","t":"running the tests","d":"4 of 5 · 2 min over","o":1,"at":[1,1]}}
+{"clock":3000}
+{"shot":"status-over"}
+{"t":"state","base":"working","act":"terminal","mood":"engaged","busy":1,"vol":0,"when":["day"],"calls":[[0,2,"npm test"]],"card":{"a":0,"g":"claude","k":"s","t":"reading the code","at":[1,1]}}
+{"clock":4500}
+{"shot":"status-one-line"}
+{"t":"state","base":"working","act":"terminal","mood":"engaged","busy":3,"vol":0,"when":["day","tier3"],"calls":[[0,2,"npm test"],[1,1,"rg"]],"card":{"a":1,"g":"claude","k":"s","t":"reworking the tour","d":"1 of 3","at":[2,3]}}
+{"clock":6000}
+{"shot":"one-of-three"}
+{"t":"dbg.touch","x":250,"y":178,"to_x":90,"to_y":180,"ms":200}
+{"clock":6300}
+{"expect":{"last_input":{"k":"card"}}}
+{"shot":"swiped"}
+{"t":"dbg.touch","x":160,"y":180,"ms":80}
+{"clock":6600}
+{"expect":{"last_input":{"k":"card"}}}
+// A work act running is the work's, on the monitor and in the strip, no card: the card stays in its hands, and a tap is still the card's.
+{"t":"state","base":"working","act":"terminal","mood":"engaged","busy":1,"vol":0,"when":["day"],"wact":["build","building",1],"card":{"a":0,"g":"claude","k":"s","t":"fixing the overflow","at":[1,1]}}
+{"clock":8000}
+{"t":"dbg.touch","x":160,"y":180,"ms":80}
+{"clock":8300}
+{"expect":{"last_input":{"k":"card"}}}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0,"idle":1,"when":["day"],"card":{"a":0,"g":"claude","k":"r","t":"nav overflow fixed","d":"said 5 min, took 12","at":[1,1]}}
+{"clock":1500}
+{"shot":"result"}
+{"t":"do","name":"react","play":"now","args":{"mood":"happy","sign":"nice one"}}
+{"clock":2100}
+{"shot":"under-a-sign"}
+{"clock":9000}
+{"t":"state","base":"idle","mood":"happy","vol":0,"idle":1,"when":["day"],"card":{"a":0,"g":"claude","k":"r","t":"nav overflow fixed","d":"said 5 min, took 12","at":[1,1]}}
+{"clock":9500}
+{"shot":"back-after-the-sign"}
+{"t":"state","base":"working","mood":"worried","busy":1,"vol":0,"when":["day"],"attn":{"id":7,"agent":"codex","project":"api","name":"Fix the login test","kind":"approve"},"card":{"a":0,"g":"claude","k":"s","t":"fixing the overflow","at":[1,1]}}
+{"clock":11000}
+{"shot":"under-needs-you"}

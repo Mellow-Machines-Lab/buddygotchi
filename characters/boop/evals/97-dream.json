@@ -1,0 +1,23 @@
+{
+  "name": "The dream: everything since the last, told the first time you show up after it",
+  "judge": "A mixed day, then night. Boop tells one dream when the person comes back in the morning: not at an agent's dawn turn, not again at the next poke.",
+  "reasonable": "Wakes up for them, holding up a dream sign about the person's touch, the failures, the long day, or a dreamy hello. The mood is free. The later poke gets its usual answer.",
+  "unreasonable": "Telling the dream at the agent's early turn or while they're away, telling it again at the poke, or coming back with no dream told.",
+  "start": "2026-10-20T15:00",
+  "steps": [
+    {"event": "session started", "at": "0s", "workspace": "api"},
+    {"event": "turn started", "at": "10s", "workspace": "api"},
+    {"event": "turn finished", "at": "2m", "workspace": "api"},
+    {"event": "gesture", "at": "5m", "kind": "stroke"},
+    {"event": "turn started", "at": "10m", "workspace": "api"},
+    {"event": "command", "at": "12m", "workspace": "api", "topic": "tests", "failed": true},
+    {"event": "turn failed", "at": "40m", "workspace": "api"},
+    {"event": "gesture", "at": "45m", "kind": "stroke"},
+    {"event": "poke", "at": "50m"},
+    {"event": "away", "at": "3h"},
+    {"event": "turn started", "at": "16h", "workspace": "api", "prompt": "carry on", "expect": {"dream": "none"}},
+    {"event": "turn finished", "at": "16h5m", "workspace": "api", "expect": {"dream": "none"}},
+    {"event": "back", "at": "18h", "expect": {"dream": "told"}, "brain": {"react.sign": "dreamt of u"}},
+    {"event": "poke", "at": "18h1m", "expect": {"dream": "none"}}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Stroking a fed-up Boop calms it; shaking it makes it dizzy; a swipe is a stroke too",
+  "judge": "Fed up from pokes, Boop gets a stroke, later a shake, later a swipe. Strokes should soothe it; the shake should startle it.",
+  "reasonable": "Softer at the stroke, grudging or calm. Startled or put out at the shake. Softer again at the swipe, even pleased by then. Mood easing overall.",
+  "unreasonable": "Angrier at the stroke, instantly delighted while still cross, enjoying the shake, or still at full fury after the swipe.",
+  "steps": [
+    {"event": "pokes", "at": "0s", "count": 4, "brain": {"mood": "cross"}},
+    {"event": "gesture", "at": "8s", "kind": "stroke", "brain": {"react.face": "annoyed", "mood": "cross"}},
+    {"event": "gesture", "at": "3m", "kind": "shake", "brain": {"react.face": "surprised"}},
+    {"event": "gesture", "at": "6m", "kind": "swipe", "brain": {"react.face": "annoyed", "mood": "cross"}}
+  ]
+}

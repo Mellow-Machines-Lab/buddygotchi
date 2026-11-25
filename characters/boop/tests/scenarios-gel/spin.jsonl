@@ -1,0 +1,23 @@
+// The spin: the high five's payoff. Your tap claps its palm, and it hops
+// and spins all the way round, only its face going round the dome: out at
+// its right rim, its back, in again at its left, and it settles facing you.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"sign": "nice!", "mood": "happy", "loops": 1, "invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "ms": 4000, "xp": 3, "label": "tap"}}}
+{"clock": 4800}
+{"expect": {"invite": {"stage": "pose", "pose": "palm"}}}
+{"input": {"touch": [236, 110]}}
+{"clock": 4860}
+{"clock": 4920}
+{"clock": 4980}
+{"expect": {"invite": {"stage": "payoff"}}}
+{"clock": 5220}
+{"shot": "going-round"}
+{"clock": 5400}
+{"shot": "its-back"}
+{"clock": 5640}
+{"shot": "coming-round", "pin": true}
+{"clock": 6400}
+{"shot": "round"}

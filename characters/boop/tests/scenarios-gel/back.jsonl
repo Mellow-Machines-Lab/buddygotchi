@@ -1,0 +1,27 @@
+// The back, and the look over the shoulder (the rig's turn): the upset
+// skit's invite. It flinches, stomps and turns its back, only its face
+// going round the dome; waiting, it looks over its shoulder, one eye at
+// the rim in side-eye, to check whether you saw, and turns its back again.
+// No stroke comes, so it huffs and comes on round by itself.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "annoyed", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "upset", "pose": "back", "touch": "stroke", "payoff": "sigh", "ms": 6000, "xp": 3, "label": "pet"}}}
+{"clock": 1500}
+{"shot": "stomp"}
+{"expect": {"invite": {"stage": "pose", "pose": "back"}}}
+{"clock": 1800}
+{"shot": "turning"}
+{"clock": 3000}
+{"shot": "its-back", "pin": true}
+{"clock": 4000}
+{"shot": "over-the-shoulder", "pin": true}
+{"clock": 5200}
+{"shot": "its-back-again"}
+{"clock": 7000}
+{"expect": {"invite": {"stage": "shrug"}}}
+{"clock": 7700}
+{"shot": "coming-round"}
+{"clock": 8600}
+{"shot": "round-again"}

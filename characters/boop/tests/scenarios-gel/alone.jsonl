@@ -1,0 +1,25 @@
+// Alone: the Mac goes quiet, and Boop rests
+// with a small plug; a poke gets the board's own reaction in the last mood;
+// it falls asleep on the board's clock with the plug gone; a touch wakes it;
+// the Mac's return is a small hello. A frozen clock, after a reset.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t":"state","base":"working","mood":"grumpy","busy":1,"vol":0}
+{"clock": 30600}
+{"expect":{"screen":"no_app","bl":255}}
+{"shot":"resting-plug","pin":true}
+{"t":"dbg.touch","x":160,"y":120,"ms":40}
+{"clock": 31000}
+{"shot":"poked"}
+{"clock": 331000}
+{"clock": 331600}
+{"expect":{"screen":"face","bl":60}}
+{"shot":"asleep-no-plug"}
+{"t":"dbg.touch","x":160,"y":120,"ms":40}
+{"clock": 332000}
+{"expect":{"screen":"no_app","bl":255}}
+{"shot":"woken-plug"}
+{"t":"state","base":"idle","mood":"grumpy","vol":0}
+{"clock": 332400}
+{"expect":{"screen":"face"}}
+{"shot":"hello"}

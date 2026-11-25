@@ -1,0 +1,17 @@
+{
+  "why": "The voice bank was recorded in 13 moods. Three of them are no longer faces: `plays` says which face each one's takes play in. `borrows` is TEMPORARY, until the voice has takes of its own for every face: each face there plays the takes of the one it names. voicegen lends the takes with it. Delete a line once its face has its own takes.",
+  "plays": {
+    "engaged": "focused",
+    "irritated": "grumpy",
+    "whiny": "sad"
+  },
+  "borrows": {
+    "pleased": "happy",
+    "mischievous": "proud",
+    "angry": "grumpy",
+    "surprised": "curious",
+    "amused": "happy",
+    "affectionate": "happy",
+    "lonely": "sad"
+  }
+}

@@ -1,0 +1,13 @@
+{"about": "The high five: your tap claps its palm, a ring and a shake; it squashes, hops and spins all the way round, pleased, the palm sinking back into it, and leaves the glass.", "group": "touch_answers", "ms": 2400, "tracks": {
+    "squash": [[0, 0], [110, 240, "out"], [300, -200, "out"], [520, 170, "in"], [700, -60], [900, 0]],
+    "lift": [[0, 0], [250, 0], [460, 26, "out"], [680, 0, "in"], [2400, 0]],
+    "lean": [[0, 110], [700, 110], [1000, -200], [1300, 170], [1600, -100], [1900, 40], [2200, 0]],
+    "glass": [[0, 1000], [1800, 1000], [2400, 0]],
+    "eyeSize": [[0, 120], [2400, 0]],
+    "gazeY": [[0, -260], [1800, -260], [2400, 0]],
+    "handRSize": [[0, 870], [100, 1040, "out"], [300, 870], [700, 650], [1000, 0, "in"]],
+    "handRX": [[0, 84], [600, 84], [1000, 92]],
+    "handRY": [[0, 30], [300, 34], [1000, 6]],
+    "handRShape": [[0, 1000], [600, 1000], [900, 0]],
+    "handRGlass": [[0, 1000], [350, 1000], [620, 0]],
+    "turn": [[0, 0], [250, 0], [1050, 1000, "out"], [2400, 1000]]}, "cues": [[0, "body_contact"]]}

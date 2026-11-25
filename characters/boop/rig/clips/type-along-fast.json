@@ -1,0 +1,12 @@
+{
+  "about": "Typing along with you fast, over type-along: hunched in a little more toward the keys, its eyes open and wider; the paws tap quicker (render/gel/painter.h, kFastMs). No hop.",
+  "group": "with_you",
+  "ms": 1200,
+  "loop": true,
+  "tracks": {
+    "squash": [[0, 50], [1200, 50]],
+    "eyeOpen": [[0, 260], [1200, 260]],
+    "eyeSize": [[0, 140], [1200, 140]],
+    "gazeY": [[0, 150], [1200, 150]]
+  }
+}

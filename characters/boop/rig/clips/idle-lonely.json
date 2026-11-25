@@ -1,0 +1,11 @@
+{
+  "about": "Lonely's idle move: it looks around for someone, one way and the other, a little up and hopeful, finds nobody, and sinks a little.",
+  "group": "pastimes",
+  "ms": 3400,
+  "tracks": {
+    "gazeX": [[0, 0], [600, -900], [1200, -900], [1700, 900], [2200, 900], [2700, 0], [3400, 0]],
+    "gazeY": [[0, 0], [600, -200], [2200, -200], [2700, 250], [3100, 250], [3400, 0]],
+    "lean": [[0, 0], [600, -40], [1200, -40], [1700, 40], [2200, 40], [2700, 0], [3400, 0]],
+    "squash": [[0, 0], [600, -40], [2200, -40], [2700, 90], [3100, 90], [3400, 0]]
+  }
+}

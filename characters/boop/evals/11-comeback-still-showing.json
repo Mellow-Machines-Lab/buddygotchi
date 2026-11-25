@@ -1,0 +1,13 @@
+{
+  "name": "A comeback still showing isn't made again when the turn finishes",
+  "judge": "Boop is still showing pride at a fix when the turn finishes moments later. It shouldn't redo the whole performance.",
+  "reasonable": "Proud, happy or pleased at the fix. At the finish, quiet, a plain success, or a small glad word or face. A smaller echo of the pride is fine.",
+  "unreasonable": "Replaying the same full relief as if the fix had just happened, or turning sad or cross at a good finish.",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "30s", "topic": "tests", "failed": true},
+    {"event": "command", "at": "1m30s", "topic": "tests", "failed": true},
+    {"event": "command", "at": "2m30s", "topic": "tests", "failed": false, "reaction": "in progress", "brain": {"react.face": "proud"}},
+    {"event": "turn finished", "at": "2m50s", "brain": {"react.face": "none"}}
+  ]
+}

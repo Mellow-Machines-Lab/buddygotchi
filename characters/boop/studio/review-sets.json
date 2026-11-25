@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {"id": "happy.working", "set": "activities", "from": {"mood": "happy", "state": "working"}},
+    {"id": "happy.terminal", "set": "activities", "from": {"mood": "happy", "state": "terminal"}},
+    {"id": "happy.needs_you", "set": "activities", "from": {"mood": "happy", "state": "needs_you"}},
+    {"id": "happy.task_complete.success", "set": "activities", "from": {"mood": "happy", "state": "task_complete", "outcome": "success"}},
+    {"id": "happy.task_complete.failure", "set": "activities", "from": {"mood": "happy", "state": "task_complete", "outcome": "failure"}},
+    {"id": "happy.asleep", "set": "activities", "from": {"mood": "happy", "state": "asleep"}},
+    {"id": "grumpy.working", "set": "activities", "from": {"mood": "grumpy", "state": "working"}},
+    {"id": "grumpy.terminal", "set": "activities", "from": {"mood": "grumpy", "state": "terminal"}},
+    {"id": "grumpy.needs_you", "set": "activities", "from": {"mood": "grumpy", "state": "needs_you"}},
+    {"id": "grumpy.task_complete.success", "set": "activities", "from": {"mood": "grumpy", "state": "task_complete", "outcome": "success"}},
+    {"id": "grumpy.task_complete.failure", "set": "activities", "from": {"mood": "grumpy", "state": "task_complete", "outcome": "failure"}},
+    {"id": "grumpy.asleep", "set": "activities", "from": {"mood": "grumpy", "state": "asleep"}},
+    {"id": "sad.working", "set": "activities", "from": {"mood": "sad", "state": "working"}},
+    {"id": "sad.terminal", "set": "activities", "from": {"mood": "sad", "state": "terminal"}},
+    {"id": "sad.needs_you", "set": "activities", "from": {"mood": "sad", "state": "needs_you"}},
+    {"id": "sad.task_complete.success", "set": "activities", "from": {"mood": "sad", "state": "task_complete", "outcome": "success"}},
+    {"id": "sad.task_complete.failure", "set": "activities", "from": {"mood": "sad", "state": "task_complete", "outcome": "failure"}},
+    {"id": "sad.asleep", "set": "activities", "from": {"mood": "sad", "state": "asleep"}},
+    {"id": "wounded.working", "set": "activities", "from": {"mood": "wounded", "state": "working"}},
+    {"id": "wounded.terminal", "set": "activities", "from": {"mood": "wounded", "state": "terminal"}},
+    {"id": "wounded.needs_you", "set": "activities", "from": {"mood": "wounded", "state": "needs_you"}},
+    {"id": "wounded.task_complete.success", "set": "activities", "from": {"mood": "wounded", "state": "task_complete", "outcome": "success"}},
+    {"id": "wounded.task_complete.failure", "set": "activities", "from": {"mood": "wounded", "state": "task_complete", "outcome": "failure"}},
+    {"id": "wounded.asleep", "set": "activities", "from": {"mood": "wounded", "state": "asleep"}}
+  ]
+}

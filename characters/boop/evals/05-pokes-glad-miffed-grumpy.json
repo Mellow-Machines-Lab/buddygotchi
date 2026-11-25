@@ -1,0 +1,13 @@
+{
+  "name": "Pokes make Boop curious, then miffed, then fed up",
+  "judge": "Three quick pokes in a row. Boop's patience should run out as they pile up, and it should cool off some minutes later.",
+  "reasonable": "A curious, cheeky or glad start, then miffed, then fed up, at any pace. A huff or grumble is fine. Later it has cooled somewhat, whether still a little annoyed or nearly calm.",
+  "unreasonable": "Growing happier with each poke, no change at all by the third, swearing at the person, or leaping straight from fury to joy.",
+  "steps": [
+    {"event": "session started", "at": "0s"},
+    {"event": "poke", "at": "0s", "expect": {"offered": "calm|happy|focused|proud|cross|sad"}, "brain": {"react.face": "curious", "mood": "calm"}},
+    {"event": "poke", "at": "1s", "brain": {"react.face": "annoyed", "mood": "cross"}},
+    {"event": "poke", "at": "2s", "brain": {"react.face": "grumpy", "mood": "cross"}},
+    {"event": "turn started", "at": "4m", "prompt": "carry on", "brain": {"react.face": "none", "mood": "cross"}}
+  ]
+}

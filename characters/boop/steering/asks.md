@@ -1,0 +1,19 @@
+<!-- What Boop may ask you (Asks; dealt as an idle beat, IdleBeat: the sign is the ask): a question it holds up with two answers in the lane, for you to tap, left or right. A line with parts (question | a | b) is a question: its first tag is its id, and the rest the tags it needs: its moment (idle, an idle check-in), the calendar's (morning, night, friday…, characters/CHARACTER.md §9) and your kept answers, plus keeps (asked once, ever: the answer becomes a tag for good). Only asks whose answer does something: it becomes part of Boop (keeps), or it goes into memory; no quizzes. A line with no parts is a follow-up: what Boop may hold up after an answer, tagged with the question's id and the answer. The questions that shape Boop come first; the brain is offered them first. A question is at most 18 characters, each answer 7, a follow-up 18, printable ASCII only. When one is asked is the idle beat's (at most one beat an hour and four a day, none on Quiet); one answered stays off for 30 days, one ignored for a day. A line tagged wish is Boop's one want a day, not a question: `[wish pet]` is the sign that makes it, its lines taking turns by the day, and `[wish pet met]` what it holds up when you give it; the kinds are pet, chat and work, and code says which comes and what meets each. Read-only at runtime; the app bundles a copy. -->
+- [snack idle keeps] fav snack? | cookie | pizza
+- [hat idle keeps] hat or bow? | hat | bow
+- [snack cookie] nom nom
+- [snack pizza] pizza party!
+- [hat hat] dapper!
+- [hat bow] so pretty
+- [wish pet] pet me?
+- [wish pet] scritches?
+- [wish pet] pat pat?
+- [wish pet met] <3
+- [wish chat] talk to me?
+- [wish chat] say something?
+- [wish chat] got a word?
+- [wish chat met] i hear u
+- [wish work] work with me?
+- [wish work] give me work?
+- [wish work] bored. any work?
+- [wish work met] lets go!

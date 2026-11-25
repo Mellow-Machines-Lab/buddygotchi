@@ -1,0 +1,23 @@
+// Two of the meme faces (character.json's board_faces), at rest and in
+// their moves, played by dbg.clip: the silent scream, tall and shaking with
+// its palms on its cheeks and no sound; the faint, tipping over and melting.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "silent_scream", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"shot": "silent_scream"}
+{"t": "dbg.clip", "name": "face-silent-scream"}
+{"clock": 2600}
+{"shot": "silent_scream-move", "pin": true}
+{"clock": 6000}
+{"shot": "silent_scream-after"}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "faint", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"shot": "faint"}
+{"t": "dbg.clip", "name": "face-faint"}
+{"clock": 3600}
+{"shot": "faint-move", "pin": true}
+{"clock": 6000}
+{"shot": "faint-after"}

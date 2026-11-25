@@ -1,0 +1,24 @@
+// The missed high five (render/gel/invite.h, the win's palm): no tap
+// comes, so Boop looks at its palm, lowers it from the glass and shrugs
+// with both hands, lids heavy, as it goes back from the glass.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "ms": 4000, "xp": 3, "label": "tap"}}}
+{"clock": 1300}
+{"shot": "palm-coming"}
+{"clock": 4999}
+{"expect": {"invite": {"stage": "pose"}}}
+{"shot": "palm-waits"}
+{"clock": 5000}
+{"expect": {"invite": {"stage": "shrug"}}}
+{"clock": 5200}
+{"shot": "looks-at-palm", "pin": true}
+{"clock": 5600}
+{"shot": "lowers-it"}
+{"clock": 5900}
+{"shot": "shrugs"}
+{"clock": 6200}
+{"expect": {"invite": {"stage": "window"}}}
+{"shot": "back"}

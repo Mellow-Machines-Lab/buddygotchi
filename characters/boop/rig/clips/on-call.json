@@ -1,0 +1,11 @@
+{
+  "about": "On a call: holding still and a little smaller, a soft squash down, its eyes half closed and a little small. It barely breathes.",
+  "group": "with_you",
+  "ms": 6000,
+  "loop": true,
+  "tracks": {
+    "squash": [[0, 150], [3000, 165], [6000, 150]],
+    "eyeOpen": [[0, -450], [6000, -450]],
+    "eyeSize": [[0, -60], [6000, -60]]
+  }
+}

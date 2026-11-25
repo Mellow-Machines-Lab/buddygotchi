@@ -1,0 +1,112 @@
+// A successful finish's sizes on the gel (render/gel/finish.h): with the
+// tier its turn reached, by it alone, short of tier1 (a minute) Little
+// Win, to tier2 (5 minutes) the confetti, from there Gold Rush; with no
+// turn by its hold, Little Win once, the confetti twice, Gold Rush three
+// times or more; a sad one is small, and a failure keeps its card.
+// Variants are counted from 1: Little Win's takes 1-4, then the confetti
+// 5 and Gold Rush 6.
+// Little Win: a hop, a small trophy over its head, sparkles.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":1}}
+{"clock":216}
+{"clock":1780}
+{"shot":"little"}
+// Twice: Little Win with confetti from both corners.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":2}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":5}}}
+{"clock":1500}
+{"shot":"confetti","pin":true}
+// Three times: the gold floods in and the trophy lands on its head; the desk goes.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":3}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":6}}}
+{"clock":800}
+{"shot":"gold-flood"}
+{"clock":1500}
+{"shot":"gold"}
+// Whatever its mood: excited's is Gold Rush too, and a proud board's.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"excited","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"excited","loops":3}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":6}}}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"proud","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":3}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":6}}}
+// More than three times is still Gold Rush.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":4}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":6}}}
+// A turn short of tier1, under a minute, is small, however long it's held:
+// Little Win's takes (1-4), the bag's after a reset.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":3,"turn":0}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":1}}}
+// One at tier1, a minute, is the confetti, held once.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":1,"turn":1}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":5}}}
+// One at tier2, 5 minutes, is Gold Rush, held once; and one at tier3, 15.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":1,"turn":2}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":6}}}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":1,"turn":3}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":6}}}
+// A sad one is small, whatever its turn.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"sad","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"sad","loops":3,"turn":3}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete"}}}
+// A chat turn ends (the agent asked or answered): no finish, only a look
+// up at you, and "your turn" held low in the strip's place, with no
+// thread named.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"notice","play":"now","args":{"sign":"your turn","low":true,"loops":1}}
+{"clock":2200}
+{"shot":"chat-turn-your-turn","pin":true}
+{"t":"dbg.reset"}

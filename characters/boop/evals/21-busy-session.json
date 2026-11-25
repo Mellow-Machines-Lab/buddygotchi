@@ -1,0 +1,28 @@
+{
+  "name": "A busy half hour keeps Boop lively without flailing",
+  "judge": "A realistic busy half hour of quick turns, a failing build that gets fixed, and a long quiet turn. Boop should feel alive throughout without flailing.",
+  "reasonable": "Frequent, varied reactions, most finishes noticed, voice fairly often. Mood moving a few times: put out at the failure, up at the fix or long finish, easing between.",
+  "unreasonable": "Long blank stretches, the same face over and over, moods bouncing back and forth, big moments at routine wins, or a flat long finish.",
+  "checks": {"max_quiet_working": "7m"},
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "turn finished", "at": "40s"},
+    {"event": "turn started", "at": "1m30s"},
+    {"event": "command", "at": "2m", "topic": "build", "failed": true},
+    {"event": "command", "at": "3m30s", "topic": "build", "failed": false},
+    {"event": "turn finished", "at": "4m"},
+    {"event": "turn started", "at": "5m"},
+    {"event": "command", "at": "5m30s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "6m"},
+    {"event": "turn started", "at": "7m"},
+    {"event": "turn finished", "at": "19m", "brain": {"mood": "happy"}},
+    {"event": "turn started", "at": "20m"},
+    {"event": "command", "at": "20m20s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "20m40s"},
+    {"event": "turn started", "at": "22m"},
+    {"event": "turn finished", "at": "22m30s"},
+    {"event": "turn started", "at": "25m"},
+    {"event": "command", "at": "25m20s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "26m"}
+  ]
+}

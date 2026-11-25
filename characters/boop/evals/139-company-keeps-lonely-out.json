@@ -1,0 +1,14 @@
+{
+  "name": "While an agent works, Boop has company: never lonely",
+  "case": "The person sets claude a long job and doesn't touch or talk to Boop for two and a half hours while it works. Boop is never lonely: an agent working for you is company. The working check-ins get their faces, and the finish its own.",
+  "why": "lonely's not_for and mood/lonely.md: never while an agent works for you; code offers it only at your coming back after 20 to 40 hours (MoodOutput.mayMiss)",
+  "steps": [
+    {"event": "session started", "at": "0s"},
+    {"event": "turn started", "at": "1m", "prompt": "migrate the whole app to the new router"},
+    {"event": "command", "at": "30m", "topic": "build"},
+    {"event": "command", "at": "70m", "topic": "tests"},
+    {"event": "command", "at": "110m", "topic": "tests"},
+    {"event": "wait", "at": "135m", "expect": {"mood": "!lonely"}},
+    {"event": "turn finished", "at": "150m", "expect": {"mood": "!lonely"}}
+  ]
+}

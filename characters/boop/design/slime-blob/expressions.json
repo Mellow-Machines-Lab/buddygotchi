@@ -1,0 +1,1908 @@
+{
+  "version": "slime-kawaii-faces-v3",
+  "status": "review-candidate",
+  "material": "Accepted simple blue translucent glowing gel; unchanged",
+  "baseMotion": "Motion V2: the accepted V1 springs (the gel engine's render/gel/motion.cpp) and the motion layer over every clip (render/gel/lively.cpp)",
+  "boundaries": [
+    "The 18 faces of character.json, each a mood ID on the wire; calm:asleep is the board's own sleeping face, not a mood.",
+    "Emotion acting and surface drag are additive review candidates outside locked V1 source blocks.",
+    "Procedural graphics only; no saved face textures, model assets, backend, speech or sound changes.",
+    "Reference face language is interpreted; accessories and colors are not copied.",
+    "New face art is a V3 review candidate, not accepted production artwork."
+  ],
+  "referenceMapping": [
+    {
+      "reference": "Pleased (Happy Default)",
+      "expression": "pleased",
+      "mood": "pleased"
+    },
+    {
+      "reference": "Idle / Curious (Neutral Default)",
+      "expression": "calm",
+      "mood": "calm",
+      "relatedMood": "curious"
+    },
+    {
+      "reference": "Happy",
+      "expression": "happy",
+      "mood": "happy"
+    },
+    {
+      "reference": "Happy / Excited",
+      "expression": "excited",
+      "mood": "excited"
+    },
+    {
+      "reference": "Proud",
+      "expression": "proud",
+      "mood": "proud"
+    },
+    {
+      "reference": "Naughty?",
+      "expression": "mischievous",
+      "mood": "mischievous"
+    },
+    {
+      "reference": "Hurt / Sad",
+      "expression": "wounded",
+      "mood": "wounded"
+    }
+  ],
+  "expressions": {
+    "calm": {
+      "mood": "calm",
+      "label": "Calm",
+      "description": "Quiet green neutral reference: two tiny egg-shaped eyes and one delicate o; no human eyebrows.",
+      "eyes": "soft-dot",
+      "mouth": "tiny-ring",
+      "blush": 0,
+      "family": "settled",
+      "tears": "none",
+      "art": {
+        "eyes": "soft-dot",
+        "mouth": "tiny-ring",
+        "eyeX": 0.29,
+        "eyeY": 0.035,
+        "mouthY": -0.095,
+        "cheeks": "none",
+        "note": "Quiet green neutral reference: two tiny egg-shaped eyes and one delicate o; no human eyebrows."
+      },
+      "traits": {
+        "delayMs": 7.999999999999972,
+        "spacing": 0.9583333333333333,
+        "gain": 0.786,
+        "lean": 0.0002812499999999999
+      }
+    },
+    "pleased": {
+      "mood": "pleased",
+      "label": "Pleased",
+      "description": "Blue pleased reference: substantial inward smiling bean eyes, round w smile and tiny cheek freckles.",
+      "eyes": "pleased-bean",
+      "mouth": "baby-w",
+      "blush": 0.23,
+      "family": "joy",
+      "tears": "none",
+      "art": {
+        "eyes": "pleased-bean",
+        "mouth": "baby-w",
+        "eyeX": 0.32,
+        "eyeY": 0.035,
+        "mouthY": -0.081,
+        "cheeks": "freckles",
+        "note": "Blue pleased reference: substantial inward smiling bean eyes, round w smile and tiny cheek freckles."
+      },
+      "traits": {
+        "delayMs": -15.999999999999943,
+        "spacing": 0.8958333333333335,
+        "gain": 0.9466666666666665,
+        "lean": 0.004125
+      }
+    },
+    "happy": {
+      "mood": "happy",
+      "label": "Happy",
+      "description": "Blue happy reference: round ink dots and a pale-filled, round-bottom U smile, no teeth or complicated lip.",
+      "eyes": "happy-dot",
+      "mouth": "happy-u",
+      "blush": 0.16,
+      "family": "joy",
+      "tears": "none",
+      "art": {
+        "eyes": "happy-dot",
+        "mouth": "happy-u",
+        "eyeX": 0.3,
+        "eyeY": 0.063,
+        "mouthY": -0.101,
+        "cheeks": "soft",
+        "note": "Blue happy reference: round ink dots and a pale-filled, round-bottom U smile, no teeth or complicated lip."
+      }
+    },
+    "excited": {
+      "mood": "excited",
+      "label": "Excited",
+      "description": "Teal excited reference plus original Rimuru smiling eye arcs: long, soft upward closed eyes and a wide bean laugh.",
+      "eyes": "laugh-lid",
+      "mouth": "wide-laugh",
+      "blush": 0.35,
+      "family": "joy",
+      "tears": "none",
+      "gags": [
+        "zoomies"
+      ],
+      "art": {
+        "eyes": "laugh-lid",
+        "mouth": "wide-laugh",
+        "eyeX": 0.33,
+        "eyeY": 0.05,
+        "mouthY": -0.092,
+        "cheeks": "hatch",
+        "note": "Teal excited reference plus original Rimuru smiling eye arcs: long, soft upward closed eyes and a wide bean laugh."
+      },
+      "traits": {
+        "delayMs": 7.999999999999972,
+        "spacing": 0.9583333333333333,
+        "gain": 1.12,
+        "lean": 0.002647058823529411
+      }
+    },
+    "amused": {
+      "mood": "amused",
+      "label": "Amused",
+      "description": "One relaxed smiling eyelid, one cheeky little egg eye, and an off-centre bean grin.",
+      "eyes": "amused-wink",
+      "mouth": "crooked-grin",
+      "blush": 0.2,
+      "family": "joy",
+      "tears": "none",
+      "art": {
+        "eyes": "amused-wink",
+        "mouth": "crooked-grin",
+        "eyeX": 0.32,
+        "eyeY": 0.042,
+        "mouthY": -0.072,
+        "cheeks": "soft",
+        "note": "One relaxed smiling eyelid, one cheeky little egg eye, and an off-centre bean grin."
+      },
+      "traits": {
+        "delayMs": -27.999999999999954,
+        "spacing": 0.88,
+        "gain": 0.872,
+        "lean": 0.004090909090909091
+      }
+    },
+    "curious": {
+      "mood": "curious",
+      "label": "Curious",
+      "description": "One eye clearly bigger than the other under a lifted brow, and a small open tilted o: peering at something. Reads apart from calm at arm's length.",
+      "eyes": "curious-eggs",
+      "mouth": "peering-o",
+      "blush": 0,
+      "family": "cognition",
+      "tears": "none",
+      "art": {
+        "eyes": "curious-eggs",
+        "mouth": "peering-o",
+        "eyeX": 0.3,
+        "eyeY": 0.05,
+        "mouthY": -0.092,
+        "cheeks": "none",
+        "note": "One eye clearly bigger than the other under a lifted brow, and a small open tilted o: peering at something. Reads apart from calm at arm's length."
+      },
+      "traits": {
+        "delayMs": 40.000000000000014,
+        "spacing": 1.0416666666666667,
+        "gain": 0.9386666666666666,
+        "lean": 0.0045000000000000005
+      }
+    },
+    "focused": {
+      "mood": "focused",
+      "label": "Focused",
+      "description": "Two even, taller soft egg eyes and a compact settled smile; alert without looking robotic. The working mood's face.",
+      "eyes": "attentive-eggs",
+      "mouth": "small-u-line",
+      "blush": 0,
+      "family": "cognition",
+      "tears": "none",
+      "art": {
+        "eyes": "attentive-eggs",
+        "mouth": "small-u-line",
+        "eyeX": 0.29,
+        "eyeY": 0.038,
+        "mouthY": -0.083,
+        "cheeks": "none",
+        "note": "Two even, taller soft egg eyes and a compact settled smile; alert without looking robotic."
+      },
+      "traits": {
+        "delayMs": -3.999999999999986,
+        "spacing": 0.9270833333333334,
+        "gain": 0.852,
+        "lean": 0.004312500000000001
+      }
+    },
+    "determined": {
+      "mood": "determined",
+      "label": "Determined",
+      "description": "Subtle upward brows and attentive ink eggs; a little determined mouth, never a villain glare.",
+      "eyes": "gentle-resolve",
+      "mouth": "firm-w",
+      "blush": 0,
+      "family": "cognition",
+      "tears": "none",
+      "art": {
+        "eyes": "gentle-resolve",
+        "mouth": "firm-w",
+        "eyeX": 0.3,
+        "eyeY": 0.035,
+        "mouthY": -0.079,
+        "cheeks": "effort",
+        "note": "Subtle upward brows and attentive ink eggs; a little determined mouth, never a villain glare."
+      },
+      "traits": {
+        "delayMs": -12.00000000000001,
+        "spacing": 0.9062499999999999,
+        "gain": 0.8341818181818181,
+        "lean": 0.005931818181818182
+      }
+    },
+    "proud": {
+      "mood": "proud",
+      "label": "Proud",
+      "description": "Dark proud reference: short upward slanted confident eye beans and a deliberate curling w/smirk.",
+      "eyes": "smug-lids",
+      "mouth": "curled-smirk",
+      "blush": 0.08,
+      "family": "confidence",
+      "tears": "none",
+      "art": {
+        "eyes": "smug-lids",
+        "mouth": "curled-smirk",
+        "eyeX": 0.33,
+        "eyeY": 0.035,
+        "mouthY": -0.075,
+        "cheeks": "soft",
+        "note": "Dark proud reference: short upward slanted confident eye beans and a deliberate curling w/smirk."
+      },
+      "traits": {
+        "delayMs": 47.999999999999986,
+        "spacing": 1.0625,
+        "gain": 0.8959999999999999,
+        "lean": 0.0043125
+      }
+    },
+    "mischievous": {
+      "mood": "mischievous",
+      "label": "Mischievous",
+      "description": "Green naughty reference: tiny cheeky diagonal bean eyes and a recognisable rounded 3 mouth.",
+      "eyes": "cheeky-beans",
+      "mouth": "puckered-three",
+      "blush": 0.12,
+      "family": "confidence",
+      "tears": "none",
+      "art": {
+        "eyes": "cheeky-beans",
+        "mouth": "puckered-three",
+        "eyeX": 0.32,
+        "eyeY": 0.043,
+        "mouthY": -0.055,
+        "cheeks": "soft",
+        "note": "Green naughty reference: tiny cheeky diagonal bean eyes and a recognisable rounded 3 mouth."
+      },
+      "traits": {
+        "delayMs": -23.999999999999968,
+        "spacing": 0.88,
+        "gain": 0.8938181818181818,
+        "lean": 0.011045454545454544
+      }
+    },
+    "affectionate": {
+      "mood": "affectionate",
+      "label": "Affectionate",
+      "description": "Original Rimuru soft closed arcs with a warm little w and broad, soft blush cheeks.",
+      "eyes": "warm-lids",
+      "mouth": "warm-w",
+      "blush": 0.3,
+      "family": "social",
+      "tears": "none",
+      "art": {
+        "eyes": "warm-lids",
+        "mouth": "warm-w",
+        "eyeX": 0.33,
+        "eyeY": 0.035,
+        "mouthY": -0.072,
+        "cheeks": "blush",
+        "note": "Original Rimuru soft closed arcs with a warm little w and broad, soft blush cheeks."
+      },
+      "traits": {
+        "delayMs": 15.999999999999996,
+        "spacing": 0.9791666666666666,
+        "gain": 0.8763636363636365,
+        "lean": 0.0069545454545454554
+      }
+    },
+    "lonely": {
+      "mood": "lonely",
+      "label": "Lonely",
+      "description": "Small lifted inner bean eyes and a vulnerable tiny pout; no accusing eyebrows or large sobs.",
+      "eyes": "longing-beans",
+      "mouth": "small-pout",
+      "blush": 0,
+      "family": "social",
+      "tears": "none",
+      "art": {
+        "eyes": "longing-beans",
+        "mouth": "small-pout",
+        "eyeX": 0.3,
+        "eyeY": 0.028,
+        "mouthY": -0.098,
+        "cheeks": "soft",
+        "note": "Small lifted inner bean eyes and a vulnerable tiny pout; no accusing eyebrows or large sobs."
+      },
+      "traits": {
+        "delayMs": 72.00000000000001,
+        "spacing": 1.125,
+        "gain": 0.84,
+        "lean": 0.00045000000000000037
+      }
+    },
+    "annoyed": {
+      "mood": "annoyed",
+      "label": "Annoyed",
+      "description": "Soft uneven low beans and a pushed-aside pout: restrained, not angry.",
+      "eyes": "annoyed-beans",
+      "mouth": "pushed-pout",
+      "blush": 0,
+      "family": "frustration",
+      "tears": "none",
+      "art": {
+        "eyes": "annoyed-beans",
+        "mouth": "pushed-pout",
+        "eyeX": 0.32,
+        "eyeY": 0.017,
+        "mouthY": -0.083,
+        "cheeks": "none",
+        "note": "Soft uneven low beans and a pushed-aside pout: restrained, not angry."
+      },
+      "traits": {
+        "delayMs": -23.999999999999968,
+        "spacing": 0.88,
+        "gain": 0.864,
+        "lean": -0.006524999999999998
+      }
+    },
+    "grumpy": {
+      "mood": "grumpy",
+      "label": "Grumpy",
+      "description": "Big round-ended sulking slant eyes and a little m-shaped baby pout; bad temper stays adorable.",
+      "eyes": "grumpy-beans",
+      "mouth": "grumpy-pout",
+      "blush": 0,
+      "family": "frustration",
+      "tears": "none",
+      "art": {
+        "eyes": "grumpy-beans",
+        "mouth": "grumpy-pout",
+        "eyeX": 0.33,
+        "eyeY": 0.036,
+        "mouthY": -0.086,
+        "cheeks": "effort",
+        "note": "Big round-ended sulking slant eyes and a little m-shaped baby pout; bad temper stays adorable."
+      }
+    },
+    "angry": {
+      "mood": "angry",
+      "label": "Angry",
+      "description": "Squeezed, rounded >.< eye curves and a small comic protest mouth; do not stack sharp brows on tiny pupils.",
+      "eyes": "angry-squeeze",
+      "mouth": "protest-bean",
+      "blush": 0,
+      "family": "frustration",
+      "tears": "none",
+      "art": {
+        "eyes": "angry-squeeze",
+        "mouth": "protest-bean",
+        "eyeX": 0.33,
+        "eyeY": 0.038,
+        "mouthY": -0.086,
+        "cheeks": "hatch",
+        "note": "Squeezed, rounded >.< eye curves and a small comic protest mouth; do not stack sharp brows on tiny pupils."
+      },
+      "traits": {
+        "delayMs": -3.999999999999986,
+        "spacing": 0.9270833333333334,
+        "gain": 1.12,
+        "lean": 0.010546875
+      }
+    },
+    "sad": {
+      "mood": "sad",
+      "label": "Sad",
+      "description": "Rimuru sad eye curves: long soft drooping lids, a timid small pout and a little gathering water.",
+      "eyes": "sad-lids",
+      "mouth": "sad-pout",
+      "blush": 0,
+      "family": "sadness",
+      "tears": "occasional",
+      "art": {
+        "eyes": "sad-lids",
+        "mouth": "sad-pout",
+        "eyeX": 0.33,
+        "eyeY": 0.035,
+        "mouthY": -0.095,
+        "cheeks": "soft",
+        "note": "Rimuru sad eye curves: long soft drooping lids, a timid small pout and a little gathering water."
+      }
+    },
+    "wounded": {
+      "mood": "wounded",
+      "label": "Hurt",
+      "description": "Green hurt reference: small vertical oval eyes, tender tear trails and a fragile rounded pout.",
+      "eyes": "hurt-eggs",
+      "mouth": "hurt-pout",
+      "blush": 0,
+      "family": "sadness",
+      "tears": "thin",
+      "art": {
+        "eyes": "hurt-eggs",
+        "mouth": "hurt-pout",
+        "eyeX": 0.29,
+        "eyeY": 0.025,
+        "mouthY": -0.092,
+        "cheeks": "soft",
+        "note": "Green hurt reference: small vertical oval eyes, tender tear trails and a fragile rounded pout."
+      },
+      "traits": {
+        "delayMs": 63.999999999999986,
+        "spacing": 1.1041666666666665,
+        "gain": 0.872,
+        "lean": -0.005931818181818181
+      }
+    },
+    "surprised": {
+      "mood": "surprised",
+      "label": "Surprised",
+      "description": "Round ink dots that widen, and a rounded o; still a childlike slime rather than a human alarm face.",
+      "eyes": "surprise-dots",
+      "mouth": "round-gasp",
+      "blush": 0,
+      "family": "surprise",
+      "tears": "none",
+      "art": {
+        "eyes": "surprise-dots",
+        "mouth": "round-gasp",
+        "eyeX": 0.3,
+        "eyeY": 0.055,
+        "mouthY": -0.092,
+        "cheeks": "soft",
+        "note": "Round ink dots that widen, and a rounded o; still a childlike slime rather than a human alarm face."
+      },
+      "traits": {
+        "delayMs": 3.999999999999986,
+        "spacing": 0.9479166666666666,
+        "gain": 1.016,
+        "lean": -0.0018409090909090908
+      }
+    },
+    "deadpan": {
+      "mood": "deadpan",
+      "label": "Deadpan",
+      "description": "A meme face: flat lids half down over solid dark eyes and a dead flat mouth; one slow blink sells it.",
+      "eyes": "flat-lids",
+      "mouth": "flat-line",
+      "blush": 0,
+      "family": "settled",
+      "tears": "none",
+      "art": {
+        "eyes": "flat-lids",
+        "mouth": "flat-line",
+        "eyeX": 0.29,
+        "eyeY": 0.035,
+        "mouthY": -0.1,
+        "cheeks": "none",
+        "note": "A meme face: flat lids half down over solid dark eyes and a dead flat mouth; one slow blink sells it."
+      },
+      "traits": {
+        "delayMs": 7.999999999999972,
+        "spacing": 0.9583333333333333,
+        "gain": 0.786,
+        "lean": 0.0002812499999999999
+      }
+    },
+    "side_eye": {
+      "mood": "side_eye",
+      "label": "Side-eye",
+      "description": "A meme face: the body stays, only the eyes go: both slid to one side under low flat lids, a short mouth aslant.",
+      "eyes": "side-glance",
+      "mouth": "side-line",
+      "blush": 0,
+      "family": "frustration",
+      "tears": "none",
+      "art": {
+        "eyes": "side-glance",
+        "mouth": "side-line",
+        "eyeX": 0.29,
+        "eyeY": 0.035,
+        "mouthY": -0.1,
+        "cheeks": "none",
+        "note": "A meme face: the body stays, only the eyes go: both slid to one side under low flat lids, a short mouth aslant."
+      },
+      "traits": {
+        "delayMs": -23.999999999999968,
+        "spacing": 0.88,
+        "gain": 0.864,
+        "lean": -0.006524999999999998
+      }
+    },
+    "squint": {
+      "mood": "squint",
+      "label": "Squint",
+      "description": "A meme face: it doubts you, eyes narrowed to slits top and bottom and a wobbly mouth; it comes up to the glass to look closer.",
+      "eyes": "slits",
+      "mouth": "wavy-line",
+      "blush": 0,
+      "family": "cognition",
+      "tears": "none",
+      "art": {
+        "eyes": "slits",
+        "mouth": "wavy-line",
+        "eyeX": 0.3,
+        "eyeY": 0.035,
+        "mouthY": -0.1,
+        "cheeks": "none",
+        "note": "A meme face: it doubts you, eyes narrowed to slits top and bottom and a wobbly mouth; it comes up to the glass to look closer."
+      },
+      "traits": {
+        "delayMs": -3.999999999999986,
+        "spacing": 0.9270833333333334,
+        "gain": 0.852,
+        "lean": 0.004312500000000001
+      }
+    },
+    "smug": {
+      "mood": "smug",
+      "label": "Smug",
+      "description": "A meme face: half lids tilted, a glance aside, a cat's w of a mouth and pink cheeks; a tilt of the whole body sells it.",
+      "eyes": "smug-half",
+      "mouth": "cat-w",
+      "blush": 0.3,
+      "family": "confidence",
+      "tears": "none",
+      "art": {
+        "eyes": "smug-half",
+        "mouth": "cat-w",
+        "eyeX": 0.31,
+        "eyeY": 0.035,
+        "mouthY": -0.09,
+        "cheeks": "blush",
+        "note": "A meme face: half lids tilted, a glance aside, a cat's w of a mouth and pink cheeks; a tilt of the whole body sells it."
+      },
+      "traits": {
+        "delayMs": 47.999999999999986,
+        "spacing": 1.0625,
+        "gain": 0.8959999999999999,
+        "lean": 0.0043125
+      }
+    },
+    "silent_scream": {
+      "mood": "silent_scream",
+      "label": "Silent scream",
+      "description": "A meme face: tall dark eyes and a tall open oval of a mouth, no sound; tall and shaking, hands on its cheeks.",
+      "eyes": "scream-eggs",
+      "mouth": "scream-o",
+      "blush": 0,
+      "family": "surprise",
+      "tears": "none",
+      "art": {
+        "eyes": "scream-eggs",
+        "mouth": "scream-o",
+        "eyeX": 0.3,
+        "eyeY": 0.05,
+        "mouthY": -0.11,
+        "cheeks": "none",
+        "note": "A meme face: tall dark eyes and a tall open oval of a mouth, no sound; tall and shaking, hands on its cheeks."
+      },
+      "traits": {
+        "delayMs": 3.999999999999986,
+        "spacing": 0.9479166666666666,
+        "gain": 1.016,
+        "lean": -0.0018409090909090908
+      }
+    },
+    "faint": {
+      "mood": "faint",
+      "label": "Faint",
+      "description": "A meme face: crosses for eyes and a wobbly mouth; it tips over and melts.",
+      "eyes": "x-eyes",
+      "mouth": "wavy-line",
+      "blush": 0,
+      "family": "sadness",
+      "tears": "none",
+      "art": {
+        "eyes": "x-eyes",
+        "mouth": "wavy-line",
+        "eyeX": 0.3,
+        "eyeY": 0.035,
+        "mouthY": -0.1,
+        "cheeks": "soft",
+        "note": "A meme face: crosses for eyes and a wobbly mouth; it tips over and melts."
+      },
+      "traits": {
+        "delayMs": 63.999999999999986,
+        "spacing": 1.1041666666666665,
+        "gain": 0.872,
+        "lean": -0.005931818181818181
+      }
+    },
+    "calm:asleep": {
+      "mood": "calm",
+      "label": "Asleep",
+      "description": "The sleeping face, which the board draws squashed to its own size while asleep (render/gel/motion.cpp). Not a mood: no name on the wire.",
+      "eyes": "sleepy-lid",
+      "mouth": "baby-yawn",
+      "blush": 0,
+      "family": "reference",
+      "tears": "none",
+      "art": {
+        "eyes": "sleepy-lid",
+        "mouth": "baby-yawn",
+        "eyeX": 0.32,
+        "eyeY": 0.012,
+        "mouthY": -0.098,
+        "cheeks": "soft",
+        "note": "Long drooping, round-tipped lids and a tiny oval yawn; sleepy rather than sorrowful."
+      },
+      "traits": {
+        "delayMs": 136.00000000000006,
+        "spacing": 1.18,
+        "gain": 0.8271999999999999,
+        "lean": -0.0013499999999999999
+      }
+    }
+  },
+  "gags": {
+    "yawn-and-settle": {
+      "label": "Yawn and settle",
+      "duration": 2.9,
+      "keys": [
+        [
+          0.45,
+          "lids",
+          0.8
+        ],
+        [
+          0.7,
+          "lift",
+          0.06
+        ],
+        [
+          0.7,
+          "squash",
+          0.12
+        ],
+        [
+          0.7,
+          "forward",
+          -0.05
+        ],
+        [
+          1.5,
+          "lift",
+          0.07
+        ],
+        [
+          1.5,
+          "squash",
+          0.13
+        ],
+        [
+          1.5,
+          "forward",
+          -0.06
+        ],
+        [
+          1.55,
+          "lids",
+          0.85
+        ],
+        [
+          1.8,
+          "lids",
+          0
+        ],
+        [
+          1.9,
+          "lift",
+          0
+        ],
+        [
+          1.9,
+          "forward",
+          0
+        ],
+        [
+          1.95,
+          "squash",
+          -0.03
+        ],
+        [
+          2.5,
+          "squash",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          1.95,
+          "squash",
+          -0.6
+        ],
+        [
+          2.15,
+          "lean",
+          0.7
+        ],
+        [
+          2.45,
+          "lean",
+          -0.55
+        ]
+      ],
+      "contacts": []
+    },
+    "sneeze-and-shake": {
+      "label": "Sneeze and shake it off",
+      "duration": 2.7,
+      "keys": [
+        [
+          0.3,
+          "lids",
+          0.5
+        ],
+        [
+          0.8,
+          "lift",
+          0.05
+        ],
+        [
+          0.8,
+          "squash",
+          0.05
+        ],
+        [
+          0.85,
+          "forward",
+          -0.06
+        ],
+        [
+          0.9,
+          "lids",
+          0.9
+        ],
+        [
+          0.95,
+          "lift",
+          0.06
+        ],
+        [
+          0.97,
+          "squash",
+          0.06
+        ],
+        [
+          0.97,
+          "forward",
+          -0.07
+        ],
+        [
+          1,
+          "lids",
+          1
+        ],
+        [
+          1.05,
+          "lift",
+          0
+        ],
+        [
+          1.06,
+          "squash",
+          -0.05
+        ],
+        [
+          1.08,
+          "forward",
+          0.06
+        ],
+        [
+          1.12,
+          "lids",
+          0
+        ],
+        [
+          1.4,
+          "squash",
+          0
+        ],
+        [
+          1.4,
+          "forward",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.3,
+          "ripple",
+          0.5
+        ],
+        [
+          0.6,
+          "ripple",
+          0.6
+        ],
+        [
+          1,
+          "forward",
+          1.8
+        ],
+        [
+          1,
+          "ripple",
+          2.2
+        ],
+        [
+          1.45,
+          "lean",
+          1.8
+        ],
+        [
+          1.65,
+          "lean",
+          -2.2
+        ],
+        [
+          1.85,
+          "lean",
+          1.6
+        ]
+      ],
+      "contacts": [
+        [
+          1,
+          "sneeze_contact",
+          0.6
+        ]
+      ]
+    },
+    "zoomies": {
+      "label": "Zoomies, edge to edge",
+      "duration": 2.6,
+      "keys": [
+        [
+          0.3,
+          "slide",
+          0.5
+        ],
+        [
+          0.75,
+          "slide",
+          -0.5
+        ],
+        [
+          1.2,
+          "slide",
+          0.5
+        ],
+        [
+          1.65,
+          "slide",
+          -0.35
+        ],
+        [
+          2.05,
+          "slide",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.04,
+          "lean",
+          -1.4
+        ],
+        [
+          0.3,
+          "squash",
+          -1.1
+        ],
+        [
+          0.5,
+          "lean",
+          2.2
+        ],
+        [
+          0.75,
+          "squash",
+          -1.1
+        ],
+        [
+          0.95,
+          "lean",
+          -2.2
+        ],
+        [
+          1.2,
+          "squash",
+          -1.1
+        ],
+        [
+          1.4,
+          "lean",
+          1.8
+        ]
+      ],
+      "contacts": [
+        [
+          0.3,
+          "zoom_contact",
+          0.55
+        ],
+        [
+          0.75,
+          "zoom_contact",
+          0.55
+        ],
+        [
+          1.2,
+          "zoom_contact",
+          0.55
+        ],
+        [
+          1.65,
+          "zoom_contact",
+          0.45
+        ]
+      ]
+    }
+  },
+  "gestureFaceGivesWayTo": [
+    "frustration",
+    "sadness"
+  ],
+  "gestures": [
+    {
+      "id": "handoff",
+      "label": "Lifts and leans in, offering",
+      "face": "pleased",
+      "duration": 2.4,
+      "keys": [
+        [
+          0.35,
+          "lift",
+          0.07
+        ],
+        [
+          0.35,
+          "squash",
+          0.1
+        ],
+        [
+          0.4,
+          "forward",
+          0.12
+        ],
+        [
+          1.3,
+          "lift",
+          0.08
+        ],
+        [
+          1.3,
+          "forward",
+          0.14
+        ],
+        [
+          1.7,
+          "lift",
+          0
+        ],
+        [
+          1.7,
+          "squash",
+          0
+        ],
+        [
+          1.9,
+          "forward",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.3,
+          "ripple",
+          0.6
+        ],
+        [
+          1.75,
+          "squash",
+          -0.6
+        ]
+      ],
+      "contacts": [
+        [
+          0.35,
+          "body_contact",
+          0.35,
+          0
+        ],
+        [
+          1.75,
+          "body_contact",
+          0.3,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "stroke",
+      "label": "Melts under the hand, eyes closed",
+      "face": "affectionate",
+      "duration": 3,
+      "keys": [
+        [
+          0.5,
+          "lids",
+          0.9
+        ],
+        [
+          0.8,
+          "squash",
+          -0.08
+        ],
+        [
+          1.2,
+          "lean",
+          0.03
+        ],
+        [
+          2,
+          "lean",
+          -0.03
+        ],
+        [
+          2.3,
+          "lids",
+          0.9
+        ],
+        [
+          2.5,
+          "lean",
+          0
+        ],
+        [
+          2.7,
+          "squash",
+          0
+        ],
+        [
+          2.8,
+          "lids",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.9,
+          "ripple",
+          0.4
+        ],
+        [
+          1.7,
+          "ripple",
+          0.4
+        ]
+      ],
+      "contacts": [
+        [
+          0.2,
+          "body_contact",
+          0.25,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "ruffle",
+      "label": "Bristles, then huffs",
+      "face": "annoyed",
+      "duration": 2.2,
+      "keys": [
+        [
+          0.25,
+          "squash",
+          0.06
+        ],
+        [
+          0.3,
+          "lift",
+          0.05
+        ],
+        [
+          0.9,
+          "squash",
+          -0.04
+        ],
+        [
+          0.9,
+          "forward",
+          -0.06
+        ],
+        [
+          1.2,
+          "lift",
+          0
+        ],
+        [
+          1.6,
+          "squash",
+          0
+        ],
+        [
+          1.6,
+          "forward",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.3,
+          "ripple",
+          1.6
+        ],
+        [
+          0.5,
+          "ripple",
+          -1.4
+        ],
+        [
+          0.7,
+          "ripple",
+          1.2
+        ],
+        [
+          0.95,
+          "squash",
+          -0.9
+        ]
+      ],
+      "contacts": [
+        [
+          0.3,
+          "body_contact",
+          0.55,
+          -1
+        ],
+        [
+          0.95,
+          "body_contact",
+          0.4,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "nose",
+      "label": "Squished at the nose, then pops back",
+      "face": "surprised",
+      "duration": 1.8,
+      "keys": [
+        [
+          0.15,
+          "squash",
+          -0.1
+        ],
+        [
+          0.15,
+          "forward",
+          -0.08
+        ],
+        [
+          0.2,
+          "lids",
+          0.5
+        ],
+        [
+          0.5,
+          "lids",
+          0
+        ],
+        [
+          0.55,
+          "squash",
+          0.04
+        ],
+        [
+          0.8,
+          "forward",
+          0
+        ],
+        [
+          1,
+          "squash",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.16,
+          "ripple",
+          1.2
+        ],
+        [
+          0.55,
+          "lift",
+          0.8
+        ]
+      ],
+      "contacts": [
+        [
+          0.12,
+          "body_contact",
+          0.7,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "tickle",
+      "label": "Giggles, jiggling side to side",
+      "face": "excited",
+      "duration": 2.4,
+      "keys": [
+        [
+          0.2,
+          "lids",
+          0.6
+        ],
+        [
+          0.3,
+          "squash",
+          0.05
+        ],
+        [
+          1.8,
+          "lids",
+          0.6
+        ],
+        [
+          2,
+          "squash",
+          0
+        ],
+        [
+          2.1,
+          "lids",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.2,
+          "lean",
+          1.6
+        ],
+        [
+          0.45,
+          "lean",
+          -1.6
+        ],
+        [
+          0.7,
+          "lean",
+          1.6
+        ],
+        [
+          0.95,
+          "lean",
+          -1.6
+        ],
+        [
+          1.2,
+          "lean",
+          1.4
+        ],
+        [
+          1.45,
+          "lean",
+          -1.2
+        ],
+        [
+          1.7,
+          "lean",
+          0.8
+        ]
+      ],
+      "contacts": [
+        [
+          0.2,
+          "body_contact",
+          0.35,
+          1
+        ],
+        [
+          0.7,
+          "body_contact",
+          0.35,
+          -1
+        ],
+        [
+          1.2,
+          "body_contact",
+          0.35,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "dizzy",
+      "label": "Wobbles round, dizzy",
+      "face": "surprised",
+      "duration": 3.2,
+      "keys": [
+        [
+          0.4,
+          "roll",
+          0.1
+        ],
+        [
+          0.5,
+          "lids",
+          0.4
+        ],
+        [
+          0.6,
+          "slide",
+          0.12
+        ],
+        [
+          0.6,
+          "squash",
+          -0.04
+        ],
+        [
+          0.9,
+          "roll",
+          -0.1
+        ],
+        [
+          1.3,
+          "slide",
+          -0.12
+        ],
+        [
+          1.4,
+          "roll",
+          0.08
+        ],
+        [
+          1.9,
+          "roll",
+          -0.06
+        ],
+        [
+          1.9,
+          "slide",
+          0.06
+        ],
+        [
+          2.4,
+          "lids",
+          0
+        ],
+        [
+          2.4,
+          "squash",
+          0
+        ],
+        [
+          2.5,
+          "roll",
+          0
+        ],
+        [
+          2.6,
+          "slide",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.1,
+          "lean",
+          2
+        ],
+        [
+          0.5,
+          "lean",
+          -2.2
+        ],
+        [
+          0.9,
+          "lean",
+          1.8
+        ],
+        [
+          1.3,
+          "lean",
+          -1.4
+        ],
+        [
+          1.7,
+          "lean",
+          1
+        ],
+        [
+          2.1,
+          "lean",
+          -0.6
+        ]
+      ],
+      "contacts": [
+        [
+          0.1,
+          "body_contact",
+          0.45,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "pickup",
+      "label": "Stretches up, surprised",
+      "face": "surprised",
+      "duration": 2.2,
+      "keys": [
+        [
+          0.3,
+          "lift",
+          0.2
+        ],
+        [
+          0.3,
+          "squash",
+          0.16
+        ],
+        [
+          0.4,
+          "forward",
+          0.04
+        ],
+        [
+          1.4,
+          "lift",
+          0.18
+        ],
+        [
+          1.4,
+          "squash",
+          0.14
+        ],
+        [
+          1.6,
+          "forward",
+          0
+        ],
+        [
+          1.9,
+          "lift",
+          0
+        ],
+        [
+          1.9,
+          "squash",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.05,
+          "ripple",
+          1.4
+        ],
+        [
+          1.5,
+          "ripple",
+          0.8
+        ]
+      ],
+      "contacts": [
+        [
+          0.06,
+          "body_contact",
+          0.5,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "putdown",
+      "label": "Lands with a squash and settles",
+      "face": "pleased",
+      "duration": 2,
+      "keys": [
+        [
+          0.2,
+          "squash",
+          -0.12
+        ],
+        [
+          0.3,
+          "lids",
+          0.5
+        ],
+        [
+          0.55,
+          "squash",
+          0.05
+        ],
+        [
+          0.9,
+          "squash",
+          -0.03
+        ],
+        [
+          0.9,
+          "lids",
+          0
+        ],
+        [
+          1.3,
+          "squash",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.05,
+          "squash",
+          -1.6
+        ],
+        [
+          0.25,
+          "ripple",
+          1.2
+        ],
+        [
+          0.6,
+          "lean",
+          0.6
+        ],
+        [
+          0.85,
+          "lean",
+          -0.5
+        ]
+      ],
+      "contacts": [
+        [
+          0.06,
+          "body_contact",
+          0.8,
+          0
+        ],
+        [
+          0.6,
+          "body_contact",
+          0.25,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "startle",
+      "label": "Jumps at the thump",
+      "face": "surprised",
+      "duration": 1.9,
+      "keys": [
+        [
+          0.06,
+          "squash",
+          -0.06
+        ],
+        [
+          0.25,
+          "lift",
+          0.16
+        ],
+        [
+          0.25,
+          "squash",
+          0.12
+        ],
+        [
+          0.6,
+          "lift",
+          0
+        ],
+        [
+          0.7,
+          "squash",
+          -0.08
+        ],
+        [
+          1.2,
+          "squash",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.02,
+          "ripple",
+          1.6
+        ],
+        [
+          0.65,
+          "squash",
+          -1.2
+        ],
+        [
+          0.9,
+          "lean",
+          0.8
+        ],
+        [
+          1.1,
+          "lean",
+          -0.6
+        ]
+      ],
+      "contacts": [
+        [
+          0.04,
+          "body_contact",
+          0.6,
+          0
+        ],
+        [
+          0.65,
+          "body_contact",
+          0.55,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "peekaboo",
+      "label": "Rises up from below: peekaboo",
+      "face": "happy",
+      "duration": 2.6,
+      "keys": [
+        [
+          0.05,
+          "squash",
+          -0.2
+        ],
+        [
+          0.05,
+          "forward",
+          -0.08
+        ],
+        [
+          0.05,
+          "lids",
+          0.9
+        ],
+        [
+          0.45,
+          "squash",
+          -0.2
+        ],
+        [
+          0.45,
+          "forward",
+          -0.08
+        ],
+        [
+          0.5,
+          "lids",
+          0.9
+        ],
+        [
+          0.8,
+          "lids",
+          0
+        ],
+        [
+          0.95,
+          "lift",
+          0.12
+        ],
+        [
+          0.95,
+          "squash",
+          0.1
+        ],
+        [
+          0.95,
+          "forward",
+          0.06
+        ],
+        [
+          1.6,
+          "lift",
+          0
+        ],
+        [
+          1.6,
+          "forward",
+          0
+        ],
+        [
+          1.8,
+          "squash",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          1,
+          "ripple",
+          1
+        ],
+        [
+          1.65,
+          "squash",
+          -0.6
+        ]
+      ],
+      "contacts": [
+        [
+          0.95,
+          "body_contact",
+          0.45,
+          0
+        ]
+      ]
+    }
+  ],
+  "pastimes": [
+    {
+      "id": "deep-snore",
+      "label": "A deeper snore at night",
+      "recipe": {
+        "duration": 5.6,
+        "lean": 0,
+        "jitter": false,
+        "contacts": [
+          [
+            0.6,
+            "breath_contact",
+            0.45,
+            0
+          ],
+          [
+            2.4,
+            "breath_contact",
+            0.45,
+            0
+          ],
+          [
+            4.2,
+            "breath_contact",
+            0.45,
+            0
+          ]
+        ]
+      }
+    },
+    {
+      "id": "dream",
+      "label": "A dream after half an hour asleep: a twitch and a wriggle",
+      "gag": {
+        "duration": 3.4,
+        "keys": [
+          [
+            1.6,
+            "roll",
+            0.04
+          ],
+          [
+            1.9,
+            "roll",
+            -0.04
+          ],
+          [
+            2.2,
+            "roll",
+            0
+          ],
+          [
+            2.6,
+            "squash",
+            0.05
+          ],
+          [
+            3.2,
+            "squash",
+            0
+          ]
+        ],
+        "cues": [
+          [
+            1.7,
+            "lean",
+            0.6
+          ],
+          [
+            2.8,
+            "ripple",
+            0.5
+          ]
+        ],
+        "contacts": []
+      },
+      "recipe": {
+        "duration": 5.2,
+        "lean": 0,
+        "jitter": false,
+        "contacts": [
+          [
+            0.8,
+            "breath_contact",
+            0.3,
+            0
+          ],
+          [
+            3.4,
+            "breath_contact",
+            0.3,
+            0
+          ]
+        ]
+      }
+    }
+  ],
+  "notices": [
+    {
+      "id": "notice-surprised",
+      "label": "Hears its name, surprised",
+      "face": "surprised"
+    },
+    {
+      "id": "notice-happy",
+      "label": "Hears its name, beaming",
+      "face": "happy"
+    },
+    {
+      "id": "notice-pleased",
+      "label": "Hears its name, pleased",
+      "face": "pleased"
+    }
+  ],
+  "created": "2026-10-02",
+  "designSystem": {
+    "identity": "Soft rounded slime face, inspired by the supplied kawaii/Rimuru-like facial language; original blue gel body retained.",
+    "faceScale": 1.24,
+    "facePlacement": "Individual low-set, broad eye rows with compact eye-to-mouth spacing.",
+    "strokes": "Cubic/quadratic brush curves, rounded ends and joins; no thin angular scaffold brows.",
+    "eyes": "Pupil-free eggs, bean lids, pinched curves or reference-specific pale water/cloud shapes.",
+    "mouths": "Small smooth w/pout/ring silhouettes, simple U for happy and a wide bean laugh for excited.",
+    "cheeks": "Visible soft oval blush and rounded hatching; selected cheek freckles or stress strokes.",
+    "tears": "Soft translucent blue ribbons with short broken highlights; not bright straight stripes.",
+    "changes": "All 44 faces individually redrawn and given per-face eye spacing, eye height, mouth position and cheek treatment.",
+    "preserved": "42 mood IDs, 19 reference mappings, three existing gesture recipes per expression, blue gel material, drag extension and seven accepted V1 motion blocks."
+  },
+  "familyTitles": {
+    "settled": "Settled / low stimulation",
+    "joy": "Joy / humor",
+    "cognition": "Interest / understanding / focus",
+    "confidence": "Confidence / mischief",
+    "social": "Social warmth / self-consciousness",
+    "frustration": "Frustration / anger",
+    "sadness": "Disappointment / sorrow / support-seeking",
+    "surprise": "Surprise / freeze"
+  }
+}

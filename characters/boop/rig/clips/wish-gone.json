@@ -1,0 +1,11 @@
+{
+  "about": "A wish left too long: a silent sigh as the bubble fades, sagging down with its eyes half shut and its gaze dropping, then back. No sound; the feeling after it is Jev's.",
+  "group": "moments",
+  "ms": 1100,
+  "tracks": {
+    "squash": [[0, 0], [150, -50], [550, 200, "out"], [850, 170], [1100, 0]],
+    "gazeY": [[0, 0], [250, 500], [850, 500], [1100, 0]],
+    "mouthOpen": [[0, 0], [150, 0], [300, 300], [600, 300], [750, 0], [1100, 0]],
+    "eyeOpen": [[0, 0], [200, -500], [850, -500], [1100, 0]]
+  }
+}

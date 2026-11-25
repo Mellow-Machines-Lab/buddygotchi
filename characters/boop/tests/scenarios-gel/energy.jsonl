@@ -1,0 +1,27 @@
+// Boop's energy (render/face.h's Energy, the Mac's `state.energy`; the
+// engine's documentation/design/screen-guide.md, "Energy"), each on a frozen
+// clock after a reset, idle unless it says. Normal: the plain look. Bright,
+// as you first show up today: a stretch, then wide eyes and a quicker sway.
+// Tired: heavy lids and a slow sway, idle and at work, never a costume; a
+// yawn dealt now and then. A state every 20 s keeps the link alive.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day"]}
+{"clock":2000}
+{"shot":"normal"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["morning"],"energy":"bright"}
+{"clock":2600}
+{"shot":"bright-stretches"}
+{"clock":6000}
+{"shot":"bright"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["night","tier1"],"energy":"tired"}
+{"clock":3000}
+{"shot":"tired","pin":true}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":1,"when":["night"],"energy":"tired","calls":[[0,3,"editing Core.swift +12"]]}
+{"clock":3000}
+{"shot":"tired-at-work"}
+{"t":"dbg.reset"}

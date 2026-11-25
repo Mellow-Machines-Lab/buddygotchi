@@ -1,0 +1,23 @@
+// Two of the meme faces (character.json's board_faces), at rest and in
+// their moves, played by dbg.clip: deadpan's flat lids, flat mouth and one
+// slow blink; side-eye's, where the body stays and only the eyes go.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "deadpan", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"shot": "deadpan"}
+{"t": "dbg.clip", "name": "face-deadpan"}
+{"clock": 2600}
+{"shot": "deadpan-move", "pin": true}
+{"clock": 6000}
+{"shot": "deadpan-after"}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "side_eye", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"shot": "side_eye"}
+{"t": "dbg.clip", "name": "face-side-eye"}
+{"clock": 3000}
+{"shot": "side_eye-move", "pin": true}
+{"clock": 6000}
+{"shot": "side_eye-after"}

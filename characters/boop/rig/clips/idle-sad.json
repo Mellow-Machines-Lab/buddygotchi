@@ -1,0 +1,11 @@
+{
+  "about": "Sad's idle move: it slowly sags, flatter, its eyes going down and to one side, stays there, and gathers itself again.",
+  "group": "pastimes",
+  "ms": 3800,
+  "tracks": {
+    "squash": [[0, 0], [1000, 180], [2500, 180], [3500, 0], [3800, 0]],
+    "gazeY": [[0, 0], [1000, 400], [2500, 400], [3300, 0], [3800, 0]],
+    "lean": [[0, 0], [1000, -40], [2500, -40], [3400, 0], [3800, 0]],
+    "eyeOpen": [[0, 0], [1000, -250], [2500, -250], [3300, 0], [3800, 0]]
+  }
+}

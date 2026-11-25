@@ -1,0 +1,37 @@
+// XP on the board (plan/xp-league.md §5): no bar, only three low signs, each
+// naming its XP. A finish that's a success carries its XP in a chip at its
+// sign's right end, "+5 XP"; a long thread's name is cut for it.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":31,"name":"task_complete","args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"mood":"happy","loops":1,"xp":5}}
+{"clock":4500}
+{"shot":"finish","pin":true}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":32,"name":"task_complete","args":{"outcome":"success","who":{"agent":"claude","thread":"move the settings pane into the popover"},"mood":"happy","loops":1,"xp":5}}
+{"clock":4500}
+{"shot":"finish-long"}
+// A ship, and tests that pass after they failed: a low sign of their own.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":33,"name":"react","args":{"mood":"proud","loops":1,"low":true,"sign":"shipped","xp":10}}
+{"clock":1500}
+{"shot":"ship"}
+// Today's ring full: its XP and the days in a row, low in gold behind a
+// full ring.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":34,"name":"react","args":{"mood":"happy","loops":2,"gold":"100 XP today, day 12","mark":"ring"}}
+{"clock":1500}
+{"shot":"ring"}
+// Monday's moment: last week's place, with its medal.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":35,"name":"react","args":{"mood":"proud","loops":2,"gold":"2nd, 512 XP last week","mark":"silver"}}
+{"clock":1500}
+{"shot":"medal"}

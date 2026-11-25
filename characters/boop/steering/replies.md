@@ -1,0 +1,54 @@
+<!-- Boop's replies' signs: what it holds up replying to what you said on push-to-talk (MomentOutput's replies, react.reply's answers). It holds up its bye lines too at your lock of the Mac, when it really waves (MomentRule.wave). Each line's first tag is the reply it's for (yes, no, huh, and dunno, a huh to a question; hello, bye, thanks, ouch, comfort, hehe, hush; status holds up what the agents are doing instead), and any more are the calendar's (morning, night, friday, party…, characters/CHARACTER.md §9) or the moment's: working (an agent works), waiting (something waits on you). {words} is a phrase of what you said, at most 12 characters ("hello" from "Hello!"): such a line is offered once for each. For each reply, only the lines with the most of the moment's tags that fit are offered, the calendar's among the plain ones (a night line is one of several, not the only one), never the one shown last while another fits; the brain (react.sign) picks the one that best answers what you said, of those for the reply it makes, and with no brain's pick the app picks one at random, never your words. At most 18 characters once filled, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
+- [yes] yep!
+- [yes] uh-huh
+- [yes] mhm!
+- [yes] yes yes!
+- [no] nope
+- [no] nuh-uh
+- [no] nah
+- [no] make me
+- [no] no way
+- [dunno] no idea!
+- [dunno] beats me
+- [dunno] who knows?
+- [dunno] {words}? idk
+- [huh] huh?
+- [huh] come again?
+- [huh] '{words}'?
+- [hello] hi hi!
+- [hello] oh, hi!
+- [hello] good, u?
+- [hello] right here!
+- [hello] {words} 2 u!
+- [hello morning] morning!
+- [bye] bye bye
+- [bye] see ya!
+- [bye] {words} 2 u!
+- [bye night] nite nite
+- [bye night] {turns} turns today
+- [bye working] i got this
+- [thanks] i know ;)
+- [thanks] hehe thx
+- [thanks] woo!
+- [thanks] yay!
+- [thanks] {words}? me?!
+- [thanks] we rock
+- [thanks] <3
+- [thanks] love u too
+- [thanks] aww
+- [ouch] :(
+- [ouch] rude.
+- [comfort] *hug*
+- [comfort] there there
+- [comfort] i'm here
+- [comfort night] bed time?
+- [comfort working] u got this
+- [comfort working] we'll fix it
+- [hehe] hehe
+- [hehe] lol
+- [hehe] {words} lol
+- [hush] ok, shh
+- [hush] *zips lips*
+- [hush] fine. hmph.
+- [no] ask them!
+- [no waiting] that's ur job

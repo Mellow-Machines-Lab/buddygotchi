@@ -16,17 +16,16 @@ isn't needed; the three packages alone need macOS 13. Flashing the board
 simulator's snapshots) also need a newer Python than the Mac's own
 (`brew install python`; [firmware/README.md](firmware/README.md#build-and-flash)). The simulator's page and the Mac's mirror of
 the board also need Emscripten, to build the firmware for a browser (the
-mirror is checked in, so it's rebuilt only when what the board draws
-changes), and Node, to test them (`brew install emscripten node`). The
+mirror, which the builds make when it's stale), and Node, to test them (`brew install emscripten node`). The
 first firmware build downloads the ESP32 toolchain into the checkout,
 which takes about five minutes.
 
-The character is in a repository of its own, SlimeBuddy, and the checks
-here use it: `make -C internal packs` fetches it into `characters/`
-(`--update` pulls it again). Pixel, the second character, is archived
-(CLAUDE.md, Repositories). A change to the character is a pull request
-in its repository; making its art or voice again is a target of that
-repository's `Makefile`.
+The character's pack is here, in `characters/boop/`. Pixel, the second
+character, is archived (CLAUDE.md, Repositories). Its generated files
+are made again with its own tools: the gel's tables and art with
+`node characters/boop/tools/slimegen/slimegen.mjs` (`--check` only
+checks they're fresh), the voice with
+`python3 characters/boop/tools/voicegen/voicegen.py`.
 
 `agent-hooks/` and `mellowharness/` are submodules, each a repository
 of its own: clone with `--recurse-submodules`, or run
@@ -113,16 +112,12 @@ Contributors work in those repositories directly; this one only bumps.
 
 **Setting up.** A fresh clone needs `git clone --recurse-submodules`, and
 **every new worktree**, the app's included, starts with both folders
-empty and no packs: run this in it before anything else, or the build
-can't find the packages or a character:
+empty: run this in it before anything else, or the build can't find the
+packages:
 
 ```sh
-git submodule update --init && make -C internal packs
+git submodule update --init
 ```
-
-To change a character from here, work in its clone
-(`characters/.repos/SlimeBuddy`, which `characters/boop` links into) on
-a branch, as in a submodule, and give it the push URL below.
 
 To push from a submodule (the owner's, when asked), point it at the SSH
 alias that can write to the organisation:
@@ -130,7 +125,6 @@ alias that can write to the organisation:
 ```sh
 git -C agent-hooks remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/AgentHooks.git
 git -C mellowharness remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/MellowHarness.git
-git -C characters/.repos/SlimeBuddy remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/SlimeBuddy.git
 ```
 
 **Changing a package.** A submodule is checked out on no branch, and a

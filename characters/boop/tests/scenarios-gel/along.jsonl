@@ -1,0 +1,52 @@
+// Typing along with you (render/gel/face.h), each on a frozen clock after a
+// reset. Idle and your hands busy (the `typing` tag): its keyboard out, its
+// paws tapping, its eyes down on the keys. You stop: the keyboard stays,
+// its paws at rest; four seconds on it's gone. At work its desk is out
+// already: its paws type briskly with you, its eyes on the keys, and go
+// back to the agents' soft typing when you stop. Asleep, nothing. A Moment takes the
+// face at once, the keys gone under it. At work in another activity's pose,
+// running or looking, its paws stay off the keys though you type, and it
+// types with you again once its own pose is typing.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","typing"]}
+{"clock":1500}
+{"shot":"typing","pin":true}
+{"clock":1680}
+{"shot":"typing-other-paw"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day"]}
+{"clock":3000}
+{"shot":"paused"}
+{"clock":8000}
+{"shot":"put-away"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","typing"]}
+{"clock":9000}
+{"t":"do","name":"react","play":"now","args":{"mood":"happy","sign":"nice one"}}
+{"clock":9600}
+{"shot":"under-a-moment"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"tool_use","mood":"focused","busy":1,"vol":0,"when":["day","typing"],"calls":[[0,1,"grep"]]}
+{"clock":1500}
+{"shot":"at-work-with-you","pin":true}
+{"clock":1670}
+{"shot":"at-work-other-paw"}
+{"t":"state","base":"working","act":"tool_use","mood":"focused","busy":1,"vol":0,"when":["day"],"calls":[[0,1,"grep"]]}
+{"clock":3200}
+{"shot":"at-work-you-stopped"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"focused","busy":1,"vol":0,"when":["day","typing"],"calls":[[0,1,"npm test"]]}
+{"clock":1500}
+{"shot":"at-work-running-paws-off"}
+{"t":"state","base":"working","act":"analyzing","mood":"focused","busy":1,"vol":0,"when":["day","typing"],"calls":[[0,1,"npm test"]]}
+{"clock":3000}
+{"shot":"at-work-looking-paws-off"}
+{"t":"state","base":"working","act":"tool_use","mood":"focused","busy":1,"vol":0,"when":["day","typing"],"calls":[[0,1,"npm test"]]}
+{"clock":4500}
+{"shot":"at-work-typing-again"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"when":["day","typing"]}
+{"clock":2000}
+{"shot":"asleep-nothing"}

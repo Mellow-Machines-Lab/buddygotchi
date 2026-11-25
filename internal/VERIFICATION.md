@@ -75,7 +75,6 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `linkkit-bridge`, `linkkit-flash` and `boop-cards`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
 | `make -C internal app` | What `make dev` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
 | `make -C internal simulator` | The board in a browser at `http://127.0.0.1:8206/`, alone, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`. No Bluetooth, so agents may run it |
-| `make -C internal packs` | The character packs the engine is tested with (`characters/packs.json`), each fetched from its repository if it's missing: a clone in `characters/.repos/`, and `characters/<id>` a link to its pack (`internal/tools/packs.py`; `--update` pulls them, `ID=PATH` links a pack of yours in its place) |
 | `make -C internal check` | The tests that need no board, camera or Jev key, one after another: `packs`, `test`, `fw-test`, `tools-test`, `sim` and `mirror`, then the chosen pack staged again, as some stage Boop's. It's narrower than CI: it builds no board's firmware, which CI does and `boards` does. Run both to cover CI |
 | `make -C internal boards` | The board's firmware, as CI builds it: the AMOLED's with Boop |
 | `make -C internal test` | `make -C internal build`, then Boop's Swift tests through the XCTest shim, with Boop's pack (`CHARACTER=boop internal/app/tools/run-tests.sh`: six runners side by side, each taking every sixth test, about a minute in all; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`; the runner's generator fails on a `func test…()` outside a test case, and on finding fewer than its floor of tests, so a test file gone missing fails the build; a failing test stops the runner at once), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder, so the target retries that failure alone, up to eight tries in all |
@@ -144,10 +143,6 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 - `python3 characters/charactergen.py`: `--check` and `--stage` a pack,
   `--which` names the pack in use and `--boards` the boards it has a face
   for ([CHARACTER.md](../characters/CHARACTER.md) §2).
-- `internal/tools/packs.py`: the character packs in `characters/`,
-  fetched from their repositories (what `make -C internal packs` runs;
-  `--help`). `characters/packs.json` names each as `Owner/Repo`, or
-  `Owner/Repo@branch` to fetch a branch.
 - `internal/tools/world_e2e.py URL`: two headless Boops, each with its own
   state folder and `HOME`, join the world at URL, see each other, boop
   each other and leave (L4). `npm run dev` in `internal/world/` serves a
@@ -167,7 +162,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   yet and needs `brew install espeak-ng`) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's tables
   and the pack's moods;
-  [its README](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/tools/slimegen/README.md)), and
+  [its README](../characters/boop/tools/slimegen/README.md)), and
   the engine's `firmware/tools/mirror.sh` (the Mac's mirror of the
   board, `characters/boop/mac/mirror/board.js`, with Emscripten;
   `--check` builds it again and compares), on `firmware/tools/wasm.sh`,
@@ -188,10 +183,10 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   its hooks reach Boop; `--headless` against a throwaway app.
 
 **A pack's own design checks** live with the pack: Boop's gel slime's in its
-[VALIDATION.md](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/design/slime-blob/VALIDATION.md) and
-[slimegen's README](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/tools/slimegen/README.md), and
+[VALIDATION.md](../characters/boop/design/slime-blob/VALIDATION.md) and
+[slimegen's README](../characters/boop/tools/slimegen/README.md), and
 Boop's recorded voice bank's in
-[its README](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/design/assets/boop-voice-v1/README.md).
+[its README](../characters/boop/design/assets/boop-voice-v1/README.md).
 None of them contacts Jev, a paid API or a device.
 
 **Side by side.** Make targets can run at once, in one checkout or in
@@ -367,7 +362,7 @@ Each suite says what it pins.
   and renderer), `test_push` (what reaches the AMOLED's panel), `test_voice`,
   `test_effects` (the sound effects) and `test_rig`. In Boop's pack,
   `test_gel`, which holds the gel slime's engine
-  to every rule of its design ([its VALIDATION.md](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/design/slime-blob/VALIDATION.md)).
+  to every rule of its design ([its VALIDATION.md](../characters/boop/design/slime-blob/VALIDATION.md)).
 - **The Mac app's look**, for Mac UI changes: run
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal

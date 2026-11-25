@@ -1,0 +1,21 @@
+{
+  "name": "Back after a night's sleep, Boop is glad, never lonely",
+  "case": "The person locks the Mac in the evening and comes back ten hours later, after a night's sleep. Boop is glad to see them: a happy, excited or curious face as it wakes up for them, never a lonely or sad one. A night away is a reunion, not a guilt trip.",
+  "always": true,
+  "why": "Decided with the owner: a night away is a glad reunion, lonely needs more than a night (about 20 hours, the steering's call, from the hours the back line gives); PERSONALITY: you coming back delights it, a happy, excited or fond face and a hello",
+  "steps": [
+    {
+      "event": "away",
+      "at": "0s"
+    },
+    {
+      "event": "back",
+      "at": "10h",
+      "expect": {
+        "react": "happy|excited|curious|pleased|affectionate",
+        "move": "wake up",
+        "mood": "calm|happy|focused"
+      }
+    }
+  ]
+}

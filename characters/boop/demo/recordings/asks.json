@@ -1,0 +1,180 @@
+{
+  "character": "boop",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 2.134,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 2.136,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Fix the login bug”"
+      }
+    },
+    {
+      "at": 2.456,
+      "effect": "Boop makes a curious face",
+      "line": "{\"t\":\"do\",\"id\":1065027493,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"reason\":\"you asked claude\",\"say\":{},\"mood\":\"curious\",\"loops\":1}}"
+    },
+    {
+      "at": 5.644,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"running the tests\"]],\"wact\":[\"tests\",\"running tests\"]}"
+    },
+    {
+      "at": 7.649,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"running the tests\"]],\"wact\":[\"tests\",\"running tests\",\"p\"]}"
+    },
+    {
+      "at": 7.649,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude: run the tests"
+      }
+    },
+    {
+      "at": 10.896,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"running the tests\"]]}"
+    },
+    {
+      "at": 12.529,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 12.529,
+      "line": "{\"t\":\"do\",\"id\":1065027494,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 12.53,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 12.85,
+      "effect": "Boop celebrates",
+      "line": "{\"t\":\"do\",\"id\":1065027495,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":15000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"xp\":5,\"who\":{\"agent\":\"claude\",\"thread\":\"fav-snack\"},\"say\":{},\"mood\":\"happy\",\"loops\":1}}"
+    },
+    {
+      "at": 16.89,
+      "cause": {
+        "kind": "wait",
+        "text": "A quiet hour later"
+      }
+    },
+    {
+      "at": 16.892,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\",\"tier3\"]}"
+    },
+    {
+      "at": 16.892,
+      "effect": "Boop reacts",
+      "line": "{\"t\":\"do\",\"id\":1065027496,\"name\":\"react\",\"play\":\"if_free\",\"args\":{\"reason\":\"quiet for 1 h\"}}"
+    },
+    {
+      "at": 17.207,
+      "effect": "Boop makes a curious face and asks “fav snack?”: cookie or pizza",
+      "line": "{\"t\":\"do\",\"id\":1065027497,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"fav snack?\",\"ask\":{\"q\":\"snack\",\"a\":\"cookie\",\"b\":\"pizza\"},\"say\":{},\"mood\":\"curious\",\"loops\":1}}"
+    },
+    {
+      "at": 21.392,
+      "cause": {
+        "kind": "tap",
+        "text": "You tap the left answer"
+      },
+      "input": "answer-a"
+    },
+    {
+      "at": 21.713,
+      "effect": "Boop makes a happy face",
+      "line": "{\"t\":\"do\",\"id\":1065027498,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"nom nom\",\"reason\":\"Boop will remember\",\"say\":{},\"mood\":\"happy\",\"loops\":1}}"
+    },
+    {
+      "at": 25.893,
+      "cause": {
+        "kind": "back",
+        "text": "The next morning"
+      }
+    },
+    {
+      "at": 25.897,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"tier3\"]}"
+    },
+    {
+      "at": 25.898,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"tier3\"],\"energy\":\"bright\"}"
+    },
+    {
+      "at": 26.213,
+      "effect": "Boop makes a happy face",
+      "line": "{\"t\":\"do\",\"id\":1065027499,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{},\"mood\":\"happy\",\"loops\":1}}"
+    },
+    {
+      "at": 30.39,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"morning\"],\"energy\":\"bright\"}"
+    },
+    {
+      "at": 30.39,
+      "effect": "Boop reacts",
+      "line": "{\"t\":\"do\",\"id\":1065027500,\"name\":\"react\",\"play\":\"if_free\",\"args\":{\"reason\":\"claude woke Boop\"}}"
+    },
+    {
+      "at": 30.391,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Add a dark mode”"
+      }
+    },
+    {
+      "at": 30.71,
+      "effect": "Boop makes a curious face",
+      "line": "{\"t\":\"do\",\"id\":1065027501,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"reason\":\"you asked claude\",\"say\":{},\"mood\":\"curious\",\"loops\":1}}"
+    },
+    {
+      "at": 34.528,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\"],\"energy\":\"bright\"}"
+    },
+    {
+      "at": 34.528,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 34.848,
+      "line": "{\"t\":\"do\",\"id\":1065027502,\"name\":\"notice\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"your turn\",\"low\":true,\"say\":{},\"mood\":\"happy\",\"loops\":1}}"
+    },
+    {
+      "at": 38.89,
+      "cause": {
+        "kind": "wait",
+        "text": "A quiet half hour"
+      }
+    },
+    {
+      "at": 38.891,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"tier3\"],\"energy\":\"bright\"}"
+    },
+    {
+      "at": 39.239,
+      "effect": "Boop makes a happy face",
+      "line": "{\"t\":\"do\",\"id\":1065027503,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"snack time?\",\"say\":{},\"mood\":\"happy\",\"loops\":1}}"
+    }
+  ],
+  "face": "gel",
+  "length": 45.39,
+  "name": "Boop",
+  "script": "fbdf294a5db423167e71c15ab4edb2898444de907561b62d0bc6d65c0810f099",
+  "takes": [],
+  "version": 1
+}

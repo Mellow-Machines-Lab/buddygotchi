@@ -1,0 +1,18 @@
+<!-- Boop's dreams: the signs it may hold up as it tells its dream, everything since the last one, the first time you show up after it (DreamReader, the react.sign question at the telling). A line may start with tags in brackets, every one of which the dream must have: the person's (fond: 3 touches or talks; distant: there, but no touch or word; here: 4 hours at the Mac; late: a prompt at night; answered: an ask answered) and the agents' (failed, clean, long: a 30-minute turn, quiet: no turns, poked: 5 pokes), and the calendar's (halloween, friday…, characters/CHARACTER.md §9). The lines about the person come first, so they're offered first; tagged lines before plain ones; at most six, each at most 18 characters, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
+- [fond] dreamt of u
+- [fond] warm dreams
+- [fond poked] poke dreams
+- [answered] i remember!
+- [distant] where were u?
+- [late] up so late...
+- [here] long day, huh
+- [failed long] bug nightmares
+- [failed] bad dream
+- [clean long] what a day
+- [clean] sweet dreams
+- [long] epic dreams
+- [quiet] dreamt of nothing
+- [halloween] spooky dreams
+- [winter] snowy dreams
+- zzz... hi!
+- had a dream

@@ -1,0 +1,18 @@
+{
+  "kind": "inspiration",
+  "note": "Inspiration for notice: like a dog hearing its name.",
+  "status": "approved",
+  "became": [
+    {
+      "what": "clip",
+      "id": "notice"
+    }
+  ],
+  "show": {
+    "mood": "calm",
+    "state": "idle",
+    "anim": "notice"
+  },
+  "frames": 25,
+  "ms": 1000
+}

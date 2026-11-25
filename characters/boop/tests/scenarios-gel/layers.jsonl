@@ -1,0 +1,74 @@
+// What the gel wears, and nothing else: nothing at night, no hat or
+// shades for a special day, no sky, no air (render/gel/layers.h), each on a frozen clock after a reset, idle unless
+// it says. A state every 20 s keeps the link alive.
+// A night: no nightcap, only its lids a little lower; nothing worn,
+// nothing in the sky.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["night"],"energy":"tired"}
+{"clock":1200}
+{"shot":"night"}
+// Asleep at night: Zs rising; and the same on a winter's night.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"when":["night"]}
+{"clock":2000}
+{"shot":"asleep-night","pin":true}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"happy","vol":0,"when":["night","winter"]}
+{"clock":3200}
+{"shot":"asleep-winter-night"}
+// A morning is as any time of day: nothing behind it and nothing in its
+// hand, idle or at work.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["morning"]}
+{"clock":4200}
+{"shot":"morning"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"determined","vol":0,"busy":1,"when":["morning"]}
+{"clock":1500}
+{"shot":"morning-working"}
+// A special day wears nothing: a party day, Halloween, winter, a Friday,
+// Valentine's.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0,"busy":1,"when":["day","party"]}
+{"clock":1500}
+{"shot":"party"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"curious","vol":0,"when":["evening","halloween"]}
+{"clock":1200}
+{"shot":"halloween"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["morning","winter"]}
+{"clock":1200}
+{"shot":"winter"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"proud","vol":0,"when":["day","friday"]}
+{"clock":1200}
+{"shot":"friday"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"pleased","vol":0,"when":["day","valentines"]}
+{"clock":1200}
+{"shot":"valentines"}
+// A party night wears nothing, as any night.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["night","party"],"energy":"tired"}
+{"clock":1200}
+{"shot":"party-night"}
+// A sign at night: held at its front.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["night"],"energy":"tired"}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"still broken","mood":"sad"}}
+{"clock":1600}
+{"shot":"sign-night"}

@@ -1,0 +1,11 @@
+{
+  "about": "Proud's idle move: a small dip, then chin up: tall, eyes up and half shut, a slight tilt, held, and down again.",
+  "group": "pastimes",
+  "ms": 3700,
+  "tracks": {
+    "squash": [[0, 0], [200, 60], [700, -220, "out"], [2400, -220], [3100, 0], [3700, 0]],
+    "gazeY": [[0, 0], [300, 0], [800, -700, "out"], [2400, -700], [3000, 0], [3700, 0]],
+    "eyeOpen": [[0, 0], [400, 0], [800, -350], [2400, -350], [2900, 0], [3700, 0]],
+    "lean": [[0, 0], [800, 0], [1600, 50], [2400, 30], [3100, 0], [3700, 0]]
+  }
+}

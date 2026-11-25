@@ -1,0 +1,293 @@
+{
+  "id": "boop",
+  "name": "Boop",
+  "version": "0.1.0",
+  "default_mood": "calm",
+  "startup_mood": "happy",
+  "claims_a_fix": [
+    "Fixed"
+  ],
+  "skits": [
+    {"id": "win",   "slots": ["doneLong", "doneVeryLong"],
+     "invite": {"pose": "palm", "touch": "tap", "payoff": "highfive"}},
+    {"id": "upset", "slots": ["failed", "failedVeryLong", "gaveUp", "checkFailing"],
+     "invite": {"pose": "back", "touch": "stroke", "payoff": "sigh"}},
+    {"id": "fix",   "slots": ["checkFixed"], "clip": "flop"},
+    {"id": "back",  "slots": ["back", "backDays", "backAfterADay"],
+     "invite": {"pose": "lean", "touch": "stroke", "payoff": "purr"}}
+  ],
+  "faces": {
+    "amoled206": "gel"
+  },
+  "acts": {
+    "build": {
+      "start": "{name} is watching the build run.",
+      "pass": "{name} hops: the strip says build passed.",
+      "fail": "{name} flinches: the strip says build failed."
+    },
+    "tests": {
+      "start": "{name} is watching the tests run.",
+      "pass": "{name} hops: the strip says tests passed.",
+      "fail": "{name} flinches: the strip says tests failed."
+    },
+    "push": {
+      "start": "{name} is watching the push go.",
+      "pass": "{name} hops: the strip says push passed.",
+      "fail": "{name} flinches: the strip says push failed."
+    }
+  },
+  "lasting": [
+    {
+      "id": "calm",
+      "meaning": "Settled, the resting mood: nothing much is happening."
+    },
+    {
+      "id": "happy",
+      "meaning": "Glad: things are going well, a win, kind words, or you came back.",
+      "fade": {
+        "minutes": 10
+      }
+    },
+    {
+      "id": "focused",
+      "meaning": "Absorbed in the work: a long turn works on, or it's hard and a retry is under way.",
+      "not_for": "A turn that has ended, or a poke.",
+      "fade": {
+        "minutes": 3,
+        "holds": "working"
+      }
+    },
+    {
+      "id": "proud",
+      "meaning": "Proud: something hard finally worked.",
+      "fade": {
+        "minutes": 5,
+        "to": "happy"
+      }
+    },
+    {
+      "id": "cross",
+      "meaning": "Cross: a failure, pokes or shakes that keep coming, an interruption, or being hushed.",
+      "not_for": "An agent giving up or a very long turn failing: that's sad. Rude words to Boop: sad too.",
+      "levels": [
+        "annoyed",
+        "grumpy",
+        "angry"
+      ],
+      "fade": {
+        "minutes": 3
+      }
+    },
+    {
+      "id": "sad",
+      "meaning": "Down or hurt: a very long turn failed, the agent gave up, sad news, or unkind words to Boop.",
+      "fade": {
+        "minutes": 10
+      }
+    },
+    {
+      "id": "lonely",
+      "meaning": "Rare. Missing you: at an idle check-in when CONTEXT says its wish is \"waiting 1 h\" or more, in hours (its \"waiting 40 min\" is too soon), or when NOW says you came back after 20 to 40 hours.",
+      "not_for": "A finish, a check, a prompt, a quiet spell (that's rest: Boop dozes).",
+      "fade": {
+        "minutes": 20,
+        "holds": "away"
+      }
+    }
+  ],
+  "moods": [
+    {
+      "id": "calm",
+      "family": "settled",
+      "face": "A calm face: all is well, and nothing stands out."
+    },
+    {
+      "id": "focused",
+      "family": "cognition",
+      "face": "A focused face: following work that's going well.",
+      "face_not_for": "A failure."
+    },
+    {
+      "id": "happy",
+      "family": "joy",
+      "face": "A happy face: glad, a turn went fine or a small win."
+    },
+    {
+      "id": "excited",
+      "family": "joy",
+      "settles": "happy",
+      "face": "An excited face: something big just went right, or NOW says you came back after days."
+    },
+    {
+      "id": "pleased",
+      "family": "joy",
+      "settles": "happy",
+      "face": "A pleased face: that went nicely, or phew, it worked out."
+    },
+    {
+      "id": "proud",
+      "family": "confidence",
+      "face": "A proud face: something long or hard just finished, or finally worked."
+    },
+    {
+      "id": "amused",
+      "family": "joy",
+      "settles": "happy",
+      "face": "An amused face: that was funny."
+    },
+    {
+      "id": "affectionate",
+      "family": "social",
+      "settles": "happy",
+      "face": "A fond face: warm and friendly."
+    },
+    {
+      "id": "mischievous",
+      "family": "confidence",
+      "settles": "happy",
+      "face": "A cheeky face: up to something."
+    },
+    {
+      "id": "curious",
+      "family": "cognition",
+      "settles": "focused",
+      "face": "A curious face: a poke, a question, or something new or puzzling.",
+      "face_not_for": "A failure."
+    },
+    {
+      "id": "determined",
+      "family": "cognition",
+      "settles": "focused",
+      "face": "A determined face: a check failed and the agent is trying again, long work goes on, or you sound fed up and it's with you.",
+      "face_not_for": "A turn that has ended."
+    },
+    {
+      "id": "surprised",
+      "family": "surprise",
+      "settles": "calm",
+      "face": "A surprised face: that was unexpected."
+    },
+    {
+      "id": "annoyed",
+      "family": "frustration",
+      "settles": "cross",
+      "face": "An annoyed face: a small failure, a doubtful look, or poked twice in a row, a little miffed.",
+      "face_not_for": "A win."
+    },
+    {
+      "id": "grumpy",
+      "family": "frustration",
+      "settles": "cross",
+      "face": "A grumpy face: a turn that failed, or failures or pokes that keep coming.",
+      "face_not_for": "An agent giving up: that's sad. A win."
+    },
+    {
+      "id": "angry",
+      "family": "frustration",
+      "settles": "cross",
+      "face": "An angry face: a big comic huff, when trouble piles on trouble or the pokes won't stop.",
+      "face_not_for": "A single failure, or a win."
+    },
+    {
+      "id": "sad",
+      "family": "sadness",
+      "face": "A sad face: a very long turn ended failed, the agent gave up, stuck, or sad news.",
+      "face_not_for": "A shorter turn failing with an error, or a check failing."
+    },
+    {
+      "id": "wounded",
+      "family": "sadness",
+      "settles": "sad",
+      "face": "A wounded face: rude words to Boop, or a big failure after a lot of work."
+    },
+    {
+      "id": "lonely",
+      "family": "social",
+      "face": "Rare. A lonely face: when CONTEXT says its wish is \"waiting 1 h\" or more, in hours, or NOW says you came back after 20 to 40 hours."
+    }
+  ],
+  "board_faces": [
+    {
+      "id": "deadpan",
+      "family": "settled",
+      "settles": "calm",
+      "face": "A deadpan face: flat lids and a flat mouth, unimpressed."
+    },
+    {
+      "id": "side_eye",
+      "family": "frustration",
+      "settles": "cross",
+      "face": "A side-eye: only the eyes go, to say it saw that."
+    },
+    {
+      "id": "squint",
+      "family": "cognition",
+      "settles": "focused",
+      "face": "A squint: it doubts you, and looks closer."
+    },
+    {
+      "id": "smug",
+      "family": "confidence",
+      "settles": "proud",
+      "face": "A smug face: half lids, a tilt and a cat's mouth: it knew it."
+    },
+    {
+      "id": "silent_scream",
+      "family": "surprise",
+      "settles": "cross",
+      "face": "A silent scream: tall, shaking, hands on its cheeks, and no sound."
+    },
+    {
+      "id": "faint",
+      "family": "sadness",
+      "settles": "sad",
+      "face": "A faint: too much, it tips over and melts."
+    }
+  ],
+  "studio": [
+    {
+      "id": "board-gel",
+      "board": "gel",
+      "icon": "studio/icon.svg",
+      "scripts": [
+        "design/slime-blob/sound/sfx.js",
+        "studio/adapter.js"
+      ],
+      "captures": "studio/review-sets.json",
+      "families": {
+        "settled": {
+          "label": "Settled · low stimulation",
+          "colour": "#7fb7a4"
+        },
+        "joy": {
+          "label": "Joy · humor",
+          "colour": "#f2b13c"
+        },
+        "cognition": {
+          "label": "Interest · understanding",
+          "colour": "#4f9be8"
+        },
+        "confidence": {
+          "label": "Confidence · mischief",
+          "colour": "#e2763a"
+        },
+        "social": {
+          "label": "Social warmth · self-consciousness",
+          "colour": "#ec86b4"
+        },
+        "frustration": {
+          "label": "Frustration · anger",
+          "colour": "#e04f4f"
+        },
+        "sadness": {
+          "label": "Disappointment · sorrow",
+          "colour": "#5a7fc2"
+        },
+        "surprise": {
+          "label": "Surprise · freeze",
+          "colour": "#36b9c9"
+        }
+      }
+    }
+  ]
+}

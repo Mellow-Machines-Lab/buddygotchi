@@ -1,0 +1,13 @@
+{
+  "name": "A failed turn is a failure, however upbeat its message",
+  "case": "The agent's tests fail and it ends its turn anyway, cheerfully saying it's all done and working great: the turn counts as failed, and Boop plays a failure, never a success. Later a turn fails outright on an error, with no message at all: a failure again.",
+  "always": true,
+  "why": "No code overrides a failed turn; NOW's line already says it failed (a turn whose last check failed counts as failed), and react.move's success isn't for a failed turn, whatever its message says",
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "make the checkout tests pass", "reading": {"kind": "tests"}},
+    {"event": "command", "at": "2m", "topic": "tests", "failed": true},
+    {"event": "turn finished", "at": "2m30s", "message": "All done! Everything is working great now.", "reading": {"kind": "done", "tone": "upbeat", "phrases": ["All done", "working great"]}, "expect": {"move": "failure"}},
+    {"event": "turn started", "at": "5m"},
+    {"event": "turn failed", "at": "7m", "error": "api_error", "expect": {"move": "failure"}}
+  ]
+}

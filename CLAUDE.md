@@ -34,7 +34,7 @@ cheap ESP32 board with a screen is the body.
 | `firmware/` | PlatformIO firmware for the board |
 | `linkkit/` | The device link, a package of its own: protocol, host library, device library ([SPEC](linkkit/SPEC.md)) |
 | `agent-hooks/`, `mellowharness/` | Submodules: reading agents' hooks, and the brain's harness. Each depends on nothing else here |
-| `characters/` | The pack contract, `charactergen.py`, the Studio; the pack is fetched into `characters/.repos/` (`boop`) |
+| `characters/` | The pack contract, `charactergen.py`, the Studio, and the character's pack itself, `characters/boop/`: the gel slime's words, art, firmware, sounds and evals |
 | `simulator/` | The board with no board, for development, tests and demos |
 | `internal/` | Everything that doesn't ship: tests, evals, `boopdev`, tools (`boopctl`), skills ([README](internal/README.md)) |
 | `internal/world/` | The world's server: Hono on Vercel, Postgres, PGlite in its tests (`npm test` there; [README](internal/world/README.md)) |
@@ -52,7 +52,7 @@ or tools goes in `internal/Makefile`. `make dev` uses Bluetooth, so it's
 the owner's. For agents:
 
 ```sh
-git submodule update --init && make -C internal packs  # first, in every new worktree
+git submodule update --init                           # first, in every new worktree
 make -C internal build                                # everything Swift
 make -C internal check                                # the tests that need no board, camera or Jev key; not the board's build
 make -C internal boards                               # the board's firmware, as CI builds it
@@ -97,29 +97,27 @@ no check fails on a stale one, and `simulator/tools/demos.py check` lists them.
 
 ## Repositories
 
-Boop is four public repositories, and a fifth is archived; the steps for working across them are in
+Boop is three public repositories; the steps for working across them are in
 [CONTRIBUTING.md](CONTRIBUTING.md#working-across-the-repositories).
 
 | Repository | Here at | What goes in it |
 | --- | --- | --- |
-| Mellow-Machines-Lab/buddygotchi | the root | Boop's engine, LinkKit, the pack contract, tools, tests and docs |
+| Mellow-Machines-Lab/buddygotchi | the root | Boop's engine, LinkKit, the character's pack, tools, tests and docs |
 | Mellow-Machines-Lab/AgentHooks | `agent-hooks/` | Reading agents' hooks. Nothing of Boop |
 | Mellow-Machines-Lab/MellowHarness | `mellowharness/` | The generic multiple-choice brain. Nothing of Boop |
-| Mellow-Machines-Lab/SlimeBuddy | `characters/boop` | The gel slime's own words, art, engine, sounds and evals |
-| Mellow-Machines-Lab/PixelBuddy | (none) | Archived: Pixel, the second character |
 
 Boop is one character, the gel slime, on one board, the AMOLED
-(`amoled206`). Pixel and the CYD board (`cyd24`) are archived. Restore
-them from commit `c71ccc5e`, the last that has them. The PixelBuddy
-repository stays as it is, with its own pin.
+(`amoled206`), and its pack is here, in `characters/boop/`: a change to
+what Boop does or draws is one commit in this repository. The pack came
+from Mellow-Machines-Lab/SlimeBuddy (its `main-v2` at `a96500c`), which
+keeps its history and takes no more changes. Pixel and the CYD board
+(`cyd24`) are archived: restore them from commit `c71ccc5e`, the last
+that has them, and Mellow-Machines-Lab/PixelBuddy.
 
-- Only what's a character's own goes in its repository; anything another
-  character could use stays here. Anything another app could use about
-  hooks goes in AgentHooks, about a personality brain in MellowHarness.
-- A change that spans repositories lands in this order: a package; the
-  character's content (this repo's CI fetches the pack's main); here; then
-  each character's `engine/` pin, to the commit here (its CI fails on the
-  old pin until then). Never commit a pointer to a commit that isn't pushed.
+- Anything another app could use about hooks goes in AgentHooks, about a
+  personality brain in MellowHarness.
+- A change that spans repositories lands in a package first, then here.
+  Never commit a pointer to a commit that isn't pushed.
 - Every repository squash-merges. **Only the owner pushes, tags or
   force-pushes, or says to.**
 

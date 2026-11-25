@@ -1,0 +1,11 @@
+{
+  "about": "Happy's idle move: one buoyant hop for nothing at all, a crouch first, beaming, eyes squeezed at the top, landing flat and round again.",
+  "group": "pastimes",
+  "ms": 1600,
+  "tracks": {
+    "squash": [[0, 0], [200, 140], [320, -150, "out"], [540, 0], [600, 150], [760, 0], [1600, 0]],
+    "lift": [[0, 0], [260, 0], [420, 14, "out"], [560, 0, "in"], [1600, 0]],
+    "eyeOpen": [[0, 0], [280, 0], [360, -700], [620, -700], [760, 0], [1600, 0]],
+    "mouthOpen": [[0, 0], [300, 0], [400, 450], [640, 0], [1600, 0]]
+  }
+}

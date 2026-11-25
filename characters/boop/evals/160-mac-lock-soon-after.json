@@ -1,0 +1,48 @@
+{
+  "name": "Locking the Mac: a real wave the first time, a slight silent one soon after",
+  "case": "The person locks the Mac, unlocks it two minutes later and locks it again. The first lock in a while gets a real wave with a word and a sign; the unlock and the lock soon after are routine: a slight wave in silence, no sign.",
+  "why": "MomentRule.bye and hello: a lock an hour or more after the last, or the first, is a real wave, medium; any other lock and every unlock a slight one, small. The rule makes the moment, so no Jev is asked.",
+  "scripted": true,
+  "checks": {
+    "reactions": "3"
+  },
+  "steps": [
+    {
+      "event": "session started",
+      "at": "0s"
+    },
+    {
+      "event": "lock",
+      "at": "1m",
+      "expect": {
+        "react": "calm",
+        "move": "bye",
+        "intensity": "medium",
+        "said": "some",
+        "sign": "bye bye|see ya!"
+      }
+    },
+    {
+      "event": "unlock",
+      "at": "3m",
+      "expect": {
+        "react": "calm",
+        "move": "wave",
+        "intensity": "small",
+        "said": "none",
+        "sign": "none"
+      }
+    },
+    {
+      "event": "lock",
+      "at": "8m",
+      "expect": {
+        "react": "calm",
+        "move": "wave",
+        "intensity": "small",
+        "said": "none",
+        "sign": "none"
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+// A minute and a half: the long haul. The agent ticks off a to-do list of
+// four, its count under the face, while the demo's clock jumps on through
+// the tiers, settling deeper into its work at each: a minute in, at ease;
+// 5, focused, and a stretch; 15, in the zone, and it melts for a moment.
+// Then the turn ends, and the quiet after it goes through its own: looking
+// round, a hop, a yawn, then a snooze.
+{"demo": 1, "title": "The long haul"}
+{"agent": "prompt", "text": "Migrate the payments service to the new queue"}
+{"brain": {"react.face": "curious"}}
+{"agent": "todo", "todos": "1/4", "after": 1}
+{"agent": "read", "file": "src/payments/queue.js", "say": "I'll start with the old queue."}
+{"you": "wait", "minutes": 1, "after": 2, "note": "A minute in: at ease"}
+{"agent": "todo", "todos": "2/4", "after": 1}
+{"agent": "run", "cmd": "npm test", "about": "Run the payments tests", "takes": 3}
+{"you": "wait", "minutes": 4, "after": 1, "note": "Five minutes in: focused"}
+{"agent": "todo", "todos": "3/4", "after": 6}
+{"you": "wait", "minutes": 10, "after": 2, "note": "Fifteen minutes in: in the zone"}
+{"agent": "todo", "todos": "4/4", "after": 6}
+{"agent": "reply", "text": "The payments service runs on the new queue, and its tests pass.", "after": 2}
+{"brain": {"react.face": "proud"}, "mood": "proud"}
+{"you": "wait", "minutes": 1, "after": 5, "note": "A minute idle: it looks round"}
+{"you": "wait", "minutes": 4, "after": 6, "note": "Five minutes idle: a hop, a yawn"}
+{"you": "wait", "minutes": 10, "after": 6, "note": "Fifteen minutes idle: it nods off"}

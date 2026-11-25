@@ -752,13 +752,6 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
     return data
 
 
-def known_packs() -> dict[str, str]:
-    """The packs the engine is tested with, each in a repository of its own
-    (characters/packs.json), which internal/tools/packs.py fetches."""
-    listed = CHARACTERS / "packs.json"
-    return json.loads(listed.read_text()) if listed.is_file() else {}
-
-
 def local_packs(also: Path | None = None) -> list[Path]:
     packs = [p.parent for p in sorted(CHARACTERS.glob("*/character.json"))]
     if also and also not in packs and (also / "character.json").exists():
@@ -979,9 +972,6 @@ def main(argv: list[str]) -> int:
     pack = Path(rest[0]).absolute() if rest else in_use() if "--which" in argv else chosen()
     if not (pack / "character.json").exists():
         print(f"charactergen: {pack} isn't a character pack (no character.json)", file=sys.stderr)
-        if pack.parent == CHARACTERS and pack.name in known_packs():
-            print(f"charactergen: {pack.name}'s pack is in a repository of its own: fetch it with "
-                  f"`make -C internal packs`", file=sys.stderr)
         return 1
     if "--which" in argv:
         print(pack)

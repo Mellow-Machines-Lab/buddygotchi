@@ -1,0 +1,56 @@
+// Where the gel looks by itself (render/gel/gaze.h), each on a frozen clock
+// after a reset. At work, typing: forward at rest, and still forward as a
+// new call comes. Looking, running or waiting, its eyes stay where the
+// pose has them: down the page, on the monitor, out at you. Something
+// needs you: up at you first, then turned to the Mac on its right and held
+// there; to its left with the Mac there; forward with no side told.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"tool_use","mood":"focused","busy":2,"vol":0,"when":["day"],"calls":[[0,1,"grep"],[1,1,"sed"]]}
+{"clock":3600}
+{"shot":"work-rest"}
+{"t":"state","base":"working","act":"tool_use","mood":"focused","busy":2,"vol":0,"when":["day"],"calls":[[0,1,"grep"],[1,2,"npm test"]]}
+{"clock":4300}
+{"shot":"work-rest-new-call"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"analyzing","mood":"focused","busy":2,"vol":0,"when":["day"],"calls":[[0,1,"grep"],[1,1,"sed"]]}
+{"clock":3600}
+{"t":"state","base":"working","act":"analyzing","mood":"focused","busy":2,"vol":0,"when":["day"],"calls":[[0,1,"grep"],[1,2,"npm test"]]}
+{"clock":4300}
+{"shot":"looking-no-glance"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"focused","busy":2,"vol":0,"when":["day"],"calls":[[0,1,"grep"],[1,1,"sed"]]}
+{"clock":3600}
+{"t":"state","base":"working","act":"terminal","mood":"focused","busy":2,"vol":0,"when":["day"],"calls":[[0,1,"grep"],[1,2,"npm test"]]}
+{"clock":4300}
+{"shot":"running-no-glance"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"waiting","mood":"focused","busy":2,"vol":0,"when":["day"],"calls":[[0,1,"grep"],[1,1,"sed"]]}
+{"clock":3600}
+{"t":"state","base":"working","act":"waiting","mood":"focused","busy":2,"vol":0,"when":["day"],"calls":[[0,1,"grep"],[1,2,"npm test"]]}
+{"clock":4300}
+{"shot":"waiting-no-glance"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"focused","busy":1,"vol":0,"when":["day","macright"],"attn":{"id":7,"agent":"codex","project":"api","name":"Fix the login test","kind":"approve"}}
+{"clock":700}
+{"shot":"needs-you-at-you"}
+{"clock":3000}
+{"shot":"needs-you-at-the-mac-right","pin":true}
+{"clock":20000}
+{"t":"state","base":"working","act":"terminal","mood":"focused","busy":1,"vol":0,"when":["day","macright"],"attn":{"id":7,"agent":"codex","project":"api","name":"Fix the login test","kind":"approve"}}
+{"clock":24000}
+{"shot":"needs-you-still-turned"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"focused","busy":1,"vol":0,"when":["day","macleft"],"attn":{"id":8,"agent":"claude","project":"api","kind":"question"}}
+{"clock":3000}
+{"shot":"needs-you-at-the-mac-left"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"focused","busy":1,"vol":0,"when":["day"],"attn":{"id":9,"agent":"claude","project":"api","kind":"question"}}
+{"clock":3000}
+{"shot":"needs-you-no-side"}

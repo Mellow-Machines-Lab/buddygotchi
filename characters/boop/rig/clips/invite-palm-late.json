@@ -1,0 +1,12 @@
+{"about": "A late tap on the palm: it comes back to the glass with a little hop, its palm up again, for the high five.", "group": "touch_answers", "ms": 600, "tracks": {
+    "squash": [[0, 0], [100, 140], [240, -120], [400, 80], [600, 0]],
+    "lift": [[0, 0], [110, 0], [250, 14, "out"], [400, 0, "in"]],
+    "glass": [[0, 0], [460, 1000, "out"]],
+    "lean": [[0, 0], [460, 110]],
+    "eyeSize": [[0, 0], [300, 120]],
+    "gazeY": [[0, 0], [400, -260]],
+    "handRSize": [[0, 0], [360, 870, "out"]],
+    "handRX": [[0, 92], [360, 84, "out"]],
+    "handRY": [[0, 6], [360, 30, "out"]],
+    "handRShape": [[0, 0], [300, 1000]],
+    "handRGlass": [[0, 0], [330, 0], [480, 1000, "out"]]}}

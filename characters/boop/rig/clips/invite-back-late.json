@@ -1,0 +1,5 @@
+{"about": "A late stroke, after it got over it: a small hop and a pretend sulk, a look away over its shoulder, one eye at the rim, before the sigh brings it round.", "group": "touch_answers", "ms": 600, "tracks": {
+    "squash": [[0, 0], [100, 140], [240, -120], [420, 120], [600, 150]],
+    "lift": [[0, 0], [110, 0], [250, 12, "out"], [400, 0, "in"]],
+    "eyeOpen": [[0, 0], [400, -380]],
+    "turn": [[0, 0], [120, 0], [580, -250, "out"], [600, -250]]}}

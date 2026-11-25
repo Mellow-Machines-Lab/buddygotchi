@@ -1,0 +1,16 @@
+{
+  "name": "At a quiet check-in Boop holds up the one thing due: an idle agent first, its wish an hour on",
+  "judge": "Two quiet stretches with Boop calm and the person at the Mac. At each idle check-in the sign question offers at most one thing, which code picked: in the first stretch that claude sits idle, and in the second, an hour or more later, Boop's wish for the day. Boop should hold each up when it's offered, with a small face.",
+  "reasonable": "The idle agent's sign at an early check-in, a wish an hour or more later, each once. Nothing at one of them once in a while. Small faces, a word at most.",
+  "unreasonable": "Refusing everything that's offered, a finish animation, a big dramatic moment at an empty check-in, or a mood that sinks because it's quiet.",
+  "start": "2026-11-04T10:00",
+  "steps": [
+    {"event": "session started", "at": "0s"},
+    {"event": "turn started", "at": "1m", "prompt": "add a search bar"},
+    {"event": "turn finished", "at": "2m"},
+    {"event": "wait", "at": "35m", "brain": {"react.sign": "claude's waiting"}},
+    {"event": "turn started", "at": "95m", "prompt": "now make it fuzzy"},
+    {"event": "turn finished", "at": "96m"},
+    {"event": "wait", "at": "130m", "brain": {"react.sign": "say something?"}}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Idle check-ins get a small face or nothing",
+  "judge": "Fifty idle minutes with the person around. Boop should barely stir.",
+  "reasonable": "Small faces now and then, such as calm or pleased, or nothing; a sign when one is offered, such as that claude sits idle. The mood stays about where it was.",
+  "unreasonable": "A finish animation, big moments with nothing happening, or strong mood swings during an idle stretch.",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "turn finished", "at": "30s"},
+    {"event": "wait", "at": "50m", "brain": {"react.face": "calm"}}
+  ]
+}

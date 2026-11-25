@@ -1,0 +1,35 @@
+// The invite late: missed, then a touch of its kind in the 30 s after
+// turns Boop round, pleased, into the payoff; past the window a tap is a
+// poke again.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "back", "touch": "stroke", "payoff": "sigh", "ms": 4000, "xp": 3, "label": "pet"}}}
+{"clock": 6200}
+{"expect": {"invite": {"stage": "window"}}}
+{"clock": 20000}
+{"t": "dbg.touch", "x": 110, "y": 110, "to_x": 210, "to_y": 110, "ms": 300}
+{"clock": 20100}
+{"clock": 20200}
+{"clock": 20300}
+{"clock": 20400}
+{"expect": {"invite": {"stage": "late"}}}
+{"clock": 20600}
+{"shot": "turn"}
+{"clock": 21600}
+{"shot": "late-sigh", "pin": true}
+{"clock": 24000}
+{"expect": {"invite": null}}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "ms": 4000, "xp": 3, "label": "tap"}}}
+{"clock": 36000}
+{"expect": {"invite": null}}
+{"input": {"touch": [236, 110]}}
+{"clock": 36060}
+{"clock": 36120}
+{"clock": 36180}
+{"expect": {"moment": {"anim": "poked"}, "invite": null}}

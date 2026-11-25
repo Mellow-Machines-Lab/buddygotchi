@@ -1,0 +1,5 @@
+{"about": "The sigh: your stroke on its back, a breath in, tall, its shoulders drop, and it comes on round to you, calmer, a puff of breath.", "group": "touch_answers", "ms": 2400, "tracks": {
+    "squash": [[0, 150], [450, -150, "out"], [950, 200, "in"], [1500, 40], [2000, 0]],
+    "eyeOpen": [[0, -380], [500, -500], [1300, -250], [2000, 0]],
+    "gazeY": [[0, 300], [1400, 0]],
+    "turn": [[0, -500], [700, -1000, "out"], [2400, -1000]]}}

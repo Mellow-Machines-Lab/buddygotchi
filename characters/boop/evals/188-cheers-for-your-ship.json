@@ -1,0 +1,24 @@
+{
+  "name": "Cheers for your ship: Boop is proud, with a sign",
+  "case": "Three buddies in the world cheered the ship you just pushed, all in one moment. Boop is proud of it: a face, not small, in silence, and a sign that thanks them or says you shipped.",
+  "why": "MomentRule.world: cheers for your ship make it proud, medium, with a sign and no word: a boop from the world is no skit. The rule makes the moment, so no Jev is asked.",
+  "steps": [
+    {
+      "event": "session started",
+      "at": "0s"
+    },
+    {
+      "event": "world",
+      "at": "1m",
+      "kind": "cheer",
+      "count": 3,
+      "expect": {
+        "react": "proud",
+        "intensity": "medium",
+        "said": "none",
+        "sign": "we shipped!|thanks, all!|hi, world!|a friend!"
+      }
+    }
+  ],
+  "scripted": true
+}

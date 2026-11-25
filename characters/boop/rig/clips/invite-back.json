@@ -1,0 +1,7 @@
+{"about": "The upset skit's invite: it flinches, stomps once, and turns its back to you, slumped, lids low; only its face goes round the dome.", "group": "touch_answers", "ms": 1300, "tracks": {
+    "squash": [[0, 0], [90, 240, "out"], [280, -60], [420, -200, "out"], [560, 280, "in"], [700, 60, "out"], [1300, 150]],
+    "lift": [[0, 0], [300, 0], [450, 16, "out"], [560, 0, "in"], [1300, 0]],
+    "x": [[0, 0], [90, -6, "out"], [400, 0]],
+    "eyeOpen": [[0, 0], [300, -330], [1300, -380]],
+    "gazeY": [[0, 0], [400, 250], [1300, 300]],
+    "turn": [[0, 0], [650, 0], [1250, -500, "inout"], [1300, -500]]}, "cues": [[560, "body_contact"]]}

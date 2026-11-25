@@ -8,10 +8,6 @@
 # warning, so app/ can't reach internal/ code (internal/README.md).
 SWIFT_CHECK := --explicit-target-dependency-import-check error
 
-# The chosen character pack, fetched from its own repository first if it
-# isn't in characters/ yet (characters/CHARACTER.md §2).
-PACK := python3 internal/tools/packs.py --chosen
-
 # The debug app on a folder of its own (~/Library/Application Support/Boop-dev),
 # with the simulator window inside, and the studio's matrix and the live
 # dashboard open beside it (internal/tools/dev.sh). It starts on the board,
@@ -19,7 +15,6 @@ PACK := python3 internal/tools/packs.py --chosen
 # Simulator row switch to the simulator window and back, and the choice
 # is kept. FRESH=1 starts the folder afresh: onboarding again.
 dev:
-	$(PACK)
 	internal/tools/dev.sh
 
 # Boop.app, as it ships, in .build/Boop.app (app/tools/bundle.sh): a release
@@ -31,7 +26,6 @@ dev:
 # ours, the simulator for now, a board in a window of its own to choose
 # as Boop's body (needs Emscripten).
 bundle:
-	$(PACK)
 	app/tools/bundle.sh
 
 # The demos (characters/DEMOS.md). With no NAME, it asks which demo and
@@ -39,7 +33,6 @@ bundle:
 # simulator's page from its recording, at once; NAME=all every one, one
 # after another. BOARD=usb:SOCKET plays it on a board.
 demo:
-	@$(PACK)
 	@simulator/tools/demos.py $(if $(NAME),play $(NAME) $(if $(BOARD),--board $(BOARD)))
 
 # The harness eval scenarios (internal/EVALS.md) against Jev at the full level,
@@ -50,7 +43,6 @@ demo:
 # (internal/VERIFICATION.md L5). Builds boopdev alone, with the chosen
 # pack staged, not the rest of `make -C internal build`.
 eval:
-	$(PACK)
 	python3 characters/charactergen.py --stage
 	swift build $(SWIFT_CHECK) --product boopdev
 	.build/debug/boopdev eval --level full
@@ -59,7 +51,6 @@ eval:
 # plugged in; BOOP_PORT picks one when there are two (firmware/tools/flash.sh,
 # firmware/README.md).
 flash:
-	$(PACK)
 	firmware/tools/flash.sh
 
 # Every build's output, so the next build starts from nothing: the Swift

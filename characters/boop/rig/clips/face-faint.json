@@ -1,0 +1,5 @@
+{"about": "The faint's move: it sways, tips over one way and melts down into a puddle, lies there a while, and pulls itself back up.", "group": "moments", "ms": 5000, "tracks": {
+    "squash": [[0, 0], [500, -80], [800, 0]],
+    "lean": [[0, 0], [500, -120], [1100, 520, "in"], [1500, 300, "out"], [4000, 300], [4700, 0]],
+    "melt": [[0, 0], [700, 0], [1600, 230, "in"], [4000, 230], [4700, 0, "inout"]],
+    "eyeSize": [[0, 0], [1600, -150], [4000, -150], [4700, 0]]}}

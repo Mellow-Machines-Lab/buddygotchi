@@ -1,0 +1,274 @@
+{
+  "character": "boop",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.002,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 1.005,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 1.005,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Clean up the old payment handlers and get the tests green”"
+      }
+    },
+    {
+      "at": 1.322,
+      "effect": "Boop makes a focused face",
+      "line": "{\"t\":\"do\",\"id\":1896791293,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"reason\":\"you asked claude\",\"say\":{},\"mood\":\"focused\",\"loops\":1}}"
+    },
+    {
+      "at": 3.455,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"reading\"]]}"
+    },
+    {
+      "at": 4.096,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude reads src/payments/handlers.js"
+      }
+    },
+    {
+      "at": 5.164,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,2,\"searching\"]]}"
+    },
+    {
+      "at": 7.247,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude: find the old handlers"
+      }
+    },
+    {
+      "at": 8.25,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,3,\"running sed\"]]}"
+    },
+    {
+      "at": 10.254,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude: read the routes"
+      }
+    },
+    {
+      "at": 11.322,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":1,\"idle\":1,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0i1\",\"watch\":0,\"who\":\"the-work-str\",\"calls\":[[0,3,\"running sed\"]]}"
+    },
+    {
+      "at": 11.323,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,3,\"running sed\"]]}"
+    },
+    {
+      "at": 11.323,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Update the payments docs”"
+      }
+    },
+    {
+      "at": 12.388,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,3,\"running sed\"],[1,1,\"reading\"]]}"
+    },
+    {
+      "at": 12.996,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude reads docs/payments.md"
+      }
+    },
+    {
+      "at": 15.001,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,4,\"searching\"],[1,1,\"reading\"]]}"
+    },
+    {
+      "at": 17.003,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,4,\"searching\"],[1,1,\"thinking\"]]}"
+    },
+    {
+      "at": 17.005,
+      "line": "{\"t\":\"do\",\"id\":1896791294,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"searching\",\"as\":\"shrug\"}}"
+    },
+    {
+      "at": 17.005,
+      "cause": {
+        "kind": "tool_failed",
+        "text": "A lookup that finds nothing: a shrug"
+      }
+    },
+    {
+      "at": 19.139,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,4,\"searching\"],[1,2,\"editing +1\"]]}"
+    },
+    {
+      "at": 19.748,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits docs/payments.md"
+      }
+    },
+    {
+      "at": 21.754,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,5,\"running node\"],[1,2,\"editing +1\"]]}"
+    },
+    {
+      "at": 23.888,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,5,\"running node\"],[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 23.888,
+      "line": "{\"t\":\"do\",\"id\":1896791295,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"node\",\"as\":\"bonk\"}}"
+    },
+    {
+      "at": 23.888,
+      "cause": {
+        "kind": "tool_failed",
+        "text": "A failed command hits it"
+      }
+    },
+    {
+      "at": 26.996,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,6,\"running node\"],[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 29.001,
+      "line": "{\"t\":\"do\",\"id\":1896791296,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"node\",\"as\":\"bonk2\"}}"
+    },
+    {
+      "at": 29.001,
+      "cause": {
+        "kind": "tool_failed",
+        "text": "Again: harder"
+      }
+    },
+    {
+      "at": 32.197,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,7,\"editing\"],[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 32.838,
+      "line": "{\"t\":\"do\",\"id\":1896791297,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"-140\",\"as\":\"shatter\"}}"
+    },
+    {
+      "at": 32.839,
+      "cause": {
+        "kind": "tool",
+        "text": "A big deletion, swallowed"
+      }
+    },
+    {
+      "at": 35.002,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,7,\"editing\"],[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 35.989,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,8,\"running the tests\"],[1,2,\"thinking\"]],\"wact\":[\"tests\",\"running tests\"]}"
+    },
+    {
+      "at": 37.996,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,8,\"running the tests\"],[1,2,\"thinking\"]],\"wact\":[\"tests\",\"running tests\",\"f\"]}"
+    },
+    {
+      "at": 37.996,
+      "cause": {
+        "kind": "tool_failed",
+        "text": "Failing tests rain on it"
+      }
+    },
+    {
+      "at": 40,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,9,\"editing +1\"],[1,2,\"thinking\"]],\"wact\":[\"tests\",\"running tests\",\"f\"]}"
+    },
+    {
+      "at": 40.639,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,9,\"editing +1\"],[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 40.639,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits src/payments/routes.js"
+      }
+    },
+    {
+      "at": 41.002,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,9,\"editing +1\"],[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 43.739,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,10,\"running the tests\"],[1,2,\"thinking\"]],\"wact\":[\"tests\",\"running tests\"]}"
+    },
+    {
+      "at": 45.748,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,10,\"running the tests\"],[1,2,\"thinking\"]],\"wact\":[\"tests\",\"running tests\",\"p\"]}"
+    },
+    {
+      "at": 45.749,
+      "cause": {
+        "kind": "tool",
+        "text": "Green: confetti"
+      }
+    },
+    {
+      "at": 49.004,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w0w1\",\"watch\":1,\"who\":\"the-work-str\",\"calls\":[[0,10,\"running the tests\"],[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 49.392,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"idle\":1,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w1a0\",\"watch\":0,\"who\":\"the-work-str\",\"pill\":[1,\"the-work-str finished\"],\"calls\":[[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 49.392,
+      "line": "{\"t\":\"do\",\"id\":1896791298,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 49.392,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 49.713,
+      "effect": "Boop celebrates",
+      "line": "{\"t\":\"do\",\"id\":1896791299,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":15000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"xp\":5,\"who\":{\"agent\":\"claude\",\"thread\":\"the-work-stream\"},\"say\":{},\"mood\":\"proud\",\"loops\":2}}"
+    },
+    {
+      "at": 49.714,
+      "effect": "Boop's mood is now proud",
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"proud\",\"busy\":1,\"idle\":1,\"vol\":6,\"when\":[\"day\"],\"pips\":\"w1a0\",\"watch\":0,\"who\":\"the-work-str\",\"pill\":[1,\"the-work-str finished\"],\"calls\":[[1,2,\"thinking\"]]}"
+    },
+    {
+      "at": 52.389,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"proud\",\"busy\":0,\"idle\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"a0i1\",\"watch\":1,\"who\":\"the-work-str\",\"pill\":[0,\"the-work-str finished\"]}"
+    },
+    {
+      "at": 52.389,
+      "line": "{\"t\":\"do\",\"id\":1896791300,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":1,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 52.389,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 53.998,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"proud\",\"busy\":0,\"idle\":2,\"vol\":6,\"when\":[\"day\"],\"pips\":\"a0i1\",\"watch\":1,\"who\":\"the-work-str\"}"
+    }
+  ],
+  "face": "gel",
+  "length": 58.5,
+  "name": "Boop",
+  "script": "94233a2d1ca2abb2618008fb7374f24a6469e457d0900d572f355674cac8e558",
+  "takes": [],
+  "version": 1
+}

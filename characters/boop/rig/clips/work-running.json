@@ -1,0 +1,15 @@
+{
+  "about": "Working, running (a command, the tests, a build, helpers): it scoots back from the desk and sits up tall, its paws held together off the keys, eyes wide and fixed on the monitor, bobbing on the spot with anticipation.",
+  "group": "work_poses",
+  "ms": 2000,
+  "loop": true,
+  "tracks": {
+    "lean": [[0, 380], [500, 420], [1000, 380], [1500, 420], [2000, 380]],
+    "x": [[0, 42], [2000, 42]],
+    "lift": [[0, 4], [250, 14, "out"], [500, 4, "in"], [1000, 4], [1250, 14, "out"], [1500, 4, "in"], [2000, 4]],
+    "squash": [[0, -330], [250, -380], [500, -300], [1000, -330], [1250, -380], [1500, -300], [2000, -330]],
+    "gazeX": [[0, -750], [2000, -750]],
+    "gazeY": [[0, 300], [2000, 300]],
+    "eyeSize": [[0, 220], [2000, 220]]
+  }
+}

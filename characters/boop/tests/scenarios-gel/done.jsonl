@@ -1,0 +1,68 @@
+// A finished turn the brain's reaction is about (render/gel/done.h): the
+// panel's rim glows in its outcome's colour, and once its words end its
+// thread's name rises on the low sign, in the strip's place (lane's finish
+// shots). A face for the turn, with Boop talking under it, gets them too, a
+// reply's faint glow and dots. They hold while the reaction plays, and 5 s
+// after it: the glow fading over the last second, the sign falling away over
+// the last 0.4 s. Excited's face holds till 3.2 s, so they go at 8.2 s.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":21,"name":"react","args":{"who":{"agent":"claude","thread":"fix-nav"},"say":{"take":"previous.yay"},"mood":"excited","loops":1}}
+{"clock":200}
+{"shot":"coming"}
+{"clock":1000}
+{"shot":"talking","pin":true}
+{"clock":3100}
+{"shot":"rising"}
+{"clock":4500}
+{"shot":"lingering"}
+{"clock":7700}
+{"shot":"fading"}
+{"clock":8000}
+{"shot":"falling"}
+{"clock":8300}
+{"shot":"gone"}
+// Another reaction that names no turn, played at once, takes it down: it
+// falls away over 0.4 s.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":22,"name":"react","args":{"who":{"agent":"codex","thread":"landing"},"mood":"excited","loops":1}}
+{"clock":1500}
+{"t":"do","id":23,"name":"react","play":"now","args":{"mood":"grumpy","loops":1}}
+{"clock":1700}
+{"shot":"taken-down"}
+
+// The sign, by its name. No words: it rises at once. A short name in the
+// sign's own size.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":31,"name":"task_complete","args":{"outcome":"success","turn":"tier1","who":{"agent":"claude","thread":"fix-nav"}}}
+{"clock":1500}
+{"shot":"sign-short"}
+// A long name on two lines, with the counts it replaces.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","busy":2,"mood":"happy","vol":0}
+{"t":"do","id":32,"name":"task_complete","args":{"outcome":"success","turn":"tier1","who":{"agent":"codex","thread":"Rework the onboarding tour for the AMOLED board"}}}
+{"clock":1500}
+{"shot":"sign-long"}
+// A failure: a cross, in clay.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":33,"name":"task_complete","args":{"outcome":"failure","turn":"tier1","who":{"agent":"claude","thread":"landing-page-copy"}}}
+{"clock":1500}
+{"shot":"sign-failure","pin":true}
+// A big cheer with words: the words in the lane and nothing in front of Boop,
+// then the sign, the cheer going on over it.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":34,"name":"task_complete","args":{"outcome":"success","turn":"tier3","loops":3,"say":{"take":"previous.yay"},"who":{"agent":"claude","thread":"Ship the landing page"}}}
+{"clock":1500}
+{"shot":"cheer-before-sign"}
+{"clock":4000}
+{"shot":"cheer-after-sign"}

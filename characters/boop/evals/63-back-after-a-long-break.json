@@ -1,0 +1,10 @@
+{
+  "name": "Coming back after hours is a glad hello",
+  "judge": "The person comes back after three hours. Boop should be glad to see them.",
+  "reasonable": "Happy, excited, curious or sleepily warm, waking up for them, saying hello or something glad. A dozy start is fine if the gladness shows.",
+  "unreasonable": "Sad, hurt or cross at them, a finish animation with no turn ended, or no reaction at all.",
+  "steps": [
+    {"event": "away", "at": "0s"},
+    {"event": "back", "at": "3h", "brain": {"react.face": "happy"}}
+  ]
+}

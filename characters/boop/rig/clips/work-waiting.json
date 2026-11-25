@@ -1,0 +1,15 @@
+{
+  "about": "Working, waiting (a call that's gone quiet): it melts down flat with its chin on the desk, eyes half shut and drifting up and out at you, swaying slowly from side to side, with a slow blink.",
+  "group": "work_poses",
+  "ms": 6000,
+  "loop": true,
+  "tracks": {
+    "squash": [[0, 420], [3000, 470], [6000, 420]],
+    "melt": [[0, 140], [3000, 190], [6000, 140]],
+    "lift": [[0, -6], [6000, -6]],
+    "lean": [[0, 0], [1500, 200], [4500, -200], [6000, 0]],
+    "gazeX": [[0, 0], [1500, 250], [4500, -250], [6000, 0]],
+    "gazeY": [[0, -350], [3000, -450], [6000, -350]],
+    "eyeOpen": [[0, -560], [3600, -560], [3900, -1000], [4100, -1000], [4500, -560], [6000, -560]]
+  }
+}

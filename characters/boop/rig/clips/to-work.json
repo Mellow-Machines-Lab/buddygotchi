@@ -1,0 +1,13 @@
+{
+  "about": "From resting to work, half a second and a bit: it tucks one side and the other, as if rolling up its sleeves, then settles down onto its seat and looks to the keys.",
+  "group": "bases",
+  "ms": 850,
+  "tracks": {
+    "lean": [[0, 0], [120, 130], [260, -130], [400, 0], [850, 0]],
+    "squash": [[0, 0], [120, 40], [260, 40], [400, -70], [560, 150, "in"], [700, -30], [850, 0]],
+    "lift": [[0, 0], [400, 6, "out"], [560, 0, "in"], [850, 0]],
+    "gazeY": [[0, 0], [440, 0], [620, 500], [850, 0]],
+    "eyeOpen": [[0, 0], [120, -300], [300, -300], [420, 0], [850, 0]]
+  },
+  "cues": [[560, "body_contact"]]
+}

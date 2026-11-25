@@ -1,0 +1,21 @@
+// A fix: a check passes after it failed. The Mac sends the fix skit's
+// Moment as a react with a face, the low sign "tests fixed", its XP and
+// the skit's clip, flop. The gel plays a Moment's clip as reply-<clip>,
+// else by its own name: the flop of relief, as it starts. It holds its
+// breath, lets go flat against the glass with both palms on it, slides
+// down and peels off, the low sign under it all along.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "id": 41, "name": "react", "play": "now", "args": {"mood": "pleased", "loops": 1, "low": true, "sign": "tests fixed", "xp": 5, "clip": "flop", "say": {}}}
+{"clock": 1400}
+{"shot": "holds-its-breath"}
+{"clock": 2500}
+{"shot": "flat-on-the-glass", "pin": true}
+{"clock": 4400}
+{"shot": "sliding-down", "pin": true}
+{"clock": 6300}
+{"shot": "peels-off"}
+{"clock": 8500}
+{"shot": "after"}

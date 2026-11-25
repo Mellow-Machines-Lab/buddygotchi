@@ -1,0 +1,5 @@
+{"about": "The squint's move: it comes up to the glass, head tilted, to look closer and doubt you, then backs off.", "group": "moments", "ms": 4500, "tracks": {
+    "squash": [[0, 0], [250, 90, "out"], [500, 0]],
+    "glass": [[0, 0], [400, 0], [1300, 1000, "out"], [3600, 1000], [4300, 0]],
+    "lean": [[0, 0], [400, -60], [1300, 180, "out"], [3600, 180], [4300, 0]],
+    "gazeY": [[0, 0], [1300, -150], [3600, -150], [4300, 0]]}}

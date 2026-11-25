@@ -1,0 +1,3 @@
+{"about": "Side-eye's move: the body stays; only the eyes go, slowly, to the side, hold there, and come back.", "group": "moments", "ms": 4500, "tracks": {
+    "gazeX": [[0, 0], [600, 0], [1500, 800, "inout"], [3600, 800], [4200, 0]],
+    "gazeY": [[0, 0], [1500, 120], [3600, 120], [4200, 0]]}}

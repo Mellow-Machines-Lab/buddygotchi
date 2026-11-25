@@ -47,18 +47,15 @@ with a screen is the body:
   </picture>
 </p>
 
-## Pick a character
+## The character
 
-Boop is the engine; a character is who lives on the board. The
-character has a repository of its own, with everything to run it and
-this repository inside it as its engine:
+Boop is the engine; a character is who lives on the board. There is one,
+and its pack is in this repository:
 
 | | Character | Board |
 | --- | --- | --- |
-| <img src="https://raw.githubusercontent.com/Mellow-Machines-Lab/SlimeBuddy/main/media/boop.gif" width="260" alt="The gel slime on the AMOLED board"> | **[SlimeBuddy](https://github.com/Mellow-Machines-Lab/SlimeBuddy)**: a gel slime, Boop's own. Overconfident, theatrical and easily wounded, and always on your side | Waveshare ESP32-S3-Touch-AMOLED-2.06 |
+| <img src="documentation/media/boop.gif" width="260" alt="The gel slime on the AMOLED board"> | **[The gel slime](characters/boop/)**: a gel slime, Boop's own. Overconfident, theatrical and easily wounded, and always on your side | Waveshare ESP32-S3-Touch-AMOLED-2.06 |
 
-The rest of this page runs Boop from this repository, which is the same
-engine, for working on it.
 
 ## Get started
 
@@ -110,8 +107,7 @@ too.
 
 **Which character.** A clone runs Boop's own character, the gel slime,
 on the AMOLED board ([characters/CHARACTER.md](characters/CHARACTER.md)
-§2). Its pack is fetched from its repository into `characters/` the
-first time it's used.
+§2).
 
 ### Everyday commands
 

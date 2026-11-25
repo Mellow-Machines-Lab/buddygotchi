@@ -1,0 +1,23 @@
+{
+  "name": "A boop from the world: a warm little moment, and a sign that answers it",
+  "case": "Someone in another buddy's world booped Boop. It's a small, warm moment between you and Boop: always a face, not a big one, and a sign that answers the boop.",
+  "why": "MomentRule.world: another buddy reaching out gets a warm face, small, a sound and a sign that answers it. The rule makes the moment, so no Jev is asked.",
+  "steps": [
+    {
+      "event": "session started",
+      "at": "0s"
+    },
+    {
+      "event": "world",
+      "at": "1m",
+      "kind": "boop",
+      "expect": {
+        "react": "happy",
+        "move": "none",
+        "intensity": "small",
+        "sign": "boop back!|who was that?|hi, world!|a friend!"
+      }
+    }
+  ],
+  "scripted": true
+}

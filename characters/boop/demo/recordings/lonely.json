@@ -1,0 +1,116 @@
+{
+  "character": "boop",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 2.134,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 2.135,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Tidy up the README”"
+      }
+    },
+    {
+      "at": 2.45,
+      "effect": "Boop makes a curious face",
+      "line": "{\"t\":\"do\",\"id\":1415806965,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"reason\":\"you asked claude\",\"say\":{},\"mood\":\"curious\",\"loops\":1}}"
+    },
+    {
+      "at": 5.499,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"editing\"]]}"
+    },
+    {
+      "at": 6.107,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits README.md"
+      }
+    },
+    {
+      "at": 8,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"editing\"]]}"
+    },
+    {
+      "at": 10.886,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 10.887,
+      "line": "{\"t\":\"do\",\"id\":1415806966,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 10.888,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 11.208,
+      "effect": "Boop celebrates",
+      "line": "{\"t\":\"do\",\"id\":1415806967,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":15000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"xp\":5,\"who\":{\"agent\":\"claude\",\"thread\":\"missed-you\"},\"say\":{},\"mood\":\"happy\",\"loops\":1}}"
+    },
+    {
+      "at": 15.248,
+      "cause": {
+        "kind": "back",
+        "text": "A day and more later"
+      }
+    },
+    {
+      "at": 15.25,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 15.25,
+      "effect": "Boop reacts",
+      "line": "{\"t\":\"do\",\"id\":1415806968,\"name\":\"react\",\"play\":\"if_free\",\"args\":{\"reason\":\"no agents open\"}}"
+    },
+    {
+      "at": 15.251,
+      "effect": "Boop's mood is now lonely",
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"lonely\",\"busy\":0,\"vol\":6,\"when\":[\"day\"],\"energy\":\"bright\"}"
+    },
+    {
+      "at": 15.569,
+      "effect": "Boop stretches and yawns and says “Hullo”",
+      "line": "{\"t\":\"do\",\"id\":1415806969,\"name\":\"wake_up\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"reason\":\"you were away 26 h\",\"invite\":{\"skit\":\"back\",\"pose\":\"lean\",\"touch\":\"stroke\",\"payoff\":\"purr\",\"label\":\"pet\",\"ms\":12000},\"greeting\":true,\"say\":{\"take\":\"phase1.word.idle.hullo__whiny__contained\"},\"mood\":\"lonely\",\"loops\":3}}"
+    },
+    {
+      "at": 19.749,
+      "cause": {
+        "kind": "gesture",
+        "text": "You stroke Boop"
+      },
+      "input": "stroke"
+    },
+    {
+      "at": 19.75,
+      "effect": "Boop's mood is now calm",
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"],\"energy\":\"bright\"}"
+    },
+    {
+      "at": 20.071,
+      "effect": "Boop makes an affectionate face",
+      "line": "{\"t\":\"do\",\"id\":1415806970,\"name\":\"react\",\"play\":\"next\",\"ttl\":24899,\"args\":{\"reason\":\"you stroked Boop\",\"say\":{},\"mood\":\"affectionate\",\"loops\":1}}"
+    }
+  ],
+  "face": "gel",
+  "length": 26.24,
+  "name": "Boop",
+  "script": "fab84db089f14ffd30ae4212896a6a4d18ff1732f2c1f30e19fbeebf15313ef6",
+  "takes": [
+    "phase1.word.idle.hullo__whiny__contained"
+  ],
+  "version": 1
+}

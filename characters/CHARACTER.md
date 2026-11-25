@@ -85,18 +85,11 @@ meaning.
 - What each mood means, how the moods connect and how fast they move.
 - Its prompts, and whether it has a voice.
 
-Boop has one pack, **`boop`**, in a public repository of its own,
-[SlimeBuddy](https://github.com/Mellow-Machines-Lab/SlimeBuddy): the gel
-slime, on the AMOLED. Its pack is the repository's `character/` folder, and
-the engine is beside it as the `engine/` submodule.
-
-`make -C internal packs` fetches each pack that's missing
-(`internal/tools/packs.py`, from the repositories `characters/packs.json`
-names): a clone in `characters/.repos/`, and `characters/<id>` a link to its
-pack; git ignores them. A character repository's `make` links its own pack
-in the same way (`engine/characters/<id>`, a link to `character/`) and
-chooses it in `engine/.character`, so every engine command there runs with
-it. Only what is the character's own goes in its repository.
+Boop has one pack, **`boop`**, the gel slime, on the AMOLED. It's here, in
+`characters/boop/`, so a change to the character and to the engine is one
+commit. It came from the repository
+[SlimeBuddy](https://github.com/Mellow-Machines-Lab/SlimeBuddy), which
+keeps its history.
 
 ## 2. Choosing a pack
 
@@ -106,9 +99,7 @@ The first of these wins:
    `characters/<name>/`, in the environment or on a `make` command line.
 2. The name or path in `.character` at the repo root, a one-line file you
    write and git ignores.
-3. `characters/boop/`. The root `make`'s targets fetch the chosen pack first
-   if it's one of `characters/packs.json`'s and missing (`packs.py
-   --chosen`).
+3. `characters/boop/`.
 
 `python3 characters/charactergen.py --stage` lays the chosen pack out in
 `.character-build/` at the repo root (also ignored). The builds read only

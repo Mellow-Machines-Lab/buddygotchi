@@ -1,0 +1,32 @@
+// The invite cut: something needing you takes the screen during the wait,
+// or a newer Moment does, and the invite is over, with no window after.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "ms": 4000, "xp": 3, "label": "tap"}}}
+{"clock": 2500}
+{"expect": {"invite": {"stage": "pose"}}}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"], "attn": {"agent": "claude", "project": "boop", "kind": "approve"}}
+{"clock": 2600}
+{"expect": {"invite": null, "screen": "needs_you"}}
+{"shot": "needs-you"}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 4000}
+{"input": {"touch": [236, 110]}}
+{"clock": 4060}
+{"clock": 4120}
+{"clock": 4180}
+{"expect": {"invite": null, "moment": {"anim": "poked"}}}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "lean", "touch": "stroke", "payoff": "purr", "ms": 4000, "xp": 3, "label": "pet"}}}
+{"clock": 2500}
+{"expect": {"invite": {"stage": "pose"}}}
+{"t": "do", "name": "react", "play": "now", "args": {"sign": "hmm", "mood": "curious"}}
+{"clock": 2600}
+{"expect": {"invite": null}}
+{"clock": 3300}
+{"shot": "newer-moment", "pin": true}

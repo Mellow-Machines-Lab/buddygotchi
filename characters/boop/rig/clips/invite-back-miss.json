@@ -1,0 +1,6 @@
+{"about": "No stroke: a huff, and it gets over it by itself, coming on round the way it turned until it faces you again.", "group": "touch_answers", "ms": 1200, "tracks": {
+    "squash": [[0, 150], [200, 230, "out"], [450, -90, "out"], [800, 0]],
+    "lift": [[0, 0], [250, 0], [400, 6, "out"], [560, 0, "in"]],
+    "eyeOpen": [[0, -380], [700, -380], [1200, 0]],
+    "gazeY": [[0, 300], [800, 0]],
+    "turn": [[0, -500], [250, -500], [1150, -1000, "inout"], [1200, -1000]]}}

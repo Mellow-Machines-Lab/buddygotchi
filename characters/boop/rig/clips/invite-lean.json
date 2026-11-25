@@ -1,0 +1,10 @@
+{"about": "The back's invite: you're back, it perks up, comes to the glass and rests its cheek on it, the patch pale where it touches, looking up at you.", "group": "touch_answers", "ms": 1500, "tracks": {
+    "squash": [[0, 0], [240, -230, "out"], [600, 0], [1500, 160, "out"]],
+    "eyeSize": [[0, 0], [200, 230, "out"], [700, 80]],
+    "gazeY": [[0, 0], [300, -380], [1500, -320]],
+    "glass": [[0, 0], [450, 0], [1350, 1000, "out"]],
+    "lean": [[0, 0], [350, 0], [600, 70], [1450, -560, "out"]],
+    "x": [[0, 0], [500, 0], [1350, -16, "out"]],
+    "patch": [[0, 0], [1050, 0], [1450, 680, "out"]],
+    "patchX": [[0, -700], [1500, -700]],
+    "patchY": [[0, 250], [1500, 250]]}}

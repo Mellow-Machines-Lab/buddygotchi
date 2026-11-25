@@ -1,0 +1,10 @@
+{"about": "A late stroke: it comes back to the glass and its cheek, for the purr.", "group": "touch_answers", "ms": 600, "tracks": {
+    "glass": [[0, 0], [450, 1000, "out"]],
+    "lean": [[0, 0], [500, -560, "out"]],
+    "x": [[0, 0], [450, -16, "out"]],
+    "squash": [[0, 0], [150, -120], [500, 160]],
+    "patch": [[0, 0], [300, 0], [550, 680, "out"]],
+    "patchX": [[0, -700], [600, -700]],
+    "patchY": [[0, 250], [600, 250]],
+    "eyeSize": [[0, 0], [300, 80]],
+    "gazeY": [[0, 0], [400, -320]]}}

@@ -1,0 +1,24 @@
+// The show (render/face.h's CardShow pic 's'; the engine's
+// documentation/design/screen-guide.md, "The show"): the agent's window,
+// its headline in Boop's words over the picture the agent drew, which
+// comes as a blob (linkkit/SPEC.md §3) the state then names. Until the
+// picture is whole, the headline alone. The picture is what the Mac's
+// ShowPicture made of a small SVG: two bars, the lane's and dim, and
+// three lines of text.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"busy":0,"idle":1,"when":["day"],"show":{"i":1,"h":"search is 2.1x faster","a":0,"g":"claude"}}
+{"clock":1500}
+{"shot":"headline-only"}
+{"t":"blob","id":7,"n":0,"of":5,"size":1434,"d":"D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8PeC//KA98L/8oD3wv/ygPfC//KA8kIA8JIg8rL/8oDyQgDwckDysv/ygPJCAPByEPLi//KA8kIA8HIQ8uL/8oDyQlBSMEJwQjBSEAIwMkDwwv/ygPJCYDJQMnAyUEJgImDwsv/ygPJCECIQIhAyEFIQUhAyEDIgYhAiIPCi//KA8kIQMhASEDIQUhBSEDIQMhBiIDIQ8KL/8oDyQhAyEBJwUhBSEDIQMhBigPCi//KA8kIQMhACILIQUhAyEDIQYhDxEv/ygPJCEDIQEhCyEFIQMhAyEGIQ8RL/8oDyQhAiIBIQshBSEDIQMhBiIPEC//KA8kIgAiAiMAIgUhBSYE"}
+{"t":"blob","id":7,"n":1,"of":5,"d":"IQciASIPCi//KA8kJQUlBSEGJAUhCCUPCy//KA98L/8oD3wv/ygPfC//KA98L/8oD3wv/ygPfC//KA98L/8oD3wv/ygP/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//DylvdQ//DwBvdQ//DwBvdQ//DwBvdQ/GEg82b3UPxBQFEA8vb3UPxBEHEQ8vb3UPxBEHEQ8vb3UPtxUDFwIXBBMFEQATDxVvdQ+3FgIXAhcDFgMWDxVvdQ+8EQURBxEGEgIRAxIPGW91D7wRBREHEQYRAxEDEg8Zb3UPtxcEEQcRBRkCEQ8ab3UPthMBEgQRBxEFEgkR"}
+{"t":"blob","id":7,"n":2,"of":5,"d":"DxpvdQ+2EQMSBBEHEQYRCREPGm91D7YRAxIEEQcRBhEJEQ8ab3UPthgEEQcVAhcDEQ8ab3UPtxcEEQgUBBUDEQ8ab3UP/w8Ab3UP/w8Ab3UP/w8Ab3UP/w8Ab3UP/w8Ab3UP/w8Ab3UP/w8Ab3UP/w8Ab3UP/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D6UzBjMP/w91NAU0DwE1BjIJMQ8CMA8PMA//DxgxCDEPADcDNAgyDwExDw8xD/8PFzEIMQ8GMQMxADEHMw8BMQ8PMQ//Dwo1BjEIMQ8GMQYxBzMONwQzBTQD"}
+{"t":"blob","id":7,"n":3,"of":5,"d":"NwQ0DjEAMgU0BTQFNA/WNgUxCDEPBjEGMQYxADEONwM1AzYCNwM2DTYDNgM2AzYP2jEFMQgxDwUyBjEFMQExDwExBjEDMQIxCjEGMQ8DMgIxCDECMQgxD98xBTEIMQ8FMQcxBTEBMQ8BMQYxAzECMQoxBjEPAzEDMQgxAjEIMQ/aNgUxCDEPBDEIMQQxAjEPATEGNwI0BzEGNA8AMQMxAzYCNAU0D9YzATEFMQgxDwMxCTEEOA4xBTIKNAUxCDQNMQMxAjICMQQ0BTQP1DEDMQUxCDEPAjEKMQQ4DjEGMQ0xBTELMQ0xAzECMQMxBzEIMQ/UMQMxBTEIMQ8BMQsxCTEPATEGMQ0xBTELMQ0yAjECMQIyBzEIMQ/UNwYzBjMMNwM3BjEPATQDMwAyAjEAMwU0AzEAMw03AjIAMwIxADMDMQAz"}
+{"t":"blob","id":7,"n":4,"of":5,"d":"D9U2BjMGMww3AzcGMQ8CNAQ1AjUHMwM1DjYEMwAxAjUENQ//D14xD/8PgzEP/w+DMQ//D4MxD/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w//D/8P/w8m"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"busy":0,"idle":1,"when":["day"],"show":{"i":1,"h":"search is 2.1x faster","a":0,"g":"claude","b":7}}
+{"clock":3000}
+{"shot":"picture","pin":true}
+{"t":"state","base":"idle","mood":"calm","vol":0,"busy":0,"idle":1,"when":["day"],"show":{"i":1,"h":"search is 2.1x faster","a":0,"g":"claude","b":8}}
+{"clock":4500}
+{"shot":"another-blob"}
+{"t":"dbg.reset"}

@@ -1,0 +1,7 @@
+{
+  "idle": {"clip": "breathe"},
+  "working": {"clip": "work",
+              "tiers": {"tier1": "work-easy", "tier2": "work-focused", "tier3": "work-zone"},
+              "acts": {"analyzing": "work-looking", "terminal": "work-running", "waiting": "work-waiting"}},
+  "asleep": {"clip": "doze"}
+}

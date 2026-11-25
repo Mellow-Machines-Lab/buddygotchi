@@ -1,0 +1,38 @@
+// The invite missed: the glow alone, with no word, still says where to
+// touch, for each pose; no touch comes, so Boop shrugs and turns back, and
+// the window for a late touch stays open.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "ms": 4000}}}
+{"clock": 2200}
+{"shot": "palm-glow"}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "lean", "touch": "stroke", "payoff": "purr", "ms": 4000}}}
+{"clock": 2200}
+{"shot": "lean-glow"}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "back", "touch": "stroke", "payoff": "sigh", "ms": 4000}}}
+{"clock": 2200}
+{"shot": "back-glow"}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "ms": 4000, "xp": 3, "label": "tap"}}}
+{"clock": 4999}
+{"expect": {"invite": {"stage": "pose"}}}
+{"clock": 5000}
+{"expect": {"invite": {"stage": "shrug"}}}
+{"clock": 5400}
+{"shot": "shrug", "pin": true}
+{"clock": 6200}
+{"expect": {"invite": {"stage": "window"}}}
+{"shot": "after"}

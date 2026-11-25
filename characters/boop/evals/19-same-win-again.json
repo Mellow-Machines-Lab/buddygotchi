@@ -1,0 +1,23 @@
+{
+  "name": "Quick wins again and again each get a reaction, and not the same one",
+  "judge": "Five quick wins in a row. Boop should notice each, or nearly, and vary how it does as they pile up, without treating any as big.",
+  "reasonable": "Pleased first, livening or growing amused, smug or settled, in whatever order. A success each time or nearly. The last few may go quieter, and one may be skipped.",
+  "unreasonable": "The same reaction three times running, ignoring most of the wins, going sad or grumpy, or a big celebration for a quick win.",
+  "steps": [
+    {"event": "turn started", "at": "0m"},
+    {"event": "command", "at": "0m20s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "0m30s", "brain": {"react.face": "happy", "mood": "calm"}},
+    {"event": "turn started", "at": "1m"},
+    {"event": "command", "at": "1m20s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "1m30s", "brain": {"react.face": "pleased", "mood": "calm"}},
+    {"event": "turn started", "at": "2m"},
+    {"event": "command", "at": "2m20s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "2m30s", "brain": {"react.face": "excited", "mood": "calm"}},
+    {"event": "turn started", "at": "3m"},
+    {"event": "command", "at": "3m20s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "3m30s", "brain": {"react.face": "amused", "mood": "calm"}},
+    {"event": "turn started", "at": "4m"},
+    {"event": "command", "at": "4m20s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "4m30s", "brain": {"react.face": "proud", "mood": "calm"}}
+  ]
+}

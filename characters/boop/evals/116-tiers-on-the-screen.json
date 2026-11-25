@@ -1,0 +1,18 @@
+{
+  "name": "A long turn and the quiet after it go through their tiers",
+  "case": "Claude works on one turn for sixteen minutes, then sits idle for fifteen. The board hears how long in its tags, the last tier reached: tier1 from a minute of work, tier2 from 5 and tier3 from 15; then, once the turn is over, the same ladder again from when it came to rest.",
+  "why": "Core.when: the working stretch's tier (Occasions.tiers, from Core.stretch's start) and, with none working, the time since the last turn ended, the last tier reached in state.when (characters/CHARACTER.md §9)",
+  "scripted": true,
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "migrate the payments service to the new queue"},
+    {"event": "wait", "at": "1m", "expect": {"when": "tier1"}},
+    {"event": "command", "at": "1m30s", "topic": "build"},
+    {"event": "command", "at": "4m", "topic": "tests"},
+    {"event": "wait", "at": "5m", "expect": {"when": "tier2"}},
+    {"event": "wait", "at": "15m", "expect": {"when": "tier3"}},
+    {"event": "turn finished", "at": "16m", "message": "The payments service runs on the new queue.", "reading": {"kind": "done"}},
+    {"event": "wait", "at": "17m", "expect": {"when": "tier1", "idle": "1"}},
+    {"event": "wait", "at": "21m", "expect": {"when": "tier2"}},
+    {"event": "wait", "at": "31m", "expect": {"when": "tier3"}}
+  ]
+}

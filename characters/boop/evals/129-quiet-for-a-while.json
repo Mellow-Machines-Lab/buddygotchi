@@ -1,0 +1,18 @@
+{
+  "name": "Told to hush, Boop is quiet for a while, and sulks a little",
+  "case": "Nothing is working. The person tells Boop to be quiet: it replies hush, and it sulks: its mood turns cross. For the next half hour Talk is quiet: it still makes faces at a poke and at a finished turn, but says nothing at these small moments. Once the half hour is up, a poke gets something said again. Later the app's Hush button makes it quiet again, with no pass of its own; then the person talks to it, which ends the quiet, and a poke gets something said again.",
+  "why": "MomentOutput: a hush reply makes Talk quiet for half an hour (Core.quiet), and on Quiet a small moment or a finish says nothing; talking to Boop ends it (Pipeline.said); PERSONALITY: told to hush, it sulks, whatever the mood: cross",
+  "always": true,
+  "steps": [
+    {"event": "session started", "at": "0s"},
+    {"event": "said", "at": "10s", "words": "shh, be quiet for a bit", "expect": {"move": "hush", "mood": "cross"}},
+    {"event": "poke", "at": "5m", "expect": {"said": "none"}},
+    {"event": "turn started", "at": "10m"},
+    {"event": "turn finished", "at": "14m", "expect": {"move": "success|none", "said": "none"}},
+    {"event": "poke", "at": "35m"},
+    {"event": "hush", "at": "40m"},
+    {"event": "poke", "at": "41m", "expect": {"said": "none"}},
+    {"event": "said", "at": "42m", "words": "okay okay, you can talk now", "expect": {"move": "yes|thanks|hello|hehe"}},
+    {"event": "poke", "at": "44m"}
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Away all day, a wish hasn't been left: Boop isn't sad about it",
+  "case": "Boop wishes for a pet, and five minutes later the person locks the Mac for eight hours. The wish waited five minutes with them there. They come back: Boop greets them, not sad.",
+  "why": "Core.tickWish: the wait counts only while you're here; CONTEXT says how long",
+  "steps": [
+    {
+      "event": "session started",
+      "at": "0s"
+    },
+    {
+      "event": "wish",
+      "at": "1m",
+      "kind": "pet"
+    },
+    {
+      "event": "away",
+      "at": "6m"
+    },
+    {
+      "event": "back",
+      "at": "8h6m",
+      "expect": {
+        "mood": "!sad"
+      }
+    }
+  ]
+}

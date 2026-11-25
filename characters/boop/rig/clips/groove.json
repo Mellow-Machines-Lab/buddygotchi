@@ -1,0 +1,12 @@
+{
+  "about": "Music playing: getting into it, eyes half closed, a slow sway from side to side and a small nod of the head at each end of it. A groove, not a beat (no tempo is known), and never a hop.",
+  "group": "with_you",
+  "ms": 6000,
+  "loop": true,
+  "tracks": {
+    "lean": [[0, -70], [3000, 70], [6000, -70]],
+    "squash": [[0, 0], [2800, 0], [2980, 40, "out"], [3250, 0], [5600, 0], [5780, 40, "out"], [6000, 0]],
+    "gazeY": [[0, 0], [2800, 0], [2980, 120, "out"], [3250, 0], [5600, 0], [5780, 120, "out"], [6000, 0]],
+    "eyeOpen": [[0, -450], [6000, -450]]
+  }
+}

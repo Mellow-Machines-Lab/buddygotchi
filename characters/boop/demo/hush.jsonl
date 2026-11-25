@@ -1,0 +1,16 @@
+// Forty seconds: shh. You tell Boop to be quiet: it zips its lips,
+// sulks a step, and for the half hour it's quiet: it still makes faces
+// at a poke and at claude's finish, and says nothing. Then you talk to
+// it again, which ends the quiet, and it says so.
+{"demo": 1, "title": "Shh"}
+{"agent": "prompt", "text": "Tidy up the settings page", "after": 1}
+{"brain": {"react.face": "curious"}}
+{"you": "talk", "text": "shh, be quiet for a bit", "after": 2}
+{"brain": {"react.face": "sad", "react.reply": "hush"}, "mood": "calm", "after": 0.7, "note": "Quiet for half an hour"}
+{"you": "poke", "after": 4}
+{"brain": {"react.face": "amused"}, "note": "A face, and nothing said"}
+{"agent": "edit", "file": "src/settings/page.js", "old": "legacy()", "new": "tidy()", "say": "I'll drop the old layout code.", "takes": 3}
+{"agent": "reply", "text": "The settings page is tidied up.", "after": 1}
+{"brain": {"react.face": "happy"}, "note": "Its finish, in silence"}
+{"you": "talk", "text": "okay, you can talk now", "after": 3}
+{"brain": {"react.face": "happy", "react.reply": "yes"}, "mood": "calm", "after": 0.7, "note": "Talking again"}

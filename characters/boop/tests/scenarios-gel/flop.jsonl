@@ -1,0 +1,19 @@
+// The flop of relief (the pack's rig clip `flop`), played alone by
+// dbg.clip; a fix's Moment plays it as fix.jsonl shows. It holds its
+// breath, lets go flat against the glass with both palms on it, slides
+// down, and peels off.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "happy", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "dbg.clip", "name": "flop"}
+{"clock": 1400}
+{"shot": "holds-its-breath"}
+{"clock": 2500}
+{"shot": "flat-on-the-glass", "pin": true}
+{"clock": 4400}
+{"shot": "sliding-down"}
+{"clock": 6300}
+{"shot": "peels-off"}
+{"clock": 8000}
+{"shot": "after"}

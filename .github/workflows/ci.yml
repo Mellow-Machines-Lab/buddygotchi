@@ -5,9 +5,7 @@
 # mirror of the board, built there with Emscripten, against the simulator
 # on five scenarios,
 # all as Boop, and the board's firmware: the AMOLED's with Boop's gel
-# face. Boop's pack is in a repository of its own (characters/packs.json),
-# and every job that needs it fetches it first, at the branch packs.json
-# names. The world's
+# face. Boop's pack is here, in characters/boop/. The world's
 # server (internal/world/) runs its own tests, on PGlite.
 #
 # Package.swift needs Swift 6.2 or later. Boop is developed with Swift 6.4,
@@ -32,8 +30,6 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
         with:
           submodules: true  # agent-hooks/ and mellowharness/
-      - name: Fetch the character pack
-        run: python3 internal/tools/packs.py
       - run: swift --version
       - name: Build, then Boop's tests and each package's
         run: |
@@ -77,8 +73,6 @@ jobs:
         with:
           submodules: true  # the behaviour map's numbers are read from agent-hooks/ and mellowharness/
       - run: /usr/bin/python3 --version
-      - name: Fetch the character pack
-        run: /usr/bin/python3 internal/tools/packs.py
       - name: The pack checks out (its moods, what it uses, its studio entry)
         run: /usr/bin/python3 characters/charactergen.py --check
       - name: charactergen's tests
@@ -99,8 +93,6 @@ jobs:
           python-version: "3.12"
       - name: Install PlatformIO
         run: pip install platformio==6.2.0
-      - name: Fetch the character pack
-        run: python3 internal/tools/packs.py
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: firmware/.platformio-core
@@ -122,8 +114,6 @@ jobs:
           python-version: "3.12"
       - name: Install PlatformIO
         run: pip install platformio==6.2.0
-      - name: Fetch the character pack
-        run: python3 internal/tools/packs.py
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: firmware/.platformio-core

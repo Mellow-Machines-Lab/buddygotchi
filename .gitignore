@@ -31,15 +31,12 @@ Package.resolved.bak
 # The landing page is a repo of its own, cloned here
 /landing/
 
-# The character packs, each a repository of its own, which
-# internal/tools/packs.py fetches into characters/: clones in
-# characters/.repos/, and characters/<id> a link to each one's pack
-/characters/*
-!/characters/CHARACTER.md
-!/characters/DEMOS.md
-!/characters/charactergen.py
-!/characters/packs.json
-!/characters/studio/
+# The character's pack is here, in characters/boop/. Old clones of its
+# former repository, and what its builds and tools make:
+/characters/.repos/
+/characters/*/mac/mirror/board.js
+/characters/*/tools/facegen/build/
+/characters/*/references/*/frames/
 
 # JavaScript
 node_modules/

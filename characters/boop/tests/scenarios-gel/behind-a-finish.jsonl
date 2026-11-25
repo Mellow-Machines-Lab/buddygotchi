@@ -1,0 +1,26 @@
+// A busy board, then a finish and the low Moment the Mac queues behind it
+// (a remark, carrying the invite), with the ttls the Mac sends: the finish
+// waits up to 15 s (BoopDevice.finishTTL), the Moment behind it 25 s
+// (BoopDevice.behindFinishTTL). A reply still plays when both arrive; the
+// finish plays once it ends, then the low sign, then the invite's pose.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "id": 9, "name": "react", "play": "next", "ttl": 5000, "args": {"mood": "happy", "loops": 2, "sign": "hi"}}
+{"clock": 2000}
+{"t": "do", "id": 1, "name": "task_complete", "play": "next", "ttl": 15000, "args": {"outcome": "success", "mood": "proud", "loops": 3, "turn": 2, "who": {"agent": "claude", "thread": "Ship it"}, "xp": 5}}
+{"t": "do", "id": 2, "name": "react", "play": "next", "ttl": 25000, "args": {"sign": "that was fast", "low": true, "mood": "proud", "loops": 1, "invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "ms": 4000, "xp": 3, "label": "tap"}}}
+{"clock": 6000}
+{"expect": {"sign": "hi", "turn": {"holder": {"id": 9}, "waiting": [{"id": 1, "name": "task_complete", "left_ms": 11000}, {"id": 2, "name": "react", "left_ms": 21000}]}}}
+{"clock": 8000}
+{"expect": {"moment": {"anim": "task_complete"}, "turn": {"holder": {"id": 1}, "waiting": [{"id": 2, "name": "react", "left_ms": 19000}]}}}
+{"shot": "finish"}
+{"clock": 12000}
+{"expect": {"sign": "that was fast", "invite": {"stage": "ahead"}, "turn": {"holder": {"id": 2}, "waiting": []}}}
+{"shot": "low-sign", "pin": true}
+{"clock": 16000}
+{"expect": {"invite": {"stage": "pose", "pose": "palm"}, "turn": {"holder": {"id": 2}}}}
+{"clock": 17200}
+{"expect": {"invite": {"stage": "pose", "pose": "palm"}}}
+{"shot": "pose", "pin": true}

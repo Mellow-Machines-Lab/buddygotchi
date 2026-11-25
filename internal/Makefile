@@ -3,7 +3,7 @@
 # them as `make -C internal <target>` from the repo root. Every recipe runs
 # from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: build app simulator check boards test tools packs fw fw-test sim sim-test mirror demos e2e tools-test
+.PHONY: build app simulator check boards test tools fw fw-test sim sim-test mirror demos e2e tools-test
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -52,7 +52,7 @@ simulator:
 # against the goldens and the Mac's mirror of the board. Some stage Boop's
 # pack, which they're written against, so the chosen one is staged again
 # at the end.
-check: packs test fw-test tools-test sim mirror
+check: test fw-test tools-test sim mirror
 	cd $(ROOT) && python3 characters/charactergen.py --stage
 
 # The board's firmware, as CI builds it, with Boop's pack: apart from
@@ -60,12 +60,6 @@ check: packs test fw-test tools-test sim mirror
 boards:
 	cd $(ROOT) && CHARACTER=boop $(PIO) run -e amoled206
 	cd $(ROOT) && python3 characters/charactergen.py --stage
-
-# The character pack the engine is tested with, in a repository of its
-# own (characters/packs.json): fetched into characters/ if it's missing
-# (internal/tools/packs.py). Every check needs it.
-packs:
-	cd $(ROOT) && python3 internal/tools/packs.py
 
 # Swift unit tests through the XCTest shim (there's no Xcode here):
 # `build` (one `swift build` of the whole package, the tests' runner

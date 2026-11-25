@@ -1,0 +1,11 @@
+{
+  "about": "Reading along a long while (two minutes and more): settled in for a comfortable read, low and wide, its lids half down, its eyes still on the page and a slow breath.",
+  "group": "with_you",
+  "ms": 4800,
+  "loop": true,
+  "tracks": {
+    "squash": [[0, 170], [2400, 200], [4800, 170]],
+    "eyeOpen": [[0, -520], [4800, -520]],
+    "gazeY": [[0, 150], [4800, 150]]
+  }
+}

@@ -1,0 +1,27 @@
+// The knock (the pack's rig clips `knock` and `knock-climb`): something
+// needs you, and a fist knocks twice on the glass, a ring and a shake at
+// each. Nobody comes, so after slime::kKnockClimbAtMs (slimegen's
+// scenes.mjs `knock`) it climbs: louder with a bigger fist, then both
+// fists, then its forehead on the glass, palms sliding down. Each step is
+// a pose of its own.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "working", "act": "working", "mood": "calm", "busy": 1, "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "state", "base": "working", "act": "working", "mood": "calm", "busy": 1, "vol": 0, "when": ["day"], "attn": {"agent": "claude", "project": "boop", "name": "Ship the knock", "kind": "approve", "more": 0, "id": 21}}
+{"clock": 1920}
+{"shot": "1-knock", "pin": true}
+{"clock": 2700}
+{"shot": "1-waits"}
+{"clock": 4000}
+{"shot": "1-looks-for-you"}
+{"clock": 21520}
+{"shot": "2-louder"}
+{"clock": 23730}
+{"shot": "3-both-fists"}
+{"clock": 26300}
+{"shot": "4-forehead-on-the-glass", "pin": true}
+{"clock": 28100}
+{"shot": "4-slid-down"}
+{"clock": 29500}
+{"shot": "after"}

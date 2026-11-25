@@ -1,0 +1,12 @@
+{
+  "about": "Reading along with you while you scroll (GelFace::showWithYou), looped a line at a time: sitting lower and turned to the screen (the face leans and slides it toward the Mac's side and lowers its eyes to the page), its eyes travel down a line, then snap back up for the next with a small nod. The page beside it, its lines scrolling as you scroll, is drawn by the layers.",
+  "group": "with_you",
+  "ms": 1400,
+  "loop": true,
+  "tracks": {
+    "squash": [[0, 90], [1150, 90], [1250, 140, "out"], [1400, 90]],
+    "gazeY": [[0, -150], [1150, 250, "linear"], [1250, -150, "out"], [1400, -150]],
+    "gazeX": [[0, -120], [1150, 120, "linear"], [1250, -120, "out"], [1400, -120]],
+    "eyeOpen": [[0, -180], [1400, -180]]
+  }
+}

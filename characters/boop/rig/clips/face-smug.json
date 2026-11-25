@@ -1,0 +1,5 @@
+{"about": "Smug's move: a dip, then a tilt of the whole body, chin up, eyes aside, held, and back.", "group": "moments", "ms": 4500, "tracks": {
+    "squash": [[0, 0], [250, 120, "out"], [700, -110, "out"], [3700, -90], [4200, 0]],
+    "lean": [[0, 0], [300, -60], [1100, 320, "out"], [3700, 300], [4200, 0]],
+    "gazeX": [[0, 0], [1100, 350, "out"], [3700, 350], [4200, 0]],
+    "gazeY": [[0, 0], [1100, -120], [3700, -120], [4200, 0]]}}

@@ -1,0 +1,41 @@
+// The transitions, each a clip over the new look (GelFace::showTransition):
+// from resting to work, from work to resting, and falling asleep, each with shots on its way and at its end.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"state","base":"working","mood":"calm","busy":1,"vol":0,"when":["day"]}
+{"clock":1120}
+{"shot":"to-work-1"}
+{"clock":1260}
+{"shot":"to-work-2","pin":true}
+{"clock":1400}
+{"shot":"to-work-3"}
+{"clock":1560}
+{"shot":"to-work-4"}
+{"clock":2200}
+{"shot":"to-work-end"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":2500}
+{"shot":"to-rest-1"}
+{"clock":2760}
+{"shot":"to-rest-2"}
+{"clock":3300}
+{"shot":"to-rest-end"}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"when":["day"]}
+{"clock":3600}
+{"shot":"to-sleep-1"}
+{"clock":3860}
+{"shot":"to-sleep-2"}
+{"clock":4600}
+{"shot":"to-sleep-end"}
+// A needs-you cuts through.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"state","base":"working","mood":"calm","busy":1,"vol":0,"when":["day"]}
+{"clock":1100}
+{"t":"state","base":"working","mood":"calm","busy":1,"vol":0,"when":["day"],"attn":{"agent":"claude","project":"api"}}
+{"clock":1300}
+{"shot":"cut-through"}

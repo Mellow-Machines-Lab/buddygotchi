@@ -1,0 +1,69 @@
+<!-- Boop's signs: what it may hold up on a sign when it reacts to your prompt (Signs, the react.sign question), and, tagged [idle], its idle musings: held up at an idle check-in when nothing else is due (IdleBeat), never on Quiet, asking nothing; {turns} is today's turns and {thread} the busiest thread, and a line may need a kept answer's tag ([cookie]). Tagged [notice waiting], [notice stretch], [notice rough] or [notice late], what it may hold up for something it noticed (Notices): at an idle check-in, as the idle beat, by name, {agent} being the agent's name. Tagged [world], with the gesture's kind ([world boop], [world wave], [world heart], [world cheer]), what it holds up when another buddy reaches out from the world, its kind's first: code picks one (MomentRule.world), no brain. Tagged [invite tap] and [invite stroke], the word the board shows by the place to touch when a skit invites that touch, until you know it (InviteLedger), the first of each. Tagged [remark fast], [remark slow], [remark run], [remark count], [remark early], [remark late], [remark soon] and [remark longBreak], what it holds up for a remark, how now differs from your usual (Remarks): code picks one, no brain; {n} is the run, or today's wins. A line may start with tags in brackets, every one of which the prompt's reading must have: its kind (fix, feature, cleanup, refactor, tests, deploy, docs, question, carry_on, other), its tone (calm, frustrated, rushed, polite, playful, shouting, careful), its length (words, sentence, paragraph, essay), named (you said its name, the one you gave it), and the calendar's (morning, night, friday, party…, characters/CHARACTER.md §9). {words} is one of your phrases as you wrote it, {WORDS} the same in capitals: such a line is offered once for each. Your words come first, at most three, then tagged captions, then the rest; at most six, each at most 18 characters, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
+- [frustrated] {words} :(
+- [frustrated] {words}?!
+- [frustrated] {words}. again.
+- [shouting] {WORDS}!!
+- [polite] {words} <3
+- [rushed] '{words}', sure
+- [careful] {words}...
+- [playful] {words} lol
+- [named] me?!
+- [named] you rang?
+- [fix frustrated] bug, again
+- [fix] bug hunt
+- [fix] who broke it?
+- [fix night] bugs at night?
+- [feature] new thing!
+- [feature] ooh, shiny
+- [feature] another one?!
+- [cleanup] bye bye code
+- [cleanup] delete it all
+- [refactor] tidy time
+- [tests] tests! tests!
+- [deploy] ship it?
+- [deploy] yolo
+- [deploy friday] on a FRIDAY?
+- [docs] docs...
+- [question] hmm?
+- [question] good q
+- [carry_on] onward!
+- [essay] reading...
+- {words}
+- [idle] quiet day...
+- [idle] {turns} turns today!
+- [idle] {thread} again?
+- [idle] still here, u?
+- [idle cookie] snack time?
+- [idle pizza] pizza later?
+- [notice waiting] {agent}'s waiting
+- [notice waiting] {agent} sits idle
+- [notice waiting] {agent}'s done
+- [notice stretch] stretch?
+- [notice stretch] legs ok?
+- [notice stretch] water break?
+- [notice rough] i'm here
+- [notice rough] *hug*
+- [notice rough] rough one
+- [notice late] bed?
+- [notice late] still up?
+- [notice late] getting late...
+- [world boop] boop back!
+- [world boop] who was that?
+- [world wave] hi, friend!
+- [world wave] *waves back*
+- [world heart] aww, a heart
+- [world heart] <3 <3
+- [world cheer] we shipped!
+- [world cheer] thanks, all!
+- [world] hi, world!
+- [world] a friend!
+- [invite tap] tap
+- [invite stroke] pet
+- [remark fast] that was fast
+- [remark slow] long one, phew
+- [remark run] {n} in a row
+- [remark count] {n} today
+- [remark early] you're early
+- [remark late] there you are
+- [remark soon] back so soon
+- [remark longBreak] missed you

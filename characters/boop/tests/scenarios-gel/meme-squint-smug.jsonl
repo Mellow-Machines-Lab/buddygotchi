@@ -1,0 +1,23 @@
+// Two of the meme faces (character.json's board_faces), at rest and in
+// their moves, played by dbg.clip: the squint coming to the glass to doubt
+// you; smug's tilt, half lids and cat mouth.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "squint", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"shot": "squint"}
+{"t": "dbg.clip", "name": "face-squint"}
+{"clock": 3200}
+{"shot": "squint-move", "pin": true}
+{"clock": 6000}
+{"shot": "squint-after"}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "smug", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"shot": "smug"}
+{"t": "dbg.clip", "name": "face-smug"}
+{"clock": 3200}
+{"shot": "smug-move", "pin": true}
+{"clock": 6000}
+{"shot": "smug-after"}

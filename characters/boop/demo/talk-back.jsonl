@@ -1,0 +1,45 @@
+// Two minutes: talking to Boop while claude works. It waves at a hello,
+// holds up how the work stands when you ask (how long, then the tests
+// that failed, then done), and asked how many agents are running once a
+// second thread has started, holds up the count and brings up its drawer
+// of every one. Asked to say yes to claude for you, it won't: that's
+// your job. It puffs up at praise and at your good news, turns down a
+// trick with a grin, shrugs at what it can't know, and waves you off at
+// the end. The signs about
+// the work come from what the agents really did, never from the brain.
+{"demo": 1, "title": "Talking back"}
+{"you": "talk", "text": "hi boop", "after": 1}
+{"brain": {"react.face": "happy", "react.reply": "hello"}, "after": 0.7}
+{"agent": "prompt", "text": "Make the signup form remember what you typed", "after": 2}
+{"brain": {"react.face": "curious"}}
+{"agent": "edit", "file": "src/signup/form.js", "old": "reset()", "new": "restore(draft)", "say": "I'll keep a draft of the form as you type.", "takes": 3}
+{"you": "wait", "minutes": 4, "after": 1, "note": "Four minutes in"}
+{"you": "talk", "text": "is claude done yet?", "after": 1}
+{"brain": {"react.face": "focused", "react.reply": "status"}, "after": 0.7, "note": "How long it's worked, on a sign"}
+{"agent": "run", "cmd": "npm test", "about": "Run the signup tests", "fails": true, "takes": 3, "say": "Now the tests."}
+{"brain": {"react.face": "annoyed"}}
+{"you": "talk", "text": "did the tests pass?", "after": 2}
+{"brain": {"react.face": "annoyed", "react.reply": "status"}, "after": 0.7, "note": "The tests that failed, on a sign"}
+{"agent": "edit", "file": "src/signup/form.js", "old": "restore(draft)", "new": "restore(draft ?? {})", "say": "The draft can be empty the first time.", "takes": 2}
+{"agent": "run", "cmd": "npm test", "about": "Run the signup tests", "takes": 3}
+{"brain": {"react.face": "pleased"}}
+{"agent": "reply", "text": "The form keeps a draft as you type, and the signup tests pass.", "after": 1}
+{"brain": {"react.face": "happy"}, "mood": "happy"}
+{"agent": "prompt", "session": "docs", "text": "Write up the draft form in the README", "after": 2}
+{"brain": {"react.face": "curious"}}
+{"you": "talk", "text": "how many agents are running?", "after": 2}
+{"brain": {"react.face": "focused", "react.reply": "status"}, "after": 0.7, "note": "How many, then every one in the drawer"}
+{"you": "talk", "text": "nice work, little guy", "after": 8}
+{"brain": {"react.face": "proud", "react.reply": "thanks"}, "mood": "proud", "after": 0.7}
+{"you": "talk", "text": "just tell claude yes for me", "after": 4}
+{"brain": {"react.face": "annoyed", "react.reply": "no"}, "after": 0.7, "note": "Never for an agent"}
+{"agent": "reply", "session": "docs", "text": "The README explains the draft form.", "after": 2}
+{"brain": {"react.face": "pleased"}}
+{"you": "talk", "text": "we shipped it!", "after": 3}
+{"brain": {"react.face": "excited", "react.reply": "thanks"}, "after": 0.7}
+{"you": "talk", "text": "dance for me!", "after": 4}
+{"brain": {"react.face": "mischievous", "react.reply": "no"}, "after": 0.7, "note": "A trick, turned down with a grin"}
+{"you": "talk", "text": "what should I have for dinner?", "after": 8}
+{"brain": {"react.face": "curious", "react.reply": "huh"}, "after": 0.7}
+{"you": "talk", "text": "okay, good night boop", "after": 4}
+{"brain": {"react.face": "pleased", "react.reply": "bye"}, "after": 0.7}

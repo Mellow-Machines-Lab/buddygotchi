@@ -1,0 +1,13 @@
+{
+  "name": "A comeback that didn't happen is made when the turn finishes",
+  "judge": "Boop's reaction to a hard-won fix never got to play. The finish moments later is its chance to show that pleasure.",
+  "reasonable": "The finish carries the win: proud, pleased, excited or happy, with a glad word or sound. A warmly pleased smaller moment is fine too.",
+  "unreasonable": "A blank finish with no pleasure at all, or sadness or crossness when the work ended well.",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "1m", "topic": "tests", "failed": true},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": true},
+    {"event": "command", "at": "5m", "topic": "tests", "failed": false, "reaction": "failed: waited too long", "brain": {"react.face": "proud"}},
+    {"event": "turn finished", "at": "5m20s", "brain": {"react.face": "proud"}}
+  ]
+}

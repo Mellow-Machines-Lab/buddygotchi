@@ -1,0 +1,56 @@
+// The invite answered (render/gel/invite.h): after a skit Boop holds a pose
+// at the glass, the place to touch glowing with its word by it, and the
+// touch of its kind pays off: a palm's tap is a high five, a lean's stroke
+// a purr, a stroke on its back a sigh, each with +3 XP low.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"sign": "nice!", "mood": "happy", "loops": 1, "invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "ms": 4000, "xp": 3, "label": "tap"}}}
+{"clock": 3400}
+{"expect": {"invite": {"stage": "ahead"}}}
+{"clock": 3600}
+{"expect": {"invite": {"stage": "pose", "pose": "palm"}}}
+{"clock": 4800}
+{"shot": "palm-label", "pin": true}
+{"input": {"touch": [236, 110]}}
+{"clock": 4860}
+{"clock": 4920}
+{"clock": 4980}
+{"expect": {"invite": {"stage": "payoff"}}}
+{"clock": 5300}
+{"shot": "highfive-clap"}
+{"clock": 5800}
+{"shot": "highfive", "pin": true}
+{"clock": 8000}
+{"expect": {"invite": null}}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "calm", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "lean", "touch": "stroke", "payoff": "purr", "ms": 4000, "xp": 3, "label": "pet"}}}
+{"clock": 2200}
+{"shot": "lean-label"}
+{"t": "dbg.touch", "x": 110, "y": 110, "to_x": 210, "to_y": 110, "ms": 300}
+{"clock": 2300}
+{"clock": 2400}
+{"clock": 2500}
+{"clock": 2600}
+{"expect": {"invite": {"stage": "payoff"}}}
+{"clock": 3600}
+{"shot": "purr"}
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "sad", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "do", "name": "react", "play": "now", "args": {"invite": {"skit": "win", "pose": "back", "touch": "stroke", "payoff": "sigh", "ms": 4000, "xp": 3, "label": "pet"}}}
+{"clock": 2200}
+{"shot": "back-label"}
+{"t": "dbg.touch", "x": 110, "y": 110, "to_x": 210, "to_y": 110, "ms": 300}
+{"clock": 2300}
+{"clock": 2400}
+{"clock": 2500}
+{"clock": 2600}
+{"expect": {"invite": {"stage": "payoff"}}}
+{"clock": 3500}
+{"shot": "sigh"}

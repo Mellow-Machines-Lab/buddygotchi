@@ -1,0 +1,92 @@
+// A reply to what you said on the gel: the Mac's `reply` on a face's
+// `react`, which plays the pack's clip for it (rig/clips/reply-*.json)
+// over that face, with the reply's sign: a nod, a head shake, a shrug, a
+// head tilt, puffing up, a flinch, presenting the agents' facts and, told
+// to hush, squeezing its eyes in a little nod, each caught partway through
+// on a frozen clock after a reset.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"yep!","reply":"yes","say":{},"mood":"happy","loops":1}}
+{"clock":1320}
+{"shot":"yes","pin":true}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"nope","reply":"no","say":{},"mood":"calm","loops":1}}
+{"clock":1350}
+{"shot":"no"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"no idea!","reply":"dunno","say":{},"mood":"curious","loops":1}}
+{"clock":1500}
+{"shot":"dunno"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"huh?","reply":"huh","say":{},"mood":"curious","loops":1}}
+{"clock":1700}
+{"shot":"huh"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"i know ;)","reply":"thanks","say":{},"mood":"proud","loops":1}}
+{"clock":1700}
+{"shot":"thanks"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":":(","reply":"ouch","say":{},"mood":"wounded","loops":1}}
+{"clock":1300}
+{"shot":"ouch"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"claude: 4 min in","reply":"status","say":{},"mood":"focused","loops":1}}
+{"clock":1600}
+{"shot":"status"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"ok, shh","reply":"hush","say":{},"mood":"calm","loops":1}}
+{"clock":1600}
+{"shot":"hush"}
+// A reply while something needs you: "tell claude yes" gets a no's head
+// shake and sign over the needs-you screen, no voice, then it's back.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"calm","busy":1,"vol":0,"when":["day"],"attn":{"agent":"claude","project":"landing","more":0,"id":7}}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"that's ur job","reply":"no","say":{},"mood":"annoyed","loops":1}}
+{"clock":1400}
+{"shot":"no-over-needs-you"}
+// Your lock of the Mac, a small moment: the slight wave, reply-wave, its
+// sway at the turn, with the narration under it and nothing said.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"reason":"you locked the Mac","reply":"wave","say":{},"mood":"calm","loops":1}}
+{"clock":1250}
+{"shot":"wave-at-a-lock"}
+// A lock at night, the nap: its bye, a real wave with its sign, as Boop's
+// Doing goes to asleep at once, then simply asleep.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["night"],"energy":"tired"}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"nite nite","reason":"you locked the Mac","reply":"bye","say":{},"mood":"calm","loops":2}}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"when":["night"]}
+{"clock":2500}
+{"shot":"bye-at-a-night-lock"}
+{"clock":12000}
+{"shot":"bye-at-a-night-lock-after"}

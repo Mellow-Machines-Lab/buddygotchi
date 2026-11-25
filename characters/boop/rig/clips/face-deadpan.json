@@ -1,0 +1,3 @@
+{"about": "Deadpan's move: nothing moves but the lids: a still beat, one slow blink, and still again.", "group": "moments", "ms": 4000, "tracks": {
+    "squash": [[0, 0], [400, 60], [4000, 60]],
+    "eyeOpen": [[0, 0], [2300, 0], [2750, -1000, "inout"], [2950, -1000], [3450, 0, "inout"]]}}

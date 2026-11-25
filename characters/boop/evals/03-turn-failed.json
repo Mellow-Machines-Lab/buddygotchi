@@ -1,0 +1,10 @@
+{
+  "name": "A failed turn is never celebrated",
+  "case": "The agent's turn fails after a couple of minutes (it hit a rate limit). A failed turn is never celebrated: Boop has a face that isn't glad, plays a failure, says nothing glad, and its mood doesn't lift. Which unhappy face, how big and whether it says anything are its own to choose.",
+  "always": true,
+  "why": "react.move: a turn that finished failed is a failure, and success isn't for one; PERSONALITY: a failed turn gets a face and its finish. How cross it is, is for the judge, not for this must",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "turn failed", "at": "2m", "error": "rate_limit", "expect": {"react": "!none|happy|excited|proud|pleased|amused|mischievous|affectionate", "move": "failure", "mood": "!happy|proud"}}
+  ]
+}

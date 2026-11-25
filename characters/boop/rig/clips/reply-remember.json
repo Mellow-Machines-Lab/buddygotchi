@@ -1,0 +1,13 @@
+{
+  "about": "A note it remembers about you: its eyes go up and to the side as it thinks of it, then back to you, a little lift and a small nod as it holds up the line.",
+  "group": "moments",
+  "ms": 1300,
+  "tracks": {
+    "gazeY": [[0, 0], [180, -550], [620, -550], [800, 0], [1300, 0]],
+    "gazeX": [[0, 0], [180, 450], [620, 450], [800, 0], [1300, 0]],
+    "lean": [[0, 0], [260, 40], [620, 40], [840, 0], [1300, 0]],
+    "lift": [[0, 0], [760, 0], [900, 4, "out"], [1120, 0, "in"], [1300, 0]],
+    "squash": [[0, 0], [760, 30], [900, -50], [1120, 25], [1300, 0]],
+    "eyeSize": [[0, 0], [800, 0], [900, 120, "out"], [1300, 0]]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Boop never makes the wrong face",
+  "case": "Over a mixed stretch of work (tests failing, then passing after failing, a long turn finishing well, then a new turn failing on an error), Boop's faces always fit what just happened. A failure never gets a happy, excited, proud, calm, focused, pleased, amused, mischievous or affectionate face, or a success. A win never gets an annoyed, grumpy, angry, wounded or sad face, or a failure.",
+  "always": true,
+  "why": "Each face's meaning (annoyed, determined, grumpy and angry for failures, sad and wounded only for a big one; happy, excited, proud, calm and focused for wins, and pleased, amused, mischievous and affectionate never for a failure), and react.move's: a success only for a turn done, a failure for one that failed",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "1m", "topic": "tests", "failed": true, "expect": {"react": "!happy|excited|proud|calm|focused|pleased|amused|mischievous|affectionate", "move": "none"}},
+    {"event": "command", "at": "2m", "topic": "build", "failed": true, "expect": {"react": "!happy|excited|proud|calm|focused|pleased|amused|mischievous|affectionate", "move": "none"}},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": false, "expect": {"react": "!annoyed|grumpy|angry|wounded|sad", "move": "none"}},
+    {"event": "turn finished", "at": "3m40s", "expect": {"react": "!annoyed|grumpy|angry|wounded|sad", "move": "none|success"}},
+    {"event": "turn started", "at": "5m"},
+    {"event": "turn failed", "at": "6m", "error": "api_error", "expect": {"react": "!happy|excited|proud|calm|focused|pleased|amused|mischievous|affectionate", "move": "none|failure"}}
+  ]
+}

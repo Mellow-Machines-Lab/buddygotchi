@@ -1,0 +1,35 @@
+{
+  "name": "The nap at a night's lock sleeps at once, until you unlock",
+  "case": "At night, the person locks the Mac with an agent's thread sitting idle. Boop says good night with a real wave and a sign, and takes its nap: asleep at once, as Doing says, not after the usual doze. A short unlock wakes it, with a slight wave.",
+  "why": "MomentRule.bye: a lock at night with no agent working is good night and the nap. Core.nap holds the sleep, so no Jev is needed",
+  "scripted": true,
+  "start": "2026-10-28T23:00",
+  "steps": [
+    {
+      "event": "session started",
+      "at": "0s",
+      "expect": {
+        "doing": "idle"
+      }
+    },
+    {
+      "event": "lock",
+      "at": "1m",
+      "expect": {
+        "doing": "asleep",
+        "move": "bye",
+        "intensity": "medium",
+        "sign": "bye bye|see ya!|nite nite"
+      }
+    },
+    {
+      "event": "unlock",
+      "at": "2m",
+      "expect": {
+        "doing": "idle",
+        "move": "wave",
+        "intensity": "small"
+      }
+    }
+  ]
+}

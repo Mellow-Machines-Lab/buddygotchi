@@ -1,0 +1,9 @@
+{"about": "Needs you: a fist comes up and knocks twice on the glass, a ring and a shake at each, then it waits and looks round for you.", "group": "moments", "ms": 3400, "tracks": {
+    "handRSize": [[0, 0], [300, 0], [600, 1000, "out"], [1700, 1000], [2100, 0, "in"]],
+    "handRX": [[0, 92], [300, 92], [620, 106, "out"], [1700, 106], [2100, 92]],
+    "handRY": [[0, 6], [300, 6], [620, 52, "out"], [1700, 52], [2100, 6]],
+    "handRShape": [[0, -1000], [3400, -1000]],
+    "handRGlass": [[560, 0], [680, 900, "out"], [810, 120, "out"], [900, 900, "in"], [1110, 120, "out"], [1200, 900, "in"], [1700, 900], [1950, 0]],
+    "lean": [[0, 0], [150, 0], [300, -50], [700, 230, "out"], [1800, 230], [2200, 0]],
+    "eyeSize": [[0, 0], [500, 120], [2200, 0]],
+    "gazeX": [[0, 0], [2200, 0], [2500, 450], [2900, -450], [3250, 0]]}, "cues": [[900, "screen_knock"], [1200, "screen_knock"]]}

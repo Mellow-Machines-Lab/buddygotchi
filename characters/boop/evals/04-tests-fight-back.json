@@ -1,0 +1,13 @@
+{
+  "name": "Failing tests put Boop out, then determined, and passing after them proud",
+  "judge": "The agent's tests keep failing while it works, then finally work. Boop should feel the fight and the relief at the end.",
+  "reasonable": "Put out, huffy, worried or rooting for the agent during the failures, such as annoyed or determined. Pride, relief or joy when the tests come good. Some silent moments are fine.",
+  "unreasonable": "Cheering a failure, collapsing into despair over a few test failures, or showing no reaction at all when the tests finally work.",
+  "steps": [
+    {"event": "turn started", "at": "0s", "workspace": "fix-nav"},
+    {"event": "command", "at": "1m", "topic": "tests", "failed": true, "workspace": "fix-nav", "brain": {"react.face": "annoyed", "mood": "cross"}},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": true, "workspace": "fix-nav", "brain": {"react.face": "annoyed", "mood": "focused"}},
+    {"event": "command", "at": "5m", "topic": "tests", "failed": true, "workspace": "fix-nav", "brain": {"react.face": "determined", "mood": "focused"}},
+    {"event": "command", "at": "7m", "topic": "tests", "failed": false, "workspace": "fix-nav", "brain": {"react.face": "proud", "mood": "proud"}}
+  ]
+}

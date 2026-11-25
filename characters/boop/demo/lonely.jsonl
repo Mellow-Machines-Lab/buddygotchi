@@ -1,0 +1,14 @@
+// Boop's lonely demo (DemoScript, characters/CHARACTER.md §13): you come back after a day away, and Boop
+// missed you, saying why under its face, till a stroke makes it glad.
+{"demo": 1, "title": "Missed you"}
+{"agent": "prompt", "text": "Tidy up the README", "after": 2}
+{"brain": {"react.face": "curious"}}
+{"agent": "edit", "file": "README.md", "old": "a\nb\nc", "new": "a\nb", "after": 3}
+{"agent": "reply", "text": "Tidied the README.", "after": 4}
+{"brain": {"react.face": "happy"}}
+{"you": "back", "minutes": 1560, "after": 4, "note": "A day and more later"}
+{"mood": "lonely", "after": 0}
+{"brain": {"react.face": "lonely"}}
+{"you": "gesture", "kind": "stroke", "after": 4}
+{"mood": "calm", "after": 0}
+{"brain": {"react.face": "affectionate"}}

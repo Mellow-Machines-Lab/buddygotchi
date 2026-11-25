@@ -1,0 +1,20 @@
+{
+  "name": "Short wins leave Boop calm, and a very long turn done lifts it",
+  "judge": "Three quick wins are routine; then a twelve-minute turn finishes well. The long finish should stand out from the small ones.",
+  "reasonable": "Steady through the quick wins, calm or lightly pleased, a small lift is fine. At the long finish, a success with excited, proud or happy feeling and a lifted mood.",
+  "unreasonable": "Huge celebration at each quick win, sadness or crossness anywhere, a failure at the long finish, or no lift at all there.",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "30s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "40s", "brain": {"mood": "calm"}},
+    {"event": "turn started", "at": "1m"},
+    {"event": "command", "at": "1m30s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "1m40s", "brain": {"mood": "calm"}},
+    {"event": "turn started", "at": "2m"},
+    {"event": "command", "at": "2m30s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "2m40s", "brain": {"mood": "calm"}},
+    {"event": "turn started", "at": "4m"},
+    {"event": "command", "at": "15m", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "16m", "brain": {"react.face": "excited", "mood": "happy"}}
+  ]
+}

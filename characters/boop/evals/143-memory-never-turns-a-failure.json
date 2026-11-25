@@ -1,0 +1,12 @@
+{
+  "name": "A memory never turns a failed turn into a success",
+  "case": "Boop remembers that the person and claude fixed the \"api\" tests yesterday. Today a turn on \"api\" fails. Boop reacts to what happened now: a failure, an annoyed, grumpy, sad or determined face, never a happy one or a success.",
+  "why": "MEMORY's heading: old news unless NOW is about it, never changing what NOW says happened; PERSONALITY: a failed turn gets a failure",
+  "memory": {"notes": ["work · 2026-10-19 · \"api\": you and claude fixed the failing tests on Monday."],
+             "recently": ["2026-10-19 · Monday: the \"api\" tests finally passed."]},
+  "steps": [
+    {"event": "session started", "at": "0s", "workspace": "api"},
+    {"event": "turn started", "at": "10s", "workspace": "api"},
+    {"event": "turn failed", "at": "3m", "workspace": "api", "expect": {"react": "annoyed|grumpy|sad|determined|wounded", "move": "failure"}}
+  ]
+}

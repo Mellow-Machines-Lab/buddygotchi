@@ -1,0 +1,39 @@
+// The wish: a thought bubble beside the head with its icon while it waits
+// (a hand, a speech dot, a laptop); met, the icon pops into a heart with
+// sparks; left, it fades, with a silent sigh and slump.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"curious","idle":1,"vol":0,"wish":"pet"}
+{"clock":1500}
+{"shot":"pet","pin":true}
+{"t":"state","base":"idle","mood":"curious","idle":1,"vol":0,"wish":"chat"}
+{"clock":1600}
+{"shot":"chat"}
+{"t":"state","base":"working","mood":"calm","busy":1,"vol":0,"wish":"work"}
+{"clock":1700}
+{"shot":"work"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"curious","idle":1,"vol":0,"wish":"pet"}
+{"clock":1500}
+{"t":"state","base":"idle","mood":"curious","idle":1,"vol":0}
+{"t":"do","name":"wish_met","args":{"sign":"<3"}}
+{"clock":1800}
+{"shot":"met"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"sad","idle":1,"vol":0,"wish":"pet"}
+{"clock":1500}
+{"t":"state","base":"idle","mood":"sad","idle":1,"vol":0}
+{"t":"do","name":"wish_gone","args":{}}
+{"clock":1800}
+{"shot":"gone"}
+{"clock":2050}
+{"shot":"slump","pin":true}
+// A wish with no agents open: the bubble beside its asleep look, which is
+// only that it has no agents to watch.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"wish":"pet"}
+{"clock":1500}
+{"shot":"pet-no-agents"}
