@@ -31,7 +31,7 @@ final class RuntimeTests: XCTestCase {
     /// The name the runtime's buddy is given at setup, which it goes by.
     static let name = "Pip"
 
-    /// A runtime whose brain is `brain` once the key reads, or none.
+    /// A runtime whose brain is `brain` alone once the key reads, or none.
     func options(_ transport: FakeTransport?, brain: ScriptedBrain = .pipelineCheck,
                  readJevKey: @escaping @Sendable (() -> String?) -> String? = { _ in "k" }) throws -> Runtime.Options {
         try Runtime.setUp(stateDir: dir, name: Self.name)
@@ -39,6 +39,7 @@ final class RuntimeTests: XCTestCase {
         options.devLines = true
         options.readJevKey = readJevKey
         options.brain = { key in key.map { _ in brain } }
+        options.alone = true
         let opened = self.opened
         options.open = { opened.add($0.arguments.joined(separator: " ")); return true }
         return options
@@ -149,14 +150,11 @@ final class RuntimeTests: XCTestCase {
         try runtime.start()
         defer { runtime.stop() }
         eventually("home answers while the key is read") { runtime.home.sync { statuses.last?.brain == "none" } }
-        XCTAssertTrue(runtime.home.sync { statuses.allSatisfy { !$0.keyRead } }, "not read yet, so not missing")
         prompt.signal()
         eventually("the brain once it's read") { runtime.home.sync { statuses.last?.brain == "jev-test" } }
-        XCTAssertTrue(runtime.home.sync { statuses.last?.keyRead == true })
         XCTAssertTrue(runtime.home.sync { runtime.pipeline.brain })
         runtime.reloadBrain(jevKey: nil)
         eventually("none when Settings clears it") { runtime.home.sync { statuses.last?.brain == "none" } }
-        XCTAssertTrue(runtime.home.sync { statuses.last?.keyRead == true }, "read, and there's none")
         XCTAssertFalse(runtime.home.sync { runtime.pipeline.brain }, "so no event wakes it")
         runtime.reloadBrain(jevKey: "k2")
         eventually("the brain when Settings saves one") { runtime.home.sync { statuses.last?.brain == "jev-test" } }
@@ -2137,36 +2135,69 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(core.snapshot(at: 1000).attn?.id, 1, "back to 1, never 0")
     }
 
-    /// The popover says Jev isn't answering at once for a
-    /// status only the person can fix (401, 402, 403), and for anything
-    /// else after 3 dropped passes in a row. A pass that runs clears it, a
-    /// pass that never asked Jev (one held back) doesn't count, nor does
-    /// one that asked the brain before a new key, and a new key starts over.
+    /// The popover says Jev isn't helping at once for a status only the
+    /// key's owner can fix (401, 402, 403), and for anything else after 3
+    /// failed passes in a row. Jev answering in time clears it, a report
+    /// from the brain before a new key says nothing, and a new key starts
+    /// over.
     func testBrainTroubleShowsAtOnceForTheAccountAndAfterThreeInARowElse() throws {
         XCTAssertEqual(BrainTrouble.showAfter, 3)
         let runtime = try Runtime(options(nil))
-        let e = Event(seq: 1, at: 1, source: .device, type: .poke, specificType: "input")
-        func pass(_ status: Int?, asked: Bool = true, current: Bool = true) -> BrainTrouble? {
-            let error = status.map { BrainError("jev: HTTP \($0)", status: $0) }
-            let p = Harness.Pass(event: e, line: "You poked Boop.", seq: 2, answers: [:], dropped: error?.description, held: nil,
-                                 latencyMs: 1, brain: "jev:jev-latest", by: nil, prompt: asked ? "state" : nil, questions: [],
-                                 seen: 1, outputs: [], error: error, current: current)
-            return runtime.home.sync {
-                runtime.passed(p)
+        func jev(_ status: Int?, earlier: Bool = false) -> BrainTrouble? {
+            runtime.home.sync {
+                runtime.jevAnswered(status.map { BrainError("jev: HTTP \($0)", status: $0) },
+                                    use: runtime.brainUses - (earlier ? 1 : 0))
                 return runtime.trouble
             }
         }
-        XCTAssertEqual(pass(402), BrainTrouble(kind: .credit, why: "jev: HTTP 402", inARow: 1))
-        XCTAssertNil(pass(nil))
-        XCTAssertEqual(pass(401)?.kind, .key)
-        XCTAssertNil(pass(nil))
-        XCTAssertNil(pass(503))
-        XCTAssertNil(pass(503))
-        XCTAssertEqual(pass(503), BrainTrouble(kind: .failing, why: "jev: HTTP 503", inARow: 3))
-        XCTAssertEqual(pass(nil, asked: false)?.inARow, 3, "a pass held back never asked Jev")
-        XCTAssertEqual(pass(401, current: false)?.kind, .failing, "one that asked the brain before a new key says nothing")
+        XCTAssertEqual(jev(402), BrainTrouble(kind: .credit, why: "jev: HTTP 402", inARow: 1))
+        XCTAssertNil(jev(nil))
+        XCTAssertEqual(jev(401)?.kind, .key)
+        XCTAssertEqual(jev(403)?.kind, .key)
+        XCTAssertNil(jev(nil))
+        XCTAssertNil(jev(503))
+        XCTAssertNil(jev(503))
+        XCTAssertEqual(jev(503), BrainTrouble(kind: .failing, why: "jev: HTTP 503", inARow: 3))
+        XCTAssertEqual(jev(401, earlier: true)?.kind, .failing, "a report from the brain before a new key says nothing")
         runtime.home.sync { runtime.useBrain() }
         XCTAssertNil(runtime.home.sync { runtime.trouble }, "a new key starts over")
+    }
+
+    /// As every real launch runs: the rules answer every pass, and Jev
+    /// only takes their seats. A Jev out of credit is the popover's notice,
+    /// and the poke still gets its face, the rules'.
+    func testWithTheRulesJevFailingIsANoticeNeverASilentBoop() throws {
+        try seatedPoke(key: "k", trouble: .credit)
+    }
+
+    /// With no key the poke gets its face too, and nothing is said of Jev.
+    func testWithNoKeyTheRulesAnswerAndNothingIsSaidOfJev() throws {
+        try seatedPoke(key: nil, trouble: nil)
+    }
+
+    /// A poke on a runtime as every real launch runs it, Jev's key `key`
+    /// and Jev out of credit: a face plays, and the popover's notice is
+    /// `trouble`.
+    func seatedPoke(key: String?, trouble: BrainTrouble.Kind?) throws {
+        let transport = FakeTransport()
+        var options = try options(transport, readJevKey: { _ in key })
+        options.alone = false
+        options.brain = { key in key.map { _ in ScriptedBrain(id: "jev-test") { _, _ in throw BrainError("jev: HTTP 402", status: 402) } } }
+        let runtime = try Runtime(options)
+        var statuses: [Runtime.Status] = []  // on `home`
+        runtime.onChange = { statuses.append($0) }
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        eventually("the brain") { runtime.home.sync { runtime.jevKey != nil && statuses.last?.brain == (key == nil ? "rules" : "jev-test") } }
+        dev(#"{"dev":"tap"}"#)
+        eventually("the poke's face, the rules'") { transport.dos("react").contains { $0.contains(#""mood":"#) } }
+        if let trouble {
+            eventually("Jev's trouble") { runtime.home.sync { statuses.last?.brainTrouble?.kind == trouble } }
+        } else {
+            runtime.home.sync {}
+            XCTAssertNil(runtime.home.sync { statuses.last?.brainTrouble }, "nothing to say")
+        }
     }
 
     /// HISTORY closes with `mood`'s time in a mood

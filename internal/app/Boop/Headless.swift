@@ -61,8 +61,8 @@ enum Headless {
         // Jev's key only from BOOP_JEV_KEY, as boopdev: a run from an agent
         // shell must never use the owner's key from the Keychain.
         options.readJevKey = { _ in JevKey.environment() }
-        if brain == "scripted" { options.brain = { _ in ScriptedBrain.pipelineCheck } }
-        if brain == "none" { options.brain = { _ in nil }; options.rules = false }
+        if brain == "scripted" { options.brain = { _ in ScriptedBrain.pipelineCheck }; options.alone = true }
+        if brain == "none" { options.brain = { _ in nil }; options.alone = true }
         if brain == "rules" { options.brain = { _ in nil } }
         // `--record` listens from the start, so the recording opens with
         // how things stood when the demo began (DemoRecorder.begin).

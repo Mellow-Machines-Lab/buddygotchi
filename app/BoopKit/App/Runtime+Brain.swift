@@ -1,21 +1,17 @@
 import Foundation
 import MellowHarness
 
-// The brain: Jev's key, the brain it builds, and each pass's outcome.
+// The brain: the rules, Jev in their seats for its key, and how Jev does.
 extension Runtime {
     /// Boop's mood now, as the log has it.
     var moodNow: String { MoodOutput.value(mood, harness.log.view(now: options.clock())) }
 
     /// Every pass the harness made: its app log line
-    /// (the brain's only), whether the brain is in trouble, its
-    /// `debug.jsonl` lines, and what it means for push-to-talk's reply.
+    /// (the brain's only), its `debug.jsonl` lines, and what it means for
+    /// push-to-talk's reply.
     func passed(_ pass: Harness.Pass) {
         let now = options.clock()
         if let line = Runtime.logLine(pass) { options.log(line) }
-        if pass.prompt != nil, pass.current {
-            // Only a pass that asked the brain in use says how it's doing.
-            (droppedInARow, trouble) = BrainTrouble.after(pass.error, previous: droppedInARow)
-        }
         // The head is logged only when it changes; the pass, HISTORY and NOW.
         debugWriter?.pass(pass, launchOptions: launchOptions, at: now)
         // Push-to-talk's reply: a reaction is one, and a pass on what you
@@ -45,14 +41,42 @@ extension Runtime {
         }
     }
 
-    /// The brain for Jev's key as far as it's been read. On `home`.
+    /// The brain for Jev's key as far as it's been read: the rules, with
+    /// Jev in their seats when there's a key; with `alone`, the options'
+    /// brain alone, or none. On `home`.
     func useBrain() {
-        let brain = options.brain(jevKey ?? nil) ?? (options.rules ? rulesBrain() : nil)
+        let key = jevKey ?? nil
+        brainUses += 1
+        let use = brainUses
+        let brain: (any Brain)?
+        let said: String
+        if options.alone {
+            brain = options.brain(key)
+            said = brain?.id ?? "none: nothing wakes it"
+        } else {
+            let rules = self.rules ?? rulesBrain()
+            self.rules = rules
+            let jev = options.brain(key)
+            brain = SeatedBrain(rules: rules, jev: jev) { [weak self] error in
+                self?.home.async { [weak self] in self?.jevAnswered(error, use: use) }
+            }
+            said = rules.id + (jev.map { ", \($0.id) in its seats" } ?? "")
+        }
         harness.use(brain)
         pipeline.brain = brain != nil
         trouble = nil
-        droppedInARow = 0
-        options.log("brain \(brain?.id ?? "none")" + (brain == nil ? ": no Jev key, so Boop does only its rule reactions" : ""))
+        jevFailedInARow = 0
+        options.log("brain " + said)
+    }
+
+    /// How Jev did at a pass of the brain `use` installed: nil in time,
+    /// else why not. Only Jev's trouble is shown, and only a key has any
+    /// (`BrainTrouble`). On `home`.
+    func jevAnswered(_ error: BrainError?, use: Int) {
+        guard use == brainUses else { return }
+        let before = trouble
+        (jevFailedInARow, trouble) = BrainTrouble.after(error, previous: jevFailedInARow)
+        if trouble != before { changed() }
     }
 
     /// The brain in the box, for this buddy: it reads each event's line

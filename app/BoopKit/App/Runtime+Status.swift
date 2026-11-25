@@ -23,12 +23,10 @@ extension Runtime {
         /// That device's `hello.id`, when it gave one: the board its
         /// firmware update is for.
         public var misfit: String?
-        /// The brain as it runs: `jev:jev-latest`, or `none` without a key.
+        /// The brain as it runs: `rules`, Jev's id (`jev:jev-latest`) once a
+        /// key gives it the rules' seats, or `none` with no brain at all.
         public var brain: String
-        /// Jev's key has been read, whether there was one or not. Until
-        /// then `brain` is `none` only because it isn't known yet.
-        public var keyRead: Bool
-        /// The brain failing, for the popover's notice.
+        /// Jev failing, for the popover's notice: only with a key.
         public var brainTrouble: BrainTrouble?
         /// The Mac's mic is on for push-to-talk.
         public var listening: Bool
@@ -131,7 +129,7 @@ extension Runtime {
 
         public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
                     device: DeviceInfo?, linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
-                    brain: String, keyRead: Bool = true, brainTrouble: BrainTrouble? = nil, listening: Bool = false,
+                    brain: String, brainTrouble: BrainTrouble? = nil, listening: Bool = false,
                     micTrouble: String? = nil, growth: Growth? = nil) {
             self.name = name
             self.snapshot = snapshot
@@ -141,7 +139,6 @@ extension Runtime {
             self.linkTrouble = linkTrouble
             self.deviceTrouble = deviceTrouble
             self.brain = brain
-            self.keyRead = keyRead
             self.brainTrouble = brainTrouble
             self.listening = listening
             self.micTrouble = micTrouble
@@ -164,7 +161,7 @@ extension Runtime {
         var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: core.sessionList(at: now),
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
                             deviceTrouble: link.trouble.map(Self.words), brain: harness.brain?.id ?? "none",
-                            keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
+                            brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.pushToTalk.trouble, growth: growthNow)
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }

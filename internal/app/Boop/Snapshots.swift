@@ -238,8 +238,8 @@ enum Snapshots {
                 failed.install(.claude)
                 failed.dismissHookError(.claude)
                 shot("settings-hook-failed", failed, pane: .settings)
-                // No Jev key, the body away and Claude's hooks needing a repair.
-                let offline = model(installer, status: status(connected: false, brain: "none"))
+                // No Jev key, so the rules alone, the body away and Claude's hooks needing a repair.
+                let offline = model(installer, status: status(connected: false, brain: "rules"))
                 offline.hooks[.claude] = .outdated
                 shot("settings-offline-nokey", offline, pane: .settings)
                 // Claude's hooks turned off by the person: only Remove.
@@ -468,14 +468,14 @@ enum Snapshots {
                 $0.progress.lessons = [.tap, .button]
                 $0.talk = .nothing
             }),
-            // Before act 7's key: what it heard, and that the answer comes then.
-            ("5-how-to-heard", at(.howTo, status: status(brain: "none")) {
+            // What it heard.
+            ("5-how-to-heard", at(.howTo, status: status(brain: "rules")) {
                 $0.body = .joined
                 $0.progress.lessons = [.tap, .button, .talk]
                 $0.talk = .heard("Hi Boop, can you hear me from all the way over here on my desk?")
             }),
             // The practice request answered: all four done.
-            ("5-how-to-all-done", at(.howTo, status: status(brain: "none")) {
+            ("5-how-to-all-done", at(.howTo, status: status(brain: "rules")) {
                 $0.body = .joined
                 $0.progress.lessons = [.tap, .button, .talk, .amber]
                 $0.talk = .heard("Hi Boop")
@@ -522,8 +522,6 @@ enum Snapshots {
             ("7-small-things-mic-refused", at(.smallThings, status: status()) {
                 $0.mic = .refused("Allow Boop in System Settings → Privacy & Security → Microphone.")
             }),
-            ("7-small-things-key-saved", at(.smallThings, status: status()) { $0.keySaved = true }),
-            ("7-small-things-key-failed", at(.smallThings, status: status()) { $0.keySaved = false }),
             ("7-small-things-login-approval", at(.smallThings, status: status()) {
                 $0.app.loginItem = LoginItem(state: { .needsApproval }, set: { _ in })
                 $0.app.refreshLoginItem()
@@ -544,7 +542,7 @@ enum Snapshots {
                 $0.app.setup.name = Long.name
                 $0.body = .joined
             }),
-            ("5-how-to-long", at(.howTo, status: status(name: Long.name, brain: "none")) {
+            ("5-how-to-long", at(.howTo, status: status(name: Long.name, brain: "rules")) {
                 $0.app.setup.name = Long.name
                 $0.body = .joined
                 $0.progress.lessons = [.tap, .button]
@@ -566,7 +564,6 @@ enum Snapshots {
                 $0.app.setup.name = Long.name
                 $0.app.loginItemError = Long.detail
                 $0.mic = .refused(Long.detail)
-                $0.keySaved = false
             }),
             ("8-world", at(.world, status: status())),
             ("8-world-long", at(.world, status: status(name: Long.name)) { $0.app.setup.name = Long.name }),
@@ -781,7 +778,7 @@ enum Snapshots {
     /// optionally the thread's name and its workspace.
     static func status(base: String = "working", sessions rows: [[String]] = [], vol: Int = 6,
                        connected: Bool = true, talk: Talk = .default,
-                       name: String = "Mochi", brain: String = "jev:jev-latest", keyRead: Bool = true,
+                       name: String = "Mochi", brain: String = "jev:jev-latest",
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
                        linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
@@ -827,7 +824,7 @@ enum Snapshots {
         var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
                               device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice, face: face) : nil,
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
-                              brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
+                              brain: brain, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)
         // Its age and its memory's recent days, read the day after.
         status.talk = talk
@@ -950,11 +947,8 @@ enum Snapshots {
                 return m
             }()),
             ("waking-up", model(installer, status: nil)),
-            ("no-key", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]], brain: "none"))),
-            // Jev's key still being read, a Keychain prompt waiting: no brain
-            // yet, but nothing says the key is missing.
-            ("reading-key", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
-                                                            brain: "none", keyRead: false))),
+            // No Jev key: the rules alone, and nothing to say about it.
+            ("no-key", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]], brain: "rules"))),
             ("brain-trouble", model(installer, status: status(sessions: [["claude", "jetpack", "work"]],
                                                               brainTrouble: BrainTrouble(kind: .credit, why: "jev: HTTP 402",
                                                                                          inARow: 1)))),

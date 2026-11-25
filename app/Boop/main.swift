@@ -24,11 +24,12 @@ let usage = """
                is set up with --name (default Boop). --talk overrides the saved one for this run only.
                The world of buddies only with BOOP_WORLD_URL set: npm run dev in internal/world serves a
                fake one on http://localhost:8787.
-               --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
-               reads the Keychain; without it the rules brain answers, with no network. --brain rules asks
-               the rules brain even with a key. --brain scripted answers every pass the same way without a
-               network: an excited "Go", for pipeline checks. --brain none asks no brain at all, even with a
-               key: only the rule reactions, and dev lines' answers. Your prompts are
+               --brain jev (the default) has the rules brain answer every pass, with no network, and Jev
+               replace its answers in their seats when BOOP_JEV_KEY holds its key and Jev answers in time,
+               since headless never reads the Keychain. --brain rules asks only the rules brain, even with a
+               key. --brain scripted answers every pass the same way without a network: an excited "Go",
+               for pipeline checks. --brain none asks no brain at all, even with a key: only the rule
+               reactions, and dev lines' answers. Your prompts are
                counted only, never read by Apple Intelligence.
                Stops cleanly on SIGINT or SIGTERM. {"dev":"advance","ms":N} on the socket moves the clock forward,
                and {"dev":"tap"} stands in for a tap on the board. A tap while something needs you opens that
@@ -124,8 +125,6 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
         AppModel.offersSimulator ? DeviceChooser(board: board, simulator: { BoardLink() }, log: { log.write($0) }) : board
     }
     var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath, link: board.map { chooser($0) }, steering: bundledSteering())
-    // With no Jev key, the rules brain: every Boop has its personality.
-    options.rules = true
     // At a dream, your own agent tool writes the memory, if Settings allows.
     options.agentTool = true
     if let ble = board as? BLETransport { options.chooseBoard = { ble.take(only: $0) } }

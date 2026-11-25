@@ -5,7 +5,7 @@ import SwiftUI
 /// Settings, inside the popover, in the order of use: the buddy itself
 /// (its name, how much it says, its sound), the agents, the world, the
 /// memory and the app. What only support needs (the body and its board,
-/// the firmware, the simulator, the brain's key, uninstalling) waits under
+/// the firmware, the simulator, a Jev key, uninstalling) waits under
 /// Advanced, closed. When the body has trouble, one strip at the top says
 /// so with its one fix, and the rows say only the short state.
 struct SettingsPane: View {
@@ -424,12 +424,6 @@ struct SettingsPane: View {
                         .help("Save a bug report, to hand to an agent or attach to an issue")
                 }
                 .disabled(model.status == nil)
-                // With no key, the brain's key can't wait under Advanced:
-                // the Overview's notice sends you here for it.
-                if model.noKey {
-                    RowDivider()
-                    key
-                }
                 RowDivider()
                 advancedToggle
                 if model.advancedOpen { advanced }
@@ -451,7 +445,7 @@ struct SettingsPane: View {
                     Text("Advanced").font(.bodyMedium).foregroundStyle(Theme.ink)
                         .frame(minHeight: SettingLine.firstLine)
                     if !model.advancedOpen {
-                        Text("The body and its board, updates, the brain's key, uninstall").caption()
+                        Text("The body and its board, updates, a Jev key, uninstall").caption()
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -509,10 +503,8 @@ struct SettingsPane: View {
                 }
             }
         }
-        if !model.noKey {
-            RowDivider()
-            key
-        }
+        RowDivider()
+        key
         RowDivider()
         // Only the everyday Boop uninstalls; a copy on another folder says
         // so rather than ask and then do nothing.
@@ -572,14 +564,7 @@ struct SettingsPane: View {
         }
     }
 
-    // MARK: The brain's key
-
-    /// What Boop does without a brain, if it has none:
-    /// the rules' looks and reactions, but no brain reaction or mood change.
-    private var brainNote: String? {
-        guard model.noKey else { return nil }
-        return "Without a Jev API key, \(model.name) shows what the agents are doing and when one needs you, but doesn't react or change its mood, and shrugs when you talk to it."
-    }
+    // MARK: Jev's key
 
     /// The field holds the key the Keychain has.
     private var keySaved: Bool {
@@ -607,14 +592,21 @@ struct SettingsPane: View {
         }
     }
 
-    /// Jev's key, the brain's: a row like the others, the field under its
-    /// words.
+    /// Jev's key, optional: a row like the others, the field under its
+    /// words, and where Jev's docs are.
     private var key: some View {
         SettingRow(icon: "key", title: "Jev API key",
                    detail: keyFailed ? "Couldn't save the key in your Keychain. Try again, or check Keychain Access."
-                       : "This is how \(model.name) thinks. It stays in your Keychain. What \(model.name) notices goes to TypeSafe, never your code.",
+                       : "Optional. \(model.name) works without it. With a key, \(model.name) notices more. "
+                       + "It stays in your Keychain, and what \(model.name) notices goes to TypeSafe, never your code.",
                    detailTone: keyFailed ? Theme.clayInk : Theme.inkSoft) {
-            EmptyView()
+            Link(destination: AppModel.jevDocs) {
+                HStack(spacing: Theme.hair) {
+                    Text("Jev's docs")
+                    Image(systemName: "arrow.up.right")
+                }
+            }
+            .font(.detail).foregroundStyle(Theme.inkSoft)
         } below: {
             HStack(spacing: Theme.gapSnug) {
                 SecureField("Jev API key", text: $apiKey)
@@ -640,10 +632,6 @@ struct SettingsPane: View {
                         .buttonStyle(.row)
                         .disabled(!canSaveKey)
                 }
-            }
-            if let note = brainNote {
-                Text(note).font(.detail).foregroundStyle(Theme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

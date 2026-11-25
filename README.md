@@ -70,7 +70,7 @@ engine, for working on it.
 | 💻 **A Mac** | macOS 14 or later, with Command Line Tools 26 or later (`xcode-select --install`): Swift 6.2 and the macOS 26 SDK |
 | 🐍 **A newer Python** | For flashing the board, unless you already have PlatformIO's `pio`: `brew install python` ([why](firmware/README.md#build-and-flash)). PlatformIO installs itself |
 | 🟨 **A board** | One of the two below, and a USB cable that carries data |
-| 🔑 **A Jev key** | Optional. [Jev](https://docs.typesafe.ai/api) is TypeSafe's small hosted model, and it's what picks how Boop reacts. It needs a key from TypeSafe, which may cost money. Without one, Boop's own rules pick how it reacts, on your Mac, with the same moods and the same celebrations. Add it in Boop's Settings |
+| 🔑 **A Jev key** | Optional. Boop's own rules always pick how it reacts, on your Mac, with the same moods and the same celebrations. [Jev](https://docs.typesafe.ai/api), TypeSafe's small hosted model, can pick a finer mood, face, reply or word on top, when it answers in time. It needs a key from TypeSafe, which may cost money. Add it in Boop's Settings, under Advanced |
 
 ### Supported boards
 

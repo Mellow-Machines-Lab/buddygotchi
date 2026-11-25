@@ -355,14 +355,12 @@ struct HowToAct: View {
     }
 
     /// The talk lesson's words: what it's for, what the Mac heard, or why
-    /// it can't hear. Without Jev's key, which act 7 asks for, nothing
-    /// answers yet.
+    /// it can't hear.
     private var talkDetail: String {
         guard paired else { return Self.talkFor + " Or use Talk on the Mac." }
         if let why = app.status?.micTrouble { return why }
-        let later = app.noKey ? " I'll answer once I have a brain, in a couple of steps." : ""
         switch model.talk {
-        case .heard(let words): return "I heard “\(Self.quoted(words))”." + later
+        case .heard(let words): return "I heard “\(Self.quoted(words))”."
         case .nothing: return "I didn't catch that. Keep holding while you talk, then let go."
         case nil: return Self.talkFor + " macOS asks for the microphone the first time."
         }

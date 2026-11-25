@@ -35,7 +35,9 @@ public final class MomentOutput: Output {
     /// Whose reactions: its character.
     let pack: CharacterPack
     /// The questions' keys.
-    public static let emotionKey = "react.face", replyKey = "react.reply"
+    public static let emotionKey = "react.face", replyKey = "react.reply", takeKey = "skit.take"
+    /// The most takes a skit's question offers.
+    public static let takesOffered = 6
     /// Its questions, built once: none of them changes. What you said gets
     /// its reply's too (`talkQuestions`).
     let asked: [Question]
@@ -334,9 +336,8 @@ public final class MomentOutput: Output {
         var naps = false
     }
 
-    /// The moment's tags a reply's sign may have, beside the calendar's:
-    /// `nobrain` is the shrug's with no brain to answer (`Core.shrug`).
-    public static let momentTags = ["working", "waiting", Core.noBrain]
+    /// The moment's tags a reply's sign may have, beside the calendar's.
+    public static let momentTags = ["working", "waiting"]
 
     /// Whether `e` is something you said on push-to-talk, which a reply
     /// answers.
@@ -480,11 +481,17 @@ public final class MomentOutput: Output {
         return a.choice
     }
 
-    /// Its questions, and the sign's where there's one to pick: for what
-    /// you said, a prompt's reading, an answered ask or a dream's telling,
-    /// a caption that fits; at an idle check-in, whether to hold up the
-    /// one thing that's due (`IdleBeat`).
+    /// Its questions, the sign's where there's one to pick, and at a skit
+    /// which take it says (`takeQuestion`).
     public func questions(now: Event?, log: LogView) -> [Question] {
+        faceAndSign(now: now, log: log) + (takeQuestion(now, log).map { [$0] } ?? [])
+    }
+
+    /// The face, and the sign's where there's one to pick: for what you
+    /// said, a prompt's reading, an answered ask or a dream's telling, a
+    /// caption that fits; at an idle check-in, whether to hold up the one
+    /// thing that's due (`IdleBeat`).
+    func faceAndSign(now: Event?, log: LogView) -> [Question] {
         let about = Self.about(now, log)
         if let about, Self.isTalk(about) {
             let asked = askedOfTalk
@@ -531,6 +538,68 @@ public final class MomentOutput: Output {
                                  about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, how the person sounds, and CONTEXT's Talk row when it's there",
                                  options: [Option("none", "No sign: PERSONALITY gives this prompt none, or nothing in it is worth holding up.")]
                                      + captions.map { Option($0, "A sign that says this.") })]
+    }
+
+    /// The slot the rules read `about` as, whose line has `facts`, for its
+    /// skit: none for your words, nor for a Moment the rules make whole.
+    func slot(_ about: Event?, facts: [String: JSONValue], ruled: Bool) -> RulesBrain.Slot? {
+        guard let about, !Self.isTalk(about), !ruled else { return nil }
+        return RulesBrain.read(about, facts: facts).slot
+    }
+
+    /// The skit that plays at `slot`, if any (`Skits.play`). On Quiet
+    /// nothing swears.
+    func skit(at slot: RulesBrain.Slot, facts: [String: JSONValue]) -> Skits.Play? {
+        Skits.play(slot: slot, facts: facts, swears: swears() && talk() != .quiet, in: pack.skits)
+    }
+
+    /// The words it never says at `about`: one that claims a fix, unless
+    /// the turn got past a failed check or the check passes again.
+    func never(_ about: Event?, slot: RulesBrain.Slot?) -> Set<String> {
+        about.map(fixed) == true || slot == .checkFixed ? [] : pack.claimsAFix
+    }
+
+    /// Whether it says nothing at a Moment this big, with this move: on
+    /// Quiet, nothing at a small moment or a finish, or with a wish, which
+    /// shows as its icon and sign. Late at night a notice stays gentle: no
+    /// word with it.
+    func silent(_ size: Size, move: String?, wishing: Bool = false, late: Bool = false) -> Bool {
+        (talk() == .quiet && (size.name == "small" || move != nil || wishing)) || late
+    }
+
+    /// The texts `skit` may say at `about` (`Voice.texts`), of the kind its
+    /// size asks, a swear when it swears, in whatever face is picked: the
+    /// rules' pick first, the one not said longest. None where it says
+    /// nothing.
+    func takeTexts(_ skit: Skits.Play, slot: RulesBrain.Slot, about: Event, facts: [String: JSONValue], log: LogView) -> [String] {
+        let size = Self.sizes[MomentRule.size(about, facts: facts, mood: moodID(log))]
+        let move = MomentRule.move(about, facts: facts)
+        guard speaks(), !silent(size, move: move) else { return [] }
+        recall(log)
+        return Voice.texts(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : size.kind, finish: move, avoiding: lastWords,
+                           never: never(about, slot: slot), limit: Self.takesOffered, in: pack)
+    }
+
+    /// At a skit with more than one thing it may say, which it says. The
+    /// options are the takes' texts, the rules' pick first, which leaves it
+    /// to Voice, as no answer does.
+    func takeQuestion(_ now: Event?, _ log: LogView) -> Question? {
+        let about = Self.about(now, log)
+        let facts = about.flatMap { line($0)?.facts } ?? [:]
+        guard let about, let slot = self.slot(about, facts: facts, ruled: false), let skit = self.skit(at: slot, facts: facts) else { return nil }
+        let texts = takeTexts(skit, slot: slot, about: about, facts: facts, log: log)
+        guard texts.count > 1 else { return nil }
+        return Question(key: Self.takeKey, text: "\(pack.name) speaks at this moment. Which of these does it say, in its mood?",
+                        about: "the NOW section", judgeBy: "what NOW says happened, then PERSONALITY and MOOD",
+                        options: texts.map { Option($0, "It says this.") })
+    }
+
+    /// What the brain picked for `skit` to say, if it's one of the texts
+    /// offered now and not the rules' own, the first.
+    func pickedTake(_ answers: Answers, _ skit: Skits.Play, slot: RulesBrain.Slot, about: Event, facts: [String: JSONValue],
+                    log: LogView) -> String? {
+        guard let choice = answers[Self.takeKey]?.choice else { return nil }
+        return takeTexts(skit, slot: slot, about: about, facts: facts, log: log).dropFirst().contains(choice) ? choice : nil
     }
 
     /// The captions a sign may show for `now`, if it's a prompt's reading;
@@ -694,10 +763,9 @@ public final class MomentOutput: Output {
         }
         // A skit, at a pass that's neither your words nor the rules' own
         // Moment: it always plays, so with no face picked it takes the
-        // slot's first, as the mood colours it (`RulesBrain.faces`). On
-        // Quiet nothing swears.
-        let slot = talk || ruled != nil ? nil : about.map { RulesBrain.read($0, facts: lineFacts).slot }
-        let skit = slot.flatMap { Skits.play(slot: $0, facts: lineFacts, swears: swears() && self.talk() != .quiet, in: pack.skits) }
+        // slot's first, as the mood colours it (`RulesBrain.faces`).
+        let slot = self.slot(about, facts: lineFacts, ruled: ruled != nil)
+        let skit = slot.flatMap { self.skit(at: $0, facts: lineFacts) }
         if let slot, skit != nil, !pack.faces.contains(where: { $0.name == answers[Self.emotionKey]?.choice }),
            let face = RulesBrain.colour(RulesBrain.faces[slot] ?? [], mood: moodID(log) ?? pack.defaultMood, level: moodLevel(log)).first {
             answers[Self.emotionKey] = Answer(choice: face)
@@ -735,24 +803,23 @@ public final class MomentOutput: Output {
         // At a notice it looks up at you first, so it's no quiet face; a
         // rough hour's lean is its own look.
         let pick = noticing.map { $0.kind == .rough ? nil : Self.noticeScene } ?? moved
-        // What it says: on Quiet, nothing at a small moment or a finish,
-        // or with a wish, which shows as its icon and sign. Late at night a
-        // notice stays gentle: no word with it.
-        let silent = (self.talk() == .quiet && (size.name == "small" || pick != nil || wishing != nil)) || noticing?.kind == .late
+        let silent = self.silent(size, move: pick, wishing: wishing != nil, late: noticing?.kind == .late)
         // What it says, only where a rule says so: to what you said, and at
         // a lock's real wave, the reply's own words, in this face; at a
-        // skit, one of the skit's takes, a swear when it swears.
+        // skit, one of the skit's takes, a swear when it swears: the one
+        // the brain picked, if this face has it.
         var said: [Take] = []
         recall(log)
-        let never: Set<String> = about.map(fixed) == true || slot == .checkFixed ? [] : pack.claimsAFix
+        let never = self.never(about, slot: slot)
         if speaks(), !silent {
             let take: Take?
             if let reply, talk || ruled?.saysWave == true {
                 take = Voice.take(.reply, meaning: reply, kind: kind, face: choice, finish: nil, avoiding: lastWords, never: never,
                                   in: pack, rng: &takes)
-            } else if let skit {
+            } else if let skit, let slot, let about {
+                let text = pickedTake(answers, skit, slot: slot, about: about, facts: lineFacts, log: log)
                 take = Voice.take(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : kind, face: choice, finish: pick,
-                                  avoiding: lastWords, never: never, in: pack, rng: &takes)
+                                  avoiding: lastWords, never: never, text: text, in: pack, rng: &takes)
             } else {
                 take = nil
             }

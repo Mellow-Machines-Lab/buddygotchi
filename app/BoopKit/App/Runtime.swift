@@ -23,13 +23,14 @@ public final class Runtime: @unchecked Sendable {
         /// Override whether it may swear in `settings.json`, for this run
         /// only: a demo swears as it was written to.
         public var swearing: Bool?
-        /// Builds the brain from Jev's key; nil for no brain. Tests pass
-        /// their own.
+        /// Builds Jev from its key, nil for none: what may take the rules'
+        /// seats (`SeatedBrain`). Tests pass their own.
         public var brain: @Sendable (String?) -> (any Brain)? = { key in key.map { JevBrain(key: $0) } }
-        /// With no brain from `brain` (no Jev key), the rules brain answers
-        /// (`RulesBrain`): the app and headless. Off, nothing wakes the brain
-        /// with no key, as the tests and `--brain none` want.
-        public var rules = false
+        /// `brain` answers alone, in the rules' place, once the key is read,
+        /// and with none nothing wakes the brain: `--brain scripted`,
+        /// `--brain none` and most tests. Off, as every real launch runs,
+        /// the rules answer from the start and `brain` takes their seats.
+        public var alone = false
         /// The dream may run your own agent tool (`AgentToolModel`): the
         /// app's. Tests and headless keep it off unless asked.
         public var agentTool = false
@@ -170,11 +171,15 @@ public final class Runtime: @unchecked Sendable {
     let harness: Harness
     /// The buddy's mood, MellowHarness's `Choice`.
     var mood: Choice { rig.mood }
-    /// Whether the brain has failed for long enough to say so,
-    /// and how many passes that asked it have
-    /// dropped in a row.
+    /// Whether Jev has failed for long enough to say so, and how many
+    /// passes it failed in a row.
     var trouble: BrainTrouble?
-    var droppedInARow = 0
+    var jevFailedInARow = 0
+    /// Bumped by every `useBrain`: what an earlier brain's Jev reports says
+    /// nothing of this one's.
+    var brainUses = 0
+    /// The rules brain, the one every real launch answers with, built once.
+    var rules: RulesBrain?
     /// Writes `debug.jsonl`'s event, view and pass lines, in order.
     var debugWriter: DebugLog.Writer?
     /// Each question's option names as the launch's `questions` line gave
@@ -196,7 +201,8 @@ public final class Runtime: @unchecked Sendable {
     var activity: NSObjectProtocol?
     let places = Places()
     /// Jev's key, touched only on `home`: nil until read, and then the key
-    /// or none. Until then no event wakes the brain.
+    /// or none. Until then Jev takes no seat, and with `alone` no event
+    /// wakes the brain.
     var jevKey: String??
     /// The transport's `trouble` as the status last had it.
     var linkTrouble: TransportTrouble? { rig.linkTrouble }
@@ -205,8 +211,7 @@ public final class Runtime: @unchecked Sendable {
     /// What a demo's mic hears as its button is let go: the words come once
     /// the mic is off, as speech's do.
     var wordsOnRelease: String?
-    /// A demo script plays: its brain steps answer what you say, so a
-    /// runtime with no brain doesn't shrug at it.
+    /// A demo script plays: Boop shows no growth of its own.
     var playingDemo = false
     /// Boop's XP, level and today's ring, counted from each event as it's
     /// logged, and whether the XP changed since the last status.
@@ -643,6 +648,8 @@ public final class Runtime: @unchecked Sendable {
         // `home`: reading Jev's key sets the brain and calls `onChange`,
         // so it starts now, after the app has set its callbacks.
         home.async { [self] in
+            // The rules answer at once; Jev takes its seats once its key is read.
+            if !options.alone { useBrain() }
             readJevKey()
             run(pipeline.tick(at: options.clock()))
             changed()

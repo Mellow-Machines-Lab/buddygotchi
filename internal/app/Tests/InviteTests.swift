@@ -418,6 +418,7 @@ final class InviteTests: XCTestCase {
         try Runtime.setUp(stateDir: dir, name: "Pip")
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: transport,
                                       steering: RuntimeTests.steering)
+        options.alone = true
         options.devLines = true
         options.clock = { clock.now }
         options.wallClock = { clock.now }

@@ -189,6 +189,7 @@ final class GrowthTests: XCTestCase {
         let clock = VirtualClock(1_793_000_000_000)
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
+        options.alone = true
         options.devLines = true
         options.clock = { clock.now }
         options.wallClock = { clock.now }
@@ -254,6 +255,7 @@ final class GrowthTests: XCTestCase {
         let transport = FakeTransport()
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: transport,
                                       steering: RuntimeTests.steering)
+        options.alone = true
         options.devLines = true
         options.clock = { clock.now }
         options.wallClock = { clock.now }

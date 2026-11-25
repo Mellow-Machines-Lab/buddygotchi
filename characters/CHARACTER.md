@@ -445,8 +445,7 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
   night, `[bye working]` while an agent works.
 - Each line is `- [reply tags] words`. Its first tag is the reply; any more
   are the calendar's or the moment's: `working` (an agent works), `waiting`
-  (something waits on you), `nobrain` (the `huh` Boop shrugs with when it has no
-  brain to answer, `Core.shrug`).
+  (something waits on you).
 - `{words}` is a phrase of what you said, at most 12 characters
   (`Signs.maxPhrase`): the whole of it or a part between marks, lowercased,
   the buddy's name taken out, so "Hello!" can come back as `hello 2 u!`.
@@ -471,13 +470,17 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 
 A pack with a voice has recorded takes, each tagged with the moods it plays
 in, a part and a meaning, and a kind (sound, word, phrase or swear). The
-brain never picks what the buddy says: a rule does, at three kinds of
+brain never picks whether the buddy speaks: a rule does, at three kinds of
 moment, and everything else plays in silence:
 
 - A skit: one of the few moments that always speak, each from takes of its
   own (`skits`, below). The brain can't veto one: when it picks no face,
   the Moment plays in the rules brain's first face for the moment, as the
-  mood colours it.
+  mood colours it. With more than one thing it may say, the brain may pick
+  which (`skit.take`): its options are the texts of the skit's takes of
+  the kind the size asks, at most 6, the one not said longest first, which
+  is the rules' answer and leaves the pick to Voice. A text the chosen face
+  has no take of says Voice's own pick.
 - Your words: the reply's own words (§7).
 - A real wave at your lock or unlock: its hello's or bye's own words.
 

@@ -99,14 +99,15 @@ long list that checks little:
 | `move` | The move the Moment played. At an event the rule's pick (`MomentRule.move`): a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name. To what you said the reply, Jev's `react.reply` pick (`huh` below the floor, and for the shrug a question gets); with the expect brain, the first reply listed is its answer. At your lock or unlock the wave: `wave` for the slight one, `bye` or `hello` for a real one. Or `none` when it played none or Boop didn't react |
 | `intensity` | The Moment's size, the rule's pick (`MomentRule.size`; `small` to `big`: how long the emotion held and how big what it said), or `none` when Boop didn't react |
 | `sign` | The sign the Moment held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
-| `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. What it says is never Jev's: a skit's takes (`Skits`), a reply's own words, a lock's wave. A scenario that names a text no take has doesn't load |
+| `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. When it speaks is never Jev's: a skit (`Skits`), a reply's own words, a lock's wave; at a skit with more than one take, which is Jev's pick (`skit.take`). A scenario that names a text no take has doesn't load |
 | `mood` | Boop's mood after the pass |
 | `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every other lasting mood, lonely only when its gate allows |
 
 A step fails if its pass was dropped (late, or an error), or if any
 expectation doesn't hold. A step with `expect` that wakes no pass stops
 the whole eval as broken. The evals ask Jev, so they need its key and
-fail without it.
+fail without it. They ask Jev alone, not in the rules' seats as the app
+does (`SeatedBrain`), so a dropped pass is Jev's to answer for.
 
 **The whole-run checks.** A scenario's `checks` are judged over every
 pass of a run, checked or not, for how lively Boop stays: an animated
