@@ -126,8 +126,9 @@ extension CharacterPack {
     /// a pack: a key missing, a face or a mood named twice, a lasting mood
     /// with no face to rest in, a default mood or a fade's end that isn't a
     /// lasting one, a face that settles into none, or a skit with no id, a
-    /// slot that isn't one, a slot another skit has too, or an invite whose
-    /// pose, touch or payoff isn't one. Everything the
+    /// slot that isn't one, a slot another skit has too, a clip that isn't
+    /// a name the board keeps, or an invite whose pose, touch or payoff
+    /// isn't one. Everything the
     /// pack has is in the one folder.
     public init(directory: URL) throws {
         let file = directory.appendingPathComponent("character.json")
@@ -217,7 +218,7 @@ extension CharacterPack {
     }
 
     /// The pack's skits, each with an id and slots that are the rules'
-    /// (`RulesBrain.Slot`), no slot in two, and maybe an invite.
+    /// (`RulesBrain.Slot`), no slot in two, and maybe a clip and an invite.
     static func skits(_ rows: [[String: Any]], in source: String) throws -> [Skit] {
         var taken: Set<RulesBrain.Slot> = []
         return try rows.map { row in
@@ -227,11 +228,18 @@ extension CharacterPack {
                 guard taken.insert(slot).inserted else { throw CharacterPackError("\(source): skit \(id) plays at \(name), which another skit has") }
                 return slot
             }
+            let clip = try row["clip"].map { value in
+                guard let name = value as? String, !name.isEmpty, name.utf8.count <= Skit.clipBytes,
+                      name.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }) else {
+                    throw CharacterPackError("\(source): skit \(id)'s clip \(value) isn't a clip's name, \(Skit.clipBytes) letters, digits or dashes at most")
+                }
+                return name
+            }
             let invite = try row["invite"].map { value in
                 guard let fields = value as? [String: Any] else { throw CharacterPackError("\(source): skit \(id)'s invite isn't an object") }
                 return try CharacterPack.invite(fields, of: id, in: source)
             }
-            return Skit(id: id, slots: slots, invite: invite)
+            return Skit(id: id, slots: slots, clip: clip, invite: invite)
         }
     }
 

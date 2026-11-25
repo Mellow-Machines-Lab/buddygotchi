@@ -10,12 +10,12 @@ extension Take {
 }
 
 extension Moment.Say {
-    /// Excited's "Go" (new.d02): a real take for tests.
-    static let go = Moment.Say(takes: [.named("new.d02")])
+    /// Proud's "Done" (new.d03), the win skit's: a real take for tests.
+    static let done = Moment.Say(takes: [.named("new.d03")])
 
     /// A made-up take `ms` long, for tests that time a line.
     static func test(ms: Int) -> Moment.Say {
-        .init(takes: [Take(id: "test", text: "Test", part: .about, meaning: "work", kind: .word, moods: ["calm"], finish: nil, ms: ms)])
+        .init(takes: [Take(id: "test", text: "Test", part: .skit, meaning: "win", kind: .word, moods: ["calm"], finish: nil, ms: ms)])
     }
 }
 
@@ -25,52 +25,39 @@ final class VoiceTests: XCTestCase {
 
     let moods = CharacterPack.active.moods.map(\.id)
 
-    /// Every take plays in moods the pack has, has a part and a meaning
-    /// the voice keeps, and a length and text the bubble can show; ids are
-    /// unique.
+    /// Every take plays in moods the pack has, is a reply's or a skit's
+    /// the pack has, and has a length and text the bubble can show; a take
+    /// listed for several is the one recorded take each time.
     func testEveryTakeIsUsable() {
-        // The feelings and the topics the table keeps from before skits:
-        // nothing but your hello and bye at a lock picks them now.
-        let feelings: Set = ["upset", "glad", "tickled", "shaken"], topics: Set = ["retry", "work", "tests", "done", "quiet", "hello"]
         let skits = Set(CharacterPack.active.skits.map(\.id))
-        // The voice file's takes that something says, each once as itself,
-        // and a feeling's or topic's take again as each reply or skit it's
-        // the words of. The takes of other topics stay on the card, and off
-        // this table.
-        XCTAssertEqual(Set(Take.all.map(\.id)).count, 1832)
+        // The voice file's takes that something says, once for each reply
+        // or skit it's the words of. The voice file's other takes stay on
+        // the card, and off this table.
+        XCTAssertEqual(Set(Take.all.map(\.id)).count, 957)
         XCTAssertEqual(Set(Take.all.map { "\($0.id) \($0.part) \($0.meaning)" }).count, Take.all.count)
-        let recorded = Dictionary(Take.all.filter { $0.part != .reply && $0.part != .skit }.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let recorded = Dictionary(Take.all.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let replies = Set(MomentOutput.replies.map(\.name) + ["dunno"])
         for t in Take.all {
             XCTAssertFalse(t.moods.isEmpty, t.id)
             XCTAssertTrue(Set(t.moods).isSubset(of: moods), "\(t.id) is in \(t.moods)")
+            if let own = recorded[t.id] {
+                XCTAssertTrue(own.text == t.text && own.kind == t.kind && own.moods == t.moods && own.ms == t.ms,
+                              "\(t.id) as \(t.part) \(t.meaning) is the recorded take")
+            }
             switch t.part {
-            case .feeling: XCTAssertTrue(feelings.contains(t.meaning), "\(t.id) feels \(t.meaning)")
-            case .about: XCTAssertTrue(topics.contains(t.meaning), "\(t.id) is about \(t.meaning)")
             case .skit:
                 XCTAssertTrue(skits.contains(t.meaning), "\(t.id) is skit \(t.meaning), which the pack hasn't")
-                if let own = recorded[t.id] {
-                    XCTAssertTrue(own.text == t.text && own.kind == t.kind && own.moods == t.moods && own.ms == t.ms,
-                                  "\(t.id) as a skit's is the recorded take")
-                }
                 XCTAssertNil(t.finish, "a skit's takes fit any finish: its rule says when it plays")
             case .reply:
                 XCTAssertTrue(replies.contains(t.meaning), "\(t.id) replies \(t.meaning), which no reply is")
-                if let own = recorded[t.id] {
-                    XCTAssertTrue(own.text == t.text && own.kind == t.kind && own.moods == t.moods && own.ms == t.ms,
-                                  "\(t.id) as a reply is the recorded take")
-                }
                 XCTAssertNil(t.finish, "a reply's words fit any finish")
                 XCTAssertNotEqual(t.kind, .swear, "never a swear at you")
             }
             XCTAssertTrue((300...3000).contains(t.ms), "\(t.id) is \(t.ms) ms")
             XCTAssertTrue(!t.text.isEmpty && t.text.utf8.count <= 35 && t.text.allSatisfy { $0.isASCII }, t.text)
-            XCTAssertTrue(t.finish == nil || ["success", "failure"].contains(t.finish!), t.id)
         }
-        // Swears only on a failure, as a feeling, or as the upset skit's.
-        XCTAssertTrue(Take.all.filter { $0.kind == .swear }.allSatisfy {
-            $0.finish == "failure" && $0.part == .feeling || $0.part == .skit && $0.meaning == "upset"
-        })
+        // Swears only as the upset skit's.
+        XCTAssertEqual(Set(Take.all.filter { $0.kind == .swear }.map { "\($0.part) \($0.meaning)" }), ["skit upset"])
         XCTAssertEqual(Take.voiceVersion.count, 12)
     }
 
@@ -91,8 +78,8 @@ final class VoiceTests: XCTestCase {
         func u32(_ at: Int) -> Int { pack[at..<at + 4].enumerated().reduce(0) { $0 | Int($1.1) << (8 * $1.0) } }
         let count = u32(24), size = u32(28), index = u32(32)
         let ids = (0..<count).map { i in String(decoding: pack[(index + i * size)...].prefix(72).prefix { $0 != 0 }, as: UTF8.self) }
-        // The card keeps the takes of topics nothing says now: the
-        // table is the ones something says, every one of them on the card.
+        // The card keeps takes nothing says now: the table is the ones
+        // something says, every one of them on the card.
         XCTAssertEqual(Set(Take.all.map(\.id)).subtracting(ids), [], "every take the Mac may ask for is one the board has")
     }
 
@@ -101,9 +88,8 @@ final class VoiceTests: XCTestCase {
     func testATakeIsOnlyEverTheFacesMood() {
         var rng = SplitMix64(seed: 1)
         for face in moods {
-            for (part, answers) in [(Take.Part.feeling, Voice.answers(.feeling)), (.about, Voice.answers(.about)), (.reply, Voice.answers(.reply)),
-                                    (.skit, Voice.answers(.skit))] {
-                for a in answers {
+            for part in Take.Part.allCases {
+                for a in Set(Take.all.filter { $0.part == part }.map(\.meaning)) {
                     for kind in Take.Kind.allCases {
                         for finish in [nil, "success", "failure"] {
                             guard let t = Voice.take(part, meaning: a, kind: kind, face: face, finish: finish, rng: &rng) else { continue }
@@ -119,20 +105,32 @@ final class VoiceTests: XCTestCase {
         }
     }
 
-    /// A success take only on a success, a swear only on a
-    /// failed turn.
-    func testTheFinishGatesSuccessesAndSwears() {
+    /// A take that needs a finish only at that finish: a success take only
+    /// on a success, a swear only on a failed turn. Boop's pack has none
+    /// now, so a pack of four takes shows it. "Passed" is only the fix
+    /// skit's, which plays only at a check passing again.
+    func testTheFinishGatesSuccessesAndSwears() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("finish-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("mac"), withIntermediateDirectories: true)
+        try Data(#"""
+            {"id": "four", "name": "Four", "version": "1", "default_mood": "calm",
+             "moods": [{"id": "calm", "face": "Calm."}], "lasting": [{"id": "calm", "meaning": "Settled."}]}
+            """#.utf8).write(to: dir.appendingPathComponent("character.json"))
+        try Data(("1\nyay\tYay\tskit\twin\tsound\tcalm\tsuccess\t500\nok\tOkay\tskit\twin\tword\tcalm\t\t500\n"
+            + "damn\tDamn\tskit\tupset\tswear\tcalm\tfailure\t500\nno\tOh no\tskit\tupset\tphrase\tcalm\t\t500\n").utf8)
+            .write(to: dir.appendingPathComponent("mac/takes.tsv"))
+        let four = try CharacterPack(directory: dir)
         var rng = SplitMix64(seed: 2)
-        // Grumpy is glad only with relief, at a success.
-        XCTAssertNil(Voice.take(.feeling, meaning: "glad", kind: .sound, face: "grumpy", finish: nil, rng: &rng))
-        XCTAssertEqual(Voice.take(.feeling, meaning: "glad", kind: .sound, face: "grumpy", finish: "success", rng: &rng)?.finish, "success")
-        // Grumpy swears at a failed turn; with no failure, the nearest
-        // plainer kind: a phrase.
-        XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .swear, face: "grumpy", finish: "failure", rng: &rng)?.kind, .swear)
-        XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .swear, face: "grumpy", finish: nil, rng: &rng)?.kind, .phrase)
-        // "Passed" is about tests, and only at a success; or the fix
-        // skit's, which plays only at a check passing again.
-        XCTAssertFalse(Take.all.contains { $0.text == "Passed" && ($0.meaning != "tests" || $0.finish != "success") && $0.meaning != "fix" })
+        func id(_ meaning: String, _ kind: Take.Kind, _ finish: String?) -> String? {
+            Voice.take(.skit, meaning: meaning, kind: kind, face: "calm", finish: finish, in: four, rng: &rng)?.id
+        }
+        XCTAssertEqual(id("win", .sound, "success"), "yay")
+        XCTAssertEqual(id("win", .sound, nil), "ok", "no success: the nearest kind that fits")
+        XCTAssertEqual(id("win", .sound, "failure"), "ok")
+        XCTAssertEqual(id("upset", .swear, "failure"), "damn")
+        XCTAssertEqual(id("upset", .swear, nil), "no", "no failure: the nearest plainer kind")
+        XCTAssertEqual(Set(Take.all.filter { $0.text == "Passed" }.map { "\($0.part) \($0.meaning)" }), ["skit fix"])
     }
 
     /// With none of the kind asked for, the nearest kind,
@@ -143,37 +141,38 @@ final class VoiceTests: XCTestCase {
         XCTAssertEqual(Voice.order(.phrase), [.phrase, .word, .sound])
         XCTAssertEqual(Voice.order(.swear), [.swear, .phrase, .word, .sound])
         var rng = SplitMix64(seed: 3)
-        // Tickled has no sounds: a sound asked for says a word.
-        XCTAssertEqual(Voice.take(.feeling, meaning: "tickled", kind: .sound, face: "calm", finish: nil, rng: &rng)?.kind, .word)
-        // Happy's glad words need a success: without one, a sound.
-        XCTAssertEqual(Voice.take(.feeling, meaning: "glad", kind: .word, face: "happy", finish: nil, rng: &rng)?.kind, .sound)
+        // Calm's ouch has no sound: a sound asked for says a word.
+        XCTAssertEqual(Voice.take(.reply, meaning: "ouch", kind: .sound, face: "calm", finish: nil, rng: &rng)?.kind, .word)
+        // Focused's dunno has no word: a word asked for says a sound.
+        XCTAssertEqual(Voice.take(.reply, meaning: "dunno", kind: .word, face: "focused", finish: nil, rng: &rng)?.kind, .sound)
     }
 
     /// The last line's words aren't said again while another
     /// fits.
     func testTheLastTakesArentRepeated() {
         var rng = SplitMix64(seed: 4)
-        let sounds = Take.all.filter { $0.part == .feeling && $0.meaning == "upset" && $0.moods.contains("annoyed") && $0.kind == .sound }
+        let sounds = Take.all.filter { $0.part == .skit && $0.meaning == "fix" && $0.moods.contains("annoyed") && $0.kind == .sound }
+        XCTAssertGreaterThan(sounds.count, 1)
         let avoiding = sounds.dropLast().map(\.text)
         for _ in 0..<50 {
-            XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .sound, face: "annoyed", finish: nil, avoiding: avoiding, rng: &rng)?.id,
+            XCTAssertEqual(Voice.take(.skit, meaning: "fix", kind: .sound, face: "annoyed", finish: nil, avoiding: avoiding, rng: &rng)?.id,
                            sounds.last?.id)
         }
         // With every one avoided, one is said anyway.
-        XCTAssertNotNil(Voice.take(.feeling, meaning: "upset", kind: .sound, face: "annoyed", finish: nil,
+        XCTAssertNotNil(Voice.take(.skit, meaning: "fix", kind: .sound, face: "annoyed", finish: nil,
                                    avoiding: sounds.map(\.text), rng: &rng))
         // A word recorded twice (previous.basta and phase1.borrowed.basta__annoyed__contained)
         // isn't said again by its other recording.
         for _ in 0..<50 {
-            XCTAssertNotEqual(Voice.take(.feeling, meaning: "upset", kind: .word, face: "annoyed", finish: nil,
+            XCTAssertNotEqual(Voice.take(.reply, meaning: "no", kind: .word, face: "annoyed", finish: nil,
                                          avoiding: [Take.named("previous.basta").text], rng: &rng)?.text, "Basta")
         }
-        // Nor by another mood's: after calm's "Ready", a curious face
+        // Nor by another mood's: after calm's "Yes", a curious face
         // doesn't say its own.
-        let ready = Take.named("phase1.word.begin.ready__calm__contained")
+        let yes = Take.named("placeholder.word.talk-yes.yes__calm__contained")
         for _ in 0..<50 {
-            XCTAssertNotEqual(Voice.take(.about, meaning: "work", kind: .word, face: "curious", finish: nil,
-                                         avoiding: [ready.text], rng: &rng)?.text, "Ready")
+            XCTAssertNotEqual(Voice.take(.reply, meaning: "yes", kind: .word, face: "curious", finish: nil,
+                                         avoiding: [yes.text], rng: &rng)?.text, "Yes")
         }
     }
 
@@ -185,8 +184,8 @@ final class VoiceTests: XCTestCase {
         XCTAssertEqual(MomentOutput.size(loops: nil).name, "small", "no hold is a small moment")
         XCTAssertEqual(MomentOutput.size(loops: 3).name, "big")
         var rng = SplitMix64(seed: 5)
-        // A phrase asked for is a topic's too: "Fingers crossed".
-        XCTAssertEqual(Voice.take(.about, meaning: "tests", kind: .phrase, face: "curious", finish: nil, rng: &rng)?.kind, .phrase)
+        // A phrase asked for is a skit's too: "Nailed it".
+        XCTAssertEqual(Voice.take(.skit, meaning: "win", kind: .phrase, face: "happy", finish: nil, rng: &rng)?.kind, .phrase)
     }
 
     /// A word or a swear gets a sound before it about half the time
@@ -211,11 +210,11 @@ final class VoiceTests: XCTestCase {
                 XCTAssertLessThanOrEqual(lead.ms + Voice.joinGapMs + word.ms, Voice.maxSayMs)
             }
         }
-        // About half of grumpy's upset words, whose sounds fit.
-        let grumpy = try XCTUnwrap(Take.all.first { $0.meaning == "upset" && $0.kind == .word && $0.moods.first == "grumpy" && $0.finish == nil })
+        // About half of calm's fix words, whose sounds fit: "Phew... Fixed".
+        let calm = try XCTUnwrap(Take.all.first { $0.part == .skit && $0.meaning == "fix" && $0.kind == .word && $0.moods.first == "calm" })
         for _ in 0..<400 {
             tries += 1
-            if Voice.lead(before: grumpy, face: "grumpy", finish: nil, rng: &rng) != nil { led += 1 }
+            if Voice.lead(before: calm, face: "calm", finish: nil, rng: &rng) != nil { led += 1 }
         }
         XCTAssertTrue((140...260).contains(led), "\(led) of \(tries)")
         for t in Take.all where t.kind == .sound || t.kind == .phrase {
@@ -239,8 +238,8 @@ final class VoiceTests: XCTestCase {
 
     /// Two takes on the wire, as the board still takes them.
     func testTwoTakesOnTheWire() {
-        let two = Moment.Say(takes: [.named("previous.tsk"), .named("phase1.word.test.test__annoyed__contained")])
-        XCTAssertEqual(two.json.json, #"{"take":"previous.tsk","then":"phase1.word.test.test__annoyed__contained"}"#)
-        XCTAssertEqual(two.text, "Tsk... Test")
+        let two = Moment.Say(takes: [.named("previous.tsk"), .named("previous.basta")])
+        XCTAssertEqual(two.json.json, #"{"take":"previous.tsk","then":"previous.basta"}"#)
+        XCTAssertEqual(two.text, "Tsk... Basta")
     }
 }

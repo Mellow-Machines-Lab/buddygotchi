@@ -8,11 +8,6 @@ import Foundation
 /// take plays in is the pack's table's to say; Voice never borrows one from
 /// another mood.
 public enum Voice {
-    /// Every meaning of `part` that has a take, each once.
-    public static func answers(_ part: Take.Part) -> Set<String> {
-        Set(Take.all.filter { $0.part == part }.map(\.meaning))
-    }
-
     /// The kinds to try for `kind`, nearest first: the kind
     /// itself, then plainer and fancier by distance, plainer first; a
     /// swear only when one was asked for.
@@ -83,8 +78,8 @@ public enum Voice {
 
     /// A sound to say before `word`, now and then: a word or a swear gets
     /// one of the same meaning, performed in the same mood, that plays in
-    /// the `face`'s mood and fits the `finish`, so "Ugh.... Broken" is one
-    /// feeling said twice over, never two things. Not one whose text is in
+    /// the `face`'s mood and fits the `finish`, so "Phew... Fixed" is one
+    /// thing said twice over, never two things. Not one whose text is in
     /// `avoiding` while another fits, nor one that makes the `say` longer
     /// than `maxSayMs`. Nil for any other take, or none that fits.
     public static func lead(before word: Take, face: String, finish: String?, avoiding: [String] = [],

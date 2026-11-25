@@ -44,7 +44,7 @@ public struct Moment: Equatable, Sendable {
             self.takes = Array(takes.prefix(2))
         }
 
-        /// The `say` object: `{"take":"new.d02"}`, with its second take as
+        /// The `say` object: `{"take":"new.d03"}`, with its second take as
         /// `then`, or `{}`.
         public var json: JSON {
             var say = JSONObject()

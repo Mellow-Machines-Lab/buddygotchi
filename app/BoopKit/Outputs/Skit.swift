@@ -4,17 +4,26 @@ import MellowHarness
 /// One kind of moment that has takes of its own and always speaks: the
 /// pack's `skits` in `character.json` (characters/CHARACTER.md §8), each the
 /// slots of the rules' reading (`RulesBrain.Slot`) it plays at. Its takes
-/// are the voice's, part `skit`, its id their meaning. It may have an
-/// invite: after it plays, Boop asks for one touch, and the touch pays off.
+/// are the voice's, part `skit`, its id their meaning. It may have a clip
+/// of the pack's, which its Moment plays as its face starts, and an invite:
+/// after it plays, Boop asks for one touch, and the touch pays off.
 public struct Skit: Equatable, Sendable {
     public let id: String
     public let slots: [RulesBrain.Slot]
+    /// The pack's clip its Moment plays as its face starts (`Moment.clip`),
+    /// before any invite, or nil for the face alone.
+    public let clip: String?
     /// What it asks of you after it plays, or nil for nothing.
     public let invite: Invite?
 
-    public init(id: String, slots: [RulesBrain.Slot], invite: Invite? = nil) {
+    /// The most bytes a clip's name has: what the board keeps of one
+    /// (firmware `kReplyBytes`, less its end).
+    public static let clipBytes = 11
+
+    public init(id: String, slots: [RulesBrain.Slot], clip: String? = nil, invite: Invite? = nil) {
         self.id = id
         self.slots = slots
+        self.clip = clip
         self.invite = invite
     }
 

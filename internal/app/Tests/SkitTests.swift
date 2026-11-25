@@ -10,8 +10,8 @@ final class SkitTests: XCTestCase {
     let skits = [Skit(id: "win", slots: [.doneLong, .doneVeryLong]),
                  Skit(id: "upset", slots: [.failed, .failedVeryLong, .gaveUp, .checkFailing]),
                  Skit(id: "fix", slots: [.checkFixed]), Skit(id: "back", slots: [.back, .backDays, .backAfterADay])]
-    /// The same, with the invites the pack gives them (`InviteTests`).
-    let invited = [InviteTests.win, InviteTests.upset, Skit(id: "fix", slots: [.checkFixed]), InviteTests.back]
+    /// The same, with the clip and the invites the pack gives them (`InviteTests`).
+    let invited = [InviteTests.win, InviteTests.upset, Skit(id: "fix", slots: [.checkFixed], clip: "flop"), InviteTests.back]
 
     func play(_ slot: RulesBrain.Slot, _ facts: [String: JSONValue] = [:], swears: Bool = true) -> String? {
         Skits.play(slot: slot, facts: facts, swears: swears, in: skits).map { $0.skit.id + ($0.swears ? " swearing" : "") }
@@ -62,16 +62,60 @@ final class SkitTests: XCTestCase {
     }
 
     /// Boop's pack has the four skits, each at the slots the skits' table
-    /// names, and three of them an invite.
+    /// names, three of them an invite, and the fix the flop of relief, a
+    /// clip of the pack's rig.
     func testThePacksSkitsParse() throws {
         let pack = try Self.pack()
         XCTAssertEqual(pack.skits, invited)
         XCTAssertEqual(pack.skits.map(\.slots), skits.map(\.slots))
+        for skit in pack.skits {
+            guard let clip = skit.clip else { continue }
+            let rig = pack.directory.appendingPathComponent("rig/clips/\(clip).json")
+            XCTAssertTrue(FileManager.default.fileExists(atPath: rig.path), "\(skit.id)'s clip \(clip) is the rig's")
+        }
+    }
+
+    /// Pins a clip's name to what the board keeps of one: its `kReplyBytes`
+    /// less the end.
+    func testAClipsNameFitsTheBoard() throws {
+        let behaviour = try String(contentsOf: FirmwareTables.root.appendingPathComponent("firmware/src/app/behaviour.h"), encoding: .utf8)
+        let bytes = try XCTUnwrap(behaviour.firstMatch(of: /kReplyBytes = (\d+);/).flatMap { Int($0.1) })
+        XCTAssertEqual(Skit.clipBytes, bytes - 1)
+    }
+
+    /// A skit's clip is its Moment's, sent in its `do`'s args, as its face
+    /// starts: the fix's flop. A skit with none sends none, nor does a
+    /// Moment that's no skit, and a Moment's own clip stays its own. A
+    /// skit with an invite as well keeps it, on the same Moment.
+    @MainActor func testASkitsClipIsItsMoments() throws {
+        try requirePack("boop")
+        let check = Event(at: 1000, source: .claude, type: .tool, phase: .end, specificType: "PostToolUse")
+        let fixed: InviteTests.Facts = ["topic": "tests", "result": "ok", "failed_before": 2]
+        let rig = InviteRig()
+        rig.run(check, fixed, face: "pleased")
+        XCTAssertEqual(rig.sent.last?.clip, "flop")
+        XCTAssertEqual(rig.sent.last?.args["clip"], "flop")
+        rig.run(InviteTests.finish, InviteTests.won, face: "proud")
+        XCTAssertNil(rig.sent.last?.args["clip"], "a win has none")
+        rig.run(Event(at: 1000, source: .device, type: .poke, specificType: "input"), [:], face: "amused")
+        XCTAssertNil(rig.sent.last?.args["clip"], "no skit, none")
+        // A skit with a clip and an invite: both, on the one Moment.
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: CharacterPack.active.directory
+                .appendingPathComponent("character.json"))) as? [String: Any])
+        var rows = try XCTUnwrap(json["skits"] as? [[String: Any]])
+        rows[0]["clip"] = "flop"
+        json["skits"] = rows
+        let invited = InviteRig()
+        invited.pack = try CharacterPack(json: json, from: "character.json", directory: CharacterPack.active.directory)
+        invited.inviting()
+        invited.run(InviteTests.finish, InviteTests.won, face: "proud")
+        XCTAssertEqual(invited.sent.last?.clip, "flop")
+        XCTAssertEqual(invited.sent.last?.invite?.pose, .palm)
     }
 
     /// A pack's `skits` that isn't one doesn't load: a skit with no id, a
-    /// slot that isn't the rules', a slot in two skits. With none, it has
-    /// no skits.
+    /// slot that isn't the rules', a slot in two skits, a clip whose name
+    /// the board can't keep. With none, it has no skits.
     func testABadSkitDoesntLoad() throws {
         func pack(_ skits: Any?) throws -> CharacterPack {
             var json: [String: Any] = ["id": "t", "name": "T", "version": "1", "default_mood": "calm",
@@ -82,11 +126,21 @@ final class SkitTests: XCTestCase {
         let none = try pack(nil), one = try pack([["id": "win", "slots": ["doneLong"]]])
         XCTAssertEqual(none.skits, [])
         XCTAssertEqual(one.skits, [Skit(id: "win", slots: [.doneLong])])
-        for (skits, why) in [([["slots": ["doneLong"]]], "t.json: a skit without an id"),
+        let flops = try pack([["id": "fix", "slots": ["checkFixed"], "clip": "flop"]])
+        XCTAssertEqual(flops.skits, [Skit(id: "fix", slots: [.checkFixed], clip: "flop")])
+        for (skits, why): ([[String: Any]], String) in [([["slots": ["doneLong"]]], "t.json: a skit without an id"),
                              ([["id": "", "slots": ["doneLong"]]], "t.json: a skit without an id"),
                              ([["id": "win", "slots": ["doneAtLast"]]], "t.json: skit win plays at doneAtLast, which isn't a slot"),
                              ([["id": "win", "slots": ["doneLong"]], ["id": "yay", "slots": ["doneLong"]]],
-                              "t.json: skit yay plays at doneLong, which another skit has")] {
+                              "t.json: skit yay plays at doneLong, which another skit has"),
+                             ([["id": "fix", "slots": ["checkFixed"], "clip": ""]],
+                              "t.json: skit fix's clip  isn't a clip's name, 11 letters, digits or dashes at most"),
+                             ([["id": "fix", "slots": ["checkFixed"], "clip": "flop of relief"]],
+                              "t.json: skit fix's clip flop of relief isn't a clip's name, 11 letters, digits or dashes at most"),
+                             ([["id": "fix", "slots": ["checkFixed"], "clip": "flop-of-relief"]],
+                              "t.json: skit fix's clip flop-of-relief isn't a clip's name, 11 letters, digits or dashes at most"),
+                             ([["id": "fix", "slots": ["checkFixed"], "clip": 3]],
+                              "t.json: skit fix's clip 3 isn't a clip's name, 11 letters, digits or dashes at most")] {
             do {
                 _ = try pack(skits)
                 XCTFail("loaded: \(why)")

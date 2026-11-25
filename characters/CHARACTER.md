@@ -457,8 +457,8 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
   ends it.
 - The board plays the reply's clip (§15), and Voice says the reply's own
   words, its takes in the voice (§8): a yes says "Yep", a no "Tsk". With
-  none in the face, it says nothing: never another feeling's words, nor a
-  topic.
+  none in the face, it says nothing: never another reply's words, nor a
+  skit's.
 
 ## 8. Voice (optional)
 
@@ -477,8 +477,7 @@ moment, and everything else plays in silence:
   take of says Voice's own pick.
 - Your words: the reply's own words (§7).
 - A real wave at your lock or unlock: the `hello` or `bye` reply's own
-  takes (part `reply`), as to your words; before skits it said the `hello`
-  topic's.
+  takes (part `reply`), as to your words.
 
 The Moment's size, which the app's rules pick (`MomentRule.size`), picks
 the kind: a sound small, a word medium, a phrase big. With none of that
@@ -489,22 +488,27 @@ person has turned swearing on in Settings (it's off by default); on Quiet
 nothing swears. With no swear in the face, it says a plain take, never
 nothing.
 
-A take's part says what it is:
+A take's part says what it is, one of two:
 
 | Part | Its meaning | Said |
 | --- | --- | --- |
 | `skit` | The skit's id | At the skit |
 | `reply` | The reply's name, or `dunno`, a huh to a question | To your words, and at a lock's real wave |
-| `feeling`, `about` | How it feels (`upset`, `glad`, `tickled`, `shaken`), or a topic (`hello`, `work`, `tests`, `done`, `retry`, `quiet`) | Never now: kept in the table from before skits |
 
 `skits` in `character.json` names each skit and the slots it plays at,
 the rules' readings of an event (`RulesBrain.Slot`); code says when each
-plays and whether it swears (`Skits.play`). A skit may have an `invite`:
+plays and whether it swears (`Skits.play`). A skit may have a `clip`, a
+clip of the pack's rig (§15) that its Moment plays as its face starts: the
+`do`'s `clip`, which a Moment with a clip of its own keeps. A skit may have
+an `invite`:
 after it plays, Boop turns to you in a `pose` (`palm`, `lean` or `back`)
 and waits for one `touch` (`tap` or `stroke`), which pays off
 (`highfive`, `purr` or `sigh`), each a name the board plays (`Skit.Invite`).
-An id missing, a slot that isn't one, a slot in two skits, or an invite
-whose pose, touch or payoff isn't one, and the pack doesn't load. Boop's:
+A skit with both plays the clip first, then the invite. An id missing, a
+slot that isn't one, a slot in two skits, a clip that isn't a name of 11
+letters, digits or dashes at most (what the board keeps of one,
+`Skit.clipBytes`), or an invite whose pose, touch or payoff isn't one, and
+the pack doesn't load. Boop's:
 
 ```json
 "skits": [
@@ -512,7 +516,7 @@ whose pose, touch or payoff isn't one, and the pack doesn't load. Boop's:
    "invite": {"pose": "palm", "touch": "tap", "payoff": "highfive"}},
   {"id": "upset", "slots": ["failed", "failedVeryLong", "gaveUp", "checkFailing"],
    "invite": {"pose": "back", "touch": "stroke", "payoff": "sigh"}},
-  {"id": "fix",   "slots": ["checkFixed"]},
+  {"id": "fix",   "slots": ["checkFixed"], "clip": "flop"},
   {"id": "back",  "slots": ["back", "backDays", "backAfterADay"],
    "invite": {"pose": "lean", "touch": "stroke", "payoff": "purr"}}
 ]
@@ -532,7 +536,8 @@ times, and again after 3 misses in a row of it.
 `win` is a turn of a minute or more done ("Done", "Nailed it"), `upset` a
 failed turn, the agent giving up, or the third failed check in a row ("Oh
 no", "Not again"), `fix` a check passing after it failed ("Phew...",
-"Fixed"), and `back` you back at the Mac after a break ("Hello", "Hey").
+"Fixed", and the flop of relief against the glass), and `back` you back at
+the Mac after a break ("Hello", "Hey").
 Every other moment has none.
 
 A `win` or a `back` may also carry a remark, the pack's `[remark …]` line
@@ -542,13 +547,13 @@ in `signs.md` (`Remarks`): text, never a take, at most one skit in three.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the
   voice file's version on its first line after the comments, the same one
   the board reports, then a take a line, tab separated: id, text, part,
-  meaning, kind, moods (space separated), finish (empty for any) and ms. A
-  take that's also a reply's words or a skit's is in it again, by the same
-  id, as part `reply` or `skit` (voicegen's `REPLY_OF`, `SKIT_OF`), and one
-  that's also a second feeling (the slime's `shaken`, from its startled and
-  cross words) again as that feeling: the voice file has it once. The
-  table may list fewer takes than the voice file holds: a take of an older
-  topic stays on the card and off the table.
+  meaning, kind, moods (space separated), finish (empty for any) and ms. It
+  lists only what a reply or a skit says: a take that's the words of
+  several is in it once for each, by the same id (voicegen's `REPLY_OF`,
+  `SKIT_OF`), and the voice file has it once. The table may list fewer
+  takes than the voice file holds: Boop's card keeps every take it was
+  built with, 2,995, and the table lists 957 of them, so the voice file
+  and its version stayed as they were when the table had the rest.
 
 Both are built files and checked in, and a pack has both or neither. Boop's
 pack holds the recordings and voicegen, the tool that makes the two files;
@@ -988,7 +993,11 @@ Some clips' ids mean something to a face:
 - `reply-wave`: the gel plays it for a small wave at your lock or unlock
   of the Mac, a slighter motion than `reply-bye` or `reply-hello`.
 - `reply-<name>`: the gel plays it for that reply, one for each of
-  `MomentOutput.replies` and `dunno`.
+  `MomentOutput.replies` and `dunno`, and for a Moment's `clip` of that
+  name (`remember`, as it brings up a remembered line).
+- `flop`: the `fix` skit's `clip`, the flop of relief. The gel looks up a
+  Moment's `clip` only as `reply-<clip>` so far, so it plays the fix's
+  face without it until it looks up the clip by its own name too.
 - A clip named for a Moment's state (Boop's `notice`): the gel plays it once
   as the Moment starts. The gel's recipe for that state times it.
 - You at the Mac: the gel loops `type-along` while it types with you, and
@@ -1140,6 +1149,10 @@ Each problem comes with its file and key (`reference.json: show.mood: …`).
 None of it stops a pack staging. The app doesn't bundle the folder.
 
 ## Not yet
+
+- A skit's `clip` that isn't a `reply-` clip: the Mac sends the fix's
+  `flop`, and the gel plays it once `GelFace::reply` also looks up a clip
+  by the name it's given (§15).
 
 - The gel's expressions, recipes, bits and springs are still its own,
   not the rig's (§15).

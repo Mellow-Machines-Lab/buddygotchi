@@ -287,9 +287,9 @@ final class HarnessTests: XCTestCase {
     func testRuleReactionsCarryNoExpression() throws {
         try requireVoice()
         XCTAssertEqual(Moment(anim: Core.wishGone).line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"wish_gone","play":"if_free"}"#)
-        XCTAssertEqual(Moment(say: .go).line(id: 2, play: .next),
-                       #"{"t":"do","id":2,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"}}}"#)
-        XCTAssertEqual(Moment(say: .go, mood: "grumpy").args.json, #"{"say":{"take":"new.d02"},"mood":"grumpy"}"#)
+        XCTAssertEqual(Moment(say: .done).line(id: 2, play: .next),
+                       #"{"t":"do","id":2,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d03"}}}"#)
+        XCTAssertEqual(Moment(say: .done, mood: "grumpy").args.json, #"{"say":{"take":"new.d03"},"mood":"grumpy"}"#)
     }
 
     /// The pack's moods, in its order; a new Boop starts calm, the resting
