@@ -130,11 +130,6 @@ stages finds every file there. Staging also links the pack's firmware tests
 (`tests/firmware/test_*`) beside the engine's, so `make -C internal fw-test`
 runs both.
 
-`charactergen.py --firmware-to=DIR PACK` lays out one pack's `firmware/`
-alone in `DIR/firmware/`, and changes nothing staged
-(`simulator/web/build.sh boop`,
-[simulator/README.md](../simulator/README.md)).
-
 Everything that runs after a build (the tests, `boopdev`, the device tools,
 the simulator) reads the **pack in use**: the one the environment chooses,
 staged if it's the one staged, else the one `pack` points to, else the

@@ -3,7 +3,6 @@
 
     characters/charactergen.py --check [PACK]
     characters/charactergen.py --stage [PACK]
-    characters/charactergen.py --firmware-to=DIR [PACK]
     characters/charactergen.py --which
     characters/charactergen.py --boards [PACK]
 
@@ -19,17 +18,13 @@ the mood list in the pack's order with the board's startup mood, and
 rig_tables.h from rig/, the rig's tables. It checks the pack as --check
 does first. firmware/tools/pio.sh runs it before every PlatformIO build.
 
---firmware-to=DIR lays out only the firmware's files for a pack, as
---stage does, in DIR/firmware/, and changes nothing staged: for a second
-build beside the staged pack's (simulator/web/build.sh PACK).
-
 --which prints the folder of the pack in use: the one everything that runs
 after a build reads (in_use()).
 
 --boards prints the boards a pack has a face for (its `faces`), the
 envs its firmware builds for. It reads the chosen pack without PACK.
 
-Every form but --which and --firmware-to also checks the board's states
+Every form but --which also checks the board's states
 against CHARACTER.md §9, each pack's studio entry (§12) and references
 (§16), and writes characters/studio/packs.js, the studio page's data for
 the packs in this checkout, which git ignores. --check fails on a problem
@@ -976,23 +971,6 @@ def firmware_from(view: Path, pack: Path, character: dict, dest: Path) -> None:
     (dest / "include" / "rig_tables.h").write_text(rig_h(pack, read_rig(view)[0]))
 
 
-def firmware_to(pack: Path, dest: Path) -> int:
-    """Only the firmware's files for a pack, in dest/firmware/, as --stage
-    lays them out, and nothing else: the staged pack and the pack in use
-    stay as they are. For a second build beside the staged one (the
-    simulator's page with a board for each pack)."""
-    checked = checked_pack(pack)
-    if checked is None:
-        return 1
-    character = checked
-    if dest.exists():
-        shutil.rmtree(dest)
-    overlay(dest / "view", pack)
-    firmware_from(dest / "view", pack, character, dest / "firmware")
-    shutil.rmtree(dest / "view")
-    return 0
-
-
 def main(argv: list[str]) -> int:
     if "--help" in argv or "-h" in argv:
         print(__doc__.strip())
@@ -1014,9 +992,6 @@ def main(argv: list[str]) -> int:
     reads = Reads()  # each pack's rig/, read once this run
     if "--stage" in argv:
         return stage(pack, reads) | write_studio(pack, False, reads)
-    to = [a.split("=", 1)[1] for a in argv if a.startswith("--firmware-to=")]
-    if to:
-        return firmware_to(pack, Path(to[0]).resolve())
     if "--check" not in argv:
         print(__doc__.strip().split("\n\n")[1], file=sys.stderr)
         return 2

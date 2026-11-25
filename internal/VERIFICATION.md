@@ -35,8 +35,7 @@ where it says:
 - `make -C internal test`, on macOS 26.
 - The Python tests that need only the standard library, on the Mac's own
   Python 3.9: `python3 characters/charactergen.py --check`, and the
-  `unittest` suites in `internal/characters/` and
-  `internal/tools/session/tests/` (with `BOOP_SLOW=1`), and the Studio's on Node (the part of
+  `unittest` suite in `internal/characters/`, and the Studio's on Node (the part of
   `make -C internal tools-test` without boopctl's venv or the webcam
   recorder).
 - `make -C internal fw-test`, then the Mac's mirror of the board: its
@@ -84,11 +83,11 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): in one `pio test -e native`, the engine's suites in `internal/firmware/test/`, on the stub face (`internal/firmware/stub_face.h`), and the chosen pack's `tests/firmware/`, which staging links beside them; then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build` |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the gel face's, with Boop's pack, its pinned shots only (§4) |
 | `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario on it and on the native simulator, the same pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and compared with the one checked in (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
-| `make -C internal demos` | Records each demo whose script has changed since its recording, or has none, into `characters/PACK/demo/recordings/` (`simulator/tools/demos.py record`); `NAMES=…` records those again, `ALL=1` every one. It needs the app, PlatformIO's native env (built once for each pack) and no board |
+| `make -C internal demos` | Records each demo whose script has changed since its recording, or has none, into `characters/PACK/demo/recordings/` (`simulator/tools/demos.py record`); `NAMES=…` records those again, `ALL=1` every one. It needs the app, PlatformIO's native env (built once) and no board |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack (`simulator/web/build.sh`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's (its two that play a demo's project, 10 s of `npm test`, only with `BOOP_SLOW=1`), `charactergen.py`'s (`internal/characters/`) and that the gel slime's tables are fresh (`slimegen.mjs --check`) |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, `charactergen.py`'s (`internal/characters/`) and that the gel slime's tables are fresh (`slimegen.mjs --check`) |
 
 **Tools.**
 
@@ -181,8 +180,6 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   `internal/tools/.venv/bin/python`.
 - `internal/tools/webcam/webcam.sh`: the camera recorder
   ([its README](tools/webcam/README.md)); `boopctl cam` wraps it.
-- `internal/tools/session/session.py`: a demo through a real agent
-  ([sessions/README.md](sessions/README.md)).
 - `simulator/tools/demos.py`: the demos, which `make demo` asks you to
   choose from; `list`, `play`, `all`, `record` and `check`
   ([characters/DEMOS.md](../characters/DEMOS.md)).

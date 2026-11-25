@@ -5,9 +5,8 @@ character lives through: an agent gets a task, you poke and talk to
 Boop, and it reacts. Use demos to record videos, to show
 Boop off, and to check that everything works end to end.
 
-One script plays four ways: in the simulator's page, on a real board,
-with Claude Code or Codex replayed in a terminal, and with your real
-Claude in the desktop app. The script is the same in each.
+One script plays two ways: in the simulator's page and on a real board.
+The script is the same in each.
 
 ## Write one
 
@@ -85,10 +84,7 @@ the reply, with more of the agent's steps after it. It needs its
 `summary` and has no `say`: the context is full before the model can
 speak, so put the words on the step after it. Every agent says the same
 when it has compacted; the board shows nothing for it, and Boop has no
-line for it. With no agent, Boop sends that hook. A replayed Claude Code or
-Codex compacts for real, and its model writes the `summary`. The desktop
-app can't play a compact, since its real model can't be made to fill its
-context on cue.
+line for it. Boop sends that hook.
 
 A back records the away, moves the clock on by the time away, then
 records the back, as the Mac would after that long: being away shows
@@ -136,40 +132,25 @@ an answer is wrong.
 make demo                                              # asks which demo, then where it plays
 make demo NAME=dismiss                                 # the simulator's page, from its recording, at once
 make demo NAME=all                                     # every recorded demo in the page, one after another
-make demo NAME=dismiss BOARD=usb:$TMPDIR/linkkit-bridge.sock # a real board, no agent
-make demo NAME=<name> IN=simulated-claude-terminal     # Claude Code in this terminal, replies replayed
-make demo NAME=<name> IN=simulated-codex-terminal      # the same with Codex (no reviewer steps: Codex has no helpers here)
-make demo NAME=<name> IN=claude                        # your real Claude, in the Claude desktop app
+make demo NAME=dismiss BOARD=usb:$TMPDIR/linkkit-bridge.sock # a real board
 ```
 
 `make demo` with nothing else lists every demo, numbered, with its
-title and length, and asks which one; then it lists only the places
-that demo can play, and asks where. Given no terminal to ask in (an
+title and length, and asks which one; then it asks where it plays: the
+simulator's page or a real board. Given no terminal to ask in (an
 agent's shell), it prints the list. `simulator/tools/demos.py list`
 prints it too.
 
-Where a demo plays, and what plays the agent:
-
-| Where | The agent | Its model |
-| --- | --- | --- |
-| The simulator's page (the default) | none: Boop sends the hooks the agent would, at the script's times | none |
-| A real board (`BOARD=usb:…`) | the same | none |
-| This terminal (`IN=simulated-claude-terminal`, `simulated-codex-terminal`) | the real Claude Code or Codex | a local server that replays the script's replies: no API key, no network |
-| The Claude desktop app (`IN=claude`) | your Claude Code | your real Claude, following the script as a `/demo` command |
+No real agent plays a demo: Boop sends the hooks the agent would, at
+the script's times, in the page and on a board alike.
 
 - **A real board** needs a bridge. The menu starts one when there's
   none; with `BOARD`, start `.build/debug/linkkit-bridge` in another
   terminal first. Quit the menu-bar app, so that only one app talks to
-  the board. `BOARD` works with every `IN` too.
-- **With an agent,** the agent goes at its own pace. Boop waits for the
-  agent's own hook for each agent step, then plays your steps and the
-  brain's after it. Only a demo with a project plays with an agent
-  (below, A project for a real agent), and none of Boop's demos has one
-  yet, so the `IN` lines above name `<name>`. How this works:
-  [internal/sessions/README.md](../internal/sessions/README.md).
-- `make demo` plays the demo as its pack, on the face its pack gives the
-  AMOLED board (Boop's gel). If two packs have a demo with the same name,
-  choose one with `CHARACTER=<pack>`; the menu shows both.
+  the board.
+- `make demo` plays the demo on the staged pack's build of the
+  simulator (`simulator/web/build.sh`), on the face it gives the AMOLED
+  board (Boop's gel), and builds it first when the firmware is newer.
 
 ## The same every time
 
@@ -188,18 +169,5 @@ Where a demo plays, and what plays the agent:
 - **A recording's clock** starts at the script's `start`, else at 14:00
   on Tuesday 20 October 2026: an afternoon with no weekend or holiday to
   dress it, whenever it's recorded.
-- **A board or an agent plays live.** The steps come in the same order,
-  each at its time or at the agent's pace.
-- **In the terminal, the agent's model is replayed** from the script, so
-  it says and does what the script says.
-- **In the desktop app, a real Claude follows the script openly** (as a
-  `/demo` command). A real model won't say what isn't true, so keep the
-  agent's words true to what it does.
-
-## A project for a real agent
-
-With `IN=…`, the agent works in a fresh copy of
-`internal/sessions/<name>/workspace/`: the files the script's agent
-reads, edits and runs, and tests that give the script's results. How to
-make one: [internal/sessions/README.md](../internal/sessions/README.md),
-A demo's project. With no `IN`, a demo needs no project.
+- **A board plays live.** The steps come in the same order, each at
+  its time.

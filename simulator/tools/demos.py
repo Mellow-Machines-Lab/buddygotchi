@@ -3,7 +3,7 @@
 lists, plays, records and checks them (characters/DEMOS.md).
 
     simulator/tools/demos.py                  asks which demo and where (make demo)
-    simulator/tools/demos.py list             every demo: its pack, title, length and where it plays
+    simulator/tools/demos.py list             every demo: its title and length
     simulator/tools/demos.py play NAME [--board usb:SOCKET]
                                               one demo in the simulator's page, or live on a board
     simulator/tools/demos.py all              every recorded demo in the page, one after another
@@ -18,8 +18,7 @@ A recording is every message the app sent the board, made by playing the
 script through the real headless app with the simulator's board as its
 device. It keeps the hash of
 the script it was made from, and it's out of date when the script changes.
-CHARACTER=<pack> picks one where two packs have a demo of the
-same name. The standard library only, for the Mac's own Python.
+The standard library only, for the Mac's own Python.
 """
 import argparse
 import hashlib
@@ -36,11 +35,10 @@ import time
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 REPO = Path(__file__).resolve().parents[2]
 CHARACTERS = REPO / "characters"
-SESSIONS = REPO / "internal" / "sessions"
 DIST = REPO / "simulator" / "web" / "dist"
 BOOP = REPO / ".build" / "debug" / "Boop"
 BRIDGE = REPO / ".build" / "debug" / "linkkit-bridge"
@@ -118,43 +116,17 @@ class Demo:
         seconds = (self.recorded() or {}).get("length")
         return f"{int(seconds) // 60}:{int(seconds) % 60:02d}" if seconds is not None else ""
 
-    def places(self) -> List[str]:
-        """Where it can play: what `where` asks, in its order."""
-        does = {s["agent"] for s in self.steps if "agent" in s}
-        places = ["page", "board"]
-        # An agent needs the project it works in, and one buddy; the rest
-        # as session.py refuses them.
-        if (SESSIONS / self.name / "workspace").is_dir() and "prompt" in does:
-            places.append("claude-terminal")
-            if "review" not in does:
-                places.append("codex-terminal")
-            if "compact" not in does:
-                places.append("claude-app")
-        return places
-
-
-PLACES = {
-    "page": "The simulator, in your browser (recorded: starts at once)",
-    "board": "The real board, over USB",
-    "claude-terminal": "Claude Code, in this terminal (its model replayed from the script)",
-    "codex-terminal": "Codex, in this terminal (its model replayed from the script)",
-    "claude-app": "Your real Claude, in the Claude desktop app",
-}
-
 
 def demos() -> List[Demo]:
     return [Demo(p) for p in sorted(CHARACTERS.glob("*/demo/*.jsonl"))]
 
 
 def find(name: str) -> Demo:
-    """A demo by name, or by PACK/NAME: $CHARACTER's where two packs have it."""
+    """A demo by name, or by PACK/NAME, as the page names it."""
     pack, _, name = name.rpartition("/")
-    pack = pack or os.environ.get("CHARACTER", "")
     found = [d for d in demos() if d.name == name and (not pack or d.pack == pack)]
     if not found:
         sys.exit(f"demos: no demo called {name}" + (f" in {pack}" if pack else "") + ": `make demo` lists them")
-    if len(found) > 1:
-        sys.exit(f"demos: {', '.join(d.pack for d in found)} each have {name}: choose one with CHARACTER=<pack>")
     return found[0]
 
 
@@ -172,10 +144,9 @@ def table(all_demos: List[Demo], numbered: bool) -> None:
         print(f"\n  {creature(pack)}'s demos")
         for d in (d for d in all_demos if d.pack == pack):
             n += 1
-            where = "with an agent too" if len(d.places()) > 2 else ""
             stale = "" if d.fresh() else "not recorded yet"
             number = f"{n:3}  " if numbered else "  "
-            print(f"  {number}{d.name:{width}}  {d.title:{title}}  {d.length():>5}  {stale or where}")
+            print(f"  {number}{d.name:{width}}  {d.title:{title}}  {d.length():>5}  {stale}")
 
 
 def ask(question: str, choices: List[str], default: Optional[str] = None) -> str:
@@ -206,27 +177,15 @@ def menu() -> int:
     print(f"\n  {d.id}: {d.title}")
     if d.about:
         print(textwrap.fill(" ".join(d.about), 78, initial_indent="  ", subsequent_indent="  "))
-    places = d.places()
-    for i, place in enumerate(places, 1):
-        print(f"    {i}  {PLACES[place]}")
-    if len(places) < 3:
-        print("    (Only a demo with a project in internal/sessions/ plays with an agent.)")
-    where = places[int(ask(f"Where? (1-{len(places)})", [str(i) for i in range(1, len(places) + 1)], "1")) - 1]
-    if where == "page":
-        return play_page(d)
-    if where == "board":
-        return play_board(d, None)
-    agent = {"claude-terminal": ["--agent", "claude"], "codex-terminal": ["--agent", "codex"],
-             "claude-app": ["--ui", "desktop"]}[where]
-    env = dict(os.environ, CHARACTER=d.pack)
-    return subprocess.call([sys.executable, str(REPO / "internal/tools/session/session.py"), "run", d.name,
-                            "--board", "sim", *agent], cwd=REPO, env=env)
+    print("    1  The simulator, in your browser (recorded: starts at once)")
+    print("    2  The real board, over USB")
+    return play_page(d) if ask("Where? (1-2)", ["1", "2"], "1") == "1" else play_board(d, None)
 
 
 # Building what a demo plays on.
 
-def quiet(argv: List[str], what: str, env: Optional[Dict[str, str]] = None) -> None:
-    out = subprocess.run(argv, cwd=REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+def quiet(argv: List[str], what: str) -> None:
+    out = subprocess.run(argv, cwd=REPO, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     if out.returncode:
         sys.exit(f"demos: {what} failed:\n{out.stdout[-3000:]}")
 
@@ -245,17 +204,17 @@ def newest(*folders: Path) -> float:
     return latest
 
 
-def build_page(packs: List[str]) -> None:
-    """The page, and a build of the board for each pack (web/build.sh PACK),
+def build_page() -> None:
+    """The page, and the board's build (web/build.sh) with the pack staged,
     when the firmware is newer than it."""
     sources = newest(REPO / "firmware" / "src", REPO / "firmware" / "include", REPO / "linkkit" / "device",
                      REPO / "simulator" / "core", *CHARACTERS.glob("*/firmware"), *CHARACTERS.glob("*/rig"),
                      *CHARACTERS.glob("*/character.json"))
-    for pack in packs:
-        built = DIST / f"boop-sim-{pack}.wasm"
-        if not built.exists() or built.stat().st_mtime < sources:
-            print(f"demos: building the simulator for {pack} (a minute or so)…")
-            quiet([str(REPO / "simulator/web/build.sh"), pack], f"simulator/web/build.sh {pack}")
+    built = DIST / "boop-sim.wasm"
+    if not built.exists() or built.stat().st_mtime < sources:
+        print("demos: building the simulator (a minute or so)…")
+        quiet([sys.executable, str(CHARACTERS / "charactergen.py"), "--stage"], "staging the pack")
+        quiet([str(REPO / "simulator/web/build.sh")], "simulator/web/build.sh")
     for page in ("boop-simulator.js", "index.html"):
         shutil.copy2(REPO / "simulator" / "web" / page, DIST / page)
 
@@ -265,27 +224,14 @@ def build_app() -> None:
     quiet(["make", "-C", "internal", "build"], "make -C internal build")
 
 
-def stage(pack: str) -> None:
-    quiet([sys.executable, str(CHARACTERS / "charactergen.py"), "--stage", str(CHARACTERS / pack)], f"staging {pack}")
-
-
-def build_cores(packs: List[str], into: Path) -> Dict[str, Path]:
-    """The simulator's board on the Mac (PlatformIO's native env) for each
-    pack, built with it staged, then what was staged staged again."""
-    was = subprocess.run([sys.executable, str(CHARACTERS / "charactergen.py"), "--which"], cwd=REPO,
-                         capture_output=True, text=True).stdout.strip()
-    cores = {}
-    try:
-        for pack in packs:
-            print(f"demos: building the simulator's board for {pack}…")
-            stage(pack)
-            quiet([str(REPO / "firmware/tools/pio.sh"), "run", "-e", "native"], "firmware/tools/pio.sh run -e native")
-            cores[pack] = into / f"core-{pack}"
-            shutil.copy2(CORE, cores[pack])
-    finally:
-        if was and Path(was).name in {p.name for p in CHARACTERS.iterdir()}:
-            stage(Path(was).name)
-    return cores
+def build_core(into: Path) -> Path:
+    """The simulator's board on the Mac (PlatformIO's native env, which
+    stages the pack first), copied so a build meanwhile leaves it as it is."""
+    print("demos: building the simulator's board…")
+    quiet([str(REPO / "firmware/tools/pio.sh"), "run", "-e", "native"], "firmware/tools/pio.sh run -e native")
+    core = into / "core"
+    shutil.copy2(CORE, core)
+    return core
 
 
 # Recording.
@@ -350,13 +296,13 @@ def record(chosen: List[Demo], jobs: int = JOBS) -> int:
         return 0
     build_app()
     with tempfile.TemporaryDirectory(prefix="boop-cores.", dir="/tmp") as into:
-        cores = build_cores(sorted({d.pack for d in chosen}), Path(into))
+        core = build_core(Path(into))
         print(f"demos: recording {len(chosen)} demo{'s' * (len(chosen) > 1)}, {jobs} at a time; "
               "each takes as long as it runs")
         failed = []
 
         def one(d: Demo) -> None:
-            why = record_one(d, cores[d.pack])
+            why = record_one(d, core)
             if why:
                 failed.append(d)
                 print(f"  {d.id}: failed\n    " + why.replace("\n", "\n    "))
@@ -445,7 +391,7 @@ def play_page(d: Demo) -> int:
         print(f"demos: {d.id} isn't recorded yet, so it's recorded first, as long as it runs")
         if record([d]):
             return 1
-    build_page([d.pack])
+    build_page()
     lay_out([d])
     return serve(f"demo={d.id}")
 
@@ -457,7 +403,7 @@ def play_all() -> int:
         if record(stale):
             return 1
     chosen = demos()
-    build_page(sorted({d.pack for d in chosen}))
+    build_page()
     lay_out(chosen)
     playlist = [{"id": d.id, "title": d.title, "length": d.length()} for d in chosen]
     (DIST / "demo" / "playlist.json").write_text(json.dumps(playlist))

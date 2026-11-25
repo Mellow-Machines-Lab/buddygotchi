@@ -99,8 +99,6 @@ test('boards side by side differ: each its own id', { skip }, async () => {
   const [l, r] = [await left.request({ t: 'hello' }), await right.request({ t: 'hello' })];
   assert.deepEqual([l.id, r.id], ['b00p-left', 'b00p-right']);
   assert.equal((await (await board()).request({ t: 'hello' })).id, 'b00p-0000', 'the id with none given');
-  const { Board } = await import(path.join(dist, 'boop-simulator.js'));
-  await assert.rejects(Board.make({ pack: '../x' }), /no pack called/);
 });
 
 test('a touch is a tap however soon it lifts, and power-on is a new boot', { skip }, async () => {

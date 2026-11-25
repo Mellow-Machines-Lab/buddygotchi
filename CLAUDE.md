@@ -370,7 +370,7 @@ updates it in the same commit. In a worktree, first check that
 | `agent-hooks/`, `mellowharness/` (in their own commit there), `linkkit/` | That package's `ARCHITECTURE.md`, `README.md`; LinkKit's `SPEC.md` and `device/README.md` too |
 | How the pieces join, which products Boop takes, `Package.swift` | `documentation/architecture.html`, `internal/README.md` |
 | What a pack holds or how the engine loads one | `characters/CHARACTER.md` |
-| A demo script or how one plays | `characters/DEMOS.md`, `internal/sessions/README.md` |
+| A demo script or how one plays | `characters/DEMOS.md` |
 | The board, flashing | `firmware/README.md` |
 | `simulator/` | `simulator/README.md`, `internal/VERIFICATION.md` |
 | A make target, tool, test level or budget | `internal/VERIFICATION.md`, this file, `README.md`, `CONTRIBUTING.md` |

@@ -35,14 +35,8 @@ def chosen_voice() -> Path:
 
 
 def pack_voice(name: str) -> Path:
-    """The voice of the pack named, in characters/: its own, or the one it
-    uses from another pack (characters/CHARACTER.md §6)."""
-    sys.path.insert(0, str(REPO / "characters"))
-    from charactergen import CHARACTERS, used
-    sys.path.pop(0)
-    pack = CHARACTERS / name
-    paths = used(pack)[0] if (pack / "character.json").is_file() else {}
-    return paths.get("voice/voice.bin", pack / "voice" / "voice.bin")
+    """The voice of the pack named, in characters/."""
+    return REPO / "characters" / name / "voice" / "voice.bin"
 
 
 def subset(pack: bytes, ids: list) -> bytes:

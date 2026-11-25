@@ -211,9 +211,9 @@ def cmd_mirror(args: argparse.Namespace) -> int:
     mac/mirror/board.js, under Node) and on the native simulator, each shot
     the same on both, pixel for pixel. The mirror has no card, so the
     simulator's is an empty one."""
-    board = REPO / "characters" / args.pack / "mac" / "mirror" / "board.js"
+    board = REPO / "characters" / "boop" / "mac" / "mirror" / "board.js"
     if not board.is_file():
-        raise DeviceError(f"no mirror at {board.relative_to(REPO)}: build it with firmware/tools/mirror.sh {args.pack}")
+        raise DeviceError(f"no mirror at {board.relative_to(REPO)}: build it with firmware/tools/mirror.sh")
     mirror = ["node", str(Path(__file__).with_name("mirror_board.mjs")), str(board)]
     build_sim()
     failures = differ = shots = 0
@@ -1266,7 +1266,6 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("mirror", help="play the gel scenarios on the Mac's mirror of the board and the simulator, and "
                                       "check every shot is the same, pixel for pixel")
     p.add_argument("scenario", nargs="*", help="names or paths (default: all the gel face's)")
-    p.add_argument("--pack", default="boop", help="the character pack whose mac/mirror/ it plays (default: boop)")
     p.set_defaults(func=cmd_mirror)
     p = sub.add_parser("run", help="play scenarios on the device and compare with the simulator (L2)")
     p.add_argument("scenario", nargs="*", help="names or paths (default: all)")

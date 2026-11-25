@@ -26,12 +26,10 @@
 <script type="module">
   import './boop-simulator.js';
   const ask = new URLSearchParams(location.search);
-  // A recording is its own app: no cable, the small voice it was cut with,
-  // and the build of its pack's board.
+  // A recording is its own app: no cable, and the small voice it was cut with.
   const recorded = (board, demo) => {
     board.setAttribute('demo', `demo/${demo}.json`);
     board.setAttribute('voice', `demo/${demo}-voice.bin`);
-    if (demo.includes('/')) board.setAttribute('pack', demo.split('/')[0]);
     return board;
   };
   const make = () => {

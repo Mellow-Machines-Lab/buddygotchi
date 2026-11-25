@@ -174,6 +174,5 @@ tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
 	cd $(ROOT) && node --test characters/studio/tests/*.test.cjs
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
-	cd $(ROOT) && python3 -m unittest discover -s internal/tools/session/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/characters
 	cd $(ROOT)/characters/boop && node tools/slimegen/slimegen.mjs --check

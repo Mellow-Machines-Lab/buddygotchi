@@ -6,18 +6,12 @@
 # board window shows (app.html). Needs Emscripten (`brew install
 # emscripten`) and the staged character pack (`python3
 # characters/charactergen.py --stage`, which make does).
-#
-#   simulator/web/build.sh          the staged pack: boop-sim.js
-#   simulator/web/build.sh boop     a pack by name, beside it: boop-sim-boop.js,
-#                                   for <boop-simulator pack="boop">, as the
-#                                   demos build it. What's staged stays as it is.
 set -eu
 cd "$(dirname "$0")/../.."
 
-PACK=${1:-}
 OUT=simulator/web/dist
 mkdir -p "$OUT"
-firmware/tools/wasm.sh ${PACK:+--pack "$PACK"} "$OUT/boop-sim${PACK:+-$PACK}.js" \
+firmware/tools/wasm.sh "$OUT/boop-sim.js" \
     -Isimulator/core simulator/core/board.cpp simulator/core/web.cpp -sEXPORT_ES6
 cp simulator/web/boop-simulator.js simulator/web/index.html simulator/web/app.html "$OUT/"
 ls -l "$OUT"
