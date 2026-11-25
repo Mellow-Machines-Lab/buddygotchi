@@ -14,17 +14,27 @@ cheap ESP32 board with a screen is the body.
 
 ## Where to read
 
+Six docs are the core. Read these, in this order, as far as the task needs:
+
 | To know | Read |
 | --- | --- |
+| What Boop is and how to run it | [README.md](README.md) |
+| The rules for working here | this file |
 | How Boop works: the model (Doing, Mood, Moment), one turn through every piece, what Jev reads, memory, the rules | [documentation/architecture.html](documentation/architecture.html) |
-| How to build, test and work across the repositories | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| How everything is checked, every make target and tool | [internal/VERIFICATION.md](internal/VERIFICATION.md), [internal/EVALS.md](internal/EVALS.md) |
-| What a character pack holds | [characters/CHARACTER.md](characters/CHARACTER.md) |
-| The board and flashing | [firmware/README.md](firmware/README.md) |
-| The board with no board | [simulator/README.md](simulator/README.md) |
-| What's next | [plan/design-build.md](plan/design-build.md) (the design, step by step), [plan/TODO.md](plan/TODO.md), [plan/product-ideas.md](plan/product-ideas.md) |
-| Agents' cards: what one is, the rules, how agents did | [plan/agent-cards.md](plan/agent-cards.md) |
-| How Boop should feel and look on the board, across idle and work: the theory, every state moving, the screen guide. Mostly not built yet | [documentation/design/](documentation/design/README.md) |
+| The words to use | [documentation/words.md](documentation/words.md) |
+| How everything is checked, every make target and tool | [internal/VERIFICATION.md](internal/VERIFICATION.md) |
+| What the character's pack holds | [characters/CHARACTER.md](characters/CHARACTER.md) |
+
+Everything else is a reference beside the code it describes:
+[CONTRIBUTING.md](CONTRIBUTING.md) for setting up a Mac and the packages'
+repositories, each folder's
+`README.md` (`firmware/`, `simulator/`, `linkkit/`, `internal/world/`, the
+Studio, the tools), [internal/EVALS.md](internal/EVALS.md) for the evals, and
+the gel's rule book in `characters/boop/design/slime-blob/`. The design the
+builds work toward is [documentation/design/](documentation/design/README.md).
+`plan/` holds what's next ([TODO.md](plan/TODO.md),
+[product-ideas.md](plan/product-ideas.md)) and three built specs the code
+cites by section (`world.md`, `xp-league.md`, `agent-cards.md`).
 
 ## Repo layout
 

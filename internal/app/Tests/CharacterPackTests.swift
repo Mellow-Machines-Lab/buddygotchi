@@ -86,9 +86,8 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertNil(pack.settled("sleepy"), "not one of its faces")
     }
 
-    /// CHARACTER.md §6: the pack stands alone, in a repository of its
-    /// own: every file the engine reads is in its own folder, its voice
-    /// (the table and its pack) included. The mirror of the board that the
+    /// The pack stands alone: every file the engine reads is in its own
+    /// folder, its voice (the table and its pack) included. The mirror of the board that the
     /// popover shows is built into it (`firmware/tools/mirror.sh`).
     func testThePackStandsAlone() throws {
         try requirePack("boop")

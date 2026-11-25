@@ -25,10 +25,10 @@ What a pack holds, and what it must have:
 | `demo/recordings/<name>.json` | one for each demo of one buddy | What the board was sent as the demo played, which the simulator's page plays (§13) |
 | `studio/` and `studio` in `character.json` | no | Its preview in the Character Studio (§12) |
 | `references/` | no | What people gave to make it from (§16) |
-| `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence (§11) |
+| `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence |
 | `design/`, `tools/`, `tests/`, `evals/` | no | What its art and sounds are made from, and its own tests |
 
-To make one, see §14. To check one, from the engine's repository:
+To check it, from the repository's root:
 
 ```sh
 make -C internal build && .build/debug/boopdev check # every pack in characters/
@@ -256,12 +256,6 @@ The wire's `mood` is the face the mood rests in: `focused` for focused,
 and `annoyed`, `grumpy` or `angry` for cross. On the gel, the body gives a
 small beat when the mood changes, and none for a change of face within one
 mood.
-
-## 6. A pack stands alone
-
-A pack has every file the engine reads in its own folder. The engine reads
-the staged pack (§2) and never falls back to another. Two packs that want
-the same voice or face copy it, each in its own repository.
 
 ## 7. Steering
 
@@ -841,12 +835,6 @@ When that isn't the Mac's pack, another id or another version, the Mac:
 
 Firmware too old to name its pack counts as the Mac's.
 
-## 11. Licence
-
-Every pack here is public, under the repository's MIT licence
-([LICENSE](../LICENSE)), unless it carries a `LICENSE` of its own. A pack
-from elsewhere brings its own.
-
 ## 12. The studio (optional)
 
 The [Character Studio](studio/README.md), `characters/studio/`, plays the
@@ -906,24 +894,6 @@ beside it, `demo/recordings/<name>.json`, made from the script (`make -C
 internal demos`) and checked in, which the simulator's page plays at once;
 the app leaves the recordings out. How to write, record and play one:
 [DEMOS.md](DEMOS.md).
-
-## 14. Making your own
-
-No tool makes a new character now. To make one by hand:
-
-1. Copy Boop's pack to a folder of its own, give it its own id and name
-   (§4), and link it as `characters/<id>`.
-2. Change the faces and the lasting moods, their meanings and fades (§5);
-   its board's face must draw every face it names.
-3. Rewrite `steering/guide.md` and `steering/personality.md` in its voice,
-   and a `steering/mood/` file for each mood that needs one.
-4. Keep the voice, or delete `voice/` and `mac/takes.tsv` for a buddy that
-   doesn't speak.
-5. Run `make -C internal build` and `.build/debug/boopdev check`.
-6. Flash it: `make flash CHARACTER=<yours>`.
-7. Optionally, write it demos ([DEMOS.md](DEMOS.md)). To look at its
-   moves, faces and moments on its board, open the Character Studio
-   (§12), and give each clip a `group` (§15) so it's listed with its kind.
 
 ## 15. The rig (optional)
 

@@ -11,8 +11,6 @@ built yet; "What is built" below says what is.
 | [screen-guide.md](screen-guide.md) | How to build it: what sits where, sizes, shapes, colors, motion, what wins |
 | [brain.md](brain.md) | Who thinks for Boop: rules, the calling agent, the dream, skits, with no key. Mostly built |
 
-The order to build it in is [plan/design-build.md](../../plan/design-build.md).
-
 When two of them disagree, the theory says why, the screen guide says what,
 and the animations are examples. Fix the one that is wrong in the same commit.
 
