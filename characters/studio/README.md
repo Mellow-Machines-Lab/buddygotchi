@@ -1,141 +1,147 @@
 # Character Studio
 
-Updated 2026-11-24. One contact sheet for a character pack: every mood
-against every state, each cell drawn by the character's own preview, and
-one cell large when you click it. The page belongs to the engine and
-names no character: the engine's states only order what the pack fills
-in. A pack that wants a preview declares one in its `character.json`
-([CHARACTER.md](../CHARACTER.md) §12). Every pack gets the board's own
-preview of each face its boards have.
+Updated 2026-11-25. The owner's working page for the character: its
+moves, its faces and its moments, each played by the board's own
+firmware, with the mood at the top and the motion layer's switches under
+the board. Everything it lists comes from the pack's files, which
+`charactergen.py` reads for it; nothing in the page names a clip, a face
+or a skit.
 
-What a pack lacks that doesn't stop it (moods a preview has no art for,
-lasting moods with no steering file, moods with no voice takes, no signs
-or dream signs) is not on the page: `charactergen.py --check` prints it
-as `CHARACTERGEN GAP` lines.
+What a pack lacks that doesn't stop it (clips with no group, lasting
+moods with no steering file, moods with no voice takes, no signs or dream
+signs) is not on the page: `charactergen.py --check` prints it as
+`CHARACTERGEN GAP` lines.
 
 ## Open it
 
 The page reads `packs.js`, which `characters/charactergen.py` writes on
-every run but `--which` for the packs in this checkout (`make -C internal
-build` stages, which writes it). Git ignores it. From the repository root:
+every run but `--which` (`make -C internal build` stages, which writes
+it). Git ignores it. From the repository root:
 
 ```sh
 python3 characters/charactergen.py --check
+simulator/web/build.sh
 python3 simulator/web/serve.py
 ```
 
 Then open `http://127.0.0.1:8206/characters/studio/`. The server serves
-`characters/` at `/characters/` and the simulator's build at
-`/simulator/` (`simulator/web/build.sh` makes it for the staged pack,
-`simulator/web/build.sh PACK` for another). `make dev` and
-`make -C internal simulator` start the same server. Opened from
-`file://`, the page works too, but a board can't run there.
+`characters/` at `/characters/`, the simulator's build at `/simulator/`
+and the staged pack's voice at `/voice.bin`. `make dev` and
+`make -C internal simulator` start the same server. From `file://` the
+page opens, but the board can't run there.
 
 ## What's on the page
 
-A card for each of the chosen pack's previews: each one the pack
-declares, then a board for each face it hasn't declared. Switching keeps
-the mood and state.
+The chosen pack's board on the stage, as big as the column allows, and
+under it what plays now and why. Above everything, **Mood**: the face
+every move and Moment plays in, which also sets its timing. Then three
+views:
 
-- **The matrix**, where the page opens: a row for each mood in its
-  family, a column for each of the engine's states
-  ([states.json](states.json)). A cell is made by the preview's adapter,
-  silent, and a mood the preview has no art for is dashed. Only the cells
-  on screen play, at most 60 at once for a `clip` character and 12 for a
-  `live` one (each holds one of the page's few WebGL contexts), a hovered
-  cell first.
-- **The scene**, a clicked cell: the stage, the mood and state pickers,
-  what each means, the variations, the transport (Play, Loop and a
-  scrubber for `clip`; Pause, Replay state, Poke and Shake for `live`),
-  and sound, off until you turn it on. **Tools**, closed, when the
-  character has any. "Every mood and state", or <kbd>M</kbd>, goes back.
+- **Moves**, where the page opens: every rig clip of the pack
+  (`rig/clips/`), in the groups its `group` names, in charactergen's
+  order: bases, work poses, moments, touch answers, pastimes, with you;
+  a clip with no group last. ↻ marks one that loops. Type in **Find a
+  move** to keep the moves whose id or `about` has your words. A base
+  (`rig/looks.json`'s clip for a state, an activity or a tier) plays as
+  that look, by a `state`. Any other plays by name (`dbg.clip`) over a
+  look, **Over**: idle, or working for a work pose, until you pick
+  another.
+- **Faces**: every face the board draws, each a still at rest, at about
+  the board's own size: the Mac's (the pack's `moods`) and then the
+  board's own (`board_faces`), marked. The stills are drawn once, on the
+  board's frozen clock, when the view first opens. A click plays the
+  change to that face from the one the board shows.
+- **Moments**: the pack's `skits`. Play sends a skit's Moment as the Mac
+  does (`logic.js`, `momentOf`), in the mood, at the size you pick, with
+  one of its takes in that face (they play with Sound on) or none: its
+  `do`, its clip and its invite. Then **Answer** sends the invite's touch,
+  a tap or a stroke, and **Miss** lets the wait run out, after which
+  Answer is late. The line under them follows the invite on the board
+  (`dbg.state`'s `invite`), and the page shows the `do` it sent and the
+  `ev invite` the board reported. One Moment plays at a time, so one
+  invite shows: playing another resets the board first.
 
-Served by the simulator's server, the matrix also marks the cell the
-simulated board shows now, from the board's `dbg.state` once a second:
-no app or needs you, else a Moment playing, else its Doing, in the mood
-its face wears. The simulator's link names the board to ask,
-`&board=/board` (`/board/NAME` for one of several); without it the page
-asks nothing.
+**Motion** is a switch for each rule of the face's motion layer, read
+from the pack's firmware (`kRules`), and **All**. A switch sends
+`dbg.motion`; the board keeps it until a reset, so the page sends the
+rules that are off again after each one.
+
+**Tools**, closed, when the pack's entry adds any (below).
 
 The address keeps the selection
-(`#pack=boop&c=board-gel&mood=grumpy&state=working&v=2&view=scene`), so a
-link opens the same cell; `view` is `matrix` or `scene`. Keys in a cell:
-←/→ variation, ↑/↓ state, Space play or pause, S sound, P poke.
+(`#view=moments&mood=sad&skit=upset&size=big&off=face`), so a link opens
+the same thing. Keys: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> the views,
+<kbd>↑</kbd>/<kbd>↓</kbd> the move, face or skit before or after,
+<kbd>Space</kbd> play again, <kbd>/</kbd> find a move, <kbd>A</kbd>
+answer, <kbd>M</kbd> miss, <kbd>S</kbd> sound.
 
 ## On the board
 
-The board's preview (`board.js`) is its firmware: the simulator's
-`Board` ([simulator/README.md](../../simulator/README.md)) with the
-pack's build, checked by its `hello`, powered on with the face. It asks
-for each state as the Mac and a finger would: a Doing is a `state`, a
-Moment a `do` over working (idle for waking up), a poke or a stroke a
-touch where the simulator taps, and no app 30 s with no state. On the
-stage it plays from a `dbg.reset` and picks its own variations; a matrix
-cell steps its clock 100 ms ten times a second, so twelve play at once.
-A board that can't run says why in its pane.
+The board (`board.js`) is its firmware: the simulator's `Board`
+([simulator/README.md](../../simulator/README.md)) with the staged pack's
+build and its voice on the card, checked by its `hello`. Each thing the
+page shows is a list of `[ms, message]` pairs (`logic.js`), which the
+board plays from a `dbg.reset`, the look said again every 8 s as the Mac
+does. A board that can't run says why in its pane.
 
-A pack may add to one of its boards' cards with an entry of its own
+## A pack's tools
+
+A pack may add to its board's card with an entry of its own
 (`"board": FACE`, its id `board-FACE`, [CHARACTER.md](../CHARACTER.md)
-§12). Its adapter takes the board's (`StudioBoard.adapter(pack, face)`)
-and adds to it. Boop's fills the Tools drawer with review sets, recorded
-on the board's frozen clock (`record({from, to, before, after})`, frames
-`StudioBoard.FRAME_MS` apart) into silent WebM clips, and sound sketches.
-With `--capture-dir DIR` the server saves the clips the entry's
-`captures` file names into `DIR`, only from its own page, never over one.
-
-## Writing an adapter
-
-A pack's `scripts` load in order as plain scripts. One of them registers
-the entry's adapter under the entry's `id`:
+§12). Its `scripts` load in order, as plain scripts, and one registers
+the entry's adapter, which takes the board's and adds to it:
 
 ```js
-Studio.register('board-gel', {
-  transport: 'clip',            // or 'live'
-  variantLabel: 'Variation',    // what the variation picker is called
-  create(ctx) { return instance; }
-});
+const board = StudioBoard.adapter('boop', 'gel');
+Studio.register('board-gel', {...board, create(ctx) {
+  const instance = board.create(ctx);
+  ctx.tools.append(/* its tools */);
+  return instance;
+}});
 ```
 
-`ctx` has `stage` (the element to draw in), `tools` (the drawer's body,
-to fill or leave empty), `root`, `onChange()` (call it when the status
-should redraw), `sound`, `volume` and `loop`, `setSound(on)`, and
-`selection`.
+`ctx` has `stage`, `tools` (the drawer's body), `root`, `sound`,
+`volume`, `setSound(on)`, `onChange()` (call it when the status should
+redraw) and `selection`. The board's instance has:
 
 | Call | What it does |
 | --- | --- |
-| `select({mood, face, state, outcome, context, variant})` | Shows that cell and returns `{variants, caption}`. `mood` is what this character plays: the mood it wears, already applied |
-| `status()` | The line under the stage |
-| `setSound()` | Applies `ctx.sound` and `ctx.volume` |
-| `destroy()` | Removes what it added to the stage and the drawer |
-| `play()`, `stop()`, `playing`, `seek(t)`, `time()`, `duration` | A `clip` character's transport |
-| `preview()` | Optional: plays silently on a loop, for a matrix cell |
-| `paused`, `setPaused(on)` | A `live` character's transport |
-| `replay()`, `poke()`, `shake()` | Optional: each shows its button |
-| `faces(mood)` | Optional: `[{id, label}]`, alternate faces for a mood, with ids `mood:name` |
-| `busy()` | Optional: true while the selection mustn't move, as while recording |
-| `find(id)` | Optional: the selection for one of its scene ids, for `selectAsset` |
+| `play(steps)`, `replay()` | Plays `[ms, message]` pairs from a reset |
+| `send(steps)` | Sends them now, with no reset: a touch, a switch |
+| `ask(message)` | The board's answer to a message |
+| `record({from, to, before, after})` | Frames from one of the engine's states ([states.json](states.json)) to another, on the board's frozen clock, `StudioBoard.FRAME_MS` apart; the board is the recording's until it ends |
+| `stills(faces, each)` | Each face at rest, a still to `each(face, picture)` |
+| `paused`, `setPaused(on)` | Pauses the board's clock; after a recording, gives the board back to the stage |
+| `setSound()`, `status()`, `destroy()` | Applies the sound, the line under the stage, and removes it all |
 
-A matrix cell gets a context of its own: its cell as `stage`, a `tools`
-element nobody sees, no sound. So `create` may run many times at once,
-and `destroy` must leave the page as it found it.
+A tool sets `busy()` on the instance while the page mustn't change.
+Boop's fills the drawer with review sets, recorded into silent WebM clips,
+and sound sketches. With `--capture-dir DIR` the server saves the clips
+the entry's `captures` file names into `DIR`, only from its own page,
+never over one.
 
 `document.getElementById('studio').studio` is the hook browser checks
-drive: `ready` (a promise), `select({...})`, `selectAsset(id, character)`
-(which opens the scene), `sel`, `adapter` (the instance), `view` and
-`setView(name)`, `matrix` (`{cells, playing, transport, board}`), and
-`boardCell(dbgState)`.
+drive: `ready` (a promise), `sel`, `select({...})`, `play()`, `answer()`,
+`miss()`, `switchMotion(rule)`, `adapter` (the board's instance),
+`moment` (the one playing: its invite, its stage and what the board said)
+and `stills` (a promise, once the faces are drawn).
 
 ## Checking it
 
 `charactergen.py --check` fails when `states.json` doesn't list the
-board's states (the firmware's `kStateNames`), each once; when a file a
-studio entry names doesn't exist, or an entry's id is another's (a
-board's is `board-<face>`); and when a `wears` file lends or borrows a
-mood the pack doesn't have. Its tests are in `internal/characters/`.
+board's states (the firmware's `kStateNames`), each once; when a clip's
+`group` isn't one of the engine's; when a file a studio entry names
+doesn't exist, or an entry's id is another's (a board's is
+`board-<face>`). Its tests are in `internal/characters/`.
 
-The page's logic with no browser, how each state is asked of the board
-and the clips the server saves, is in `tests/` (`make -C internal
-tools-test` runs both):
+The page's logic with no browser is in `tests/` (`make -C internal
+tools-test` runs it): the moves from the pack's clips, the faces sheet's
+24, each skit's `do`, the motion switches' messages, an invite answered
+and missed on the simulator's build (skipped until
+`simulator/web/build.sh` has made it), how each state is asked for a
+review clip, and the clips the server saves. A skit's `do` is pinned on
+both sides to `tests/moments.json`: here against `logic.js`, and in
+`StudioMomentTests` against what the Mac's `MomentOutput` sends.
 
 ```sh
 node --test characters/studio/tests/*.test.cjs

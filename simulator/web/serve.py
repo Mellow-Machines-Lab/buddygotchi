@@ -18,8 +18,7 @@ It also serves characters/ at /characters/, so the Character Studio is at
 /characters/studio/, and the page's own files again at /simulator/, where
 the studio's board previews look for them; and /board (or /board/NAME) is
 what the board says it shows: its reply to a `dbg.state` the server sends
-it, as a tool on the cable would, or null with no board; the studio's
-matrix marks it.
+it, as a tool on the cable would, or null with no board.
 
 With --capture-dir it saves, only from its own page, the review clips the
 packs' studio entries name (`captures`, a JSON file of {cases:[{id}]},
@@ -572,7 +571,6 @@ def main() -> int:
     else:
         print(f"Boop Simulator: http://127.0.0.1:{args.port}/")
         print(f"its USB, as a bridge's socket: {args.socket}")
-        print(f"every mood and state, the board's marked: http://127.0.0.1:{args.port}/characters/studio/#view=matrix&board=/board")
     print(f"Character Studio: http://127.0.0.1:{args.port}/characters/studio/" + (f"   (review clips to {capture_dir})" if capture_dir else ""))
     sys.stdout.flush()
     try:

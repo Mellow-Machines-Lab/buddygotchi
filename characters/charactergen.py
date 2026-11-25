@@ -156,6 +156,9 @@ constexpr const char* kBuddyName = {json.dumps(character["name"])};
 
 
 EASES = {"linear": "kLinear", "in": "kIn", "out": "kOut", "inout": "kInOut"}
+# The groups a clip's `group` may name, in the order the studio lists its
+# moves (§15).
+MOVE_GROUPS = ("bases", "work_poses", "moments", "touch_answers", "pastimes", "with_you")
 NAME = re.compile(r"[a-z0-9][a-z0-9_-]*")
 # One file's rows in a List (rig.h): at most this many.
 MOST = 255
@@ -275,8 +278,8 @@ def read_rig(pack: Path, states: list[str] | None = None) -> tuple[dict, list[st
         rel = f"clips/{path.name}"
         if not NAME.fullmatch(path.stem):
             fail(rel, "", "its name, the clip's id, isn't lower case, digits, - and _")
-        clip = read(rel, {"about": str, "ms": (1, 60000), "loop": bool, "additive": bool, "tracks": dict, "cues": list},
-                    required=("ms",))
+        clip = read(rel, {"about": str, "group": MOVE_GROUPS, "ms": (1, 60000), "loop": bool, "additive": bool, "tracks": dict,
+                          "cues": list}, required=("ms",))
         if "ms" not in clip:
             continue
         ms, loop, additive = clip["ms"], clip.get("loop", False), clip.get("additive", True)
@@ -314,7 +317,7 @@ def read_rig(pack: Path, states: list[str] | None = None) -> tuple[dict, list[st
             else:
                 cues.append((cue[0], cue[1]))
         rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop, "additive": additive, "tracks": tracks,
-                             "cues": sorted(cues)})
+                             "cues": sorted(cues), "group": clip.get("group"), "about": clip.get("about", "")})
 
     rel, ids, tags = "looks.json", [c["id"] for c in rig["clips"]], tag_names()
     a_clip = Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids)
@@ -667,16 +670,65 @@ def board(face: str) -> dict:
             "icon": "board.svg", "board": face, "scripts": [], "styles": [], "wears": {}}
 
 
-def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> dict:
+def moves(rig: dict) -> list[dict]:
+    """A pack's rig clips as the studio lists them, its moves (§12): each
+    with its group, what it is, how long, whether it loops, and the look
+    it's the base of, if it is one (rig/looks.json): a state's, an
+    activity's while working, or a tier's."""
+    tags, looks = tag_names(), {}
+    for look in rig["looks"]:
+        if look["clip"] is not None:
+            looks.setdefault(look["clip"], {"state": look["state"]})
+        for act in look["acts"]:
+            looks.setdefault(act["clip"], {"state": look["state"], "act": act["act"]})
+        for tier in look["tiers"]:
+            looks.setdefault(tier["clip"], {"state": look["state"], "tag": tags[tier["when"].bit_length() - 1]})
+    return [{"id": c["id"], "group": c["group"], "about": c["about"], "ms": c["ms"], "loop": c["loop"],
+             **({"look": looks[i]} if i in looks else {})} for i, c in enumerate(rig["clips"])]
+
+
+def invite_words(pack: Path) -> dict[str, str]:
+    """The word the board shows by the place to touch for each touch an
+    invite asks, the first `[invite <touch>]` line of steering/signs.md."""
+    path, words = pack / "steering" / "signs.md", {}
+    text = re.sub(r"<!--.*?-->", "", path.read_text(), flags=re.S) if path.is_file() else ""
+    for touch, word in re.findall(r"^- \[invite (\w+)\] (.+)$", text, re.M):
+        words.setdefault(touch, word.strip())
+    return words
+
+
+def skit_takes(pack: Path) -> list[dict]:
+    """The skits' takes in the pack's mac/takes.tsv (§8), in its order."""
+    table = pack / "mac" / "takes.tsv"
+    rows = [l.split("\t") for l in table.read_text().splitlines() if l and not l.startswith("#")][1:] if table.is_file() else []
+    return [{"id": r[0], "text": r[1], "skit": r[3], "kind": r[4], "moods": r[5].split(), "finish": r[6] or None}
+            for r in rows if len(r) == 8 and r[2] == "skit"]
+
+
+def motion_rules(pack: Path) -> list[str]:
+    """The rules of the motion layer a face of the pack's runs, by the names
+    dbg.motion switches: each `{"name", on}` row of a `kRules` table in the
+    pack's firmware (the gel's render/gel/lively.h)."""
+    names = []
+    for header in sorted((pack / "firmware").rglob("*.h")) if (pack / "firmware").is_dir() else []:
+        table = re.search(r"\bkRules\[[^\]]*\]\s*=\s*\{(.*?)\};", header.read_text(), re.S)
+        names += [n for n in re.findall(r'\{"(\w+)",', table.group(1)) if n not in names] if table else []
+    return names
+
+
+def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, reads: Reads | None = None) -> dict:
     """The studio page's data: the engine's states, with the acts the board
     draws while working; the frames' interval; the staged pack; and, for
-    each pack, its moods and its studio entries (its own and a board for
-    each face), with paths from the page."""
-    last = staged()
+    each pack, its moods, every face its board draws, its moves, its
+    skits with their takes and the words by an invite, its motion rules,
+    and its studio entries (its own and a board for each face), with
+    paths from the page."""
+    last, reads = staged(), reads or Reads()
     # The staged pack by the name the page and the board's hello know it by (its staged folder's, its id),
     # not its own folder's, which a character repository calls character/.
     data = {"chosen": chosen_pack.name, "staged": last.name if last else None,
-            "states": {**states(studio), "acts": firmware_acts()}, "frame_ms": FRAME_MS, "packs": {}}
+            "states": {**states(studio), "acts": firmware_acts()}, "move_groups": list(MOVE_GROUPS), "frame_ms": FRAME_MS,
+            "packs": {}}
     page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)
@@ -697,6 +749,15 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
             # Each face, with the meaning of the lasting mood it's the own face of.
             "moods": [{k: v for k in ("id", "meaning", "family", "settles") if (v := m.get(k, means.get(m["id"]) if k == "meaning" else None))}
                       for means in [{l["id"]: l["meaning"] for l in character.get("lasting", [])}] for m in character["moods"]],
+            # The Mac's faces, then the board's own (§4).
+            "faces": [{"id": m["id"], "family": m.get("family"), **({"face": m["face"]} if m.get("face") else {}),
+                       **({"board": True} if own else {})}
+                      for own, rows in ((False, character["moods"]), (True, character.get("board_faces", []))) for m in rows],
+            "moves": moves(reads.rig(pack)[0]),
+            "skits": character.get("skits", []),
+            "takes": skit_takes(pack),
+            "words": invite_words(pack),
+            "motion": motion_rules(pack),
             "studio": [entry for _, entry in entries] + boards(character),
         }
     return data
@@ -723,7 +784,7 @@ def write_studio(pack: Path, check: bool, reads: Reads | None = None) -> int:
     problems = studio_problems(packs, reads=reads) + state_problems()
     for problem in problems:
         print(("CHARACTERGEN FAIL: " if check else "charactergen: warning: ") + problem, file=sys.stderr)
-    data = json.dumps(studio_data(packs, pack), indent=1)
+    data = json.dumps(studio_data(packs, pack, reads=reads), indent=1)
     (STUDIO / "packs.js").write_text(f"// Generated by characters/charactergen.py. Do not edit.\nwindow.StudioData = {data};\n")
     return 1 if check and problems else 0
 
@@ -798,6 +859,9 @@ def gaps(pack: Path, character: dict) -> list[str]:
         mute = [m for m in ids if m not in said]
         if mute:
             out.append(f"{len(mute)} of {len(ids)} moods have no voice takes: {', '.join(mute)}")
+    ungrouped = [c["id"] for c in read_rig(pack)[0]["clips"] if not c["group"]]
+    if ungrouped:
+        out.append(f"{len(ungrouped)} rig clips have no group, so the studio lists them last: {', '.join(ungrouped)}")
     if not listed(pack / "steering" / "signs.md"):
         out.append("no signs (steering/signs.md), so it never holds one up")
     if not listed(pack / "steering" / "dreams.md"):

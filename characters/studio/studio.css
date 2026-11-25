@@ -28,28 +28,20 @@ button,select{background:var(--panel);border:1px solid var(--line);border-radius
 button:hover:not(:disabled){border-color:var(--muted)}
 button:disabled,select:disabled{opacity:.5;cursor:default}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;min-width:92px}
-button.icon{width:38px;padding:0;font-size:20px;line-height:1}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 select{width:100%;padding-right:28px;text-overflow:ellipsis}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Header: the character, then its previews */
+/* Header: the page, then the mood and sound for everything it plays */
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:18px}
 .brand h1{font-size:28px}
 .brand p{color:var(--muted);margin-top:4px;max-width:62ch}
-.back{margin-bottom:14px}
-.characters{margin-bottom:20px}
+.controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.controls .mood{display:flex;align-items:center;gap:8px;font-weight:650}
+.controls .mood select{width:auto;min-width:170px}
 .missing{background:var(--soft);border-radius:10px;padding:12px 14px;margin-bottom:18px}
 .missing code{font:13px ui-monospace,monospace}
-/* Two cards a row, so four sit two by two */
-.characters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.character{display:flex;align-items:center;gap:12px;text-align:left;padding:8px 14px 8px 8px;border-radius:14px;min-height:64px}
-.character[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
-.character-text{display:flex;flex-direction:column;line-height:1.25}
-.character-text small{color:var(--muted);font-size:12.5px}
-.character-art{width:56px;height:46px;border-radius:9px;background:#000;position:relative;flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:650;font-size:20px}
-.character-art img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
 
 /* Layout */
 .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:28px;align-items:start}
@@ -57,24 +49,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .stage-frame{position:relative;background:var(--stage);border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3}
 .stage{position:absolute;inset:0;touch-action:none}
 .stage canvas{display:block;width:100%;height:100%}
-.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:#aaa;margin:0}
-.start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.92);color:#111;border:none;border-radius:999px;padding:10px 22px;font-weight:600;font-size:16px;box-shadow:0 4px 24px #0006}
 .status{font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);min-height:18px}
 
 .now h2{font-size:21px}
-.now h2::before{content:"";display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--hue,#888);margin-right:9px;vertical-align:2px}
 .now p{color:var(--muted);margin-top:3px}
-.meaning{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;margin:10px 0 0;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;font-size:14px}
-.meaning dt{font-weight:650}
-.meaning dd{margin:0;color:var(--muted)}
-.now .note{color:var(--ink);background:var(--soft);border-radius:8px;padding:7px 10px;margin-top:8px;font-size:14px}
 
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.row.wrap{flex-wrap:wrap}
 .grow{flex:1 1 160px;min-width:0}
 .row-label{font-size:13px;color:var(--muted)}
-.check{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
-.time{font:12.5px ui-monospace,monospace;color:var(--muted);min-width:76px;text-align:right}
 .volume{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
 [data-sound][aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
 .segmented{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
@@ -82,7 +64,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .segmented button+button{border-left:1px solid var(--line)}
 .segmented button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 
-/* Pickers */
+/* Pickers: the views' tabs, then each view's list */
+.tabs{display:flex;gap:6px}
+.tabs button{flex:1;font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pick-column{display:flex;flex-direction:column;gap:18px}
 .picker{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
 .picker-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
@@ -90,53 +75,51 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .picker-head span{color:var(--muted);font-size:13px}
 .group{display:grid;grid-template-columns:118px minmax(0,1fr);gap:4px 10px;padding:6px 0;border-top:1px solid var(--soft)}
 .group:first-child{border-top:none}
-.group-label{font-size:12px;line-height:1.3;color:var(--muted);padding-top:7px}
+.group-label{font-size:13px;line-height:1.3;color:var(--muted);padding-top:7px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{min-height:32px;padding:4px 11px;border-radius:999px;font-size:14px;display:inline-flex;align-items:center;gap:6px;background:var(--panel)}
-.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--hue,transparent);flex:none}
-.chip.state::before{display:none}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-.chip.borrowed{border-style:dashed;color:var(--muted)}
-.chip.borrowed[aria-pressed="true"]{color:var(--accent-ink)}
-.chip .to{font-size:12px;opacity:.85}
-.chip.sample{pointer-events:none;min-height:22px;padding:0 8px;font-size:12px}
-.chip.sample::before{display:none}
-.legend{font-size:12.5px;color:var(--muted);margin-top:8px}
 
-/* Matrix: every mood and state at once */
-.app:has(.matrix:not([hidden])){max-width:none}
-.matrix{display:flex;flex-direction:column;gap:10px}
-.matrix-head{color:var(--muted);font-size:13.5px}
-.matrix-scroll{overflow:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
-.matrix table{border-collapse:separate;border-spacing:0}
-.matrix th{font-size:12px;font-weight:600;text-align:left;color:var(--muted);background:var(--panel);white-space:nowrap}
-.matrix thead th{position:sticky;top:0;z-index:2;padding:8px 6px 6px;vertical-align:bottom;border-bottom:1px solid var(--line)}
-.matrix thead th small{display:block;font-weight:500;font-size:11px;min-height:15px}
-.matrix tbody th{position:sticky;left:0;z-index:1;padding:0 10px;border-right:1px solid var(--line)}
-.matrix thead th:first-child{left:0;z-index:3;border-right:1px solid var(--line)}
-.matrix tbody th.family{padding:10px 10px 4px;font-size:11.5px;border-right:none}
-.matrix tbody th .chip{pointer-events:none;min-height:26px;font-size:13px;padding:2px 9px}
-.matrix td{padding:4px}
-.cell{display:block;padding:0;border:2px solid transparent;border-radius:8px;background:none;min-height:0;width:132px}
-.cell:hover{border-color:var(--muted)}
-.thumb{position:relative;width:128px;aspect-ratio:4/3;background:var(--stage);border-radius:6px;overflow:hidden;pointer-events:none}
-.thumb canvas{display:block;width:100%;height:100%}
-.thumb.idle::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--hue,#555);opacity:.6}
-.cell small{display:block;font-size:11px;color:var(--muted);text-align:left;padding:2px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cell.borrowed .thumb{outline:1px dashed var(--muted);outline-offset:-1px}
-.board-now{display:flex;align-items:center;gap:8px;font-size:14px}
-.board-now button{min-height:28px;padding:2px 10px;font-size:13px}
-.board-now .dot,.cell.board small::before{width:9px;height:9px;border-radius:50%;background:#1aa35a;flex:none}
-.board-now .dot{display:inline-block}
-.cell.board{border-color:#1aa35a}
-.cell.board small{color:var(--ink);font-weight:600;display:flex;align-items:center;gap:5px}
-.cell.board small::before{content:""}
-
-/* The board's own preview, on the stage and in a matrix cell */
+/* The board's own preview, on the stage */
 .board-screen{object-fit:contain;image-rendering:pixelated}
 /* Why the board can't run, in its pane where it would be */
 .board-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;margin:0;color:#c8c8c8;font-size:14px;overflow-wrap:anywhere}
-.thumb .board-note{display:none}
+/* Moves: a group's ids as chips, ↻ on those that loop */
+.find-row{margin-bottom:6px}
+input[type=search]{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:9px;min-height:38px;padding:6px 12px}
+.chip.move{font:14px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace}
+.chip .loops{opacity:.6}
+[data-over][inert]{opacity:.5}
+
+/* Faces: each still about life size (the panel is 1.6 in across), its name 14 px */
+.faces{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:6px 0 14px}
+.face{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:6px;border-radius:10px;position:relative}
+.face .still{width:100%;aspect-ratio:502/410;height:auto;background:var(--stage);border-radius:6px;display:block}
+.face-name{font-size:14px;display:flex;align-items:center;gap:6px}
+.face-name::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--hue,transparent);flex:none}
+.face[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft)}
+.badge{position:absolute;top:10px;right:10px;font-size:12px;line-height:1;padding:4px 7px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:600}
+.picker>.group-label{padding:4px 0 0;font-size:13px}
+
+/* Moments: the skits, then the controls and what went each way */
+.skits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.skit{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:8px 12px}
+.skit small{color:var(--muted);font-size:13px}
+.skit[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.field{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.field select{width:auto;max-width:100%;color:var(--ink)}
+.picker .row+.row{margin-top:8px}
+.invite-now{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--soft);font-size:15px;min-height:44px}
+.wire{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 12px;margin:12px 0 0;font-size:13px}
+.wire dt{color:var(--muted)}
+.wire dd{margin:0}
+.wire code{font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
+button kbd{margin-left:4px;opacity:.75;color:inherit;background:none;border-color:currentColor}
+
+/* Motion: a switch for each rule, pressed while it's on */
+.motion .chip.switch{font:14px ui-monospace,SFMono-Regular,Menlo,monospace}
+.motion .chip.switch[aria-pressed="false"]:not([data-rule="all"]){text-decoration:line-through;color:var(--muted)}
+
 /* Tools */
 .tools{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
 .tools summary{cursor:pointer;padding:14px 16px;font-weight:650}
@@ -151,16 +134,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .foot{margin-top:24px;color:var(--muted);font-size:13px;display:grid;gap:4px}
 kbd{font:12px ui-monospace,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;margin-right:2px;background:var(--panel)}
 @media (max-width:880px){
-  .matrix-scroll{max-height:none}
   .layout{grid-template-columns:1fr}
   .stage-column{position:static}
 }
 @media (max-width:520px){
   .app{padding:16px 16px 32px}
   .brand h1{font-size:24px}
-  .characters{width:100%}
-  .character{flex:1 1 0;min-width:0;padding-right:8px}
-  .character-art{width:44px;height:38px}
   .group{grid-template-columns:1fr}
   .group-label{padding-top:2px}
   .picker{padding:12px}

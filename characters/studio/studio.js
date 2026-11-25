@@ -1,429 +1,378 @@
-// Character Studio: one contact sheet for any character pack, every mood
-// against every state (the matrix), and one cell large with its pickers,
-// transport and sound (the scene). The page owns the selection, the
-// pickers, the two views and the URL. A pack that declares a `studio` entry
-// in its character.json brings its own preview: scripts that call
-// Studio.register(id, adapter) with the entry's id (README.md, "Writing an
-// adapter"); each face its boards have gets the board's own (board.js).
-// charactergen.py writes the pack data this reads, window.StudioData (packs.js).
+// Character Studio: the board's firmware on the stage, and three views of
+// the pack to play on it: its moves (the rig's clips, in their groups), its
+// faces (each at rest, and the change from one to another) and its moments
+// (a skit's Moment as the Mac sends it, its invite answered or missed). The
+// mood is one picker at the top; the motion layer's switches sit under the
+// stage. The page owns the selection, the views and the URL; what the board
+// is sent is logic.js's. A pack's entry for its board may add tools
+// (Studio.register, README.md). charactergen.py writes the pack data this
+// reads, window.StudioData (packs.js).
 (() => {
-  const root=document.getElementById('studio');
-  const $=selector=>root.querySelector(selector),$$=selector=>[...root.querySelectorAll(selector)];
-  const title=id=>id.replaceAll('_',' ').replace(/^\w/,c=>c.toUpperCase());
-  // Each pack's adapters by its entry's id, kept under the pack whose script registered it.
-  const adapters={};
-  window.Studio={register(id,adapter){adapters[document.currentScript.dataset.pack+'/'+id]=adapter;}};
-  const data=window.StudioData;
-  if(!data){$('[data-missing]').hidden=false;$('.layout').hidden=true;return;}
-  const packs=data.packs;
+  const root = document.getElementById('studio');
+  const $ = selector => root.querySelector(selector), $$ = selector => [...root.querySelectorAll(selector)];
+  const L = window.StudioLogic, title = L.title;
+  // The pack's adapter for its board, kept under the pack whose script registered it.
+  const adapters = {};
+  window.Studio = {register(id, adapter) { adapters[document.currentScript.dataset.pack + '/' + id] = adapter; }};
+  const data = window.StudioData;
+  if (!data) { $('[data-missing]').hidden = false; $('[data-layout]').hidden = true; return; }
+  const name = data.chosen, pack = data.packs[name];
+  // Its board's entry: the pack's own for the face, else the board's alone.
+  const entry = pack.studio.find(e => e.board);
+  const families = Object.assign({}, ...pack.studio.map(e => e.families || {}));
+  const VIEWS = ['moves', 'faces', 'moments'];
+  const moveOf = id => pack.moves.find(m => m.id === id), skitOf = id => pack.skits.find(s => s.id === id);
+  const sizeOf = id => L.SIZES.find(s => s.id === id) || L.SIZES[1];
 
-  // The engine's states, fixed for every character (states.json).
-  const stateGroups=data.states.groups,facts=data.states.facts;
-  const stateInfo=Object.fromEntries(stateGroups.flatMap(g=>g.states.map(s=>[s.id,{...s,label:s.label||title(s.id)}])));
-  const stateIds=Object.keys(stateInfo);
+  const sel = {view: 'moves', mood: pack.default_mood, move: pack.moves[0]?.id || '', over: '', face: pack.default_mood,
+    skit: pack.skits[0]?.id || '', size: 'medium', take: ''};
+  const off = new Set();  // the motion rules switched off
+  let sound = false, volume = .5, instance = null;
+  const ctx = {root, stage: $('#stage'), tools: $('[data-tools-body]'), get sound() { return sound; }, get volume() { return volume; },
+    get selection() { return sel; }, onChange: () => onChange(), onLine: line => heardLine(line),
+    motion: () => L.motionAgain(pack.motion, off), setSound: on => setSound(on)};
 
-  // A pack's cards: one for each preview it declares, by the entry's id, or the pack alone.
-  const cardsOf=pack=>packs[pack].studio.length?packs[pack].studio.map(e=>e.id):[pack];
-  const entryOf=(pack,card)=>packs[pack].studio.find(e=>e.id===card);
-  const label=card=>entryOf(sel.pack,card)?.label||packs[sel.pack].name;
-  const moodOf=id=>packs[sel.pack].moods.find(m=>m.id===id);
-  // What a card plays for one of the pack's moods: the mood, or the one whose art it wears (its entry's `wears`).
-  const shows=(card,mood)=>entryOf(sel.pack,card)?.wears?.[mood.id]||mood.id;
-  const familyMeta=()=>Object.assign({},...packs[sel.pack].studio.map(e=>e.families||{}));
-  function families(){
-    const pack=packs[sel.pack],meta=familyMeta();
-    // In the order the studio entry lists the families, then any it leaves out.
-    const order=Object.keys(meta).filter(f=>pack.moods.some(m=>m.family===f));
-    for(const m of pack.moods){const f=m.family||'';if(!order.includes(f))order.push(f);}
-    return order.map(f=>({id:f,label:meta[f]?.label||(f?title(f):'Moods'),colour:meta[f]?.colour,moods:pack.moods.filter(m=>(m.family||'')===f)}));
+  // The entry's scripts and styles, each once, in order. A script carries its pack's name for register().
+  async function load() {
+    for (const href of entry.styles || []) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.append(l); }
+    for (const src of entry.scripts || []) await new Promise((ok, fail) => {
+      const s = document.createElement('script'); s.src = src; s.dataset.pack = name; s.onload = ok;
+      s.onerror = () => fail(Error('Could not load ' + src)); document.head.append(s);
+    });
   }
-  const colourOf=mood=>familyMeta()[moodOf(mood)?.family||'']?.colour;
+  const el = (tag, text, cls) => { const e = document.createElement(tag); if (text) e.append(text); if (cls) e.className = cls; return e; };
+  function group(text, items, cls = 'chips') {
+    const g = el('div', '', 'group'), c = el('div', '', cls);
+    c.append(...items); g.append(el('div', text, 'group-label'), c); return g;
+  }
+  const press = (container, test) => { for (const b of container.querySelectorAll('button')) b.setAttribute('aria-pressed', String(test(b))); };
 
-  const sel={pack:data.chosen,card:'',mood:'',face:null,state:'idle',outcome:'success',context:'new_task',variant:0};
-  let sound=false,volume=.5,started=false,adapter=null,instance=null,info=null,loads={};
-  const ctx={root,stage:$('#stage'),tools:$('[data-tools-body]'),get sound(){return sound;},get volume(){return volume;},
-    get loop(){return $('[data-loop]').checked;},get selection(){return sel;},onChange:()=>onChange()};
-
-  // A preview's scripts and styles, each once, in order. A script carries its pack's name for register().
-  function load(pack,card){
-    const entry=entryOf(pack,card);
-    if(!entry)return Promise.resolve();
-    return loads[pack+'/'+card]??=(async()=>{
-      for(const href of entry.styles||[]){const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.append(l);}
-      for(const src of entry.scripts||[])await new Promise((ok,fail)=>{const s=document.createElement('script');s.src=src;s.dataset.pack=pack;s.onload=ok;s.onerror=()=>fail(Error('Could not load '+src));document.head.append(s);});
-    })();
+  // ── The mood, at the top ────────────────────────────────────────────────
+  function renderMoods() {
+    const order = [...Object.keys(families), ...pack.moods.map(m => m.family || '')].filter((f, i, all) => all.indexOf(f) === i);
+    $('[data-mood]').replaceChildren(...order.map(f => {
+      const g = el('optgroup'); g.label = families[f]?.label || (f ? title(f) : 'Moods');
+      g.append(...pack.moods.filter(m => (m.family || '') === f).map(m => { const o = el('option', title(m.id)); o.value = m.id; return o; }));
+      return g;
+    }));
+    $('[data-mood]').value = sel.mood;
   }
 
-  // ── Pickers ─────────────────────────────────────────────────────────────
-  function chip(text,{pressed,hue,borrowed,to,data}){
-    const b=document.createElement('button');b.type='button';b.className='chip';b.setAttribute('aria-pressed',String(pressed));
-    if(hue)b.style.setProperty('--hue',hue);
-    b.append(text);
-    if(borrowed){b.classList.add('borrowed');const t=document.createElement('span');t.className='to';t.textContent='→ '+title(to);b.append(t);
-      b.title=`No art of its own here: ${label(sel.card)} shows ${title(to)}`;}
-    Object.assign(b.dataset,data);return b;
+  // ── Moves ───────────────────────────────────────────────────────────────
+  let listed = [];  // the moves the list shows, in its order, for ↑ and ↓
+  function renderMoves() {
+    const groups = L.moveGroups(pack.moves, data.move_groups, $('[data-find]').value);
+    listed = groups.flatMap(g => g.moves.map(m => m.id));
+    $('[data-moves]').replaceChildren(...groups.map(g => group(g.label, g.moves.map(m => {
+      const b = el('button', m.id, 'chip move'); b.type = 'button'; b.dataset.move = m.id; b.title = m.about;
+      b.setAttribute('aria-pressed', String(m.id === sel.move));
+      if (m.loop) b.append(el('span', '↻', 'loops'));
+      return b;
+    }))));
+    if (!groups.length) $('[data-moves]').append(el('p', 'No move has those words.', 'hint'));
+    const move = moveOf(sel.move), over = sel.over || (move ? L.overFor(move) : 'idle');
+    press($('[data-over]'), b => b.dataset.value === over);
+    $('[data-over]').inert = Boolean(move?.look);
+    $('[data-over]').title = move?.look ? 'A base plays as its own look' : '';
   }
-  function group(text,chips){
-    const g=document.createElement('div');g.className='group';
-    const l=document.createElement('div');l.className='group-label';l.textContent=text;
-    const c=document.createElement('div');c.className='chips';c.append(...chips);g.append(l,c);return g;
+  // How a base is asked for: its state, an activity's or a tier's.
+  const lookText = look => look.act ? `working, ${look.act.replace('_', ' ')}` : look.tag ? `working, at ${look.tag}` : look.state;
+  function playMove() {
+    const move = moveOf(sel.move);
+    if (!move) return;
+    instance?.play(L.moveSteps(move, {mood: sel.mood, ...(sel.over ? {over: sel.over} : {})}));
+    const over = sel.over || L.overFor(move);
+    caption(move.id, `${move.about || 'No about.'} ${move.look ? `The board's own look for ${lookText(move.look)}` : `Over ${over}`}, ${
+      title(sel.mood).toLowerCase()}, ${(move.ms / 1000).toFixed(1)} s${move.loop ? ', looping' : ''}.`);
   }
-  function renderCards(){
-    $('[data-cards]').replaceChildren(...cardsOf(sel.pack).map(id=>{
-      const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.className='character';b.dataset.character=id;
-      b.setAttribute('aria-selected',String(id===sel.card));
-      const art=document.createElement('span');art.className='character-art';art.setAttribute('aria-hidden','true');
-      const e=entryOf(sel.pack,id);
-      if(e?.icon){const img=document.createElement('img');img.src=e.icon;img.alt='';art.append(img);}else art.textContent=packs[sel.pack].name[0];
-      const text=document.createElement('span');text.className='character-text';
-      const strong=document.createElement('strong');strong.textContent=label(id);
-      const small=document.createElement('small');small.textContent=[e?.about,`${packs[sel.pack].moods.length} moods`].filter(Boolean).join(' · ');
-      text.append(strong,small);b.append(art,text);return b;
+
+  // ── Faces ───────────────────────────────────────────────────────────────
+  // Each face's still, drawn once from the board at rest; a click plays the
+  // change to it from the face the stage shows.
+  const sheet = L.faceSheet(pack.faces);
+  let stills = null, faceShown = null;
+  const about = id => pack.faces.find(f => f.id === id)?.face || pack.moods.find(m => m.id === id)?.meaning || '';
+  function renderFaces() {
+    const tile = f => {
+      const b = el('button', '', 'face'); b.type = 'button'; b.dataset.face = f.id; b.title = about(f.id);
+      const c = el('canvas', '', 'still'); c.width = 502; c.height = 410;
+      const label = el('span', title(f.id), 'face-name');
+      if (f.family && families[f.family]) label.style.setProperty('--hue', families[f.family].colour);
+      b.append(c, label);
+      if (f.board) b.append(el('span', "board's own", 'badge'));
+      return b;
+    };
+    $('[data-faces-mac]').replaceChildren(...sheet.mac.map(tile));
+    $('[data-faces-board]').replaceChildren(...sheet.board.map(tile));
+    pressFaces();
+  }
+  const pressFaces = () => $$('.face').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.face === sel.face)));
+  function drawStills() {
+    if (stills || !instance) return;
+    const ids = [...sheet.mac, ...sheet.board].map(f => f.id);
+    let done = 0;
+    $('[data-faces-about]').textContent = `Drawing each face at rest on the board… 0 of ${ids.length}`;
+    stills = instance.ready.then(() => instance.stills(ids, (id, picture) => {
+      const c = root.querySelector(`.face[data-face="${id}"] canvas`);
+      c?.getContext('2d').drawImage(picture, 0, 0, c.width, c.height);
+      picture.close?.();
+      $('[data-faces-about]').textContent = `Drawing each face at rest on the board… ${++done} of ${ids.length}`;
+    })).then(() => { $('[data-faces-about]').textContent = facesHint; }, error => { stills = null; $('[data-faces-about]').textContent = error.message; });
+  }
+  const facesHint = 'Each face at rest, about life size. Click one to see the change to it from the face the board shows.';
+  function playFace() {
+    const from = faceShown;
+    instance?.play(L.faceSteps(sel.face, from));
+    faceShown = sel.face;
+    const own = pack.faces.find(f => f.id === sel.face)?.board ? " One of the board's own faces." : '';
+    caption(from && from !== sel.face ? `${title(from)} → ${title(sel.face)}` : title(sel.face),
+      (about(sel.face) || `The ${title(sel.face).toLowerCase()} face.`) + own);
+  }
+
+  // ── Moments ─────────────────────────────────────────────────────────────
+  // One skit's Moment at a time, so one invite: playing another resets the
+  // board first. `moment` is the one played: its skit, what the board said
+  // of its invite, and its stage now (dbg.state's `invite`).
+  let moment = null, polling = 0;
+  const skitText = s => [s.slots?.[0] ? `for ${s.slots[0]}` : '', s.invite ? `${s.invite.pose} pose, a ${s.invite.touch}, then ${s.invite.payoff}` : 'no invite',
+    s.clip ? `clip ${s.clip}` : ''].filter(Boolean).join(' · ');
+  function renderMoments() {
+    $('[data-skits]').replaceChildren(...pack.skits.map(s => {
+      const b = el('button', '', 'skit'); b.type = 'button'; b.dataset.skit = s.id;
+      b.setAttribute('aria-pressed', String(s.id === sel.skit));
+      b.append(el('strong', title(s.id)), el('small', skitText(s)));
+      return b;
+    }));
+    if (!pack.skits.length) $('[data-skits]').append(el('p', 'The pack has no skits.', 'hint'));
+    $('[data-size]').replaceChildren(...L.SIZES.map(s => { const o = el('option', title(s.id)); o.value = s.id; return o; }));
+    $('[data-size]').value = sel.size;
+    const takes = takesNow();
+    if (sel.take !== 'none' && !takes.some(t => t.id === sel.take)) sel.take = '';
+    $('[data-take]').replaceChildren(...[...takes, {id: 'none', text: takes.length ? 'No words' : `No take in ${sel.mood}`}].map(t => {
+      const o = el('option', t.id === 'none' ? t.text : `${t.text} (${t.kind})`); o.value = t.id; return o;
+    }));
+    $('[data-take]').value = take() || 'none';
+    renderInvite();
+  }
+  // The skit's takes in the mood, and the one it says: the one picked, the
+  // first (its size's kind first) as the Mac always has one, or none.
+  const takesNow = () => skitOf(sel.skit) ? L.takesFor(pack.takes, skitOf(sel.skit), sel.mood, sizeOf(sel.size).kind) : [];
+  const take = () => sel.take === 'none' ? null : sel.take || takesNow()[0]?.id || null;
+  function playMoment() {
+    const skit = skitOf(sel.skit);
+    if (!skit || !instance) return;
+    const m = L.momentOf(skit, {mood: sel.mood, loops: sizeOf(sel.size).loops, take: take(), words: pack.words});
+    const steps = L.momentSteps(m);
+    moment = {skit, invite: m.args.invite || null, stage: null, heard: null, missing: false, at: performance.now()};
+    instance.play(steps);
+    $('[data-sent]').textContent = JSON.stringify(steps[steps.length - 1][1]);
+    $('[data-heard]').textContent = 'Nothing yet.';
+    caption(title(skit.id), `The ${skit.id} skit's Moment as the Mac sends it, in ${sel.mood}` +
+      (m.args.invite ? `, then its invite: ${m.args.invite.pose}, waiting ${m.args.invite.ms / 1000} s for a ${m.args.invite.touch}.` : ', with no invite.'));
+    clearTimeout(polling);
+    if (moment.invite) poll();
+    renderInvite();
+  }
+  // dbg.state's invite while one may still pay off: until the board says
+  // how it ended, and through a miss's window.
+  async function poll() {
+    const m = moment;
+    if (!m) return;
+    try { m.stage = (await instance.ask({t: 'dbg.state'})).invite; } catch { m.stage = null; }
+    if (m !== moment) return;
+    renderInvite();
+    const over = m.heard && m.heard.did !== 'missed' || m.heard?.did === 'missed' && !m.stage;
+    if (!over && performance.now() - m.at < 60000) polling = setTimeout(poll, 200);
+  }
+  function heardLine(line) {
+    const h = L.heard(line);
+    if (!h || !moment) return;
+    moment.heard = h;
+    $('[data-heard]').textContent = line;
+    renderInvite();
+  }
+  const answerable = () => Boolean(moment?.invite && (moment.stage?.stage === 'pose' && !moment.missing || moment.stage?.stage === 'window'));
+  function renderInvite() {
+    const m = moment, s = m?.stage?.stage, touch = m?.invite?.touch;
+    const text = !m ? 'Play a skit to see its Moment, then answer its invite or let it pass.'
+      : !m.invite ? 'This skit asks for no touch.'
+      : s === 'ahead' || !s && !m.heard ? 'The Moment plays first, then the pose.'
+      : s === 'pose' ? (m.missing ? 'Letting the wait run out' : `Waiting for a ${touch}`) + `: ${(m.stage.ms / 1000).toFixed(1)} of ${m.invite.ms / 1000} s.`
+      : s === 'payoff' ? 'Answered: the payoff.'
+      : s === 'shrug' ? 'No touch came: it shrugs.'
+      : s === 'window' ? `Missed. A ${touch} in the next 30 s still pays off, late.`
+      : s === 'late' ? 'Late: the payoff after all.'
+      : `Done: the board said ${m.heard.did}.`;
+    $('[data-invite-now]').textContent = text;
+    const answer = $('[data-answer]');
+    answer.disabled = !answerable();
+    answer.firstChild.textContent = s === 'window' ? 'Answer late ' : 'Answer ';
+    $('[data-miss]').disabled = !(m?.invite && (s === 'pose' || s === 'ahead' || !s && !m.heard) && !m.missing);
+  }
+  function answer() {
+    if (!answerable()) return;
+    instance.send(L.answerSteps(moment.invite.touch, instance.tap));
+  }
+  function miss() {
+    if ($('[data-miss]').disabled) return;
+    moment.missing = true;
+    renderInvite();
+  }
+
+  // ── Motion ──────────────────────────────────────────────────────────────
+  function renderMotion() {
+    $('[data-motion-box]').hidden = !pack.motion.length;
+    $('[data-motion]').replaceChildren(...[...pack.motion, 'all'].map(rule => {
+      const b = el('button', rule === 'all' ? 'All' : rule, 'chip switch'); b.type = 'button'; b.dataset.rule = rule;
+      b.setAttribute('aria-pressed', String(rule === 'all' ? !off.size : !off.has(rule)));
+      b.title = rule === 'all' ? 'Every rule on, or every one off' : `The ${rule} rule: on when pressed`;
+      return b;
     }));
   }
-  function renderMoods(){
-    let borrowed=false;
-    $('[data-moods]').replaceChildren(...families().map(f=>group(f.label,f.moods.map(m=>{
-      const to=shows(sel.card,m),other=to!==m.id;borrowed||=other;
-      return chip(title(m.id),{pressed:m.id===sel.mood,hue:f.colour,borrowed:other,to,data:{mood:m.id}});
-    }))));
-    $('[data-legend]').hidden=!borrowed;
-  }
-  function renderStates(){
-    $('[data-states]').replaceChildren(...stateGroups.map(g=>group(g.label,g.states.map(s=>{
-      const b=chip(stateInfo[s.id].label,{pressed:s.id===sel.state,data:{state:s.id}});b.classList.add('state');b.title=s.about;return b;
-    }))));
-  }
-  function renderFacts(){
-    const fact=facts[sel.state],row=$('[data-facts]');
-    row.hidden=!fact;if(!fact){row.replaceChildren();return;}
-    const seg=document.createElement('div');seg.className='segmented';seg.setAttribute('role','group');seg.setAttribute('aria-label',fact.label);seg.dataset.fact=fact.name;
-    seg.append(...fact.options.map(o=>{const b=document.createElement('button');b.type='button';b.dataset.value=o.id;b.textContent=o.label;b.setAttribute('aria-pressed',String(sel[fact.name]===o.id));return b;}));
-    row.replaceChildren(seg);
-  }
-  function setSegment(container,value){for(const b of container.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.value===value));}
-
-  // ── Applying the selection ─────────────────────────────────────────────
-  function render({autoplay=false}={}){
-    if(!moodOf(sel.mood))sel.mood=packs[sel.pack].default_mood;
-    const mood=moodOf(sel.mood),plays=shows(sel.card,mood);
-    renderCards();renderMoods();renderStates();renderFacts();
-
-    const faces=instance?.faces?.(plays)||[];
-    if(sel.face&&!faces.some(f=>f.id===sel.face))sel.face=null;
-    $('[data-faces]').hidden=faces.length<2;
-    $('[data-face-choice]').replaceChildren(...faces.map(f=>{const b=document.createElement('button');b.type='button';b.dataset.value=f.id;b.textContent=f.label;return b;}));
-    setSegment($('[data-face-choice]'),sel.face||plays);
-
-    info=null;
-    const empty=!instance?(adapter?'':`${label(sel.card)} has no preview: its pack declares no studio entry.`):'';
-    if(instance)info=instance.select({mood:plays,face:sel.face,state:sel.state,outcome:sel.outcome,context:sel.context,variant:sel.variant});
-    $('[data-empty]').hidden=!empty;$('[data-empty]').textContent=empty;
-    const variants=info?.variants||[];
-    sel.variant=Math.max(0,Math.min(sel.variant,variants.length-1));
-    $('[data-variants]').hidden=variants.length<2;
-    const select=$('[data-variation]');
-    select.replaceChildren(...variants.map((text,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=text;return o;}));
-    select.value=String(sel.variant);
-    const word=adapter?.variantLabel||'Variation';
-    $('[data-variation-label]').textContent=word;
-    $('[data-prev]').setAttribute('aria-label','Previous '+word.toLowerCase());$('[data-next]').setAttribute('aria-label','Next '+word.toLowerCase());
-
-    const fact=facts[sel.state],detail=fact?` (${fact.options.find(o=>o.id===sel[fact.name]).label.toLowerCase()})`:'';
-    $('[data-title]').style.setProperty('--hue',colourOf(sel.mood)||'#888');
-    $('[data-title]').textContent=`${title(sel.mood)} · ${stateInfo[sel.state].label}${detail}`;
-    $('[data-caption]').textContent=info?.caption||'';$('[data-caption]').hidden=!info?.caption;
-    $('[data-mood-term]').textContent=title(sel.mood);$('[data-mood-describe]').textContent=mood.meaning||(mood.settles?`A face only: it settles into ${mood.settles}.`:'');
-    $('[data-state-term]').textContent=stateInfo[sel.state].label;$('[data-state-describe]').textContent=stateInfo[sel.state].about;
-    const note=$('[data-note]');note.hidden=plays===sel.mood;
-    if(!note.hidden)note.textContent=`${label(sel.card)} has no ${title(sel.mood).toLowerCase()} art. It shows ${title(plays).toLowerCase()} instead, which is what plays here.`;
-
-    const transport=info?adapter.transport:null;
-    for(const el of $$('[data-transport]'))el.hidden=el.dataset.transport!==transport;
-    for(const name of ['replay','poke','shake'])$(`[data-${name}]`).hidden=!instance?.[name];
-    if(transport==='clip'){$('[data-seek]').max=instance.duration||0;if(autoplay&&started)instance.play();}
-    $('[data-tools]').hidden=!ctx.tools.children.length;
-    writeHash();update();
-  }
-  function update(){
-    $('[data-status]').textContent=info?instance.status():'';
-    if(info&&adapter.transport==='clip'){
-      $('[data-play]').textContent=instance.playing?'Stop':'Play';
-      if(instance.playing||document.activeElement!==$('[data-seek]'))$('[data-seek]').value=instance.time();
-      $('[data-time]').textContent=instance.time().toFixed(1)+' / '+(instance.duration||0).toFixed(1)+' s';
-    }else if(info)$('[data-pause]').textContent=instance.paused?'Resume':'Pause';
-    $('[data-start]').hidden=started||!info||adapter.transport!=='clip';
-    const busy=busyNow();$('.pick-column').inert=busy;$('[data-faces]').inert=busy;$('[data-facts]').inert=busy;$('[data-cards]').inert=busy;
-  }
-  let pending=false;
-  function onChange(){if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;if(instance)update();});}
-  const busyNow=()=>Boolean(instance?.busy?.());
-
-  let switching=0;
-  async function switchCard(pack,card,variant=0){
-    if(pack===sel.pack&&card===sel.card||busyNow())return;
-    const ticket=++switching;
-    instance?.destroy();instance=adapter=null;ctx.stage.replaceChildren();ctx.tools.replaceChildren();
-    sel.pack=pack;sel.card=cardsOf(pack).includes(card)?card:cardsOf(pack)[0];sel.variant=variant;
-    ctx.stage.dataset.kind=sel.card;
-    try{await load(sel.pack,sel.card);}catch(error){$('[data-status]').textContent=error.message;}
-    if(ticket!==switching)return;
-    const key=sel.pack+'/'+sel.card,face=entryOf(sel.pack,sel.card)?.board;
-    adapter=adapters[key]||(face?adapters[key]=StudioBoard.adapter(sel.pack,face):null);
-    if(entryOf(sel.pack,sel.card)&&!adapter)$('[data-status]').textContent=`${label(sel.card)}'s scripts didn't register an adapter.`;
-    instance=adapter?adapter.create(ctx):null;
-    instance?.setSound();
-    rested=false;
-    if((view||opening)!=='scene'&&adapter?.transport==='live'){instance.setPaused(true);rested=true;}
-    if(view==='matrix'){clearMatrix();buildMatrix();fillSoon();}
-    render({autoplay:(view||opening)==='scene'});
-  }
-  function change(patch,{resetVariant=false}={}){
-    if(busyNow())return;
-    Object.assign(sel,patch);if(resetVariant)sel.variant=0;
-    render({autoplay:view==='scene'});
-  }
-
-  // ── Matrix ─────────────────────────────────────────────────────────────
-  // Every mood and state at once, for the card shown. Each cell is the
-  // character's own preview, made by its adapter as the stage's is, silent,
-  // and looping where the adapter can (`preview()`). Only cells on screen
-  // play, at most LIMIT at once, a hovered cell first, then those wholly on
-  // screen: a live character's each holds a WebGL context, and a page gets
-  // about 16. A cell opens its scene, the page's other view.
-  const LIMIT={clip:60,live:12};
-  // The view shown: none until the first setView(), which shows the address's,
-  // `opening` until then.
-  let view='',opening='';
-  const matrix={table:$('[data-matrix-table]'),key:'',cells:[],playing:new Map(),seen:new Map(),hovered:null,observer:null,timer:0};
-  function buildMatrix(){
-    const key=sel.pack+'/'+sel.card+'/'+Boolean(adapter);
-    if(matrix.key===key)return;
-    clearMatrix();matrix.key=key;
-    const cell=(tag,text,cls)=>{const c=document.createElement(tag);if(text)c.append(text);if(cls)c.className=cls;return c;};
-    const head=document.createElement('tr');head.append(cell('th'));
-    for(const g of stateGroups)g.states.forEach((s,i)=>{const th=cell('th');th.append(cell('small',i?'':g.label),stateInfo[s.id].label);th.title=s.about;head.append(th);});
-    const thead=document.createElement('thead'),tbody=document.createElement('tbody');thead.append(head);
-    for(const f of families()){
-      const row=document.createElement('tr');row.append(cell('th',f.label,'family'));tbody.append(row);
-      for(const m of f.moods){
-        const tr=document.createElement('tr'),th=cell('th'),to=shows(sel.card,m);th.scope='row';
-        th.append(chip(title(m.id),{pressed:false,hue:f.colour,borrowed:to!==m.id,to,data:{}}));tr.append(th);
-        for(const id of stateIds){
-          const b=cell('button','','cell'+(to!==m.id?' borrowed':''));b.type='button';
-          b.dataset.mood=m.id;b.dataset.state=id;b.title=`${title(m.id)} · ${stateInfo[id].label}`;
-          const thumb=cell('div','','thumb idle');if(f.colour)thumb.style.setProperty('--hue',f.colour);
-          b.append(thumb,cell('small','\u00a0'));
-          const td=cell('td');td.append(b);tr.append(td);matrix.cells.push(b);
-        }
-        tbody.append(tr);
-      }
+  function switchMotion(rule) {
+    if (rule === 'all') {
+      const on = off.size > 0;
+      on ? off.clear() : pack.motion.forEach(r => off.add(r));
+      instance?.send([[0, L.motionMessage('all', on)]]);
+    } else {
+      const on = off.has(rule);
+      on ? off.delete(rule) : off.add(rule);
+      instance?.send([[0, L.motionMessage(rule, on)]]);
     }
-    matrix.table.replaceChildren(thead,tbody);
-    // On screen is under the sticky state row and right of the sticky mood column, and half a cell at least;
-    // `seen` has how much of each is.
-    const top=thead.getBoundingClientRect().height,left=tbody.querySelector('th[scope=row]')?.getBoundingClientRect().width||0;
-    matrix.observer=new IntersectionObserver(entries=>{
-      for(const e of entries)e.intersectionRatio>=.5?matrix.seen.set(e.target,e.intersectionRatio):matrix.seen.delete(e.target);
-      fillSoon();
-    },{root:$('[data-matrix-scroll]'),rootMargin:`-${Math.ceil(top)}px 0px 0px -${Math.ceil(left)}px`,threshold:[.5,1]});
-    for(const c of matrix.cells)matrix.observer.observe(c);
-    if(board.shows)markBoard(board.shows,'');
-    const n=packs[sel.pack].moods.length;
-    $('[data-matrix-about]').textContent=adapter
-      ?`${label(sel.card)}: ${n} moods × ${stateIds.length} states. The cells on screen play, silently, up to ${LIMIT[adapter.transport]||LIMIT.clip} at once; hover one to play it. Click one to open it.`
-      :`${label(sel.card)} has no preview, so the matrix is empty.`;
-  }
-  // The matrix fills the window under the tabs and cards, so all of it is on screen; a narrow window lets it run on.
-  function fitMatrix(){
-    const box=$('[data-matrix-scroll]');
-    box.style.maxHeight=innerWidth>880?Math.max(360,innerHeight-box.getBoundingClientRect().top-16)+'px':'';
-  }
-  addEventListener('resize',()=>{if(view==='matrix')fitMatrix();});
-  function fillSoon(){if(!matrix.timer)matrix.timer=setTimeout(()=>{matrix.timer=0;fill();},80);}
-  function fill(){
-    if(view!=='matrix'||!adapter)return;
-    const on=matrix.cells.filter(c=>matrix.seen.has(c)&&c!==matrix.hovered).sort((a,b)=>matrix.seen.get(b)-matrix.seen.get(a));
-    const want=[...(matrix.hovered?[matrix.hovered]:[]),...on].slice(0,LIMIT[adapter.transport]||LIMIT.clip);
-    for(const c of [...matrix.playing.keys()])if(!want.includes(c))unmount(c);
-    for(const c of want)if(!matrix.playing.has(c))mount(c);
-  }
-  // A silent, looping preview of one mood and state in a matrix cell's
-  // `thumb`, by the card's adapter: its instance and what it selected, or
-  // why it couldn't.
-  function preview(thumb,{mood,state='idle',outcome='success',context='new_task',variant=0}){
-    if(!adapter)return {error:`${label(sel.card)} has no preview.`};
-    const s={mood:shows(sel.card,moodOf(mood)),face:null,state,outcome,context,variant};
-    // Its own context: no sound, no drawer, nothing to redraw.
-    const own={root,stage:thumb,tools:document.createElement('div'),sound:false,volume:0,loop:true,selection:s,onChange(){},setSound(){}};
-    thumb.classList.remove('idle');
-    let instance=null;
-    try{instance=adapter.create(own);const got=instance.select(s);instance.preview?.();return {instance,got};}
-    catch(error){return {instance,error:error.message};}
-  }
-  function unpreview(thumb,instance){
-    const canvases=[...thumb.querySelectorAll('canvas')];
-    try{instance?.destroy();}catch{}
-    // A destroyed preview's WebGL context lives on until it's collected, and
-    // the page's few run out as the matrix scrolls: let each go now.
-    for(const c of canvases)for(const kind of ['webgl2','webgl'])c.getContext(kind)?.getExtension('WEBGL_lose_context')?.loseContext();
-    thumb.replaceChildren();thumb.classList.add('idle');
-  }
-  function mount(cell){
-    const note=cell.querySelector('small');
-    const {instance,got,error}=preview(cell.querySelector('.thumb'),{mood:cell.dataset.mood,state:cell.dataset.state});
-    if(instance)matrix.playing.set(cell,instance);
-    note.textContent=error||(got?.variants?.length>1?got.variants[0]:got?.caption||'\u00a0');
-  }
-  function unmount(cell){
-    const instance=matrix.playing.get(cell);matrix.playing.delete(cell);
-    unpreview(cell.querySelector('.thumb'),instance);
-  }
-  function clearMatrix(){
-    for(const c of [...matrix.playing.keys()])unmount(c);
-    matrix.observer?.disconnect();matrix.cells=[];matrix.seen.clear();matrix.hovered=null;matrix.key='';matrix.table.replaceChildren();
-    board.cell=null;
-  }
-  // What the simulated board shows, marked: the simulator's server (simulator/web/serve.py) serves this page
-  // beside the board, and its link names the board to ask (&board=/board, or
-  // /board/NAME for one of several), which answers with the board's dbg.state.
-  const BOARD_MS=1000,BOARD_URL=/^\/board(\/[a-z0-9][a-z0-9_-]{0,15})?$/;
-  const board={timer:0,url:null,cell:null,shows:null};
-  // The cell for a dbg.state: no app and needs you first, then a reaction
-  // playing, then the look, the agents' activity while working.
-  function boardCell(d){
-    const mood=d.expr||d.mood;
-    if(d.screen==='no_app'||d.screen==='needs_you')return {mood,state:d.screen,variant:d.look_variant};
-    if(d.moment?.anim&&stateInfo[d.moment.anim])return {mood,state:d.moment.anim,variant:d.moment.variant};
-    return {mood,state:d.base==='working'?d.act||'working':d.base,variant:d.look_variant};
-  }
-  async function askBoard(){
-    board.timer=0;
-    if(view!=='matrix'||!board.url)return;
-    let shows=null,text='';
-    try{
-      const reply=await fetch(board.url,{cache:'no-store'});
-      const said=reply.ok?await reply.json():null;
-      shows=said&&boardCell(said);
-      if(!shows)text='The simulator has no board right now: open its page.';
-    }catch{text='The simulator stopped.';}
-    markBoard(shows,text);
-    board.timer=setTimeout(askBoard,BOARD_MS);
-  }
-  function markBoard(shows,text){
-    board.shows=shows;
-    const cell=shows&&matrix.cells.find(c=>c.dataset.mood===shows.mood&&c.dataset.state===shows.state)||null;
-    if(board.cell!==cell){board.cell?.classList.remove('board');cell?.classList.add('board');board.cell=cell;}
-    if(cell)cell.dataset.variant=String(Math.max(0,(shows.variant||1)-1));
-    $('[data-board-now]').hidden=!shows&&!text;
-    $('[data-board-show]').hidden=!cell;
-    $('[data-board-text]').textContent=shows?`The simulator shows ${title(shows.mood)} · ${stateInfo[shows.state]?.label||shows.state}`+(shows.variant?`, variation ${shows.variant}`:'')+(cell?'':' (not a cell here)')+'.':text;
-  }
-
-  // ── Views ──────────────────────────────────────────────────────────────
-  // The matrix, where the page opens, and the scene, a cell's detail.
-  const VIEWS=['matrix','scene'];
-  // The stage's own preview rests in the matrix: a live one is one of the page's WebGL contexts.
-  let rested=false;
-  function setView(next){
-    if(!VIEWS.includes(next)||busyNow()||next===view)return;
-    const was=view;view=next;
-    root.dataset.shown=view;
-    for(const el of $$('[data-view]'))el.hidden=el.dataset.view!==view;
-    if(was==='matrix'){clearTimeout(board.timer);board.timer=0;for(const c of [...matrix.playing.keys()])unmount(c);}
-    // Back in the scene, the stage takes its board back from the matrix: playing again if it rested, else paused as it was.
-    if(view==='scene'){if(adapter?.transport==='live')instance.setPaused(instance.paused&&!rested);rested=false;}
-    else if(adapter?.transport==='live'&&!instance.paused){instance.setPaused(true);rested=true;}
-    else if(instance?.playing)instance.stop();
-    if(view==='matrix'){fitMatrix();buildMatrix();fillSoon();if(!board.timer)askBoard();}
+    renderMotion();
     writeHash();
   }
 
-  // ── URL ────────────────────────────────────────────────────────────────
-  function writeHash(){
-    const p=new URLSearchParams({pack:sel.pack,c:sel.card,mood:sel.face||sel.mood,state:sel.state});
-    const fact=facts[sel.state];if(fact)p.set(fact.name,sel[fact.name]);
-    if(sel.variant)p.set('v',String(sel.variant+1));
-    if(view)p.set('view',view);
-    if(board.url)p.set('board',board.url);
-    const hash='#'+p.toString().replaceAll('%3A',':').replaceAll('%2F','/');
-    if(location.hash!==hash)history.replaceState(null,'',hash);
+  // ── The selection, the views and the stage ──────────────────────────────
+  function caption(text, more) { $('[data-title]').textContent = text; $('[data-caption]').textContent = more; }
+  function render() {
+    for (const b of $$('[data-tab]')) b.setAttribute('aria-selected', String(b.dataset.tab === sel.view));
+    for (const v of $$('[data-view]')) v.hidden = v.dataset.view !== sel.view;
+    $('[data-mood]').value = sel.mood;
+    $('[data-mood]').disabled = sel.view === 'faces';
+    $('[data-mood]').title = sel.view === 'faces' ? 'Each face is its own here' : 'The face and the timing every move and Moment plays in';
+    if (sel.view === 'moves') renderMoves();
+    else if (sel.view === 'faces') { pressFaces(); drawStills(); }
+    else renderMoments();
+    renderMotion();
+    $('[data-tools]').hidden = !ctx.tools.children.length;
+    writeHash();
+    update();
   }
-  function readHash(){
-    const p=new URLSearchParams(location.hash.slice(1));
-    const pack=packs[p.get('pack')]?p.get('pack'):packs[p.get('c')]?p.get('c'):data.chosen;
-    let mood=p.get('mood')||'',face=null;
-    if(mood.includes(':')){face=mood;mood=mood.split(':')[0];}
-    const out={pack,card:cardsOf(pack).includes(p.get('c'))?p.get('c'):cardsOf(pack)[0],mood,face,
-      state:stateIds.includes(p.get('state'))?p.get('state'):'idle',variant:Math.max(0,(Number(p.get('v'))||1)-1),
-      view:VIEWS.includes(p.get('view'))?p.get('view'):'matrix',board:BOARD_URL.test(p.get('board')||'')?p.get('board'):null};
-    for(const fact of Object.values(facts)){const v=p.get(fact.name);out[fact.name]=fact.options.some(o=>o.id===v)?v:fact.options[0].id;}
+  // What the stage shows for the view: its move, face or Moment, from a reset.
+  function play() {
+    if (sel.view === 'moves') playMove();
+    else if (sel.view === 'faces') playFace();
+    else playMoment();
+  }
+  function change(patch, {replay = true} = {}) {
+    if (busyNow()) return;
+    if (patch.view && patch.view !== sel.view) { clearTimeout(polling); moment = null; if (patch.view === 'faces') faceShown = null; }
+    Object.assign(sel, patch);
+    render();
+    if (replay) play();
+  }
+  function update() {
+    $('[data-status]').textContent = instance ? instance.status() : '';
+    const busy = busyNow();
+    for (const s of ['.pick-column', '.controls', '[data-motion-box]']) $(s).inert = busy;
+  }
+  let pending = false;
+  function onChange() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; update(); }); }
+  const busyNow = () => Boolean(instance?.busy?.());
+  function setSound(on) {
+    sound = on; const b = $('[data-sound]'); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? 'Sound on' : 'Sound off';
+    instance?.setSound(); update();
+  }
+  // In the list the view shows, the one `d` before or after the selection.
+  function step(d) {
+    const list = sel.view === 'moves' ? listed : sel.view === 'faces' ? [...sheet.mac, ...sheet.board].map(f => f.id) : pack.skits.map(s => s.id);
+    const key = {moves: 'move', faces: 'face', moments: 'skit'}[sel.view];
+    if (!list.length) return;
+    const i = list.indexOf(sel[key]);
+    change({[key]: list[(i + d + list.length) % list.length], ...(key === 'move' ? {over: ''} : {})});
+    root.querySelector(`[data-${key}="${sel[key]}"]`)?.scrollIntoView({block: 'nearest'});
+  }
+
+  // ── URL ─────────────────────────────────────────────────────────────────
+  // The address keeps the selection, so a link opens the same thing.
+  function writeHash() {
+    const p = new URLSearchParams({view: sel.view, mood: sel.mood});
+    if (sel.view === 'moves') { p.set('move', sel.move); if (sel.over) p.set('over', sel.over); }
+    if (sel.view === 'faces') p.set('face', sel.face);
+    if (sel.view === 'moments') { p.set('skit', sel.skit); p.set('size', sel.size); if (sel.take) p.set('take', sel.take); }
+    if (off.size) p.set('off', [...off].join(','));
+    const hash = '#' + p.toString().replaceAll('%2C', ',');
+    if (location.hash !== hash) history.replaceState(null, '', hash);
+  }
+  function readHash() {
+    const p = new URLSearchParams(location.hash.slice(1)), out = {};
+    if (VIEWS.includes(p.get('view'))) out.view = p.get('view');
+    if (pack.moods.some(m => m.id === p.get('mood'))) out.mood = p.get('mood');
+    if (moveOf(p.get('move'))) out.move = p.get('move');
+    if (['idle', 'working', 'asleep'].includes(p.get('over'))) out.over = p.get('over');
+    if (pack.faces.some(f => f.id === p.get('face'))) out.face = p.get('face');
+    if (skitOf(p.get('skit'))) out.skit = p.get('skit');
+    if (L.SIZES.some(s => s.id === p.get('size'))) out.size = p.get('size');
+    if (p.get('take')) out.take = p.get('take');  // a take of the skit's, or none
+    off.clear();
+    for (const rule of (p.get('off') || '').split(',')) if (pack.motion.includes(rule)) off.add(rule);
     return out;
   }
 
-  // ── Wiring ─────────────────────────────────────────────────────────────
-  function start(){if(started)return;started=true;update();}
-  const resetOnState=()=>adapter?.transport==='clip';
-  // Any press counts as the gesture browsers need before sound; the Start button plays itself.
-  root.addEventListener('pointerdown',e=>{if(!e.target.closest('[data-start]'))start();},{capture:true});
-  $('[data-cards]').addEventListener('click',e=>{const b=e.target.closest('[data-character]');if(b)switchCard(sel.pack,b.dataset.character);});
-  $('[data-back]').addEventListener('click',()=>setView('matrix'));
-  $('[data-moods]').addEventListener('click',e=>{const b=e.target.closest('[data-mood]');if(b)change({mood:b.dataset.mood,face:null},{resetVariant:!resetOnState()});});
-  $('[data-states]').addEventListener('click',e=>{const b=e.target.closest('[data-state]');if(b){if(b.dataset.state===sel.state)instance?.replay?.();change({state:b.dataset.state},{resetVariant:resetOnState()});}});
-  $('[data-facts]').addEventListener('click',e=>{const b=e.target.closest('button'),seg=e.target.closest('[data-fact]');if(b&&seg)change({[seg.dataset.fact]:b.dataset.value},{resetVariant:true});});
-  $('[data-face-choice]').addEventListener('click',e=>{const b=e.target.closest('button');if(b)change({face:b.dataset.value.includes(':')?b.dataset.value:null},{resetVariant:true});});
-  $('[data-variation]').addEventListener('change',e=>change({variant:Number(e.target.value)}));
-  $('[data-board-show]').addEventListener('click',()=>board.cell?.scrollIntoView({block:'center',inline:'center',behavior:'smooth'}));
-  matrix.table.addEventListener('pointerover',e=>{const c=e.target.closest('.cell');if(c&&c!==matrix.hovered){matrix.hovered=c;fillSoon();}});
-  matrix.table.addEventListener('click',e=>{const c=e.target.closest('.cell');if(!c)return;
-    setView('scene');change({mood:c.dataset.mood,face:null,state:c.dataset.state,variant:Number(c.dataset.variant||0)});});
-  function step(d){const n=$('[data-variation]').options.length;if(n)change({variant:(sel.variant+d+n)%n});}
-  $('[data-prev]').addEventListener('click',()=>step(-1));$('[data-next]').addEventListener('click',()=>step(1));
-  function playPause(){if(!info)return;start();if(adapter.transport==='clip')instance.playing?instance.stop():instance.play();else instance.setPaused(!instance.paused);update();}
-  $('[data-play]').addEventListener('click',playPause);
-  $('[data-start]').addEventListener('click',()=>{start();instance?.play();});
-  $('[data-loop]').addEventListener('change',()=>{if(instance?.playing)instance.play();});
-  $('[data-seek]').addEventListener('input',e=>instance?.seek(Number(e.target.value)));
-  $('[data-pause]').addEventListener('click',playPause);
-  $('[data-replay]').addEventListener('click',()=>instance?.replay());
-  $('[data-poke]').addEventListener('click',()=>instance?.poke());
-  $('[data-shake]').addEventListener('click',()=>instance?.shake());
-  function setSound(on){sound=on;const b=$('[data-sound]');b.setAttribute('aria-pressed',String(on));b.textContent=on?'Sound on':'Sound off';instance?.setSound();}
-  ctx.setSound=setSound;
-  $('[data-sound]').addEventListener('click',()=>setSound(!sound));
-  $('[data-volume]').addEventListener('input',e=>{volume=Number(e.target.value)/100;instance?.setSound();});
-
-  document.addEventListener('keydown',e=>{
-    if(e.metaKey||e.ctrlKey||e.altKey||busyNow()||e.target.closest?.('input,select,textarea'))return;
-    if(e.key==='m'||e.key==='M'){setView(view==='matrix'?'scene':'matrix');e.preventDefault();return;}
-    if(view!=='scene')return;
-    const i=stateIds.indexOf(sel.state);
-    if(e.key==='ArrowLeft')step(-1);
-    else if(e.key==='ArrowRight')step(1);
-    else if(e.key==='ArrowUp')change({state:stateIds[(i+stateIds.length-1)%stateIds.length]},{resetVariant:resetOnState()});
-    else if(e.key==='ArrowDown')change({state:stateIds[(i+1)%stateIds.length]},{resetVariant:resetOnState()});
-    else if(e.key===' '&&!e.target.closest?.('button'))playPause();
-    else if(e.key==='s'||e.key==='S')setSound(!sound);
-    else if((e.key==='p'||e.key==='P')&&instance?.poke)instance.poke();
+  // ── Wiring ──────────────────────────────────────────────────────────────
+  $('[data-mood]').addEventListener('change', e => change({mood: e.target.value}));
+  for (const b of $$('[data-tab]')) b.addEventListener('click', () => change({view: b.dataset.tab}));
+  $('[data-find]').addEventListener('input', () => renderMoves());
+  $('[data-moves]').addEventListener('click', e => { const b = e.target.closest('[data-move]'); if (b) change({move: b.dataset.move, over: b.dataset.move === sel.move ? sel.over : ''}); });
+  $('[data-over]').addEventListener('click', e => { const b = e.target.closest('[data-value]'); if (b) change({over: b.dataset.value}); });
+  root.addEventListener('click', e => { const b = e.target.closest('[data-face]'); if (b && b.classList.contains('face')) change({face: b.dataset.face}); });
+  $('[data-skits]').addEventListener('click', e => { const b = e.target.closest('[data-skit]'); if (b) change({skit: b.dataset.skit, take: ''}); });
+  $('[data-size]').addEventListener('change', e => change({size: e.target.value, take: ''}, {replay: false}));
+  $('[data-take]').addEventListener('change', e => change({take: e.target.value}, {replay: false}));
+  $('[data-play]').addEventListener('click', () => playMoment());
+  $('[data-answer]').addEventListener('click', answer);
+  $('[data-miss]').addEventListener('click', miss);
+  $('[data-motion]').addEventListener('click', e => { const b = e.target.closest('[data-rule]'); if (b) switchMotion(b.dataset.rule); });
+  $('[data-sound]').addEventListener('click', () => setSound(!sound));
+  $('[data-volume]').addEventListener('input', e => { volume = Number(e.target.value) / 100; instance?.setSound(); });
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey || busyNow()) return;
+    if (e.target.closest?.('input,select,textarea')) {
+      if (e.key === 'Escape' || e.key === 'ArrowDown' && e.target.matches('[data-find]')) { e.target.blur(); if (e.key === 'ArrowDown') step(listed.indexOf(sel.move) < 0 ? 1 : 0); e.preventDefault(); }
+      else if (e.key === 'Enter' && e.target.matches('[data-find]') && listed.length) { e.target.blur(); change({move: listed[0], over: ''}); }
+      return;
+    }
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (['1', '2', '3'].includes(k)) change({view: VIEWS[Number(k) - 1]});
+    else if (k === 'ArrowUp') step(-1);
+    else if (k === 'ArrowDown') step(1);
+    else if ((k === ' ' || k === 'Enter') && !e.target.closest?.('button')) play();
+    else if (k === '/' && sel.view === 'moves') $('[data-find]').focus();
+    else if (k === 'a') answer();
+    else if (k === 'm') miss();
+    else if (k === 's') setSound(!sound);
     else return;
-    started=true;e.preventDefault();
+    e.preventDefault();
   });
-  window.addEventListener('hashchange',()=>{
-    const {view:nextView,board:url,...next}=readHash();board.url=url;setView(nextView);
-    if(next.pack!==sel.pack||next.card!==sel.card){Object.assign(sel,next,{pack:sel.pack,card:sel.card});switchCard(next.pack,next.card,next.variant);}
-    else{Object.assign(sel,next);render();}
-  });
+  window.addEventListener('hashchange', () => { Object.assign(sel, readHash()); render(); play(); });
 
-  // For browser checks and the console: select by fields, or by a scene id the adapter knows.
-  // The first character loads as its view will show it (the stage playing for the scene, resting for any other), and then the view shows.
-  const ready=(async()=>{const {view:firstView,board:url,...first}=readHash();board.url=url;Object.assign(sel,first,{pack:'',card:''});
-    opening=firstView;await switchCard(first.pack,first.card,first.variant);opening='';setView(firstView);})();
-  root.studio={sel,ready,packs,get adapter(){return instance;},get view(){return view;},setView,
-    get matrix(){return {cells:matrix.cells.length,playing:matrix.playing.size,transport:adapter?.transport||null,board:board.shows};},
-    boardCell,
-    async select({pack,character,...patch}){if(pack||character)await switchCard(pack||sel.pack,character||sel.card);change(patch);},
-    async selectAsset(id,card=sel.card){
-      await switchCard(sel.pack,card);const found=instance?.find?.(id);if(!found)throw Error('No scene '+id);
-      setView('scene');Object.assign(sel,{face:null,...found});render();
-    }};
+  // The board loads with the address's selection, which then plays. For
+  // browser checks and the console: the selection, the board's instance,
+  // and the page's own buttons as calls.
+  const ready = (async () => {
+    Object.assign(sel, readHash());
+    renderMoods();
+    renderFaces();
+    try { await load(); } catch (error) { $('[data-status]').textContent = error.message; }
+    const key = name + '/' + entry.id;
+    const made = adapters[key] || StudioBoard.adapter(name, entry.board);
+    instance = made.create(ctx);
+    instance.setSound();
+    render();
+    play();
+    await instance.ready.catch(() => {});
+  })();
+  root.studio = {sel, ready, pack, get adapter() { return instance; }, get moment() { return moment; },
+    get stills() { return stills; }, select: patch => change(patch), play, answer, miss, switchMotion};
 })();

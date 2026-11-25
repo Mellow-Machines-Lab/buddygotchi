@@ -1,0 +1,15 @@
+{
+ "why": "Each of Boop's skits' Moments as the Mac's MomentOutput sends it, its takes left out: StudioMomentTests checks the Mac against it, and studio.test.cjs the studio's logic.js",
+ "moments": [
+  {"skit": "win", "mood": "happy", "loops": 2, "name": "task_complete",
+   "args": {"outcome": "success", "turn": 1, "invite": {"skit": "win", "pose": "palm", "touch": "tap", "payoff": "highfive", "label": "tap", "ms": 4000, "xp": 3},
+            "xp": 5, "who": {"agent": "claude", "thread": "Studio"}, "mood": "happy", "loops": 2}},
+  {"skit": "upset", "mood": "sad", "loops": 3, "name": "task_complete",
+   "args": {"outcome": "failure", "turn": 1, "invite": {"skit": "upset", "pose": "back", "touch": "stroke", "payoff": "sigh", "label": "pet", "ms": 4000, "xp": 3},
+            "who": {"agent": "claude", "thread": "Studio"}, "mood": "sad", "loops": 3}},
+  {"skit": "fix", "mood": "pleased", "loops": 2, "name": "react",
+   "args": {"sign": "tests fixed", "low": true, "xp": 5, "clip": "flop", "mood": "pleased", "loops": 2}},
+  {"skit": "back", "mood": "happy", "loops": 2, "name": "wake_up",
+   "args": {"invite": {"skit": "back", "pose": "lean", "touch": "stroke", "payoff": "purr", "label": "pet", "ms": 4000, "xp": 3}, "mood": "happy", "loops": 2}}
+ ]
+}

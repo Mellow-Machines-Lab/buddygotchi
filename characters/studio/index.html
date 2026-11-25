@@ -6,6 +6,7 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="studio.css">
 <script src="packs.js" defer></script>
+<script src="logic.js" defer></script>
 <script src="board.js" defer></script>
 <script src="studio.js" defer></script>
 </head>
@@ -15,80 +16,78 @@
 <header class="top">
   <div class="brand">
     <h1>Character Studio</h1>
-    <p>Every mood against every state, drawn by the character's own preview. Click a cell to look at it closely.</p>
+    <p data-about>The character's moves, faces and moments, each played by the board's own firmware.</p>
+  </div>
+  <div class="controls">
+    <label class="mood"><span>Mood</span><select data-mood></select></label>
+    <button type="button" data-sound aria-pressed="false">Sound off</button>
+    <label class="volume"><span>Volume</span><input type="range" data-volume min="0" max="100" value="50"></label>
   </div>
 </header>
 
-<div class="characters" role="tablist" aria-label="Preview" data-cards></div>
-
 <p class="missing" data-missing hidden>No pack data yet. From the repository root, run <code>python3 characters/charactergen.py --check</code>, then reload.</p>
 
-<button type="button" class="back" data-view="scene" data-back hidden>‹&nbsp; Every mood and state</button>
-<main class="layout" data-view="scene" hidden>
-  <section class="stage-column" aria-label="Preview">
+<main class="layout" data-layout>
+  <section class="stage-column" aria-label="The board">
     <div class="stage-frame">
       <div class="stage" id="stage"></div>
-      <p class="empty" data-empty hidden></p>
-      <button type="button" class="start" data-start hidden>▶&nbsp; Start</button>
     </div>
     <div class="status" data-status aria-live="polite"></div>
-
     <div class="now">
       <h2 data-title></h2>
       <p data-caption></p>
-      <dl class="meaning">
-        <dt data-mood-term></dt><dd data-mood-describe></dd>
-        <dt data-state-term></dt><dd data-state-describe></dd>
-      </dl>
-      <p class="note" data-note hidden></p>
     </div>
-
-    <div class="row variants" data-variants>
-      <button type="button" class="icon" data-prev aria-label="Previous variation">‹</button>
-      <label class="grow"><span class="visually-hidden" data-variation-label>Variation</span><select data-variation></select></label>
-      <button type="button" class="icon" data-next aria-label="Next variation">›</button>
-    </div>
-
-    <div class="row" data-facts hidden></div>
-    <div class="row" data-faces hidden><span class="row-label">Face</span><div class="segmented" data-face-choice role="group" aria-label="Face"></div></div>
-
-    <div class="row transport" data-transport="clip" hidden>
-      <button type="button" class="primary" data-play>Play</button>
-      <label class="check"><input type="checkbox" data-loop checked> Loop</label>
-      <label class="grow scrub"><span class="visually-hidden">Inspect frame</span><input type="range" data-seek min="0" max="10" step="0.01" value="0"></label>
-      <span class="time" data-time>0.0 s</span>
-    </div>
-    <div class="row transport" data-transport="live" hidden>
-      <button type="button" class="primary" data-pause>Pause</button>
-      <button type="button" data-replay>Replay state</button>
-      <button type="button" data-poke>Poke</button>
-      <button type="button" data-shake>Shake</button>
-    </div>
-
-    <div class="row sound">
-      <button type="button" data-sound aria-pressed="false">Sound off</button>
-      <label class="grow volume"><span>Volume</span><input type="range" data-volume min="0" max="100" value="50"></label>
+    <div class="picker motion" data-motion-box hidden>
+      <div class="picker-head"><h3>Motion</h3><span>the layer under every clip, on until you switch one off</span></div>
+      <div class="chips" data-motion role="group" aria-label="Motion rules"></div>
     </div>
   </section>
 
   <section class="pick-column" aria-label="Choose">
-    <div class="picker">
-      <div class="picker-head"><h3>Mood</h3><span>how it feels</span></div>
-      <div data-moods></div>
-      <p class="legend" data-legend hidden><span class="chip borrowed sample">Dashed</span> moods have no art of their own on this character. It shows the mood after the arrow instead.</p>
+    <div class="tabs" role="tablist" aria-label="View">
+      <button type="button" role="tab" data-tab="moves">Moves <kbd>1</kbd></button>
+      <button type="button" role="tab" data-tab="faces">Faces <kbd>2</kbd></button>
+      <button type="button" role="tab" data-tab="moments">Moments <kbd>3</kbd></button>
     </div>
-    <div class="picker">
-      <div class="picker-head"><h3>State</h3><span>what the agents are doing</span></div>
-      <div data-states></div>
+
+    <div class="picker" data-view="moves" hidden>
+      <div class="row find-row">
+        <label class="grow"><span class="visually-hidden">Find a move</span><input type="search" data-find placeholder="Find a move (/)" autocomplete="off"></label>
+        <span class="row-label">Over</span>
+        <div class="segmented" data-over role="group" aria-label="What a move plays over">
+          <button type="button" data-value="idle">Idle</button><button type="button" data-value="working">Working</button><button type="button" data-value="asleep">Asleep</button>
+        </div>
+      </div>
+      <div data-moves></div>
+    </div>
+
+    <div class="picker" data-view="faces" hidden>
+      <p class="hint" data-faces-about></p>
+      <div class="group-label">The Mac's faces: a mood, or a Moment's emotion</div>
+      <div class="faces" data-faces-mac></div>
+      <div class="group-label">The board's own: no rule or brain picks one yet</div>
+      <div class="faces" data-faces-board></div>
+    </div>
+
+    <div class="picker" data-view="moments" hidden>
+      <div class="skits" data-skits></div>
+      <div class="row">
+        <label class="field"><span>Size</span><select data-size></select></label>
+        <label class="field grow"><span>Words</span><select data-take></select></label>
+      </div>
+      <div class="row">
+        <button type="button" class="primary" data-play>Play <kbd>Space</kbd></button>
+        <button type="button" data-answer>Answer <kbd>A</kbd></button>
+        <button type="button" data-miss>Miss <kbd>M</kbd></button>
+      </div>
+      <p class="invite-now" data-invite-now aria-live="polite"></p>
+      <dl class="wire">
+        <dt>Sent</dt><dd><code data-sent>Nothing yet.</code></dd>
+        <dt>The board said</dt><dd><code data-heard>Nothing yet.</code></dd>
+      </dl>
     </div>
   </section>
 </main>
-
-<section class="matrix" data-matrix data-view="matrix" aria-label="Every mood and state" hidden>
-  <p class="matrix-head" data-matrix-about></p>
-  <p class="board-now" data-board-now hidden><span class="dot"></span><span data-board-text></span> <button type="button" data-board-show>Show it</button></p>
-  <div class="matrix-scroll" data-matrix-scroll><table data-matrix-table></table></div>
-</section>
 
 <details class="tools" data-tools hidden>
   <summary>Tools</summary>
@@ -96,8 +95,8 @@
 </details>
 
 <footer class="foot">
-  <p class="keys">In a cell: <kbd>←</kbd><kbd>→</kbd> variation · <kbd>↑</kbd><kbd>↓</kbd> state · <kbd>Space</kbd> play or pause · <kbd>S</kbd> sound · <kbd>P</kbd> poke · <kbd>M</kbd> every mood and state</p>
-  <p>Nothing here talks to the app or the network. Each character's preview comes from its own pack, and each board's is its firmware, which runs from the studio's server (or the simulator's, which <code>make dev</code> starts, where the matrix also marks what the simulated board shows).</p>
+  <p class="keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> moves, faces, moments · <kbd>↑</kbd><kbd>↓</kbd> the one before or after · <kbd>Space</kbd> play again · <kbd>/</kbd> find a move · <kbd>A</kbd> answer · <kbd>M</kbd> miss · <kbd>S</kbd> sound</p>
+  <p>Nothing here talks to the app or the network. The board is its firmware, which runs from the studio's server (or the simulator's, which <code>make dev</code> starts).</p>
 </footer>
 
 </div>

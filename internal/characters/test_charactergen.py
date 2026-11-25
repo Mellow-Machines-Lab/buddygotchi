@@ -134,9 +134,31 @@ class StudioRuleTests(unittest.TestCase):
                          {"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "wears": {"sad": "calm"}})
         board = {"id": "board-face", "label": "Face on the board", "about": "its firmware, in WebAssembly", "icon": "board.svg",
                  "board": "face", "scripts": [], "styles": [], "wears": {}}
+        self.assertEqual(data["move_groups"], list(gen.MOVE_GROUPS))
         self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
-                                                  "studio": [board]},
-                         "only what the matrix and the scene draw: the moods' meanings and families, and the previews")
+                                                  "faces": [{"id": "calm", "family": "settled", "face": "A face."}], "moves": [],
+                                                  "skits": [], "takes": [], "words": {}, "motion": [], "studio": [board]},
+                         "only what the page shows: the moods' meanings and families, the faces, moves, skits and motion "
+                         "rules, and the previews")
+
+    def test_what_the_page_reads_of_a_pack(self):
+        """Its faces, the board's own marked; its skits, their takes and the word by each touch an invite asks; and the rules
+        of its face's motion layer, from its firmware."""
+        pack = self.pack("full", [{"id": "calm"}], board_faces=[{"id": "deadpan", "family": "settled", "settles": "calm", "face": "Flat."}],
+                         skits=[{"id": "win", "slots": ["doneLong"], "invite": {"pose": "palm", "touch": "tap", "payoff": "highfive"}}],
+                         files=[("steering/signs.md", "<!-- [invite tap] not this -->\n- [idle] hi\n- [invite tap] tap\n- [invite tap] again\n"
+                                                      "- [invite stroke] pet\n"),
+                                ("mac/takes.tsv", "# a comment\nv1\nw.1\tDone\tskit\twin\tword\tcalm proud\tsuccess\t900\n"
+                                                  "r.1\tYes\treply\tyes\tword\tcalm\t\t500\n"),
+                                ("firmware/src/render/gel/lively.h", 'constexpr RuleInfo kRules[kRuleCount] = {\n    {"stretch", true}, {"face", false}};\n')])
+        data = gen.studio_data([pack], pack, self.studio)["packs"]["full"]
+        self.assertEqual(data["faces"], [{"id": "calm", "family": None, "face": "A face."},
+                                         {"id": "deadpan", "family": "settled", "face": "Flat.", "board": True}])
+        self.assertEqual(data["skits"][0]["invite"]["payoff"], "highfive")
+        self.assertEqual(data["takes"], [{"id": "w.1", "text": "Done", "skit": "win", "kind": "word", "moods": ["calm", "proud"],
+                                          "finish": "success"}], "a skit's takes, no reply's")
+        self.assertEqual(data["words"], {"tap": "tap", "stroke": "pet"}, "the first of each, none in a comment")
+        self.assertEqual(data["motion"], ["stretch", "face"])
 
     def test_a_board_for_each_face(self):
         """The studio's own preview of each face a pack's boards have, once each, in the order the boards name them."""
@@ -345,9 +367,24 @@ class RigRuleTests(unittest.TestCase):
                     "inline constexpr Rig kRig = {{}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
             self.assertIn(row, text)
 
+    def test_the_moves_are_the_clips_in_their_groups(self):
+        """The studio's moves (§12): each clip with its group, what it is, how long, whether it loops, and the look it's
+        the base of: a state's, an activity's while working, or a tier's, the first that names it."""
+        rig, problems = self.rig({
+            "clips/hop.json": {"about": "Hops.", "group": "pastimes", "ms": 400, "tracks": {"lift": [[0, 0], [400, 0]]}},
+            "clips/sway.json": {"group": "bases", "ms": 200, "loop": True, "tracks": {"lean": [[0, 0], [200, 0]]}},
+            "clips/type.json": {"ms": 200, "loop": True, "tracks": {"lean": [[0, 0], [200, 0]]}},
+            "looks.json": {"idle": {"clip": "sway"}, "working": {"tiers": {"tier2": "sway", "tier1": "type"}}},
+        })
+        self.assertEqual(problems, [])
+        self.assertEqual(gen.moves(rig), [
+            {"id": "hop", "group": "pastimes", "about": "Hops.", "ms": 400, "loop": False},
+            {"id": "sway", "group": "bases", "about": "", "ms": 200, "loop": True, "look": {"state": "idle"}},
+            {"id": "type", "group": None, "about": "", "ms": 200, "loop": True, "look": {"state": "working", "tag": "tier1"}}])
+
     def test_a_bad_edit_fails_with_its_file_and_key(self):
         _, problems = self.rig({
-            "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[300, "pop"], [400, "pop"], [10, "Thud"]],
+            "clips/hop.json": {"id": "hop", "group": "dancing", "ms": 400, "cues": [[300, "pop"], [400, "pop"], [10, "Thud"]],
                                "tracks": {"nose": [[0, 0]], "squash": [[0, 0], [10, 2500]],
                                           "lift": [[0, 0], [100, 300], [100, 0], [200, 0, "bouncy"]]}},
             "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"lean": [[0, 0], [200, 100]]}},
@@ -363,6 +400,7 @@ class RigRuleTests(unittest.TestCase):
             "rig/clips/Bad Name.json: its name, the clip's id, isn't lower case, digits, - and _",
             "rig/clips/Bad Name.json: ms: 0 isn't a whole number from 1 to 60000",
             "rig/clips/hop.json: id: unknown key",
+            "rig/clips/hop.json: group: 'dancing' isn't one of bases, work_poses, moments, touch_answers, pastimes, with_you",
             "rig/clips/hop.json: tracks.nose: isn't a channel",
             "rig/clips/hop.json: tracks.squash[1]: its value, 2500, isn't a whole number from -2000 to 2000",
             "rig/clips/hop.json: tracks.lift[2]: its time, 100, isn't a whole ms after the key before's and at most 400",

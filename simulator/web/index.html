@@ -6,7 +6,7 @@
 <style>
   body { margin: 0; padding: 16px; box-sizing: border-box; min-height: 100vh; display: flex; flex-wrap: wrap; gap: 24px;
          align-items: center; justify-content: center; background: #121212; }
-  .matrix { position: fixed; top: 12px; right: 16px; font: 13px system-ui, sans-serif; color: #9aa1aa; }
+  .studio { position: fixed; top: 12px; right: 16px; font: 13px system-ui, sans-serif; color: #9aa1aa; }
   body:has(.playlist) { flex-wrap: nowrap; align-items: flex-start; }
   .playlist { flex: 0 0 230px; margin: 0; padding: 0 0 0 28px; max-height: calc(100vh - 32px); overflow-y: auto;
               font: 13px system-ui, sans-serif; color: #9aa1aa; line-height: 1.9; }
@@ -16,8 +16,8 @@
   .playlist li.now { color: #fff; font-weight: 600; }
   .playlist small { color: #666; margin-left: 6px; }
 </style>
-<!-- serve.py serves the Character Studio beside the board; its matrix marks what the board it names shows. -->
-<a class="matrix" href="characters/studio/#view=matrix" target="boop-matrix">Every mood and state ↗</a>
+<!-- serve.py serves the Character Studio beside the board: the character's moves, faces and moments, on a board of its own. -->
+<a class="studio" href="characters/studio/" target="boop-studio">Character Studio ↗</a>
 <!-- The local page (simulator/web/serve.py, which make dev starts): one board with its controls.
      ?demo=boop/finishes plays a recorded demo, its pack then its name, and ?demos=all every one, one after
      another, with a list to jump to one (simulator/tools/demos.py lays them out in demo/).
@@ -90,7 +90,4 @@
     document.body.append(board);
     window.simulator = board;
   }
-  // The matrix marks the board's cell: the first board's, with several; a demo has no cable to ask.
-  const named = ask.get('boards')?.split(',')[0];
-  if (!ask.get('demo') && !ask.get('demos')) document.querySelector('.matrix').href += `&board=/board${named ? '/' + named : ''}`;
 </script>

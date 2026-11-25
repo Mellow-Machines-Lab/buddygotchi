@@ -859,11 +859,14 @@ from elsewhere brings its own.
 
 ## 12. The studio (optional)
 
-The [Character Studio](studio/README.md), `characters/studio/`, is one
-contact sheet for any pack: every mood against every one of the engine's
-states, each cell drawn by a preview, and one cell large when clicked. A
-pack opts in to a preview of its own with `studio` in `character.json`,
-a list with an entry for each preview it brings. Boop's, cut to one of its
+The [Character Studio](studio/README.md), `characters/studio/`, plays the
+chosen pack on its board's firmware: its moves (every rig clip, in the
+groups the clips name, §15), its faces (every one the board draws, the
+board's own marked), its moments (each of its `skits` as the Mac sends
+it, with its invite answered or missed) and its face's motion switches,
+with the mood at the top. It reads all of them from the pack's files.
+A pack adds to its board's card with `studio` in `character.json`, a
+list with an entry for each preview it brings. Boop's, cut to one of its
 families:
 
 ```json
@@ -881,13 +884,15 @@ families:
 
 - `scripts` and `styles`: files the page loads, in order. One script
   registers the entry's adapter ([the studio's README](studio/README.md),
-  Writing an adapter). The adapter's own files go in the pack's `studio/`
+  A pack's tools). The adapter's own files go in the pack's `studio/`
   folder, which the app doesn't bundle.
 - `id`: the name the adapter registers under and the preview's card goes by,
   its own among the pack's entries.
 - `wears`: optional, a JSON file whose `borrows` table names, for each mood
-  the preview has no art of its own for, the mood whose art it shows.
-- `families`: optional, a label and colour for each `family` the moods name.
+  the preview has no art of its own for, the mood whose art it shows. The
+  board draws every mood, so the page doesn't read it now.
+- `families`: optional, a label and colour for each `family` the moods
+  name, which the mood picker groups them by.
 - `label`, `about` and `icon` (an image): optional, for the character's
   card.
 - `captures`: optional, a JSON file of `{"cases": [{"id": ...}]}`, the only
@@ -929,9 +934,9 @@ No tool makes a new character now. To make one by hand:
    doesn't speak.
 5. Run `make -C internal build` and `.build/debug/boopdev check`.
 6. Flash it: `make flash CHARACTER=<yours>`.
-7. Optionally, write it demos ([DEMOS.md](DEMOS.md)). To look at every
-   mood and state on its board, open the Character Studio (§12); a studio
-   entry of its own is only for a preview that isn't the board.
+7. Optionally, write it demos ([DEMOS.md](DEMOS.md)). To look at its
+   moves, faces and moments on its board, open the Character Studio
+   (§12), and give each clip a `group` (§15) so it's listed with its kind.
 
 ## 15. The rig (optional)
 
@@ -985,6 +990,7 @@ tracks:
 | `tracks` | no | For each channel, its keys in order of time, `[ms, value]` or `[ms, value, ease]`, the ease into the key from the one before: `linear`, `in`, `out` or `inout`, which a key without one has. Before its first key a track holds that key's value, and after its last the last's |
 | `cues` | no | `[ms, name]`, each before `ms`: a sound the face plays by name as it crosses it. The gel's are its contacts' kinds (`body_contact` and the rest, slimegen's `recipes.mjs`) |
 | `about` | no | What it is, for people |
+| `group` | no | Where the [Character Studio](studio/README.md) lists it: `bases` (a look's clip, and the moves between them), `work_poses`, `moments` (a reply's, a meme face's, the knock), `touch_answers` (an invite's poses, payoffs, misses and late returns), `pastimes` or `with_you` (`MOVE_GROUPS` in `charactergen.py`). Without one it's listed last, and `--check` says so as a gap |
 
 A pack has at most 255 clips, a track 255 keys, a clip 255 cues and a look
 255 occasions (`MOST` in `charactergen.py`).

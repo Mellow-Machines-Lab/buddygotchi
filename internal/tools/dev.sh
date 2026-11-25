@@ -2,7 +2,7 @@
 # `make dev`: the debug app on a folder of its own, with everything that
 # watches it. Builds the app, puts the simulator window's page beside it
 # (Boop's body when onboarding or Settings makes it so), starts the
-# studio's server in the background and opens the studio's matrix, and
+# studio's server in the background and opens the Character Studio, and
 # the live dashboard in a Terminal window of its own, then runs the app here,
 # printing everything. Ctrl-C quits the app and stops the server and the
 # dashboard with it.
@@ -60,7 +60,7 @@ else
   SIM_PID=$!
   for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null "$SIM_URL/characters/studio/" && break; sleep 0.5; done
 fi
-curl -s -o /dev/null "$SIM_URL/characters/studio/" && open "$SIM_URL/characters/studio/#view=matrix"
+curl -s -o /dev/null "$SIM_URL/characters/studio/" && open "$SIM_URL/characters/studio/"
 
 DASH="internal/tools/boopctl dash --state-dir '$STATE'"
 osascript -e "tell application \"Terminal\" to do script \"cd '$PWD' && $DASH\"" >/dev/null

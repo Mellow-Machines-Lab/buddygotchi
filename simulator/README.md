@@ -13,14 +13,12 @@ It draws the staged pack's face, Boop's gel, on the AMOLED board. Add
 `?zoom=2` for a bigger one. It uses no Bluetooth, so an agent's shell may
 run it.
 
-**Every mood and state alongside.** The same server serves the
+**The Character Studio alongside.** The same server serves the
 [Character Studio](../characters/studio/README.md) at
-`http://127.0.0.1:8206/characters/studio/`; the page's "Every mood and
-state" link opens its matrix with `&board=/board`, so it marks the cell
-the board shows now (`/board`, under USB below; the first board's, with
-several). The studio's own boards, a preview of each face, are this
-`Board` too: the server serves the page's files again at `/simulator/`,
-where the studio looks for them
+`http://127.0.0.1:8206/characters/studio/`, which the page's link opens:
+the character's moves, faces and moments. The studio's board is this
+`Board` too, one of its own: the server serves the page's files again at
+`/simulator/`, where the studio looks for them
 ([characters/studio/README.md](../characters/studio/README.md), On the
 board). It is the studio's only server: with `--capture-dir DIR` it saves
 the review clips a pack's tools record, only from its own page;
@@ -252,8 +250,7 @@ next keepalive with a board that's forgotten it.
 **What the board shows.** `GET /board` (`/board/NAME` for a cable) sends
 the board `{"t":"dbg.state"}` as a tool on the cable would, so the
 clients hear the reply too, and answers with the board's reply, or
-`null` when no page is open or it says nothing within a second. The
-studio's matrix asks once a second while it's open. Beside it,
+`null` when no page is open or it says nothing within a second. Beside it,
 `/characters/` is the repository's `characters/` folder, tidied first,
 so nothing outside it is served.
 
