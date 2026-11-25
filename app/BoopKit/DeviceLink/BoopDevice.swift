@@ -120,9 +120,13 @@ public struct DeviceInfo: Equatable, Sendable {
     /// Which board it is (`cyd24`, `amoled206`), or nil from firmware that
     /// doesn't say (`BoardFirmware.board(of:)` works it out).
     public var board: String?
+    /// Whether it plays a skit's invite (`Moment.invite`) and says how it
+    /// ended (`ev invite`): its `"invites":1`. The Mac sends none to a
+    /// board that doesn't say so.
+    public var invites: Bool
 
     public init(id: String, fw: String, voice: String? = nil, face: Face = .pixel, pack: String? = nil, reset: String? = nil,
-                board: String? = nil) {
+                board: String? = nil, invites: Bool = false) {
         self.id = id
         self.fw = fw
         self.voice = voice
@@ -130,6 +134,7 @@ public struct DeviceInfo: Equatable, Sendable {
         self.pack = pack
         self.reset = reset
         self.board = board
+        self.invites = invites
     }
 
     /// Restarts that mean something went wrong on the board: a crash, a
@@ -143,7 +148,8 @@ public struct DeviceInfo: Equatable, Sendable {
         let pack = hello.fields["pack"]?.string.map { p in hello.fields["pack_version"]?.string.map { "\(p) \($0)" } ?? p }
         self.init(id: hello.id, fw: hello.fw, voice: hello.fields["voice"]?.string,
                   face: hello.fields["face"]?.string.flatMap(Face.init(rawValue:)) ?? .pixel, pack: pack,
-                  reset: hello.fields["reset"]?.string, board: hello.fields["board"]?.string)
+                  reset: hello.fields["reset"]?.string, board: hello.fields["board"]?.string,
+                  invites: (hello.fields["invites"]?.int ?? 0) >= 1)
     }
 
     /// Whether it plays the takes the app picks from: its card has the

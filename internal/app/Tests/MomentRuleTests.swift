@@ -271,14 +271,15 @@ final class MomentRuleTests: XCTestCase {
     }
 
     /// What wakes Jev, all of it: a turn's start, your lock and unlock, a
-    /// boop from the world, a session's start and Boop's growth have lines
-    /// at most, and never a pass; nor has the working check-in.
+    /// boop from the world, a session's start, Boop's growth and an
+    /// invite's end have lines at most, and never a pass; nor has the
+    /// working check-in.
     func testWhatWakesJev() {
         XCTAssertEqual(Set(TranscriptView.wakes.keys),
                        ["prompt", "turn_end", "last_message", "tool_end", "poke", "talk", "presence_end", "heartbeat", "needs_you_end",
                         "gesture", "ask", "wish_end", "act_start", "act_end"])
         XCTAssertEqual(Set(TranscriptView.quiet),
-                       ["turn_start", "presence_start", "needs_you_start", "press", "wish_start", "growth", "lock_start", "lock_end", "world"])
+                       ["turn_start", "presence_start", "needs_you_start", "press", "wish_start", "growth", "invite", "lock_start", "lock_end", "world"])
         let view = TranscriptView()
         let log = Transcript.log().view(now: 0)
         let working = Event(at: 0, source: .clock, type: .checkIn, specificType: "working")

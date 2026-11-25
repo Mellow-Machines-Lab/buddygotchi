@@ -45,6 +45,13 @@ public enum Signs {
         return (fit.filter { $0.tags.count > 1 } + fit.filter { $0.tags.count == 1 }).map(\.text).prefix(maxOffered).map { $0 }
     }
 
+    /// The word the board shows by the place to touch when a skit invites
+    /// `touch`: `signs.md`'s first `[invite tap]` or `[invite stroke]` line,
+    /// or nil for none, and then the glow alone.
+    public static func invite(_ lines: [TaggedLine], touch: Skit.Invite.Touch) -> String? {
+        lines.first { $0.tags == ["invite", touch.rawValue] && $0.text.count <= maxLength }?.text
+    }
+
     /// What it may hold up for the notice `kind`: `signs.md`'s `[notice
     /// waiting]` lines, `{agent}` filled in, each at most `maxLength`, without
     /// the last one held up while another fits.

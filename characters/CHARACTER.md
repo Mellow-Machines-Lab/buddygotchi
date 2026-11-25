@@ -382,6 +382,11 @@ your prompt (`Signs`, the `react.sign` question, asked only when NOW is a
 prompt's reading, not a message's). A pack without the file holds up no
 signs.
 
+Its `[invite tap]` and `[invite stroke]` lines are the word the board shows
+by the place to touch when a skit invites that touch (`Signs.invite`, the
+first of each; Boop's and Pixel's say `tap` and `pet`). A pack with none
+shows the glow alone.
+
 Its `[world]` lines, and `[world boop]`, `[world wave]`, `[world heart]` and
 `[world cheer]`, the kind's first, are what it may hold up when another buddy
 reaches out from the world (`Signs.world`): Jev picks one at the `world` event.
@@ -487,17 +492,36 @@ A take's part says what it is:
 
 `skits` in `character.json` names each skit and the slots it plays at,
 the rules' readings of an event (`RulesBrain.Slot`); code says when each
-plays and whether it swears (`Skits.play`). An id missing, a slot that
-isn't one, or a slot in two skits, and the pack doesn't load. Boop's:
+plays and whether it swears (`Skits.play`). A skit may have an `invite`:
+after it plays, Boop turns to you in a `pose` (`palm`, `lean` or `back`)
+and waits for one `touch` (`tap` or `stroke`), which pays off
+(`highfive`, `purr` or `sigh`), each a name the board plays (`Skit.Invite`).
+An id missing, a slot that isn't one, a slot in two skits, or an invite
+whose pose, touch or payoff isn't one, and the pack doesn't load. Boop's
+and Pixel's:
 
 ```json
 "skits": [
-  {"id": "win",   "slots": ["doneLong", "doneVeryLong"]},
-  {"id": "upset", "slots": ["failed", "failedVeryLong", "gaveUp", "checkFailing"]},
+  {"id": "win",   "slots": ["doneLong", "doneVeryLong"],
+   "invite": {"pose": "palm", "touch": "tap", "payoff": "highfive"}},
+  {"id": "upset", "slots": ["failed", "failedVeryLong", "gaveUp", "checkFailing"],
+   "invite": {"pose": "back", "touch": "stroke", "payoff": "sigh"}},
   {"id": "fix",   "slots": ["checkFixed"]},
-  {"id": "back",  "slots": ["back", "backDays", "backAfterADay"]}
+  {"id": "back",  "slots": ["back", "backDays", "backAfterADay"],
+   "invite": {"pose": "lean", "touch": "stroke", "payoff": "purr"}}
 ]
 ```
+
+Code asks a skit's invite (`MomentOutput`, `InviteLedger`): only of a board
+whose `hello` says `"invites":1`, never on a call or while something needs
+you, at most 10 a Boop day, and after 3 misses in a row of a pose only
+every second time. It rides the `do`'s `args` as `invite` (`skit`, `pose`,
+`touch`, `payoff`, the `label` by the place to touch, the wait `ms`, 4000,
+or 12000 for the very first, and the `xp` the touch earns), and the board
+plays it inside that `do` and reports how it ended with `ev invite`
+(`answered`, `missed`, `late` or `cut`). The label is the pack's (`signs.md`'s
+`[invite tap]` and `[invite stroke]`), shown until the pose was answered 5
+times, and again after 3 misses in a row of it.
 
 `win` is a turn of a minute or more done ("Done", "Nailed it"), `upset` a
 failed turn, the agent giving up, or the third failed check in a row ("Oh

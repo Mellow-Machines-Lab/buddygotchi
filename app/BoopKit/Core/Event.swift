@@ -100,6 +100,13 @@ extension Event {
         /// nobody did (`ignored`), with the question's `q`, its words
         /// (`question`), the `answer` and whether Boop `keeps` it.
         case ask
+        /// An invite's end, which the board decides: how it ended as the
+        /// `specific_type` (`answered`, `missed`, `late` or `cut`,
+        /// `Moment.Invite.End`), with the skit's id (`skit`), the touch it
+        /// asked for (`touch`), its pose (`pose`, the pack's for the skit)
+        /// and how long after the pose began (`ms`). It wakes no pass; an
+        /// answer is your touch.
+        case invite
     }
 
     /// Where in its life a thing with a start and an end is: a tool call

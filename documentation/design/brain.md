@@ -51,7 +51,7 @@ not run out.
 | 1. Rules | The mood and its fades, the face at every event, sizes, moves, touches, locks | Always | None | Nothing |
 | 2. The calling agent | Offers Boop's line for the turn's end, says how you seemed, notes one thing worth remembering | While an agent's turn runs | None | The card tools the agent already calls |
 | 3. The dream | Writes Boop's memory, and fresh lines for the next day | While Boop sleeps | None | The buyer's own agent tool, run by Boop |
-| 4. Skits | Says a word at the few moments that call for one, each from takes of its own | A long win, a failure, a fix, you back | None | Recorded takes on the board |
+| 4. Skits | Says a word at the few moments that call for one, each from takes of its own, and may invite one touch after | A long win, a failure, a fix, you back | None | Recorded takes on the board |
 | On top: Jev | A finer pick of emotion, for people who add a key | When a key is there | 0.3 s | A key |
 
 Each layer works without the ones below it in the table, and Boop is whole
@@ -166,6 +166,37 @@ four:
   nothing, as before.
 - The takes are the recorded voice's, listed again as the skit's
   (voicegen's `SKIT_OF`): no new recordings, and no board needs a new card.
+
+### The invite
+
+A skit answers "it spoke to me, but what next?" with one touch. After the
+`win`, the `upset` and the `back`, Boop may turn to you in a pose and ask
+for one touch with its body, never with words: a palm held up for a tap
+(it high-fives), its back turned for a stroke (it sighs), a lean in for a
+stroke (it purrs). You never talk back.
+
+| Skit | Pose | Touch | Payoff |
+| --- | --- | --- | --- |
+| `win` | `palm` | `tap` | `highfive` |
+| `upset` | `back` | `stroke` | `sigh` |
+| `back` | `lean` | `stroke` | `purr` |
+
+- It is part of the Moment's `do`: the board plays the body and the take,
+  then the pose and the wait, then the payoff or a shrug, and only then
+  ends the `do`. With the agent's offered line after a finish, it rides
+  that second Moment, so the pose comes after the line.
+- Code asks it, no brain: only of a board that says it plays invites,
+  never on a call or while something needs you, at most 10 a Boop day,
+  and after 3 misses in a row of a pose only every second time
+  (`InviteLedger`, a fold of the transcript). The wait is 4 s, and 12 s
+  the very first time, so everyone learns the loop once (no longer, so the
+  longest Moment, the wait and the payoff end inside the link's 60 s grace). The pack's word
+  by the place to touch ("tap", "pet") shows until a pose was answered 5
+  times, and again after 3 misses in a row.
+- The touch that answers is the invite's: in time, or late within 30 s of
+  a miss, it does what that touch does, once (care XP shown as "+3 XP", a
+  pet wish met, a stroke's soothing). HISTORY reads how it ended as one
+  plain line; it wakes no pass.
 
 ## Jev, on top
 

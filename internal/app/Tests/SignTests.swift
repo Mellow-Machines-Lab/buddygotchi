@@ -99,14 +99,15 @@ final class SignTests: XCTestCase {
     /// with a short phrase, in the board's fonts (printable ASCII), and
     /// its tags are ones a reading or the calendar can have: the calendar
     /// signs hear is `Core.calendar`, never the board's or the tiers' tags,
-    /// and your answers kept from the pack's asks.
+    /// your answers kept from the pack's asks, and an invite's touch.
     func testThePacksSignsFit() throws {
         for pack in ["boop", "pixel"] {
             let asks = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/asks.md")
             let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
                 .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
             let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle", "world", "notice"] + Notices.Kind.allCases.map(\.rawValue) + World.GestureKind.allCases.map(\.rawValue) + Days.calendarTags + answers)
+                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle", "world", "notice"] + Notices.Kind.allCases.map(\.rawValue) + World.GestureKind.allCases.map(\.rawValue)
+                + ["invite"] + Skit.Invite.Touch.allCases.map(\.rawValue) + Days.calendarTags + answers)
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
             XCTAssertGreaterThan(signs.count, 10, pack)

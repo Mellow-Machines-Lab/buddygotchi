@@ -10,6 +10,8 @@ final class SkitTests: XCTestCase {
     let skits = [Skit(id: "win", slots: [.doneLong, .doneVeryLong]),
                  Skit(id: "upset", slots: [.failed, .failedVeryLong, .gaveUp, .checkFailing]),
                  Skit(id: "fix", slots: [.checkFixed]), Skit(id: "back", slots: [.back, .backDays, .backAfterADay])]
+    /// The same, with the invites the packs give them (`InviteTests`).
+    let invited = [InviteTests.win, InviteTests.upset, Skit(id: "fix", slots: [.checkFixed]), InviteTests.back]
 
     func play(_ slot: RulesBrain.Slot, _ facts: [String: JSONValue] = [:], swears: Bool = true) -> String? {
         Skits.play(slot: slot, facts: facts, swears: swears, in: skits).map { $0.skit.id + ($0.swears ? " swearing" : "") }
@@ -60,10 +62,11 @@ final class SkitTests: XCTestCase {
     }
 
     /// Both packs have the four skits, each at the slots the skits' table
-    /// names.
+    /// names, and three of them an invite.
     func testThePacksSkitsParse() throws {
         for pack in try Self.packs() {
-            XCTAssertEqual(pack.skits, skits, pack.id)
+            XCTAssertEqual(pack.skits, invited, pack.id)
+            XCTAssertEqual(pack.skits.map(\.slots), skits.map(\.slots), pack.id)
         }
     }
 

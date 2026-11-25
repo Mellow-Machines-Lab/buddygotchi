@@ -50,7 +50,8 @@ public struct Growth: Equatable, Sendable, Codable {
         case ships
         /// A check that passed after it failed.
         case fixes
-        /// Your time with Boop: a care touch that isn't rough, your words, a met wish.
+        /// Your time with Boop: a care touch that isn't rough, an invite
+        /// answered, your words, a met wish.
         case care
     }
 
@@ -84,6 +85,7 @@ public struct Growth: Equatable, Sendable, Codable {
         if e.type == .act, e.phase == .end, e.specificType == "push", e["passed"]?.bool == true { return .ships }
         switch e.type {
         case .gesture? where Touch(e).map({ $0.isCare && !$0.isRough }) == true: return .care
+        case .invite? where Touch.answering(e) != nil: return .care
         case .said?: return .care
         case .wish? where e.phase == .end && e.specificType == Core.WishEnd.met.rawValue: return .care
         default: return nil

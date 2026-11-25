@@ -15,6 +15,9 @@ public struct DayCounts: Codable, Equatable, Sendable {
     public var threadsOpened = 0
     /// Requests shown, those you answered, and how long those took.
     public var needsYou = 0, answered = 0, answerMs: Int64 = 0
+    /// Invites asked, answered in time, answered late and missed (one cut
+    /// short is none of them).
+    public var invitesAsked = 0, invitesAnswered = 0, invitesLate = 0, invitesMissed = 0
     /// Moments that said something, and your time at the Mac, for spoken per hour.
     public var spoken = 0, hereMinutes = 0
     public var hushes = 0, faceDown = 0
@@ -49,6 +52,8 @@ public struct DayCounts: Codable, Equatable, Sendable {
         try read(.disconnects, &disconnects); try read(.unpluggedMinutes, &unpluggedMinutes); try read(.failures, &failures)
         try read(.xpTurns, &xpTurns); try read(.xpShips, &xpShips); try read(.xpFixes, &xpFixes); try read(.xpCare, &xpCare)
         try read(.xpRefused, &xpRefused)
+        try read(.invitesAsked, &invitesAsked); try read(.invitesAnswered, &invitesAnswered); try read(.invitesLate, &invitesLate)
+        try read(.invitesMissed, &invitesMissed)
         ringHour = try c.decodeIfPresent(Int.self, forKey: .ringHour)
         quiet = try c.decodeIfPresent(Bool.self, forKey: .quiet)
         volume = try c.decodeIfPresent(Int.self, forKey: .volume)
@@ -69,6 +74,7 @@ public struct DayCounts: Codable, Equatable, Sendable {
             "days touched: \(week.filter { $0.touches > 0 }.count) of \(week.count)",
             "touches: \(sum(\.touches)), \(sum(\.touchesNoWish)) with no wish open",
             "wishes: \(sum(\.wishesMade)) made, \(sum(\.wishesMet)) met, \(sum(\.wishesGaveUp)) given up, waiting \(minutes(sum(\.wishWaitMs), of: ended)) on average",
+            "invites: \(sum(\.invitesAsked)) asked, \(sum(\.invitesAnswered)) answered, \(sum(\.invitesLate)) late, \(sum(\.invitesMissed)) missed",
             "threads opened from the board: \(sum(\.threadsOpened))",
             "needs you: \(sum(\.needsYou)), \(sum(\.answered)) answered, in \(minutes(sum(\.answerMs), of: sum(\.answered))) on average",
             "spoken: \(hours > 0 ? String(format: "%.1f", Double(sum(\.spoken)) / hours) : "-") an hour at the Mac (\(sum(\.spoken)) in \(sum(\.hereMinutes)) min)",
@@ -169,7 +175,7 @@ public final class CountsReader: TranscriptReader {
             s.row.xpRefused += Growth.xp(for: source) - added
         }
         if e.type != .presence, let last = s.lastAt, e.at - last >= MemoryReader.breakGapMs { s.leftTheMac() }
-        if Yours.touch(e) {
+        if Yours.touch(e) || Touch.answering(e) != nil {
             s.row.touches += 1
             if !s.wishOpen { s.row.touchesNoWish += 1 }
         }
@@ -177,6 +183,7 @@ public final class CountsReader: TranscriptReader {
         if e.kind == Event.did {
             if e.action == Core.openThread, e["ok"]?.bool != false { s.row.threadsOpened += 1 }
             if e.action == MomentOutput.outputName, e["ok"]?.bool != false, case .array(let takes)? = e["takes"], !takes.isEmpty { s.row.spoken += 1 }
+            if e.action == MomentOutput.outputName, e["ok"]?.bool != false, e[InviteLedger.askedFact] != nil { s.row.invitesAsked += 1 }
             // "Shh": the hush reply, which makes it quiet for a while.
             if e.action == MomentOutput.outputName, e["ok"]?.bool != false, e["reply"]?.string == MomentOutput.hushReply { s.row.hushes += 1 }
         }
@@ -202,6 +209,13 @@ public final class CountsReader: TranscriptReader {
                 s.row.answerMs += max(0, e.at - from)
             }
         case .gesture? where Touch(e) == .facedown: s.row.faceDown += 1
+        case .invite?:
+            switch Moment.Invite.End(rawValue: e.specificType) {
+            case .answered?: s.row.invitesAnswered += 1
+            case .late?: s.row.invitesLate += 1
+            case .missed?: s.row.invitesMissed += 1
+            case .cut?, nil: break
+            }
         case .turn? where e.phase == .end && e["outcome"]?.string == "failed": s.row.failures += 1
         case .act? where e.phase == .end && e["passed"]?.bool == false: s.row.failures += 1
         case .growth?:

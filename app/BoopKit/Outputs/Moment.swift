@@ -98,6 +98,50 @@ public struct Moment: Equatable, Sendable {
     /// shows as two targets in the lane while the question is the sign.
     /// Nil sends none.
     public var ask: Asks.Question?
+    /// An invite, after a skit: once the Moment has played, Boop turns to
+    /// you in its pose and waits for the one touch, then plays the payoff
+    /// or a shrug, all before the `do` ends. The board says how it ended
+    /// (`ev invite`). Nil sends none.
+    public var invite: Invite?
+
+    /// The invite a Moment asks: its skit's (`Skit.Invite`), with the word
+    /// by the place to touch, the wait and what the touch will earn.
+    public struct Invite: Equatable, Sendable {
+        /// The skit's id, which the board sends back.
+        public var skit: String
+        public var pose: Skit.Invite.Pose
+        public var touch: Skit.Invite.Touch
+        public var payoff: Skit.Invite.Payoff
+        /// The word shown by the place to touch, or nil for the glow alone.
+        public var label: String?
+        /// How long the board waits for the touch, `waits` at most.
+        public var ms: Int
+        /// The XP the touch will earn, shown in the payoff as "+3 XP", or nil.
+        public var xp: Int?
+
+        /// The longest and shortest wait the board takes.
+        public static let waits = 1000...30_000
+
+        public init(skit: String, _ invite: Skit.Invite, label: String?, ms: Int, xp: Int?) {
+            self.skit = skit
+            pose = invite.pose
+            touch = invite.touch
+            payoff = invite.payoff
+            self.label = label
+            self.ms = min(max(ms, Self.waits.lowerBound), Self.waits.upperBound)
+            self.xp = xp
+        }
+
+        /// The `invite` object of the `do`'s `args`.
+        public var json: JSON {
+            var o: JSONObject = ["skit": .string(skit), "pose": .string(pose.rawValue), "touch": .string(touch.rawValue),
+                                 "payoff": .string(payoff.rawValue)]
+            if let label { o["label"] = .string(label) }
+            o["ms"] = .int(ms)
+            if let xp { o["xp"] = .int(xp) }
+            return .object(o)
+        }
+    }
     /// The first moment of your day, or the one that tells the dream: it
     /// plays whole. Its sign waits until its words end, and the work stream
     /// waits until it's over.
@@ -170,6 +214,7 @@ public struct Moment: Equatable, Sendable {
         if let ask {
             args["ask"] = ["q": .string(ask.id), "a": .string(ask.a), "b": .string(ask.b)]
         }
+        if let invite { args["invite"] = invite.json }
         if let reply { args["reply"] = .string(reply) }
         if let show { args["show"] = .string(show) }
         if greeting { args["greeting"] = true }

@@ -273,9 +273,10 @@ public final class TranscriptView {
 
     /// The kinds with lines that never wake the brain: a turn's start,
     /// which its prompt's reading speaks for; a BOOT press that opens an
-    /// agent, the board's own reaction, as a tap that opens a thread is;
-    /// and with `ruled`, what the rules answer whole.
-    public static let quiet = ["turn_start", "presence_start", "needs_you_start", "press", "wish_start", "growth"] + ruled
+    /// agent, the board's own reaction, as a tap that opens a thread is; an
+    /// invite's end, whose payoff the board already played; and with
+    /// `ruled`, what the rules answer whole.
+    public static let quiet = ["turn_start", "presence_start", "needs_you_start", "press", "wish_start", "growth", "invite"] + ruled
 
     /// The kinds the rules answer with a Moment of their own and no pass
     /// (`MomentOutput.ruled`): your lock and unlock, and another buddy's
@@ -560,6 +561,12 @@ public final class TranscriptView {
             return Line(EventLine.answered(question, answer: answer, name: name),
                         facts: ["q": e["q"] ?? .null, "answer": .string(answer), "pick": .string(e.specificType),
                                 "keeps": e["keeps"] ?? .bool(false)])
+        case .invite?:
+            guard let end = Moment.Invite.End(rawValue: e.specificType),
+                  let pose = Skit.Invite.Pose(rawValue: e["pose"]?.string ?? ""),
+                  let touch = Skit.Invite.Touch(rawValue: e["touch"]?.string ?? "") else { return nil }
+            if end.isYours { noteActivity(e.at) }
+            return Line(EventLine.invite(end, pose, touch, name: name), facts: ["invite": .string(end.rawValue)])
         case .presence?: return presence(e)
         case .lock?: return lock(e)
         case .checkIn?: return checkIn(e)

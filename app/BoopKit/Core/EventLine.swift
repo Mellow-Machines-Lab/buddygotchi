@@ -226,6 +226,29 @@ public enum EventLine {
         "You answered \(name)'s \"\(question)\": \(answer)."
     }
 
+    /// What an invite asked of you: `held up a palm for a poke`.
+    public static func inviting(_ pose: Skit.Invite.Pose, _ touch: Skit.Invite.Touch) -> String {
+        let did = switch pose {
+        case .palm: "held up a palm"
+        case .lean: "leaned in"
+        case .back: "turned its back to you"
+        }
+        return "\(did) for \(touch == .tap ? "a poke" : "a stroke")"
+    }
+
+    /// How an invite ended, whoever decided it: `Boop held up a palm for a
+    /// poke, and you gave it.`
+    public static func invite(_ end: Moment.Invite.End, _ pose: Skit.Invite.Pose, _ touch: Skit.Invite.Touch,
+                              name: String = CharacterPack.active.name) -> String {
+        let how = switch end {
+        case .answered: "and you gave it"
+        case .late: "and you gave it, late"
+        case .missed: "and you didn't"
+        case .cut: "and something cut it short"
+        }
+        return "\(name) \(inviting(pose, touch)), \(how)."
+    }
+
     /// Nobody answered an ask: `You didn't answer Boop's "fav snack?".`
     public static func unanswered(_ question: String, name: String = CharacterPack.active.name) -> String {
         "You didn't answer \(name)'s \"\(question)\"."

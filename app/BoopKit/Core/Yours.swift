@@ -7,11 +7,12 @@ import MellowHarness
 public enum Yours {
     /// Whether `e` is the person's own doing: a poke, a care gesture, what
     /// they said to the buddy, a prompt to an agent, or coming back to the
-    /// Mac, or answering an ask.
+    /// Mac, or answering an ask or an invite.
     public static func did(_ e: Event) -> Bool {
         switch e.type {
         case .said?, .prompt?: return true
         case .poke?, .gesture?: return Touch(e)?.isCare == true
+        case .invite?: return Touch.answering(e) != nil
         case .presence?: return e.phase == .end
         case .ask?: return e.specificType != Asks.ignored
         default: return false
@@ -22,12 +23,13 @@ public enum Yours {
     public static func touch(_ e: Event) -> Bool { Touch(e)?.isCare == true }
 
     /// Whether `e` touched or talked to the buddy itself: a poke, a care
-    /// gesture or what was said to it. A prompt is yours, but it's to an
-    /// agent.
+    /// gesture, an invite answered or what was said to it. A prompt is
+    /// yours, but it's to an agent.
     public static func touched(_ e: Event) -> Bool {
         switch e.type {
         case .said?: return true
         case .poke?, .gesture?: return Touch(e)?.isCare == true
+        case .invite?: return Touch.answering(e) != nil
         case .ask?: return e.specificType != Asks.ignored
         default: return false
         }

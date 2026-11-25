@@ -433,6 +433,14 @@ public final class Runtime: @unchecked Sendable {
         mind.earned = { earnedNow($0) }
         mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
         mind.lineRoom = { MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face }) }
+        // A skit's invite: only to a board that plays them, by the
+        // memory's ledger, and with care's XP while it has room.
+        let time = options.time
+        mind.inviting = MomentOutput.Inviting(board: { link.hello.map { DeviceInfo($0).invites } ?? false },
+                                              onCall: { core.along.onCall },
+                                              ledger: { remembersNow().map { $0.invites.state ?? InviteLedger() } },
+                                              sameDay: { time.boopDay(core.wall($0)) == time.boopDay(core.wall($1)) },
+                                              careRoom: { core.growth().map { $0.adds(.care) > 0 } ?? false })
         mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
                                       onLately: { remembersNow()?.onLately($0) ?? false })
         rig.mood = Runtime.brain(pipeline, mind)

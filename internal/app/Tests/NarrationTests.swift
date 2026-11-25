@@ -222,6 +222,7 @@ final class ReasonsTests: XCTestCase {
         case .ask: return [(event(kind, "a"), ["answer": "yes"]), (event(kind, Asks.ignored), [:])]
         case .card: return [(event(kind, "status", phase: .start), [:]), (event(kind, "result", phase: .end), [:])]
         case .link: return [(event(kind, "ble", phase: .start), [:]), (event(kind, "ble", phase: .end), [:])]
+        case .invite: return Moment.Invite.End.allCases.map { (event(kind, $0.rawValue, data: ["skit": "win", "touch": "tap", "pose": "palm"]), [:]) }
         @unknown default: return nil
         }
     }

@@ -171,6 +171,7 @@ public struct Narration: Equatable, Sendable {
         "session start": "a thread opening is no news, and has no line",
         "tool wait": "the needs-you screen says it",
         "card start": "log-only: Boop holds the card up, part of Doing", "card end": "log-only: the finish plays, then the card shows",
+        "invite": "the board's own: it played the payoff or a shrug, and it wakes no pass",
     ]
 
     /// Why it holds up something it noticed: "It noticed a rough hour: 3

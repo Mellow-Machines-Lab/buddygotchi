@@ -78,7 +78,7 @@ public struct CharacterPack: Sendable {
     public let claimsAFix: Set<String>
     /// The few moments that always speak, each from takes of its own
     /// (`skits`, `Skits.play`): none for a pack without, whose Moments are
-    /// silent.
+    /// silent. A skit may invite one touch after it.
     public let skits: [Skit]
     /// What the board shows before the Mac sends a mood (CHARACTER.md §4):
     /// the pack's `startup_mood`, else its default mood.
@@ -126,7 +126,8 @@ extension CharacterPack {
     /// a pack: a key missing, a face or a mood named twice, a lasting mood
     /// with no face to rest in, a default mood or a fade's end that isn't a
     /// lasting one, a face that settles into none, or a skit with no id, a
-    /// slot that isn't one or a slot another skit has too. Everything the
+    /// slot that isn't one, a slot another skit has too, or an invite whose
+    /// pose, touch or payoff isn't one. Everything the
     /// pack has is in the one folder.
     public init(directory: URL) throws {
         let file = directory.appendingPathComponent("character.json")
@@ -219,7 +220,7 @@ extension CharacterPack {
     }
 
     /// The pack's skits, each with an id and slots that are the rules'
-    /// (`RulesBrain.Slot`), no slot in two.
+    /// (`RulesBrain.Slot`), no slot in two, and maybe an invite.
     static func skits(_ rows: [[String: Any]], in source: String) throws -> [Skit] {
         var taken: Set<RulesBrain.Slot> = []
         return try rows.map { row in
@@ -229,8 +230,25 @@ extension CharacterPack {
                 guard taken.insert(slot).inserted else { throw CharacterPackError("\(source): skit \(id) plays at \(name), which another skit has") }
                 return slot
             }
-            return Skit(id: id, slots: slots)
+            let invite = try row["invite"].map { value in
+                guard let fields = value as? [String: Any] else { throw CharacterPackError("\(source): skit \(id)'s invite isn't an object") }
+                return try CharacterPack.invite(fields, of: id, in: source)
+            }
+            return Skit(id: id, slots: slots, invite: invite)
         }
+    }
+
+    /// A skit's invite: a pose, a touch and a payoff, each one the board
+    /// plays (`Skit.Invite`).
+    static func invite(_ row: [String: Any], of skit: String, in source: String) throws -> Skit.Invite {
+        func read<T: RawRepresentable>(_ key: String, _: T.Type) throws -> T where T.RawValue == String {
+            guard let name = row[key] as? String, let value = T(rawValue: name) else {
+                throw CharacterPackError("\(source): skit \(skit)'s invite has \(key) \(row[key].map { "\($0)" } ?? "none"), which isn't one")
+            }
+            return value
+        }
+        return Skit.Invite(pose: try read("pose", Skit.Invite.Pose.self), touch: try read("touch", Skit.Invite.Touch.self),
+                           payoff: try read("payoff", Skit.Invite.Payoff.self))
     }
 
     static func mood(_ m: [String: Any], in source: String) throws -> Mood {

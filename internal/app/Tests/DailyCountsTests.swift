@@ -258,7 +258,8 @@ final class DailyCountsTests: XCTestCase {
         r.level = 1
         let data = try JSONEncoder().encode(r)
         let keys = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any]).keys.sorted()
-        XCTAssertEqual(keys, ["answerMs", "answered", "day", "disconnects", "faceDown", "failures", "hereMinutes", "hushes", "level", "needsYou", "quiet", "spoken",
+        XCTAssertEqual(keys, ["answerMs", "answered", "day", "disconnects", "faceDown", "failures", "hereMinutes", "hushes", "invitesAnswered", "invitesAsked", "invitesLate",
+                              "invitesMissed", "level", "needsYou", "quiet", "spoken",
                               "threadsOpened", "touches", "touchesNoWish", "unpluggedMinutes", "volume", "wishWaitMs", "wishesGaveUp", "wishesMade", "wishesMet",
                               "xpCare", "xpFixes", "xpRefused", "xpShips", "xpTurns"])
         let bare = try JSONDecoder().decode(DayCounts.self, from: Data(#"{"day":"2026-11-04","touches":3}"#.utf8))

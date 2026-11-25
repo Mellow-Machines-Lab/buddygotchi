@@ -46,7 +46,8 @@ extension Runtime {
         changed()
     }
 
-    /// A tap, or BOOT's push-to-talk, on the board.
+    /// A tap, or BOOT's push-to-talk, on the board, or how an ask or an
+    /// invite ended.
     func deviceEvent(_ ev: DeviceEvent) {
         let now = options.clock()
         switch ev.kind {
@@ -116,6 +117,12 @@ extension Runtime {
             options.log("device: ask \(q) \(pick)")
             run(pipeline.ask(q, question: ev.data["question"]?.string ?? "", pick: pick,
                              answer: pick == Asks.ignored ? nil : ev.data["answer"]?.string, keeps: keeps, at: now))
+        case "invite":
+            // An invite's end, which the board decides; its touch is the
+            // invite's, never a tap or a gesture as well.
+            guard let end = ev.did.flatMap(Moment.Invite.End.init(rawValue:)), let skit = ev.data["skit"]?.string else { break }
+            options.log("device: invite \(skit) \(end.rawValue)")
+            run(pipeline.invite(end, skit: skit, touch: ev.data["touch"]?.string, ms: ev.data["ms"]?.int, at: now))
         case "talk_on", "talk_off":
             options.log("device: \(ev.kind)")
             // The device already shows `listening`.

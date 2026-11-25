@@ -4,14 +4,45 @@ import MellowHarness
 /// One kind of moment that has takes of its own and always speaks: the
 /// pack's `skits` in `character.json` (characters/CHARACTER.md §8), each the
 /// slots of the rules' reading (`RulesBrain.Slot`) it plays at. Its takes
-/// are the voice's, part `skit`, its id their meaning.
+/// are the voice's, part `skit`, its id their meaning. It may have an
+/// invite: after it plays, Boop asks for one touch, and the touch pays off.
 public struct Skit: Equatable, Sendable {
     public let id: String
     public let slots: [RulesBrain.Slot]
+    /// What it asks of you after it plays, or nil for nothing.
+    public let invite: Invite?
 
-    public init(id: String, slots: [RulesBrain.Slot]) {
+    public init(id: String, slots: [RulesBrain.Slot], invite: Invite? = nil) {
         self.id = id
         self.slots = slots
+        self.invite = invite
+    }
+
+    /// The pack's invite for a skit (`character.json`'s `invite`): the pose
+    /// Boop turns to you in, the one touch it asks for, and what that touch
+    /// pays off with. The board plays each by its name.
+    public struct Invite: Equatable, Sendable {
+        /// A palm held up, a lean in, or its back turned to you.
+        public enum Pose: String, CaseIterable, Sendable { case palm, lean, back }
+        /// A tap (on the Mac a poke) or a stroke.
+        public enum Touch: String, CaseIterable, Sendable {
+            case tap, stroke
+
+            /// The touch it is on the Mac.
+            public var touch: BoopKit.Touch { self == .tap ? .poke : .stroke }
+        }
+        /// A high five, a purr, a sigh of relief.
+        public enum Payoff: String, CaseIterable, Sendable { case highfive, purr, sigh }
+
+        public let pose: Pose
+        public let touch: Touch
+        public let payoff: Payoff
+
+        public init(pose: Pose, touch: Touch, payoff: Payoff) {
+            self.pose = pose
+            self.touch = touch
+            self.payoff = payoff
+        }
     }
 }
 

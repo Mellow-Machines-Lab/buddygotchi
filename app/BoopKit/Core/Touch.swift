@@ -48,6 +48,17 @@ public enum Touch: String, CaseIterable, Sendable {
         }
     }
 
+    /// The touch that answered an invite (an `invite` event that ended
+    /// `answered` or `late`): its tap a poke, its stroke a stroke; nil for
+    /// any other event. It does what that touch does, once: its care XP
+    /// (`Growth.source`), a pet wish met, a stroke's soothing, you showing
+    /// up and a touch in the daily counts. It's no `poke` or `gesture`
+    /// event, so it plays nothing more and wakes no pass.
+    public static func answering(_ e: Event) -> Touch? {
+        guard e.type == .invite, Moment.Invite.End(rawValue: e.specificType)?.isYours == true else { return nil }
+        return Skit.Invite.Touch(rawValue: e["touch"]?.string ?? "")?.touch
+    }
+
     /// Care: the person touching the buddy itself. Never the drawer's
     /// swipe or turning it over.
     public var isCare: Bool {

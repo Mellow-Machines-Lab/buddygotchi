@@ -60,6 +60,9 @@ extension Runtime {
         /// How long a line the board holds low: the gel's low sign's room,
         /// or a plain sign's on a face that holds nothing low.
         public var lineRoom: () -> Int = { MemoryPipeline.signMax }
+        /// What a skit's invite is asked by (`MomentOutput.Inviting`), or
+        /// nil for none ever.
+        public var inviting: MomentOutput.Inviting?
         /// What it notices from, or nil for a buddy that doesn't: the days
         /// kept, when each notice last played, and whether a thread had a
         /// turn since the last dream (`Memory`).
@@ -135,9 +138,9 @@ extension Runtime {
                 return
             }
             // In a levelled mood, what provokes it takes it a level up, and
-            // a gentle touch a level down.
+            // a gentle touch a level down: an invite's stroke too.
             guard let count = levels(MoodOutput.value(mood, log, pack: pack)) else { return }
-            if Touch(e)?.soothes == true { return step(MoodOutput.soothed(MoodOutput.level(mood, log)), e, log) }
+            if (Touch(e) ?? Touch.answering(e))?.soothes == true { return step(MoodOutput.soothed(MoodOutput.level(mood, log)), e, log) }
             guard let by = h.line(e.seq).flatMap({ MoodOutput.provocation(e, facts: $0.facts) }) else { return }
             step(MoodOutput.provoked(MoodOutput.level(mood, log), by: by, of: count), e, log)
         }
@@ -299,6 +302,7 @@ extension Runtime {
             return core.result(for: key)
         }
         react.lineRoom = m.lineRoom
+        react.inviting = m.inviting
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
         // The Moments the rules make whole, with no pass: your bye at a
         // lock and your hello at an unlock, a working check-in, another

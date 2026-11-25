@@ -20,6 +20,8 @@ import MellowHarness
 /// it, which may play back your words, and a status reply's the agents'
 /// facts, never guessed. At an idle check-in the one thing it may hold up
 /// is dealt by code (`IdleBeat`), and the sign's question is only whether.
+/// After a skit it may invite one touch, on the last Moment it queues, as
+/// the invite ledger allows (`invite(for:at:)`, `InviteLedger`).
 /// The Moments with no pass (your lock or unlock, a working check-in, a
 /// boop from the world) are made here too, from the rule's picks (`ruled`,
 /// `play`). It waits in the device's queue until
@@ -401,6 +403,40 @@ public final class MomentOutput: Output {
     /// How long a line the board can hold low: the gel's low sign, or a
     /// plain sign's room on a face that holds nothing low.
     public var lineRoom: () -> Int = { MemoryPipeline.signMax }
+
+    /// What a skit's invite is asked by, or nil for none ever (the evals',
+    /// and most tests'): whether the board plays invites (its `hello`'s
+    /// `invites`), whether you're on a call, the ledger (`InviteLedger`, nil
+    /// for none), whether two times are on one Boop day, and whether care
+    /// has room today for the touch's XP (`Growth.adds`).
+    public struct Inviting {
+        public var board: () -> Bool
+        public var onCall: () -> Bool
+        public var ledger: () -> InviteLedger?
+        public var sameDay: (Int64, Int64) -> Bool
+        public var careRoom: () -> Bool
+
+        public init(board: @escaping () -> Bool, onCall: @escaping () -> Bool = { false }, ledger: @escaping () -> InviteLedger?,
+                    sameDay: @escaping (Int64, Int64) -> Bool, careRoom: @escaping () -> Bool = { false }) {
+            self.board = board
+            self.onCall = onCall
+            self.ledger = ledger
+            self.sameDay = sameDay
+            self.careRoom = careRoom
+        }
+    }
+    public var inviting: Inviting?
+
+    /// What `skit`'s invite comes to at `at`: none unless the board plays
+    /// invites, nothing blocks the Moment and you're not on a call; else the
+    /// ledger's (`InviteLedger.asking`), with the pack's word for the touch
+    /// (`Signs.invite`) and care's XP while care has room.
+    func invite(for skit: Skit, at: Int64) -> InviteLedger.Asking {
+        guard skit.invite != nil, let inviting, inviting.board(), blocked() == nil, !inviting.onCall(),
+              let ledger = inviting.ledger() else { return .nothing }
+        return ledger.asking(skit, today: { inviting.sameDay($0, at) }, label: { Signs.invite(self.signs, touch: $0) },
+                             xp: inviting.careRoom() ? Growth.careXP : nil)
+    }
 
     /// Below this, Jev is guessing at what you meant, and a `huh` beats a
     /// guessed reply.
@@ -788,20 +824,27 @@ public final class MomentOutput: Output {
             ?? wishing.map { Narration.wish($0, name: pack.name, because: beat?.because) } ?? reason(about)
         if reaction.who == nil, asking == nil, remembering == nil { reaction.reason = why?.fact ?? moodMoved(now, log) }
         let pending = Pending()
-        queue(reaction, pending)
         // The agent's line, after its finish: Boop's pick of what it offered,
         // held low in the face Boop shows, with the narration saying whose
         // words they were. Never in HISTORY: the brain never reads them.
-        var offeredLine = false
+        var spoken: Moment?
         if reaction.outcome != nil, ruled == nil, blocked() == nil, let card = offered(now),
            let line = MomentRule.offeredLine(card.lines, facts: lineFacts, face: choice, mood: moodID(log) ?? pack.defaultMood,
                                              room: lineRoom()) {
-            var spoken = Moment(say: Moment.Say(takes: []), mood: choice, loops: 1, sign: line.says)
-            spoken.low = true
-            spoken.reason = reaction.who.map { "\($0.agent) offered it" }
-            queue(spoken, Pending())
-            offeredLine = true
+            var m = Moment(say: Moment.Say(takes: []), mood: choice, loops: 1, sign: line.says)
+            m.low = true
+            m.reason = reaction.who.map { "\($0.agent) offered it" }
+            spoken = m
         }
+        // A skit's invite, on the last Moment queued, so the pose comes
+        // after the agent's line.
+        let invited = skit.map { invite(for: $0.skit, at: at) } ?? .nothing
+        if case .asks(let invite) = invited {
+            if spoken != nil { spoken?.invite = invite } else { reaction.invite = invite }
+        }
+        queue(reaction, pending)
+        if let spoken { queue(spoken, Pending()) }
+        let offeredLine = spoken != nil
         // Asked to hush: quiet for a while, from here on.
         if reply == Self.hushReply { quiet(at) }
         if replied?.naps == true { nap(at) }
@@ -816,7 +859,8 @@ public final class MomentOutput: Output {
         let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }
             ?? sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
             + (show == StatusReply.drawer ? " and showing every agent" : "")
-        let spoke: String = say.text.map { ", and said \"\($0)\"." } ?? "."
+        let spoke: String = (say.text.map { ", and said \"\($0)\"" } ?? "")
+            + ((spoken?.invite ?? reaction.invite).map { ", then " + EventLine.inviting($0.pose, $0.touch) } ?? "") + "."
         var facts: [String: JSONValue] = ["takes": .array(said.map { .string($0.id) })]
         // A skit that spoke, for HISTORY and what reads the transcript.
         if let skit, !said.isEmpty { facts["skit"] = .string(skit.skit.id) }
@@ -832,6 +876,13 @@ public final class MomentOutput: Output {
         }
         if let remembering { facts["felt"] = .string(remembering.line) }
         if offeredLine { facts["offered_line"] = true }
+        // An invite asked, or skipped for the misses: what the ledger and
+        // HISTORY read.
+        switch invited {
+        case .asks(let invite): facts[InviteLedger.askedFact] = .string(invite.pose.rawValue)
+        case .skipped(let pose): facts[InviteLedger.skippedFact] = .string(pose.rawValue)
+        case .nothing: break
+        }
         if let wishing { facts["wish"] = .string(wishing.rawValue) }
         if let asking {
             facts["ask"] = .string(asking.id)
