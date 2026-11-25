@@ -240,7 +240,6 @@ struct ReactionIn {
   // The animation's variation, from 0, as Behaviour::pick chose it.
   uint8_t variant = 0;
   render::Outcome outcome = render::Outcome::kNone;
-  render::StartCtx ctx = render::StartCtx::kNone;
   // 1–Behaviour::kMaxLoops: with an animation, how many
   // times its design plays; with an expression and no animation, how many
   // loops of the design it's drawn in the face holds.
@@ -361,11 +360,11 @@ class Behaviour {
   // play: not while something needs you, or with no app.
   bool play(const ReactionIn& m, uint32_t t);
   // Which variation (from 0) of animation `a` to play in `mood`: `wanted`
-  // (from 1, 0 for none) when it's one of those for the reaction's outcome
-  // and context (render::fitting), else one of those at random, never the
-  // one shown last. A finish's `loops` and `turn` may size it (the face's).
-  uint8_t pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c,
-               Rng& rng, int loops = 1, int turn = render::kNoTurn) const;
+  // (from 1, 0 for none) when it's one of those for the reaction's outcome,
+  // else one of those at random, never the one shown last. A finish's
+  // `loops` and `turn` may size it (the face's).
+  uint8_t pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, Rng& rng, int loops = 1,
+               int turn = render::kNoTurn) const;
 
   // Inputs, already recognised as gestures.
   void pressDown(uint32_t t);  // visible feedback at once
@@ -580,7 +579,6 @@ class Behaviour {
     uint32_t key = 0;
     int loops = 1;
     render::Outcome requestedOutcome = render::Outcome::kNone;
-    render::StartCtx ctx = render::StartCtx::kNone;
     uint32_t id = 0;  // the Mac's, which a tap on the finish names
     render::Outcome outcome = render::Outcome::kNone;  // what its design is for: a finish's result
   };
@@ -625,10 +623,10 @@ class Behaviour {
 
   // An animation plays `loops` times in `mood`'s design (listening until
   // the reply), cutting the one playing, by `by`, but not the `say` or
-  // expression; a finish for `outcome`, a start for `ctx`. kNone for a
-  // newer reaction: the kit ended the one it replaces.
+  // expression; a finish for `outcome`. kNone for a newer reaction: the kit
+  // ended the one it replaces.
   void playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
-                render::Outcome outcome = render::Outcome::kNone, render::StartCtx ctx = render::StartCtx::kNone);
+                render::Outcome outcome = render::Outcome::kNone);
   // The `say` and the expression end, the `say` cut short by `by`: a new
   // reaction's animation, or listening, replaces them; a tap's poke doesn't.
   // kNone for a newer reaction, as for playAnim.

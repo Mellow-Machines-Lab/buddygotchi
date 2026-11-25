@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from boopctl_lib.common import RULE_REACTIONS, Take, call, take
+from boopctl_lib.common import Take, call, take
 from boopctl_lib.device import DeviceError
 
 Line = dict[str, Any]
@@ -300,14 +300,7 @@ class Board:
                 self._brain_do = c
             if by == "rule":
                 what = None
-                if c["anim"] in RULE_REACTIONS:
-                    # The rules' reactions: the view event
-                    # recorded right after names what set it off.
-                    fact = c.get("ctx") or c.get("outcome")
-                    what = c["anim"] + (f" ({fact})" if fact else "")
-                    self.reflexes.append({"at": at, "what": what, "anim": True, "rule": True, "trigger": None,
-                                          "id": c.get("id")})
-                elif c["anim"] == "listening":
+                if c["anim"] == "listening":
                     # The Mac's Talk button; BOOT's push-to-talk the device
                     # starts itself.
                     what = "listening"
@@ -350,13 +343,11 @@ class Board:
 
     def _event(self, view: Line, at: int) -> None:
         """A view event of a request that waits on you names the needs-you
-        screen just sent before it; any view event names a rule's reaction
-        just sent before it."""
+        screen just sent before it."""
+        if view_name(view) != "tool wait":
+            return
         waiting = [r for r in self.reflexes[-3:] if r["trigger"] is None and at - r["at"] <= TRIGGER_MS]
-        match = next((r for r in waiting if r.get("rule")), None)
-        if not match and view_name(view) == "tool wait":
-            match = next((r for r in waiting if r.get("attn")), None)
-        if match:
+        if match := next((r for r in waiting if r.get("attn")), None):
             match["trigger"] = "▸ " + view["line"]
 
     def _rule(self, a: Line, at: int) -> None:
@@ -371,7 +362,7 @@ class Board:
         if match:
             match["trigger"] = trigger
             return
-        # A `starting` with no board to send it to says nothing: its name does.
+        # An action with no board to send it to has no message: its name says it.
         what = a["message"] or a["name"]
         self.reflexes.append({"at": at, "what": what, "trigger": trigger})
         self._reflex = (at, what)
@@ -507,7 +498,7 @@ class Board:
             style = "attn" if r.get("attn") else "dim" if r.get("skipped") else "ok"
             skipped = f" (skipped: {r['skipped']})" if r.get("skipped") else ""
             out.append((style, f"{clock(r['at'])} {r['what']}{skipped}"))
-            trigger = r["trigger"] or ("" if r.get("rule") else "no event: played from the dashboard" if r.get("anim") else "")
+            trigger = r["trigger"] or ("no event: played from the dashboard" if r.get("anim") else "")
             if trigger:
                 out.append(("dim", f"  {trigger}"))
         return out

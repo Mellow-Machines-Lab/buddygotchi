@@ -253,58 +253,39 @@ class ColumnsTests(unittest.TestCase):
         self.assertEqual(rows[-2][0], "attn")
 
     def test_a_rules_action_with_no_board_is_named(self):
-        """With no board nothing was sent ahead of a rule's `starting`, whose
+        """With no board nothing was sent ahead of a rule's `wake_up`, whose
         `did` has no message: the column names it rather than an empty row."""
         board = feed.Board()
         board.apply({"event": {"seq": 2, "at": 2, "source": "self", "kind": "did",
-                               "data": {"action": "starting", "by": "rule", "for": 1, "ok": True}}, "received_at_ms": 2})
-        self.assertEqual(board.reflexes[-1]["what"], "starting")
+                               "data": {"action": "wake_up", "by": "rule", "for": 1, "ok": True}}, "received_at_ms": 2})
+        self.assertEqual(board.reflexes[-1]["what"], "wake_up")
 
-    def test_a_rules_reaction_and_the_activity(self):
-        """A rule's reaction is named by the view event recorded right after
-        it, never "played from the dashboard", and the working look shows
-        its activity (`act`)."""
+    def test_the_working_look_shows_its_activity(self):
+        """The working look shows its activity (`act`)."""
         t = 1_790_550_800_000
         state = {"t": "state", "base": "working", "act": "terminal", "mood": "calm", "busy": 1, "vol": 6}
-        view = {"id": 9, "type": "turn", "from": [9], "line": 'claude started turn 2 on "jetpack".', "notes": [],
-                "wakes_brain": True, "facts": {}, "phase": "start"}
-        board, rows = board_after([
-            {"sent": state, "received_at_ms": t},
-            {"sent": {"t": "do", "name": "starting", "play": "if_free", "args": {"ctx": "new_task"}}, "by": "rule",
-             "received_at_ms": t + 10},
-            {"view": view, "received_at_ms": t + 20},
-        ])
-        reflex = self.texts(board.reflex_column())
-        self.assertEqual(reflex, [f"{clock(t + 10)} starting (new_task)", '  ▸ claude started turn 2 on "jetpack".'])
+        board, rows = board_after([{"sent": state, "received_at_ms": t}])
         self.assertIn(("sent", "→ state working (terminal) calm · busy 1 · vol 6"), rows)
         self.assertEqual(dict(board.facts(t + 60_000))["showing"], "its terminal look")
 
     def test_what_the_mac_sends(self):
-        """What the Mac sends since the device kept a queue: a rule's
-        rule reaction is a reflex named by the view event right after it, as
-        before; the Talk button's listening is one; the brain's finish
-        isn't; and push-to-talk ending with no reply shows nothing, even as
-        the first line."""
+        """What the Mac sends since the device kept a queue: the Talk
+        button's listening is a reflex; the brain's finish isn't; and
+        push-to-talk ending with no reply shows nothing, even as the first
+        line."""
         t = 1_790_550_800_000
-        view = {"id": 9, "type": "turn", "from": [9], "line": 'claude started turn 2 on "jetpack".', "notes": [],
-                "wakes_brain": True, "facts": {}, "phase": "start"}
         sent = lambda at, by, msg: {"sent": msg, "by": by, "received_at_ms": at}  # noqa: E731
         board, rows = board_after([
             sent(t, "rule", {"t": "do", "id": 41, "name": "stop_listening", "play": "if_free"}),
             sent(t + 5, "rule", {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}),
-            sent(t + 10, "rule", {"t": "do", "id": 42, "name": "starting", "play": "if_free",
-                                  "args": {"variant": 3, "ctx": "new_task"}}),
-            {"view": view, "received_at_ms": t + 20},
             sent(t + 30, "brain", {"t": "do", "id": 43, "name": "task_complete", "play": "next", "ttl": 5000,
                                    "args": {"outcome": "success", "variant": 2, "who": {"agent": "claude", "thread": "api"},
                                             "say": {"take": "new.d15"}, "mood": "proud"}}),
             sent(t + 40, "rule", {"t": "do", "id": 44, "name": "listening", "play": "now"}),
         ])
         reflex = self.texts(board.reflex_column())
-        self.assertEqual(reflex, [f"{clock(t + 40)} listening", "  you pressed Talk on the Mac",
-                                  f"{clock(t + 10)} starting (new_task)", '  ▸ claude started turn 2 on "jetpack".'])
+        self.assertEqual(reflex, [f"{clock(t + 40)} listening", "  you pressed Talk on the Mac"])
         self.assertIn(("sent", "→ do stop_listening"), rows)
-        self.assertIn(("sent", "→ do starting"), rows)
         self.assertIn(("sent", f"→ do task_complete + say {feed.say_text({'take': 'new.d15'})}"), rows)
         self.assertEqual(dict(board.facts(t + 1000))["showing"], "listening")
 
@@ -316,15 +297,15 @@ class ColumnsTests(unittest.TestCase):
         sent = lambda at, id, name: {"sent": {"t": "do", "id": id, "name": name, "play": "if_free"},  # noqa: E731
                                      "by": "rule", "received_at_ms": at}
         board, rows = board_after([
-            sent(t, 51, "starting"),
+            sent(t, 51, "wake_up"),
             {"ended": {"id": 51, "how": "skipped", "why": "busy"}, "received_at_ms": t + 5},
-            sent(t + 10, 52, "starting"),
+            sent(t + 10, 52, "wake_up"),
             {"ended": {"id": 52, "how": "done"}, "received_at_ms": t + 900},
         ])
         self.assertIn(("fail", "  ⇠ do 51 skipped (busy)"), rows)
         self.assertIn(("dim", "  ⇠ do 52 done"), rows)
-        reflex = board.reflex_column()
-        self.assertEqual(reflex, [("ok", f"{clock(t + 10)} starting"), ("dim", f"{clock(t)} starting (skipped: busy)")])
+        reflex = [r for r in board.reflex_column() if not r[1].startswith("  ")]  # not their triggers
+        self.assertEqual(reflex, [("ok", f"{clock(t + 10)} wake_up"), ("dim", f"{clock(t)} wake_up (skipped: busy)")])
 
     def test_a_held_pass_says_nothing_of_the_brains_latency(self):
         """A pass held back when its turn came never asked the brain:
@@ -831,11 +812,11 @@ class AppTests(unittest.TestCase):
                     f.write('{"event":{"seq":28,"at":1790498700000,"source":"self","kind":"did","data":{"action":"mood",'
                             '"by":"dashboard","for":null,"latency_ms":0,"message":"already grumpy","ok":false}},'
                             '"received_at_ms":1790498700000}\n')
-                    f.write('{"sent":{"t":"do","id":5,"name":"starting","play":"if_free"},"by":"rule",'
+                    f.write('{"sent":{"t":"do","id":5,"name":"notice","play":"if_free"},"by":"rule",'
                             '"received_at_ms":1790498700001}\n')
                 app.poll()
                 self.assertEqual([name for _, name, _ in app.pending.waiting], ["answer"])
-                self.assertEqual(face.sent, [{"t": "do", "id": 5, "name": "starting", "play": "if_free"}],
+                self.assertEqual(face.sent, [{"t": "do", "id": 5, "name": "notice", "play": "if_free"}],
                                  "live lines reach the sim as sent")
 
                 # Preview: the dashboard's own lines, to its sim only.
@@ -850,7 +831,7 @@ class AppTests(unittest.TestCase):
                 self.assertEqual((face.sent[-1]["base"], face.sent[-1]["mood"]), ("working", "sad"))
                 self.assertEqual(len(server.wait(3, timeout=0.3)), 2, "nothing went to the app")
                 with log.open("a") as f:
-                    f.write('{"sent":{"t":"do","id":6,"name":"starting","play":"if_free"},"by":"rule",'
+                    f.write('{"sent":{"t":"do","id":6,"name":"notice","play":"if_free"},"by":"rule",'
                             '"received_at_ms":1790498700002}\n')
                 app.poll()
                 self.assertEqual(face.sent[-1]["mood"], "sad", "the app's lines wait")
@@ -903,7 +884,7 @@ class AppTests(unittest.TestCase):
                 log.write_text('{"questions":[],"received_at_ms":2}\n'
                                '{"sent":{"t":"state","base":"idle","busy":0,"vol":6},'
                                '"received_at_ms":2}\n'
-                               '{"sent":{"t":"do","id":7,"name":"starting","play":"if_free"},"by":"rule",'
+                               '{"sent":{"t":"do","id":7,"name":"notice","play":"if_free"},"by":"rule",'
                                '"received_at_ms":3}\n')
                 sent_before = len(face.sent)
                 app.poll()

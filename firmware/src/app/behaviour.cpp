@@ -392,7 +392,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       reaction_.id = in.id;
     } else if (anim) {
       endSay(t, CutBy::kNone);
-      playAnim(in.anim, t, CutBy::kNone, in.loops, mood, in.variant, in.outcome, in.ctx);
+      playAnim(in.anim, t, CutBy::kNone, in.loops, mood, in.variant, in.outcome);
       reaction_.key = in.key;
       reaction_.id = in.id;
       if (!listen) voice = face_->voiceMs(mood, in.anim, in.variant);
@@ -494,15 +494,15 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
   return say;
 }
 
-uint8_t Behaviour::pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c,
-                        Rng& rng, int loops, int turn) const {
-  return face_->pick(a, mood, wanted, o, c, rng, loops, turn);
+uint8_t Behaviour::pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, Rng& rng, int loops,
+                        int turn) const {
+  return face_->pick(a, mood, wanted, o, rng, loops, turn);
 }
 
 // The animation playing is cut short, by `by`; the `say` and the
 // expression play on (endSay ends them).
 void Behaviour::playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
-                         render::Outcome outcome, render::StartCtx ctx) {
+                         render::Outcome outcome) {
   if (by != CutBy::kNone && reactionOn(t)) cut(reaction_.key, by);
   reaction_ = Reaction{};
   takeDown(t);  // the face is taken
@@ -511,7 +511,6 @@ void Behaviour::playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, 
   reaction_.loops = loops;
   reaction_.at = t;
   reaction_.requestedOutcome = outcome;
-  reaction_.ctx = ctx;
   if (a == render::SceneState::kListening) {
     reaction_.ms = kListenMs + kReplyWaitMs;
     reaction_.playMs = UINT32_MAX;  // its design loops on until the reply
@@ -519,7 +518,7 @@ void Behaviour::playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, 
     reaction_.ms = reaction_.playMs = uint32_t(loops) * face_->loopMs(mood, a, variant);
   }
   reaction_.outcome = face_->outcome(mood, a, variant, outcome);
-  face_->started(a, mood, variant, outcome, ctx);
+  face_->started(a, mood, variant, outcome);
 }
 
 // A new reaction replaces the `say` playing, cut short by `by`, and its
@@ -580,7 +579,7 @@ const char* Behaviour::tap(uint32_t t, Rng& rng) {
   lastTap_ = t;
   if (held(t) || finishShown(t)) return "dip";
   const render::SceneState a = taps_ >= kTapSpamFrom ? render::SceneState::kTapSpam : render::SceneState::kPoked;
-  const uint8_t v = pick(a, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
+  const uint8_t v = pick(a, model_.mood, 0, render::Outcome::kNone, rng);
   change(t, [&] { playAnim(a, t, CutBy::kTap, 1, model_.mood, v); });
   if (face_->captionsTouches()) {
     char text[kSignBytes];
@@ -651,7 +650,7 @@ void Behaviour::talkOn(uint32_t t, Rng& rng) {
     if (listening(t)) {
       reaction_.ms = (t - reaction_.at) + kListenMs + kReplyWaitMs;
     } else {
-      uint8_t v = pick(render::SceneState::kListening, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
+      uint8_t v = pick(render::SceneState::kListening, model_.mood, 0, render::Outcome::kNone, rng);
       if (ask_.q[0]) endAsk("ignored", t);
       cutInvite(CutBy::kMicOn, t);
       greetingSignCut(CutBy::kMicOn, t);
@@ -697,7 +696,6 @@ Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
     s.loops = reaction_.loops;
     s.id = reaction_.id;
     s.outcome = reaction_.requestedOutcome;
-    s.ctx = reaction_.ctx;
     s.playMs = reaction_.playMs;
   }
   return s;

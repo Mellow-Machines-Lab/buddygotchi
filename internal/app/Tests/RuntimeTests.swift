@@ -1703,7 +1703,7 @@ final class RuntimeTests: XCTestCase {
         eventually("working") { transport.sent.contains { $0.contains("\"base\":\"working\"") } }
         eventually("the start's reaction") { transport.dos("react").contains { $0.contains("\"say\"") } }
         XCTAssertTrue(transport.dos("task_complete").isEmpty && transport.dos("reply_ready").isEmpty, "a start gets no finish")
-        XCTAssertTrue(transport.dos("starting").isEmpty, "and no card")
+        XCTAssertTrue(transport.dos("starting").isEmpty, "and no card: the board no longer lists `starting`")
         transport.endDos()  // the device says each has played
         eventually("the start's reaction has played") {
             runtime.home.sync { self.recorded().contains { $0.actionPhase == .end && $0.actionName == "react" } }

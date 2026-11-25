@@ -64,13 +64,12 @@ struct WrappedFace : render::Face {
   }
   void drawerShown(const render::Drawer& d, int& first, int& last) const override { first = 0, last = d.total() - 1; }
 
-  uint8_t pick(render::SceneState anim, render::Mood mood, int wanted, render::Outcome outcome, render::StartCtx ctx,
-               linkkit::Rng& rng, int loops, int turn) const override {
-    return f->pick(anim, mood, wanted, outcome, ctx, rng, loops, turn);
+  uint8_t pick(render::SceneState anim, render::Mood mood, int wanted, render::Outcome outcome, linkkit::Rng& rng,
+               int loops, int turn) const override {
+    return f->pick(anim, mood, wanted, outcome, rng, loops, turn);
   }
-  void started(render::SceneState anim, render::Mood mood, uint8_t variant, render::Outcome outcome,
-               render::StartCtx ctx) override {
-    f->started(anim, mood, variant, outcome, ctx);
+  void started(render::SceneState anim, render::Mood mood, uint8_t variant, render::Outcome outcome) override {
+    f->started(anim, mood, variant, outcome);
   }
   int plays(render::SceneState anim, uint8_t variant, int loops) const override {
     return f->plays(anim, variant, loops);

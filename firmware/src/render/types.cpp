@@ -3,15 +3,14 @@
 namespace render {
 namespace {
 constexpr const char* kStateNames[] = {
-    "idle",        "working",  "needs_you", "task_complete", "asleep",    "no_app",  "listening",  "starting",
-    "planning",    "terminal", "tool_use",  "searching",     "analyzing", "testing", "delegating", "waiting",
-    "reply_ready", "poked",    "tap_spam",  "wake_up",       "gesture",   "notice"};
+    "idle",     "working",     "needs_you", "task_complete", "asleep",    "no_app",  "listening",
+    "planning", "terminal",    "tool_use",  "searching",     "analyzing", "testing", "delegating",
+    "waiting",  "reply_ready", "poked",     "tap_spam",      "wake_up",   "gesture", "notice"};
 constexpr const char* kGestureNames[] = {"handoff", "stroke", "ruffle",  "nose",    "tickle",
                                          "dizzy",   "pickup", "putdown", "startle", "peekaboo"};
 static_assert(sizeof kGestureNames / sizeof kGestureNames[0] == int(Gesture::kCount), "a name for every gesture");
 static_assert(sizeof kStateNames / sizeof kStateNames[0] == int(SceneState::kCount), "a name for every state");
 const char* const kOutcomes[] = {"", "success", "failure"};
-const char* const kCtxs[] = {"", "new_task", "session", "continuation", "compacted"};
 }  // namespace
 Mood moodFromName(const char* name) {
   Mood m = kStartupMood;
@@ -42,7 +41,6 @@ bool isMoment(SceneState s) {
     case SceneState::kReplyReady:
     case SceneState::kWakeUp:
     case SceneState::kNotice:
-    case SceneState::kStarting:
     case SceneState::kPoked:
     case SceneState::kTapSpam:
     case SceneState::kGesture:
@@ -91,12 +89,5 @@ AttnKind attnKindFromName(const char* name) {
 }
 
 const char* attnKindName(AttnKind k) { return kAttnKinds[int(k) < 4 ? int(k) : 0]; }
-
-StartCtx ctxFromName(const char* name) {
-  for (int i = 1; name && i < int(sizeof(kCtxs) / sizeof(kCtxs[0])); ++i) {
-    if (!std::strcmp(name, kCtxs[i])) return StartCtx(i);
-  }
-  return StartCtx::kNone;
-}
 
 }  // namespace render

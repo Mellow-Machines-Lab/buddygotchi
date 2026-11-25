@@ -45,7 +45,6 @@ inline uint32_t loopMs(Mood, SceneState s, int = 0) {
       6000,  // asleep
       3000,  // no app
       1600,  // listening
-      1200,  // starting
       2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,  // planning … waiting
       3000,  // reply ready
       800,   // poked
@@ -163,8 +162,7 @@ class StubFace : public render::Face {
 
   // A finish's design for the outcome asked for; else the variation asked
   // for, if it has it, else one it didn't play last.
-  uint8_t pick(SceneState s, Mood mood, int wanted, Outcome o, render::StartCtx, linkkit::Rng& rng, int,
-               int) const override {
+  uint8_t pick(SceneState s, Mood mood, int wanted, Outcome o, linkkit::Rng& rng, int, int) const override {
     if (s == SceneState::kTaskComplete && o != Outcome::kNone) return o == Outcome::kFailure ? 1 : 0;
     const int n = variants(mood, s);
     if (wanted >= 1 && wanted <= n) return uint8_t(wanted - 1);
@@ -172,7 +170,7 @@ class StubFace : public render::Face {
     const int v = rng.range(0, n - 2);
     return uint8_t(v >= last_[int(s)] - 1 && last_[int(s)] ? v + 1 : v);
   }
-  void started(SceneState s, Mood, uint8_t variant, Outcome, render::StartCtx) override {
+  void started(SceneState s, Mood, uint8_t variant, Outcome) override {
     if (int(s) < int(SceneState::kCount)) last_[int(s)] = uint8_t(variant + 1);
   }
   int variants(Mood m, SceneState s) const override { return testface::variants(m, s); }

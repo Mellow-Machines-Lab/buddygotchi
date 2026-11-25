@@ -57,7 +57,6 @@ enum DoIndex : uint8_t {
   kReact,
   kTaskComplete,
   kReplyReady,
-  kStarting,
   kWakeUp,
   kListening,
   kStopListening,
@@ -67,14 +66,13 @@ enum DoIndex : uint8_t {
   kWishGone,
   kDoCount
 };
-constexpr const char* kDoNames[kDoCount] = {"react",     "task_complete",  "reply_ready", "starting", "wake_up",
-                                            "listening", "stop_listening", "notice",      "call",     "wish_met",
-                                            "wish_gone"};
-constexpr render::SceneState kDoAnims[kDoCount] = {
-    render::SceneState::kNone,      render::SceneState::kTaskComplete, render::SceneState::kReplyReady,
-    render::SceneState::kStarting,  render::SceneState::kWakeUp,       render::SceneState::kListening,
-    render::SceneState::kNone,      render::SceneState::kNotice,       render::SceneState::kNone,
-    render::SceneState::kNotice,    render::SceneState::kNone};
+constexpr const char* kDoNames[kDoCount] = {"react",          "task_complete", "reply_ready", "wake_up",  "listening",
+                                            "stop_listening", "notice",        "call",        "wish_met", "wish_gone"};
+constexpr render::SceneState kDoAnims[kDoCount] = {render::SceneState::kNone,       render::SceneState::kTaskComplete,
+                                                   render::SceneState::kReplyReady, render::SceneState::kWakeUp,
+                                                   render::SceneState::kListening,  render::SceneState::kNone,
+                                                   render::SceneState::kNotice,     render::SceneState::kNone,
+                                                   render::SceneState::kNotice,     render::SceneState::kNone};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a
@@ -361,8 +359,8 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
 // A do's args, as a reaction's fields. The variation
 // is picked here, as the reaction is about to play: the Mac's (from 1) when
 // it's one of its design's, in the mood it's drawn in, for the finish's
-// outcome or the start's context; else the device picks one of those,
-// never the one it showed last. A finish's `loops` and `turn` (the tier its
+// outcome; else the device picks one of those, never the one it showed
+// last. A finish's `loops` and `turn` (the tier its
 // turn reached) may size it, the face's call; one they sized plays once.
 ReactionIn Device::parse(const Do& c, uint32_t t) {
   ReactionIn mo;
@@ -381,13 +379,10 @@ ReactionIn Device::parse(const Do& c, uint32_t t) {
   mo.loops = heldTo(args["loops"], 1, Behaviour::kMaxLoops, 1);
   if (mo.anim != render::SceneState::kNone) {
     render::Outcome outcome = render::Outcome::kNone;
-    render::StartCtx ctx = render::StartCtx::kNone;
     if (mo.anim == render::SceneState::kTaskComplete) outcome = render::outcomeFromName(args["outcome"]);
-    if (mo.anim == render::SceneState::kStarting) ctx = render::ctxFromName(args["ctx"]);
     mo.outcome = outcome;
-    mo.ctx = ctx;
     mo.variant = b_.pick(mo.anim, mo.expr ? mo.mood : b_.model().mood, heldTo(args["variant"], 0, 255, 0), outcome,
-                         ctx, kit().rng(), mo.loops,
+                         kit().rng(), mo.loops,
                          heldTo(args["turn"], render::kNoTurn, render::kTurnTiers, render::kNoTurn));
     // A design its loops sized plays once.
     mo.loops = b_.face().plays(mo.anim, mo.variant, mo.loops);
@@ -554,11 +549,6 @@ void Device::onDo(const Do& c, uint32_t t) {
       if (b_.signPending(t)) live_.restKey = c.key, live_.restAt = b_.signEnd();
       else if (b_.reactionSeq() == seq) kit().ended(c.key);  // only the heart: over as it starts
       else kit().rest(c.key);
-      break;
-    case kStarting:
-      // The compacted card is news to read: it holds, as a finish does,
-      // until it has played. Any other start is over as it starts.
-      if (mo.ctx != render::StartCtx::kCompacted) kit().rest(c.key);
       break;
     default:
       kit().rest(c.key);

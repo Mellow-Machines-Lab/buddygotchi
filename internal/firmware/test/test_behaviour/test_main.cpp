@@ -577,7 +577,7 @@ static void test_listening_rotates_its_variations() {
   m.anim = SceneState::kListening, m.variant = 2;
   onReaction(r.b, m, r.t);
   TEST_ASSERT_EQUAL_INT(2, r.b.show(r.t).variant);
-  TEST_ASSERT_NOT_EQUAL(2, r.b.pick(SceneState::kListening, render::Mood::kHappy, 0, render::Outcome::kNone, render::StartCtx::kNone, r.rng));
+  TEST_ASSERT_NOT_EQUAL(2, r.b.pick(SceneState::kListening, render::Mood::kHappy, 0, render::Outcome::kNone, r.rng));
 }
 
 // The finish plays its loops of the mood's task-complete
@@ -1259,7 +1259,7 @@ static void test_a_sign_shows_while_its_reaction_plays() {
   r.at(30100);
   TEST_ASSERT_EQUAL_STRING("poked", r.b.tap(r.t, r.rng));
   TEST_ASSERT_EQUAL_STRING("hello", sign().c_str());
-  r.react(SceneState::kStarting);
+  r.react(SceneState::kWakeUp);
   TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
   TEST_ASSERT_EQUAL_STRING("hello 1000", drawn().c_str());  // fading out from now
   r.at(r.t + render::rig::kFadeMs);
@@ -1472,9 +1472,9 @@ static void test_the_clock_going_back_starts_the_look_over() {
   r.state(base("idle"));
   r.at(9001);
   ReactionIn in;
-  in.anim = SceneState::kStarting, in.loops = 2;
+  in.anim = SceneState::kWakeUp, in.loops = 2;
   onReaction(r.b, in, r.t);
-  TEST_ASSERT_EQUAL(SceneState::kStarting, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kWakeUp, r.anim());
   r.at(4201);
   TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   TEST_ASSERT_EQUAL_UINT32(0, r.b.designMs(r.t));
@@ -1726,7 +1726,7 @@ static void test_a_cheer_names_whose_turn_in_the_strip() {
   onReaction(r.b, in, r.t);
   TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
   TEST_ASSERT_TRUE(r.b.strip(r.t).doneOutcome == render::Outcome::kNone);
-  in.anim = SceneState::kStarting;  // not a finish: nobody's named
+  in.anim = SceneState::kWakeUp;  // not a finish: nobody's named
   onReaction(r.b, in, r.t);
   TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);
 }
@@ -2031,7 +2031,7 @@ static void test_a_finish_linger_ends_when_the_face_is_taken() {
   uint32_t left;
   r.b.reaction(r.t, left);
   r.at(r.t + left + 100);
-  r.react(SceneState::kStarting);  // another animation
+  r.react(SceneState::kWakeUp);  // another animation
   TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
   TEST_ASSERT_TRUE(r.b.strip(r.t).opacity > 0);  // fading out from what it showed
   r.at(r.t + render::rig::kFadeMs);
@@ -2077,7 +2077,7 @@ static void test_an_act_shows_in_workings_place() {
   using render::Mood;
   TEST_ASSERT_TRUE(app::actFromName("terminal") == SceneState::kTerminal);
   TEST_ASSERT_TRUE(app::actFromName("waiting") == SceneState::kWaiting);
-  for (const char* other : {"dancing", "", "working", "idle", "needs_you", "starting", "poked", "Terminal"}) {
+  for (const char* other : {"dancing", "", "working", "idle", "needs_you", "wake_up", "poked", "Terminal"}) {
     TEST_ASSERT_TRUE_MESSAGE(app::actFromName(other) == SceneState::kWorking, other);
   }
   TEST_ASSERT_TRUE(app::actFromName(nullptr) == SceneState::kWorking);
@@ -2112,11 +2112,11 @@ static void test_an_act_shows_in_workings_place() {
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNeedsYou);
 }
 
-// The rules' reaction (starting) plays its design once in Boop's mood,
-// from its start, then the look comes back.
-// They carry no id, so no `ended` goes back.
+// A reaction with no id (wake_up, here) plays its design once in Boop's
+// mood, from its start, then the look comes back. With no id, no `ended`
+// goes back.
 static void test_a_rules_reaction_plays_once() {
-  for (SceneState a : {SceneState::kStarting}) {
+  for (SceneState a : {SceneState::kWakeUp}) {
     for (render::Mood mood : {render::Mood::kHappy, render::Mood::kCalm}) {
       Rig r;
       Model m = base("working");
@@ -2149,7 +2149,7 @@ static void test_a_rules_reaction_plays_once() {
 // would have.
 static void test_a_face_plays_over_a_rules_reaction() {
   NEEDS_VOICE_PACK();
-  for (SceneState a : {SceneState::kStarting, SceneState::kPoked}) {
+  for (SceneState a : {SceneState::kWakeUp, SceneState::kPoked}) {
     Rig r;
     r.state(base("working"));
     r.at(1000);
@@ -2174,7 +2174,7 @@ static void test_a_face_plays_over_a_rules_reaction() {
 // None of the rules' reactions plays while something needs
 // you or listening waits for the reply.
 static void test_no_rules_reaction_while_the_face_is_held() {
-  for (SceneState a : {SceneState::kStarting, SceneState::kReplyReady}) {
+  for (SceneState a : {SceneState::kWakeUp, SceneState::kReplyReady}) {
     Rig r;
     r.state(attn());
     ReactionIn in;
@@ -2200,8 +2200,8 @@ static void test_only_the_reply_ends_listening() {
   r.state(base("idle"));
   r.talkOn();
   const uint32_t seq = r.b.reactionSeq();
-  for (SceneState a : {SceneState::kStarting, SceneState::kTaskComplete,
-                 SceneState::kReplyReady, SceneState::kPoked, SceneState::kTapSpam}) {
+  for (SceneState a : {SceneState::kWakeUp, SceneState::kTaskComplete, SceneState::kReplyReady, SceneState::kPoked,
+                       SceneState::kTapSpam}) {
     ReactionIn in;
     in.anim = a;
     onReaction(r.b, in, r.t);
@@ -2232,8 +2232,8 @@ static void test_what_shows_first() {
   r.state(m);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kTesting);  // 5. the look
   r.at(1000);
-  r.react(SceneState::kStarting);
-  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kStarting);  // 4. a reaction
+  r.react(SceneState::kNotice);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNotice);  // 4. a reaction
   r.b.tap(r.t, r.rng);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kPoked);  // 4. a poke replaces it
   r.react(SceneState::kWakeUp);

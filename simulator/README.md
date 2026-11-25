@@ -187,7 +187,7 @@ A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of Boop's
   "takes": ["phase1.borrowed.andiamo__curious__contained", "…"],
   "events": [
     {"at": 0, "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"},
-    {"at": 0.001, "line": "{\"t\":\"do\",\"id\":2078730064,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"},
+    {"at": 0.002, "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"},
     {"at": 2.004, "cause": {"kind": "prompt", "text": "You ask Claude: “Add keyboard shortcuts”"}}
   ]
 }

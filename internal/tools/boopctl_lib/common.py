@@ -46,14 +46,13 @@ def lasting_moods(pack: Path | None = None) -> list[str]:
 
 
 # The animations a `do` plays by name:
-# the brain's finish, wake-up and notice and the rules' reactions, each its
-# design's state. A tap's (poked, tap_spam) the device plays itself, never
-# by name.
-ANIMS = ["task_complete", "reply_ready", "wake_up", "notice", "starting"]
+# the brain's finish, wake-up and notice, each its design's state. A tap's
+# (poked, tap_spam) the device plays itself, never by name.
+ANIMS = ["task_complete", "reply_ready", "wake_up", "notice"]
 # Every name Boop's device plays, its `hello.does`:
 # the animations, the brain's reaction with no animation of its own
 # (`react`), and push-to-talk's start and its end with no reply.
-DOES = ["react", "task_complete", "reply_ready", "starting", "wake_up", "listening",
+DOES = ["react", "task_complete", "reply_ready", "wake_up", "listening",
         "stop_listening", "notice", "call", "wish_met", "wish_gone"]
 # The `do` names that play no animation: a face and a `say`, ending
 # push-to-talk, and the work stream's word that comes forward.
@@ -62,8 +61,6 @@ NO_ANIM = {"react", "stop_listening", "call", "wish_gone"}
 # play` still takes; the device doesn't know it: `cheer` is
 # task_complete's success.
 OLD_ANIMS = {"cheer": "task_complete"}
-# The reactions the rules send, never the brain.
-RULE_REACTIONS = {"starting"}
 # The animations that play a turn's finish: the brain's
 # task_complete and reply_ready, and their older names in older logs (the
 # cheer).
@@ -71,7 +68,6 @@ FINISHES = {"task_complete", "reply_ready"}
 FINISHES |= {old for old, anim in OLD_ANIMS.items() if anim in FINISHES}
 # The facts that pick an animation's variations.
 OUTCOMES = ["success", "failure"]
-CTXS = ["new_task", "session", "continuation", "compacted"]
 # How long the Mac lets a `next` wait in the queue (the kit's default,
 # linkkit/SPEC.md §3).
 TTL_MS = 5000
@@ -79,7 +75,7 @@ TTL_MS = 5000
 
 def do(name: str, play: str = "now", id: int | None = None, ttl: int | None = None, **args: Any) -> dict[str, Any]:
     """A `do` to play `name` (linkkit/SPEC.md §3), with Boop's
-    fields (`say`, `mood`, `loops`, `variant`, `outcome`, `ctx`) in `args`.
+    fields (`say`, `mood`, `loops`, `variant`, `outcome`) in `args`.
     The tools play `now` by default, so each replaces the last at once, as
     every reaction did before the device kept a queue; a `do` with no `id`
     plays but gets no `ended`, and only the ones a tool waits on have one."""
@@ -98,7 +94,7 @@ def call(msg: dict[str, Any]) -> dict[str, Any] | None:
     """What a message to the device asks it to play, in one shape for the
     tools that read the messages the Mac sent: its `name`, its `anim` (None for
     a face or a `say` alone), `id`, `play`, and Boop's fields (`say`, `mood`,
-    `loops`, `variant`, `outcome`, `ctx`, `who`) as they are. A `do`; None
+    `loops`, `variant`, `outcome`, `who`) as they are. A `do`; None
     for anything else."""
     if msg.get("t") == "do":
         args = msg.get("args") if isinstance(msg.get("args"), dict) else {}

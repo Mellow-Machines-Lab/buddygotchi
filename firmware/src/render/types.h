@@ -30,7 +30,6 @@ enum class SceneState : uint8_t {
   kAsleep,
   kNoApp,
   kListening,
-  kStarting,
   kPlanning,
   kTerminal,
   kToolUse,
@@ -55,8 +54,7 @@ SceneState stateFromName(const char* name);  // kIdle if missing or unknown
 // The Moments' animations: the brain's finish (task_complete, a turn done
 // or failed; reply_ready, an answer or a question back) and its wake_up
 // (you back at the Mac after a long break) and its notice (you named it in
-// your prompt: it looks up at you), the rules'
-// reaction (starting, a start's card), a tap's (poked, and
+// your prompt: it looks up at you), a tap's (poked, and
 // tap_spam from the third in a row), the board's own to a gesture
 // (gesture) and push-to-talk's listening, until the reply.
 bool isMoment(SceneState s);
@@ -83,17 +81,14 @@ const char* gestureName(Gesture g);  // "handoff", "stroke", ...
 SceneState reactionFromName(const char* name);  // kNone for any other name
 
 // The host fact a variation is for, when it's for one: task_complete's
-// outcome and starting's context. kNone on a design
-// is for any; as a filter, it takes any.
+// outcome. kNone on a design is for any; as a filter, it takes any.
 enum class Outcome : uint8_t { kNone, kSuccess, kFailure };
-enum class StartCtx : uint8_t { kNone, kNewTask, kSession, kContinuation, kCompacted };
 Outcome outcomeFromName(const char* name);  // "success" or "failure"; kNone otherwise
 
 // What a celebration's gold has before its words (a `do`'s `mark`): a star,
 // a full ring for today's ring, or a medal for a league's place.
 enum class GoldMark : uint8_t { kStar, kRing, kGold, kSilver, kBronze };
 GoldMark goldMarkFromName(const char* name);  // "ring", "gold", "silver", "bronze"; kStar otherwise
-StartCtx ctxFromName(const char* name);     // "new_task", "session", "continuation" or "compacted"; kNone otherwise
 // What the needs-you request asks of you (`attn.kind`): a yes or no to a
 // call, a question to answer, or a plan to read; kNone when the Mac doesn't
 // say (an older app, or practice).

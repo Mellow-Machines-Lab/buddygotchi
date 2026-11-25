@@ -73,7 +73,7 @@ final class HarnessTests: XCTestCase {
             (#"{"event":{"seq":9,"at":9,"source":"self","kind":"did","data":{"action":"wiggle","by":"rule","for":4,"message":"Boop wiggled on its own.","ok":true}},"received_at_ms":9}"#,
              "  ✓ wiggle (rule): Boop wiggled on its own."),
             ("not json", "not json"),
-            (#"{"sent":{"t":"do","id":1,"name":"starting","play":"if_free"},"by":"rule","received_at_ms":9}"#, nil),
+            (#"{"sent":{"t":"do","id":1,"name":"notice","play":"if_free"},"by":"rule","received_at_ms":9}"#, nil),
             (DebugLog.ended(Ended(id: 1, how: .skipped, why: "busy"), at: 9), nil),
             (#"{"status":{"brain":"none","connected":false,"mood":"cheerful","personality":"boop","sessions":[]},"received_at_ms":9}"#, nil),
             (#"{"questions":[],"received_at_ms":9}"#, nil),

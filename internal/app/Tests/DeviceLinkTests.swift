@@ -15,7 +15,7 @@ import XCTest
 final class FakeTransport: Transport, @unchecked Sendable {
     /// Boop's device, playing every name the app sends, with the app's
     /// voice file.
-    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","wake_up","listening","stop_listening","notice","call","wish_met","wish_gone"],"voice":"\#(Take.voiceVersion)"}"#
+    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","wake_up","listening","stop_listening","notice","call","wish_met","wish_gone"],"voice":"\#(Take.voiceVersion)"}"#
 
     let lock = NSLock()
     var lines: [String] = []
@@ -230,10 +230,12 @@ final class DeviceLinkTests: XCTestCase {
     }
 
     /// The fake device's `hello.does` is the firmware's
-    /// (`kDoNames` in firmware/src/app/device.cpp, in its order), and every
-    /// name the Mac sends is among them: LinkKit fails a `do` whose name the
-    /// `hello` doesn't list, so a name the firmware drops or renames would
-    /// silently cost Boop that reaction, or every reaction.
+    /// (`kDoNames` in firmware/src/app/device.cpp, in its order), and the
+    /// names the Mac sends are those, no more and no fewer: LinkKit fails a
+    /// `do` whose name the `hello` doesn't list, so a name the firmware drops
+    /// or renames would silently cost Boop that reaction, or every reaction;
+    /// and a name only the firmware has is one nothing plays, as `starting`
+    /// was.
     func testTheMacSendsOnlyNamesTheFirmwarePlays() throws {
         let device = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .appendingPathComponent("../../../firmware/src/app/device.cpp").standardizedFileURL
@@ -252,6 +254,7 @@ final class DeviceLinkTests: XCTestCase {
         let anims = ["task_complete", "reply_ready", "wake_up", "notice", Core.wishMet, Core.wishGone]
         let sent = anims + [Moment.react, BoopDevice.listening, BoopDevice.stopListening, WorkStream.action]
         XCTAssertEqual(Set(sent).subtracting(firmware), [], "every name the Mac sends is one the firmware plays")
+        XCTAssertEqual(Set(firmware).subtracting(sent), [], "and the firmware lists none the Mac never sends")
     }
 
     /// Bluetooth off, refused or missing is said in plain words, with what

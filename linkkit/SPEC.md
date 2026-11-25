@@ -50,7 +50,7 @@ Tools also send `dbg.*` messages over USB (§7).
 ### `hello`: device → host
 
 ```json
-{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","boot":"5d0e19a3","does":["react","starting","listening"],"voice":"1aace295d219"}
+{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","boot":"5d0e19a3","does":["react","task_complete","listening"],"voice":"1aace295d219"}
 ```
 
 | Field | Meaning |

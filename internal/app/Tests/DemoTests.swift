@@ -254,7 +254,7 @@ final class DemoTests: XCTestCase {
             #"{"t":"do","id":3,"name":"task_complete","args":{"outcome":"success"}}"#,
             #"{"t":"do","id":4,"name":"task_complete","args":{"outcome":"failure"}}"#,
             #"{"t":"do","id":6,"name":"listening"}"#,
-            #"{"t":"do","id":7,"name":"starting"}"#,
+            #"{"t":"do","id":7,"name":"stop_listening"}"#,
             #"{"t":"do","id":9,"name":"wake_up","args":{"mood":"happy"}}"#,
         ] { recorder.sent(message) }
         XCTAssertEqual(recorder.recording(character: "boop", face: "gel").events.map(\.effect), [

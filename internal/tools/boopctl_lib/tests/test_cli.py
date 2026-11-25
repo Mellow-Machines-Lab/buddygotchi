@@ -120,7 +120,7 @@ class PlayTests(unittest.TestCase):
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["determined"])
         self.play("cheer", "--mood", "wounded")
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["wounded"])
-        self.play("starting")
+        self.play("notice")
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["happy"])
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             cli.build_parser().parse_args(["play", "cheer", "--mood", "cheerful"])
@@ -141,7 +141,7 @@ class PlayTests(unittest.TestCase):
         for anim in cli.ANIMS:
             self.assertEqual(self.play(anim), (0, [anim]))
             self.assertEqual(self.dos(), [{"t": "do", "name": anim, "play": "now"}])
-        self.assertEqual(self.play("task_complete", playing="starting")[0], 1, "something else playing")
+        self.assertEqual(self.play("task_complete", playing="notice")[0], 1, "something else playing")
 
     def test_the_older_names_are_sent_by_todays(self):
         """The device no longer knows `cheer`: play sends task_complete's
@@ -156,11 +156,9 @@ class PlayTests(unittest.TestCase):
         self.assertEqual(self.play("cheer", "--take", "new.d15")[0], 0)
         self.assertEqual(self.args()[0]["say"], {"take": "new.d15"})
 
-    def test_play_sends_the_facts(self):  # outcome, ctx, variant
+    def test_play_sends_the_facts(self):  # outcome, variant
         self.play("task_complete", "--outcome", "failure", "--variant", "2")
         self.assertEqual(self.args(), [{"outcome": "failure", "variant": 2}])
-        self.play("starting", "--ctx", "session")
-        self.assertEqual([a.get("ctx") for a in self.args()], ["session"])
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             cli.build_parser().parse_args(["play", "task_complete", "--outcome", "win"])
 
@@ -207,7 +205,7 @@ class WireTests(unittest.TestCase):
         self.assertEqual(json.dumps(common.do("react", id=44, play="next", ttl=5000, mood="calm")),
                          '{"t": "do", "id": 44, "name": "react", "play": "next", "ttl": 5000, "args": {"mood": "calm"}}',
                          "in the vocabulary's order")
-        self.assertEqual(common.do("starting"), {"t": "do", "name": "starting", "play": "now"}, "now, no id, no args")
+        self.assertEqual(common.do("notice"), {"t": "do", "name": "notice", "play": "now"}, "now, no id, no args")
 
     def test_what_a_request_asks(self):
         call = common.call
@@ -217,7 +215,7 @@ class WireTests(unittest.TestCase):
                          ("task_complete", 7, "next", "success", {"take": "a"}))
         self.assertEqual({k: call({"t": "do", "name": k})["anim"] for k in ("react", "stop_listening", "listening")},
                          {"react": None, "stop_listening": None, "listening": "listening"})
-        self.assertEqual(call({"t": "do", "name": "starting"})["play"], "next", "the kit's default")
+        self.assertEqual(call({"t": "do", "name": "notice"})["play"], "next", "the kit's default")
         self.assertIsNone(call({"t": "state", "base": "idle"}))
 
     def test_what_says_a_request_ended(self):
@@ -578,13 +576,11 @@ class SoakTests(unittest.TestCase):
         finishes = [m["args"] for m in dos if m["name"] == "task_complete"]
         self.assertTrue(finishes)
         self.assertTrue(all(1 <= a["loops"] <= 3 and a["outcome"] in cli.OUTCOMES for a in finishes))
-        self.assertTrue(all(m["args"]["ctx"] in cli.CTXS for m in dos if m["name"] == "starting"))
         self.assertTrue(all(m["args"]["say"] is not None for m in dos if m["name"] == "react"), "a react says something")
         self.assertFalse(any("id" in m or "mood" in m.get("args", {}) for m in dos), "the rest aren't waited on")
-        # Each asks to play as the Mac or a tool would.
+        # Each asks to play as the Mac sends the brain's.
         plays = {m["name"]: (m["play"], m.get("ttl")) for m in dos}
-        self.assertEqual(plays, {"starting": ("if_free", None),
-                                 "task_complete": ("next", 5000), "reply_ready": ("next", 5000), "wake_up": ("next", 5000),
+        self.assertEqual(plays, {"task_complete": ("next", 5000), "reply_ready": ("next", 5000), "wake_up": ("next", 5000),
                                  "notice": ("next", 5000), "react": ("next", 5000)})
 
     def test_each_reaction_ends_once(self):

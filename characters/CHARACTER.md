@@ -581,7 +581,7 @@ A face is what the board draws and the sounds it makes. The engine says
 
 ### Every state a face is asked for
 
-The engine asks a face for any of the pack's moods (§5) with any of these 22
+The engine asks a face for any of the pack's moods (§5) with any of these 21
 states. A face must answer for all of them, in every mood. It may draw the
 same design for several. The names are the firmware's
 (`firmware/src/render/types.cpp`), and `charactergen.py --check` holds this
@@ -611,7 +611,6 @@ then go.
 
 | State | When it plays | Sent by |
 | --- | --- | --- |
-| `starting` | An agent starts; `ctx` may say how: `new_task`, `session`, `continuation` or `compacted`. The board's firmware knows it | a tool (`boopctl`); the Mac sends none |
 | `task_complete` | A turn ends: the finish. `outcome` is `success` or `failure`, and `turn` the tier it reached: 0 short of `tier1`, then 1 to 3 (`Moment.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |

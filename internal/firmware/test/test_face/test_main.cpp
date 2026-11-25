@@ -49,16 +49,16 @@ static void test_palette_ramps_run_from_black_to_the_ink() {
 
 // The animations, each by its design's state's name, and
 // nothing else: the brain's finish (task_complete, reply_ready), wake_up
-// and notice, the rules' reaction (starting), a tap's
-// (poked, tap_spam), the board's own to a gesture (gesture) and listening.
-// The older names ("cheer", "wiggle") are gone
-// with the reaction message. Each plays its own design.
+// and notice, a tap's (poked, tap_spam), the board's own to a gesture
+// (gesture) and listening. The older names ("cheer", "wiggle") are gone
+// with the reaction message, and "starting" with the start card the Mac no
+// longer sends. Each plays its own design.
 static void test_every_anim_has_a_name() {
-  const char* names[] = {"task_complete", "reply_ready", "starting", "poked",  "tap_spam",
-                         "wake_up",       "listening",   "gesture",  "notice"};
+  const char* names[] = {"task_complete", "reply_ready", "poked",   "tap_spam",
+                         "wake_up",       "listening",   "gesture", "notice"};
   int reactions = 0;
   for (int i = 0; i < int(SceneState::kCount); ++i) reactions += isMoment(SceneState(i));
-  TEST_ASSERT_EQUAL_INT(9, reactions);
+  TEST_ASSERT_EQUAL_INT(8, reactions);
   for (const char* name : names) {
     const SceneState a = reactionFromName(name);
     TEST_ASSERT_TRUE_MESSAGE(isMoment(a), name);
@@ -69,9 +69,10 @@ static void test_every_anim_has_a_name() {
   TEST_ASSERT_TRUE(reactionFromName("cheer") == SceneState::kNone);
   TEST_ASSERT_TRUE(reactionFromName("wiggle") == SceneState::kNone);
   TEST_ASSERT_TRUE(reactionFromName(nullptr) == SceneState::kNone);
-  for (const char* gone : {"dance", "oops", "side_eye", "stretch", "yawn", "zip", "gobble", "rumble", "levelup",
-                           "happy", "proud", "smug", "curious", "sleepy", "worried", "sulky", "love", "nod",
-                           "thinking", "shrug", "idle", "working", "terminal", "needs_you", "no_app", "none"}) {
+  for (const char* gone :
+       {"dance",    "oops",  "side_eye", "stretch", "yawn",     "zip",       "gobble", "rumble", "levelup",
+        "happy",    "proud", "smug",     "curious", "sleepy",   "worried",   "sulky",  "love",   "nod",
+        "thinking", "shrug", "idle",     "working", "terminal", "needs_you", "no_app", "none",   "starting"}) {
     TEST_ASSERT_TRUE_MESSAGE(reactionFromName(gone) == SceneState::kNone, gone);
   }
 }
@@ -91,14 +92,13 @@ static void test_every_mood_has_a_name() {
   TEST_ASSERT_TRUE(moodFromName(nullptr) == Mood::kHappy);
 }
 
-// The designs' 22 states by name, in the wire's order, the
+// The designs' 21 states by name, in the wire's order, the
 // first seven keeping their numbers; a missing or unknown one is idle.
 static void test_every_state_has_a_name() {
-  TEST_ASSERT_EQUAL_INT(22, int(SceneState::kCount));
-  const char* names[] = {"idle",      "working",  "needs_you",  "task_complete", "asleep",      "no_app",
-                         "listening", "starting", "planning",   "terminal",      "tool_use",    "searching",
-                         "analyzing", "testing",  "delegating", "waiting",       "reply_ready", "poked",
-                         "tap_spam",  "wake_up",  "gesture",    "notice"};
+  TEST_ASSERT_EQUAL_INT(21, int(SceneState::kCount));
+  const char* names[] = {"idle",     "working",     "needs_you", "task_complete", "asleep",    "no_app",  "listening",
+                         "planning", "terminal",    "tool_use",  "searching",     "analyzing", "testing", "delegating",
+                         "waiting",  "reply_ready", "poked",     "tap_spam",      "wake_up",   "gesture", "notice"};
   for (int i = 0; i < int(sizeof names / sizeof names[0]); ++i) {
     TEST_ASSERT_EQUAL_STRING(names[i], stateName(SceneState(i)));
     TEST_ASSERT_TRUE(stateFromName(names[i]) == SceneState(i));

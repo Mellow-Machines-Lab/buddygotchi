@@ -32,7 +32,7 @@ test('the board is asked for each state as the Mac asks for it, for a review cli
   const finish=wire({mood:'proud',state:'task_complete',outcome:'failure'}).steps;
   assert.deepEqual(finish.map(([,m])=>[m.t,m.base||m.name]),[['state','working'],['do','task_complete']],'a reaction over working');
   assert.deepEqual(finish[1][1].args,{outcome:'failure'});
-  assert.deepEqual(wire({mood:'calm',state:'starting',context:'compacted'}).steps[1][1].args,{ctx:'compacted'});
+  assert.throws(()=>wire({mood:'calm',state:'starting'}),/no state starting/,'the board has no start card');
   assert.equal(wire({mood:'calm',state:'wake_up'}).steps[0][1].base,'idle','waking up is over idle');
   assert.deepEqual(wire({mood:'calm',state:'tap_spam'}).steps.slice(1).map(([ms,m])=>[ms,m.t]),[[0,'dbg.touch'],[200,'dbg.touch'],[400,'dbg.touch']],'the third tap within 3 s is tap spam');
   assert.deepEqual([wire({mood:'calm',state:'poked'}).steps[1][1].x,wire({mood:'calm',state:'poked'}).steps[1][1].y],TAP,'a tap where the simulator taps');

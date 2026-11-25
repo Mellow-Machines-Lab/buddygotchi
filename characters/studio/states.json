@@ -5,9 +5,8 @@
       {"id": "asleep", "about": "No agent sessions at all, so the creature sleeps."},
       {"id": "no_app", "label": "No Mac", "about": "The board has lost the Mac, so it rests on its own."}
     ]},
-    {"label": "Starting", "states": [
-      {"id": "listening", "about": "You are holding the button to talk to it."},
-      {"id": "starting", "about": "An agent has just started a task, a session or a continuation, or had its context compacted."}
+    {"label": "Listening", "states": [
+      {"id": "listening", "about": "You are holding the button to talk to it."}
     ]},
     {"label": "Working", "states": [
       {"id": "planning", "about": "The agent is planning. The Mac no longer sends it: planning shows as tool_use."},
@@ -41,12 +40,6 @@
     "task_complete": {"name": "outcome", "label": "Outcome", "options": [
       {"id": "success", "label": "Success"},
       {"id": "failure", "label": "Failure"}
-    ]},
-    "starting": {"name": "context", "label": "Start context", "options": [
-      {"id": "new_task", "label": "New task"},
-      {"id": "session", "label": "New session"},
-      {"id": "continuation", "label": "Continuing"},
-      {"id": "compacted", "label": "Compacted"}
     ]}
   }
 }

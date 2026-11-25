@@ -54,8 +54,8 @@ import Testing
     @Test func testADoLineMatchesTheSpec() {
         #expect(Wire.do(id: 44, name: "task_complete", play: .next, ttl: 5000, args: ["outcome": "success"])
             == #"{"t":"do","id":44,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success"}}"#)
-        #expect(Wire.do(id: 45, name: "starting", play: .ifFree, ttl: 5000, args: ["variant": 3, "ctx": "new_task"])
-            == #"{"t":"do","id":45,"name":"starting","play":"if_free","args":{"variant":3,"ctx":"new_task"}}"#)
+        #expect(Wire.do(id: 45, name: "wake_up", play: .ifFree, ttl: 5000, args: ["variant": 3, "mood": "curious"])
+            == #"{"t":"do","id":45,"name":"wake_up","play":"if_free","args":{"variant":3,"mood":"curious"}}"#)
         #expect(Wire.do(id: 2147483647, name: "listening", play: .now, ttl: 5000, args: [:])
             == #"{"t":"do","id":2147483647,"name":"listening","play":"now"}"#)
     }
@@ -63,9 +63,9 @@ import Testing
     /// SPEC.md §3: `hello`'s five kit fields, and every other field the
     /// app's, in the line's order.
     @Test func testReadsAHello() {
-        let line = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","does":["react","starting","listening"],"voice":"1aace295d219","x":{"y":1}}"#
+        let line = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","does":["react","task_complete","listening"],"voice":"1aace295d219","x":{"y":1}}"#
         #expect(Wire.decode(line) == .hello(Hello(kit: 1, app: "boop", id: "b00p-54fe", fw: "1.4.0",
-                                                  does: ["react", "starting", "listening"],
+                                                  does: ["react", "task_complete", "listening"],
                                                   fields: ["voice": "1aace295d219", "x": ["y": 1]])))
         guard case .hello(let h) = Wire.decode(line) else { Issue.record("not a hello"); return }
         #expect(h.fields.keys == ["voice", "x"])

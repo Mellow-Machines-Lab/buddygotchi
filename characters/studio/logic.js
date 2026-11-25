@@ -31,7 +31,7 @@
   // a reaction or input plays over (working, or idle for waking up and a
   // stroke) and then it. `after` is how long the board takes to show it
   // with nothing more said: no_app's window.
-  const DOES = ['listening', 'starting', 'reply_ready', 'task_complete', 'wake_up', 'notice'];
+  const DOES = ['listening', 'reply_ready', 'task_complete', 'wake_up', 'notice'];
   const NO_APP_MS = 30000;  // with no state this long, the board takes the Mac for gone (linkkit's kHostGoneMs)
   function wiring({acts, tap}) {
     const looks = {...LOOKS, no_app: WORKING, needs_you: {...WORKING, attn: {id: 1, agent: 'claude', project: 'Studio', more: 0}},
@@ -40,12 +40,12 @@
     const TOUCH = {t: 'dbg.touch', x: tap[0], y: tap[1], ms: 60};
     const INPUTS = {poked: [[0, TOUCH]], tap_spam: [[0, TOUCH], [200, TOUCH], [400, TOUCH]], gesture: [[0, STROKE]]};
     let ids = 0;
-    return function wire({mood, state, outcome = 'success', context = 'new_task'}, vol = 0) {
+    return function wire({mood, state, outcome = 'success'}, vol = 0) {
       if (looks[state]) return {look: looks[state], after: state === 'no_app' ? NO_APP_MS : 0, steps: [[0, {t: 'state', ...looks[state], mood, vol}]]};
       const look = state === 'wake_up' || state === 'gesture' ? looks.idle : WORKING;
       const steps = [[0, {t: 'state', ...look, mood, vol}]];
       if (DOES.includes(state)) {
-        const args = state === 'task_complete' ? {outcome} : state === 'starting' ? {ctx: context} : {};
+        const args = state === 'task_complete' ? {outcome} : {};
         steps.push([0, {t: 'do', id: ++ids, name: state, play: 'now', args}]);
       } else if (INPUTS[state]) steps.push(...INPUTS[state]);
       else throw Error(`The board has no state ${state}`);

@@ -317,7 +317,7 @@ static void test_gel_frames_always_reach_the_panel() {
                       "\"mood\":\"%s\"}}",
                       takes[pick(3)], moods[pick(9)]);
         break;
-      case 4: {
+      case 4: {  // starting and poked aren't the board's to be asked: refused
         const char* names[] = {"task_complete", "starting",  "poked",          "notice",
                                "reply_ready",   "listening", "stop_listening", "wake_up"};
         std::snprintf(msg, sizeof msg, "{\"t\":\"do\",\"name\":\"%s\",\"play\":\"now\",\"args\":{\"outcome\":\"%s\"}}",

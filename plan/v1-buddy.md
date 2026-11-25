@@ -1,6 +1,6 @@
 # Boop v1: a status monitor, a friend, a buddy that grows, and a world
 
-Updated 2026-11-22. The owner agreed the direction on 2026-11-08, with XP kept
+Updated 2026-11-25. The owner agreed the direction on 2026-11-08, with XP kept
 simple; the world's build is in [world.md](world.md). Work goes on branch
 `main-v2`; `main` stays as it is. It comes from the owner's talk of 2026-11-08 and builds on main
 `b87a22c2`.
@@ -64,7 +64,6 @@ build), the falling words, the working look and its tiers.
 - The real-board checks in `plan/TODO.md`: frame rate with the Mac off, the acts'
   look, the low sign at arm's length.
 - Working at night's frame rate.
-- The `to-work` transition being cut by `starting`.
 
 **The one rule that changes:** with world moments arriving (§6), the order of
 what may play becomes, highest first:

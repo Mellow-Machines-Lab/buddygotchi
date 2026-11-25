@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 from boopctl_lib import board, reference, scenario
-from boopctl_lib.common import (ANIMS, CTXS, MOODS, OLD_ANIMS, OUTCOMES, VOICE_FILE, REPO, RULE_REACTIONS, TTL_MS, Take, checkout_tmp,
+from boopctl_lib.common import (ANIMS, MOODS, OLD_ANIMS, OUTCOMES, VOICE_FILE, REPO, TTL_MS, Take, checkout_tmp,
                                 do, ended, restarted, take, takes)
 from boopctl_lib.device import Device, DeviceError, Sim
 from boopctl_lib.image import diff, save_shot
@@ -616,14 +616,14 @@ def clock_offset(dev: "Device", rng: random.Random, pings: int) -> tuple[float, 
 def latency_stimulus(kind: str, i: int, rng: random.Random) -> dict:
     """One input or message whose way to the panel the board times: a BOOT
     tap or a touch (each a press and then its tap, 100 ms later), the i-th
-    `state`, each changing the mood from the last, or a rule reaction played `now`."""
+    `state`, each changing the mood from the last, or a reaction played `now`."""
     if kind == "boot":
         return {"t": "dbg.press", "ms": 100}
     if kind == "touch":
         return {"t": "dbg.touch", "x": rng.randint(40, 280), "y": rng.randint(30, 180), "ms": 100}
     if kind == "state":
         return {"t": "state", "base": "working", "busy": 1, "mood": MOODS[i % 2], "vol": 0}
-    return do("starting")
+    return do("notice")
 
 
 def cmd_latency(args: argparse.Namespace) -> int:
@@ -720,29 +720,18 @@ def soak_say(rng: random.Random) -> dict:
     return {} if rng.random() < 0.1 else {"take": rng.choice(takes()).id}
 
 
-def soak_play(name: str) -> dict:
-    """How a `do` of `name` asks to play: the rules'
-    reactions only when nothing plays, a finish or a `say` waiting in the
-    queue for up to 5 s, as the Mac sends the brain's."""
-    if name in RULE_REACTIONS:
-        return {"play": "if_free"}
-    return {"play": "next", "ttl": TTL_MS}
-
-
 def soak_do(rng: random.Random) -> dict:
     """An animation, a `say`, or both, which the soak doesn't wait on, each
-    asking to play as it would from the Mac or a tool (soak_play): a
-    finish with its outcome and loops (1–3), a rule reaction, a `say`."""
+    waiting in the queue for up to 5 s, as the Mac sends the brain's: a
+    finish with its outcome and loops (1–3), another animation, a `say`."""
     name = rng.choice(ANIMS) if rng.random() < 0.7 else "react"
     args: dict = {}
     if name == "task_complete":
         args["outcome"] = rng.choice(OUTCOMES)
         args["loops"] = rng.randint(1, 3)
-    if name == "starting":
-        args["ctx"] = rng.choice(CTXS)
     if name == "react" or rng.random() < 0.4:
         args["say"] = soak_say(rng)
-    return do(name, **soak_play(name), **args)
+    return do(name, play="next", ttl=TTL_MS, **args)
 
 
 def soak_reaction(rng: random.Random, call_id: int) -> dict:
@@ -1123,8 +1112,8 @@ def cmd_play(args: argparse.Namespace) -> int:
     (play_needs); or the bring-up `pattern`. `cheer` is the older name of
     task_complete's success, which the device no longer knows: it's sent
     by today's."""
-    if (args.take or args.loops or args.outcome or args.ctx or args.variant) and args.what in ("needs", "pattern"):
-        raise DeviceError(f"play {args.what} takes no --take, --loops, --outcome, --ctx or --variant")
+    if (args.take or args.loops or args.outcome or args.variant) and args.what in ("needs", "pattern"):
+        raise DeviceError(f"play {args.what} takes no --take, --loops, --outcome or --variant")
     if args.what == "cheer" and args.outcome == "failure":
         raise DeviceError("cheer is task_complete's success: play task_complete --outcome failure")
     # Checked here, not by argparse: reading the voice file to list the
@@ -1142,7 +1131,7 @@ def cmd_play(args: argparse.Namespace) -> int:
         show_begin(dev)
         show_state(dev, args.vol, base=args.base, mood=args.mood)
         name = OLD_ANIMS.get(args.what, args.what)
-        facts = {key: getattr(args, key) for key in ("loops", "variant", "outcome", "ctx") if getattr(args, key)}
+        facts = {key: getattr(args, key) for key in ("loops", "variant", "outcome") if getattr(args, key)}
         if args.what == "cheer":
             facts["outcome"] = "success"
         if args.take:
@@ -1228,7 +1217,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--variant", type=int, choices=range(1, 10), metavar="1-9",
                    help="which variation; the device picks one that fits when it's none or doesn't fit")
     p.add_argument("--outcome", choices=OUTCOMES, help="task_complete: the turn's result")
-    p.add_argument("--ctx", choices=CTXS, help="starting: what started")
     p.add_argument("--base", choices=["idle", "working", "asleep"], default="idle")
     p.add_argument("--mood", choices=MOODS, default="happy", help="the mood the state carries (default happy)")
     p.add_argument("--vol", **vol)
