@@ -598,7 +598,7 @@ show when no Moment plays.
 | `analyzing` | Looking: an agent reads or searches files, or the web | the Mac |
 | `terminal` | Running: an agent runs a command, the tests or a build, or its helpers work | the Mac |
 | `waiting` | A tool takes its time; nothing is asked of you | the Mac |
-| `planning` | No longer sent: the Mac's activities are the four above (`Act`). The board still knows it; the gel shows it as typing | no one |
+| `planning` | No longer sent: the Mac's activities are the four above (`Act`). The board still knows it; the gel shows it as typing, with typing's takes (it has no recipe of its own, nor has `tool_use`: both play `working`'s) | no one |
 | `searching` | No longer sent, as `planning`; the gel shows it as looking | no one |
 | `testing` | No longer sent, as `planning`; the gel shows it as running | no one |
 | `delegating` | No longer sent, as `planning`; the gel shows it as running | no one |
@@ -776,7 +776,8 @@ Besides drawing each mood and state, a face:
 - **Answers your words.** A Moment with an emotion may carry its reply
   (`reply`, the `do`'s args, `FaceContext::reply`): a face that can plays a
   move for it, once, as the emotion starts. The gel plays the pack's clip
-  for it (§15, `reply-<name>`).
+  for it (§15, `reply-<name>`). A Moment's `clip` goes the same way, and
+  the gel plays a clip of that very name when there's no `reply-<clip>`.
 - **Makes its own sounds.** A bank of clips (`clips`) and when each plays
   (`cues`). The engine mixes them under the voice.
 - **May ask harder the longer you wait.** Needs you is drawn on the
@@ -986,6 +987,26 @@ tracks:
 | `cues` | no | `[ms, name]`, each before `ms`: a sound the face plays by name as it crosses it. The gel's are its contacts' kinds (`body_contact` and the rest, slimegen's `recipes.mjs`) |
 | `about` | no | What it is, for people |
 
+A clip may be another's move at a size and a pace: a file with `of`, the
+other clip's id, its `ms` and a `size`, and no tracks or cues of its own.
+It plays that clip's keys and cues, each value times `size` / 1000 (1000
+without it), their time stretched or squeezed to its `ms`, and loops and
+adds as that clip does. Boop's bye is its `wave` as it is, and its small
+wave the same at a third of the size, over a second:
+
+```json
+{"about": "A wave at your lock or unlock, a small moment.", "of": "wave", "size": 350, "ms": 1000}
+```
+
+| Key | Required | Meaning |
+| --- | --- | --- |
+| `of` | yes | The clip it plays, one with keys of its own |
+| `ms` | yes | Its length, 1 to 60000 |
+| `size` | no | Its values, in thousandths of that clip's, 1 to 4000; only 1000 for an absolute clip |
+| `about` | no | What it is, for people |
+
+The face plays it by its own id like any clip (`Clip::value`, `played`).
+
 A pack has at most 255 clips, a track 255 keys, a clip 255 cues and a look
 255 occasions (`MOST` in `charactergen.py`).
 
@@ -1005,13 +1026,15 @@ Some clips' ids mean something to a face:
   plays in idle in place of its mood's, and once as a Moment shows the
   face; Boop's six meme faces have one each (`face-deadpan`…).
 - `reply-wave`: the gel plays it for a small wave at your lock or unlock
-  of the Mac, a slighter motion than `reply-bye` or `reply-hello`.
+  of the Mac, a slighter motion than `reply-bye` or `reply-hello`: Boop's
+  is its `wave` at a third of the size over a second, and its `reply-bye`
+  the same `wave` whole.
 - `reply-<name>`: the gel plays it for that reply, one for each of
   `MomentOutput.replies` and `dunno`, and for a Moment's `clip` of that
-  name (`remember`, as it brings up a remembered line).
-- `flop`: the `fix` skit's `clip`, the flop of relief. The gel looks up a
-  Moment's `clip` only as `reply-<clip>` so far, so it plays the fix's
-  face without it until it looks up the clip by its own name too.
+  name (`remember`, as it brings up a remembered line). A Moment's `clip`
+  with no `reply-<clip>` plays the clip of that name itself.
+- `flop`: the `fix` skit's `clip`, the flop of relief, which the gel plays
+  as the fix's Moment starts.
 - A clip named for a Moment's state (Boop's `notice`): the gel plays it once
   as the Moment starts. The gel's recipe for that state times it.
 - You at the Mac: the gel loops `type-along` while it types with you, and
@@ -1168,10 +1191,6 @@ Each problem comes with its file and key (`reference.json: show.mood: …`).
 None of it stops a pack staging. The app doesn't bundle the folder.
 
 ## Not yet
-
-- A skit's `clip` that isn't a `reply-` clip: the Mac sends the fix's
-  `flop`, and the gel plays it once `GelFace::reply` also looks up a clip
-  by the name it's given (§15).
 
 - The gel's expressions, recipes, bits and springs are still its own,
   not the rig's (§15).

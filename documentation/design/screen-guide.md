@@ -90,7 +90,7 @@ on a window. A hit on it adds a ring and a small shake.
 | Palm up | The `win` skit's invite | A hop, then one palm flat on the glass beside its right eye, about 85 px across, the glow round it and "tap" under it. A tap: a ring, a hop and a wobble. No tap: it looks at its palm, lowers it and shrugs with both hands |
 | The lean | The `back` skit's invite | It perks up and rests its cheek on the glass, the patch glowing, "pet" beside it. A stroke: a fast small purr, eyes shut |
 | The knock | Needs you | A fist knocks twice on the glass at the body's upper right. If nobody comes it climbs: a bigger fist, three knocks; both fists by turns; then its forehead on the glass, palms sliding down |
-| The flop | A check passes after failing (not wired yet: no Moment names it) | Flat against the glass, both palms on it, sliding down, then peels off |
+| The flop | A check passes after failing: the `fix` skit's Moment names it (`clip`) | Flat against the glass, both palms on it, sliding down, then peels off |
 | The back | The `upset` skit's invite | A stomp, then it turns its back, "pet" under the glow on its back. Now and then it looks over its shoulder, one eye at the rim in side-eye, and turns away again. A stroke: a sigh as it comes round. No stroke: a huff, and it comes round by itself |
 | The spin | The high five | All the way round during its hop |
 

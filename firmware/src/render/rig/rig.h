@@ -165,16 +165,26 @@ struct Cue {
 };
 // Keyframed curves on some channels, timed in ms, with cues. An additive
 // clip's values are offsets on what's there; an absolute one's, values to
-// blend toward.
+// blend toward. A clip may be another's move at a size and a pace (its
+// file's `of`): it shares that one's tracks and cues, their values times
+// size / 1000 and their time, `own` ms long, played over its ms.
 struct Clip {
   const char* id;
   uint16_t ms;
   bool loop, additive;
   List<Track> tracks;
-  List<Cue> cues{};  // in order of time, each before ms
+  List<Cue> cues{};  // in order of time, each before ms (of `own`, for another's move)
+  uint16_t size = 1000;
+  uint16_t own = 0;  // its tracks' length, for another's move; 0 for its own, ms
   // Its own time t ms after it started: wrapped when it loops, else held
   // at its end.
   constexpr uint32_t local(uint32_t t) const { return loop ? t % ms : t < ms ? t : ms; }
+  // The time in its tracks and cues at its own time `local`, and the other
+  // way: when it reaches a time of theirs, `at` (the first ms at or after).
+  constexpr uint32_t keyed(uint32_t local) const { return own ? uint32_t(uint64_t(local) * own / ms) : local; }
+  constexpr uint32_t played(uint32_t at) const { return own ? uint32_t((uint64_t(at) * ms + own - 1) / own) : at; }
+  // A track's value at its own time `local`, at its size.
+  int value(const Track& track, uint32_t local) const;
 };
 // A track's value at its clip's own time: its first key's before that key,
 // its last's after the last.

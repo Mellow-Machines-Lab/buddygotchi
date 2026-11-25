@@ -345,6 +345,41 @@ class RigRuleTests(unittest.TestCase):
                     "inline constexpr Rig kRig = {{}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
             self.assertIn(row, text)
 
+    def test_a_clip_may_be_another_at_a_size_and_a_pace(self):
+        """A clip file with `of` names another's move: its row shares that one's
+        tracks and cues, with its size and that one's length after them, and it
+        loops as that one does. It must name a clip with keys of its own, and
+        an absolute one only at its own size."""
+        rig, problems = self.rig({
+            "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10], [400, 0]]}, "cues": [[50, "pop"]]},
+            "clips/hop-big.json": {"about": "the hop, bigger and slower", "of": "hop", "size": 1500, "ms": 600},
+            "clips/hop-same.json": {"of": "hop", "ms": 400},
+            "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"lean": [[0, 0], [100, 10], [200, 0]]}},
+            "clips/sway-slow.json": {"of": "sway", "ms": 400},
+        })
+        self.assertEqual(problems, [])
+        text = gen.rig_h(self.dir, rig)
+        for row in ['{"hop", 400, false, true, {kTracks + 0, 1}, {kCues + 0, 1}},',
+                    '{"hop-big", 600, false, true, {kTracks + 0, 1}, {kCues + 0, 1}, 1500, 400},',
+                    '{"hop-same", 400, false, true, {kTracks + 0, 1}, {kCues + 0, 1}, 1000, 400},',
+                    '{"sway-slow", 400, true, true, {kTracks + 1, 1}, {}, 1000, 200},']:
+            self.assertIn(row, text)
+        self.assertEqual(text.count("{Channel::kLift"), 1)  # its keys once
+        _, problems = self.rig({
+            "clips/still.json": {"ms": 200, "additive": False, "tracks": {"lean": [[0, 0], [200, 0]]}},
+            "clips/still-big.json": {"of": "still", "size": 2000, "ms": 200},
+            "clips/again.json": {"of": "hop-big", "ms": 100},
+            "clips/none.json": {"of": "nothing", "ms": 100, "tracks": {}},
+            "clips/short.json": {"of": "still"},
+        })
+        self.assertEqual(problems, [
+            "rig/clips/none.json: tracks: unknown key",
+            "rig/clips/short.json: ms: missing",
+            "rig/clips/again.json: of: 'hop-big' isn't a clip in rig/clips/ with keys of its own",
+            "rig/clips/none.json: of: 'nothing' isn't a clip in rig/clips/ with keys of its own",
+            "rig/clips/still-big.json: size: still is absolute, so it has no size but 1000",
+        ])
+
     def test_a_bad_edit_fails_with_its_file_and_key(self):
         _, problems = self.rig({
             "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[300, "pop"], [400, "pop"], [10, "Thud"]],

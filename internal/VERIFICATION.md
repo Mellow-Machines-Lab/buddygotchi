@@ -273,8 +273,8 @@ A scenario is a JSON-lines file in Boop's pack,
 simulator and on the board. This is the start of `flop.jsonl`:
 
 ```
-// The flop of relief (the pack's rig clip `flop`): a check passes after
-// failing. No Moment names it yet, so dbg.clip plays it: it holds its
+// The flop of relief (the pack's rig clip `flop`), played alone by
+// dbg.clip; a fix's Moment plays it as fix.jsonl shows. It holds its
 // breath, lets go flat against the glass with both palms on it, slides
 // down, and peels off.
 {"t": "dbg.reset"}
@@ -308,7 +308,7 @@ Every screen and state the board draws
 gets at least one scenario. Their pictures are the golden images in
 `characters/boop/tests/golden-gel/<scenario>/`. The set is frozen small on purpose
 while the gel's pictures are redesigned: each scenario pins one or two
-shots, the ones that say the most about it (`"pin": true`), 71 in all,
+shots, the ones that say the most about it (`"pin": true`), 73 in all,
 and only those have a golden (`test_pins` holds it to that). Its other
 shots are still taken, for a person to look at, the mirror and the board
 (L1, L2), and every `expect` still runs. When the redesign settles, a new
@@ -320,8 +320,9 @@ palm's miss partway, and `behind-a-finish`, where a busy board plays a
 finish and then the low Moment queued behind it, with the Mac's ttls, so
 the invite it carries still plays. The engine's own rules for it, with a
 face that draws invites, are `test_device`'s invite tests. `knock` shows
-each step of needs you's climbing knock, and `flop` the flop of relief,
-which `dbg.clip` plays. `back` and `spin` show the rig's turn: the upset
+each step of needs you's climbing knock, `flop` the flop of relief,
+which `dbg.clip` plays, and `fix` the same flop as a fix's Moment brings
+it, by its `clip`. `back` and `spin` show the rig's turn: the upset
 skit's back with its look over the shoulder, and the high five's spin.
 `meme-deadpan-side-eye`, `meme-squint-smug` and `meme-scream-faint` show
 the six meme faces at rest and in their moves, which `dbg.clip` plays.
