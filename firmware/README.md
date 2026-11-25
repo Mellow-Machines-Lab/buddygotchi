@@ -221,6 +221,32 @@ cut before it). `dbg.state`'s `invite` says how it stands: `stage`
 (`ahead`, `pose`, `payoff`, `shrug`, `window` or `late`), `ms` since the
 pose began, and the `pose` while one shows.
 
+What the gel draws for it is the pack's: its palm and lean, their payoffs,
+misses and late returns are rig clips with the two hands and the glass
+(`render/gel/moves.h`, the pack's CONTINUITY.md, Hands and the glass);
+its back is drawn in code until the turn is built. The state machine, the
+wire and `test_device`'s tests are the same for every face.
+
+## Hands, the glass and the knock
+
+The rig has channels for the glass, the screen as a pane Boop lives
+behind (`glass`, how close the body is to it, and the patch where it
+touches it), and for two hands, each `X`, `Y`, `Size`, `Shape` (a fist, a
+ball, an open palm) and `Glass` (`render/rig/rig.h`). A face that draws
+them (the gel) brings the whole body up to the glass at 1.15 its size at
+most. Pixel's draws none of them.
+
+While something needs you the gel's fist knocks on the glass, the same
+move for every mood; if nobody comes it climbs in three more steps to its
+forehead on the glass. Whether the climb follows the knock at once or
+after a wait is one constant in the pack (slimegen's `scenes.mjs`,
+`knock`). The knock's sound and the needs-you card's ring keep their
+place; the body no longer dips.
+
+`dbg.clip` plays one of the pack's rig clips by its id over what shows
+(`{"t":"dbg.clip","name":"flop"}`), for scenarios and the Studio: the
+gel's flop of relief, which no Moment names yet.
+
 ## Known quirks
 
 - **Blank screen but backlight on:** usually wrong panel settings or pins.

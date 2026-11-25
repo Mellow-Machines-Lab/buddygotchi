@@ -104,6 +104,13 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
                                                                               : "{\"t\":\"dbg.pastime\",\"ok\":false}";
     dirty_ = true;
     kit().reply(from, reply, std::strlen(reply));
+  } else if (!std::strcmp(type, "dbg.clip")) {
+    // A rig clip of the pack's, by its id, played now over what shows: for
+    // scenarios and the Studio, for a move nothing on the wire names yet.
+    const char* reply = b_.face().playClip(doc["name"] | "", kit().now()) ? "{\"t\":\"dbg.clip\",\"ok\":true}"
+                                                                          : "{\"t\":\"dbg.clip\",\"ok\":false}";
+    dirty_ = true;
+    kit().reply(from, reply, std::strlen(reply));
   } else if (!std::strcmp(type, "dbg.press")) {
     live_.injPress = true;
     live_.injPressUntil = kit().now() + (doc["ms"] | kDefaultPressMs);

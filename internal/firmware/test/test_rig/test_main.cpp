@@ -354,6 +354,48 @@ static void test_the_mixer_is_deterministic_and_bounded() {
   }
 }
 
+// The glass and the hands are channels like the others: at rest the body
+// is back from the glass with no patch and both hands are hidden in it
+// (size 0), each hand's five channels in HandPart's order; a clip moves
+// them, a palm pressed on the glass and held, and the mixer keeps each in
+// its range however far a clip and an impulse carry it.
+static void test_the_glass_and_the_hands_are_channels() {
+  for (Channel c : {Channel::kGlass, Channel::kPatch, Channel::kHandLSize, Channel::kHandRSize, Channel::kHandLGlass,
+                    Channel::kHandRGlass, Channel::kHandLShape, Channel::kHandRShape})
+    TEST_ASSERT_EQUAL_INT(0, kRest[c]);
+  TEST_ASSERT_EQUAL_INT(int(Channel::kHandLX), int(hand(0, HandPart::kX)));
+  TEST_ASSERT_EQUAL_INT(int(Channel::kHandRY), int(hand(1, HandPart::kY)));
+  TEST_ASSERT_EQUAL_INT(kChannelCount, int(hand(1, HandPart::kGlass)) + 1);  // the right hand's glass, the last
+  TEST_ASSERT_EQUAL_STRING("handRShape", kChannelInfo[int(Channel::kHandRShape)].name);
+  TEST_ASSERT_EQUAL_INT(-1000, kChannelInfo[int(Channel::kHandRShape)].lo);  // a fist
+  TEST_ASSERT_EQUAL_INT(1000, kChannelInfo[int(Channel::kHandRShape)].hi);   // an open palm
+
+  static constexpr Key kUp[] = {{0, 0, Ease::kLinear}, {100, 1000, Ease::kOut}};
+  static constexpr Key kOut[] = {{0, 0, Ease::kLinear}, {100, 70, Ease::kOut}};
+  static constexpr Key kFar[] = {{0, 0, Ease::kLinear}, {100, 3000, Ease::kOut}};
+  static constexpr Track kPalmTracks[] = {{Channel::kHandRSize, {kUp, 2}},  {Channel::kHandRShape, {kUp, 2}},
+                                          {Channel::kHandRGlass, {kUp, 2}}, {Channel::kHandRX, {kOut, 2}},
+                                          {Channel::kGlass, {kUp, 2}},      {Channel::kHandLSize, {kFar, 2}}};
+  static constexpr Clip kPalm = {"palm", 400, true, true, {kPalmTracks, 6}};
+  Mixer m;
+  m.reset(0, 0, nullptr);
+  m.play(kPalm);
+  m.advance(200);
+  TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kHandRSize]);
+  TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kHandRShape]);
+  TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kHandRGlass]);
+  TEST_ASSERT_EQUAL_INT(70, m.channels()[Channel::kHandRX]);
+  TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kGlass]);
+  TEST_ASSERT_EQUAL_INT(2000, m.channels()[Channel::kHandLSize]);  // held at its range's end
+  TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kHandLX]);         // the other hand stays where it was
+  m.impulse(Channel::kHandRGlass, 90000);
+  m.advance(16);
+  TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kHandRGlass]);
+  m.stop(kPalm);
+  m.advance(Mixer::kSettledMs);
+  for (int c = 0; c < kChannelCount; ++c) TEST_ASSERT_EQUAL_INT(kRest.v[c], m.channels().v[c]);
+}
+
 // With kPlays playing, the oldest gives way but the look's own clip: a
 // burst of reactions never stops the look, and the newest of them plays.
 static void test_a_full_mixer_keeps_its_look() {
@@ -508,6 +550,7 @@ int main() {
   RUN_TEST(test_a_spring_comes_to_rest_exactly);
   RUN_TEST(test_the_mixer_is_deterministic_and_bounded);
   RUN_TEST(test_a_full_mixer_keeps_its_look);
+  RUN_TEST(test_the_glass_and_the_hands_are_channels);
   RUN_TEST(test_a_ramp_eases_over_200_ms_and_turns_back_smoothly);
   RUN_TEST(test_a_layer_fades_and_a_new_content_waits_its_turn);
   RUN_TEST(test_the_staged_rig_is_whole);

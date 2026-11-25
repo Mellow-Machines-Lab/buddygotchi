@@ -319,8 +319,11 @@ gets at least one scenario. Their pictures are the golden images in
 `characters/boop/tests/golden-gel/<scenario>/` for gel. The gel's
 invite has four, one for each way it ends: `invite-answered`,
 `invite-missed`, `invite-late` and `invite-cut`, which `expect` the
-stage `dbg.state`'s `invite` says. The engine's own rules for it, with a
-face that draws invites, are `test_device`'s invite tests.
+stage `dbg.state`'s `invite` says, and `missed-high-five` catches the
+palm's miss partway. The engine's own rules for it, with a
+face that draws invites, are `test_device`'s invite tests. `knock` shows
+each step of needs you's climbing knock, and `flop` the flop of relief,
+which `dbg.clip` plays.
 
 ## 5. The levels in detail
 

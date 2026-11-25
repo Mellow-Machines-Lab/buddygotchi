@@ -957,12 +957,18 @@ copy: expressions for its 13 drawn moods, the looks `idle`, `working` and
 **Channels.** The body's `squash`, `lean`, `lift`, `x` (sideways, far enough
 to leave the screen), `reach` (one side stretched out, the other pinched in)
 and `melt` (let down into a puddle); the eyes' `eyeOpenL`, `eyeOpenR`,
-`eyeSize`, `gazeX` and `gazeY`; and the mouth's `mouthOpen`. Each is a whole
-number, in thousandths but for `lift` and `x` (px), with a range and a value
-at rest, where a face draws its art as drawn: `kChannelInfo` in `rig.h` says
-what each means, and `charactergen.py` checks the files by it. In the files,
-`eyeOpen` sets both eyes. A face may draw only some: the gel draws them all,
-and Pixel's neither `x`, `reach` nor `melt`.
+`eyeSize`, `gazeX` and `gazeY`; the mouth's `mouthOpen`; the glass's, the
+screen as a pane Boop lives behind: `glass` (the whole body up at it) and
+the pale patch where the body touches it, `patch` (its size), `patchX` and
+`patchY`; and two hands, part of the body, hidden in it at rest:
+`handLX`, `handLY`, `handLSize`, `handLShape` (a fist, a ball or an open
+palm) and `handLGlass` (pressed flat on the glass), and the right's the
+same. Each is a whole number, in thousandths but for `lift`, `x` and the
+hands' `X` and `Y` (px), with a range and a value at rest, where a face
+draws its art as drawn: `kChannelInfo` in `rig.h` says what each means,
+and `charactergen.py` checks the files by it. In the files, `eyeOpen` sets
+both eyes. A face may draw only some: the gel draws them all, and Pixel's
+neither `x`, `reach`, `melt`, the glass nor the hands.
 
 A face also has two **styles**, the eyes' and the mouth's: which of its
 drawings it draws, for the shapes no channel reaches (hearts, X eyes). A new
@@ -1013,6 +1019,12 @@ Some clips' ids mean something to a face:
 
 - `blink`: Pixel's face plays it at each blink, but in a design that blinks
   on its own.
+- The gel's moves, which it plays by what shows and how long, not on its
+  mixer: `invite-<pose>`, then `invite-<pose>-wait` looping, for an
+  invite's pose, `invite-<payoff>` for the touch, `invite-<pose>-miss` and
+  `invite-<pose>-late`; `knock` as something needs you and `knock-climb`
+  when nobody comes. Their cues are where something hits the glass, which
+  rings there. A pose or payoff with no clip is drawn in code.
 - `reply-wave`: the gel plays it for a small wave at your lock or unlock
   of the Mac, a slighter motion than `reply-bye` or `reply-hello`.
 - `reply-<name>`: the gel plays it for that reply, one for each of
@@ -1112,7 +1124,9 @@ whose body is a clip of the rig, a bit or a take: each for one look, at work
 and idle from a tier, asleep from a wait, or whenever a tag is on, and
 none while something needs you. Each is the body's own move, with nothing
 brought out beside it. `dbg.pastime`
-plays one by its name, for scenarios and tools.
+plays one by its name, for scenarios and tools, and `dbg.clip` any clip of
+the pack's by its id, over what shows (the gel's flop, which no Moment
+names yet).
 
 ## 16. References (optional)
 

@@ -28,31 +28,75 @@ enum class Channel : uint8_t {
   kGazeX,
   kGazeY,
   kMouthOpen,
+  kGlass,
+  kPatchX,
+  kPatchY,
+  kPatch,
+  kHandLX,
+  kHandLY,
+  kHandLSize,
+  kHandLShape,
+  kHandLGlass,
+  kHandRX,
+  kHandRY,
+  kHandRSize,
+  kHandRShape,
+  kHandRGlass,
   kCount
 };
 constexpr int kChannelCount = int(Channel::kCount);
 
 // Each channel's name in a pack's rig/ files, its range and its value at
-// rest, where a face draws its art as drawn. In thousandths, but for lift
-// and x: px of the 320 × 240 canvas, lift up and x to the right, far
-// enough to leave the screen. squash runs from tall (-1000) to flat;
-// lean, the body's, from left to right; reach stretches the body's right
-// side out (1000) or its left (-1000), pinching the other in; melt lets
-// it down into a puddle (1000); eyeOpen from shut (0); gaze from left or
-// up (-1000) to right or down; eyeSize around the art's own (1000). A
-// face may draw only some: Pixel's draws neither x, reach nor melt.
+// rest, where a face draws its art as drawn. In thousandths, but for lift,
+// x and the hands' x and y: px of the 320 × 240 canvas, lift up and x to
+// the right, far enough to leave the screen. squash runs from tall (-1000)
+// to flat; lean, the body's, from left to right; reach stretches the
+// body's right side out (1000) or its left (-1000), pinching the other in;
+// melt lets it down into a puddle (1000); eyeOpen from shut (0); gaze from
+// left or up (-1000) to right or down; eyeSize around the art's own (1000).
+//
+// The glass is the screen, a pane Boop lives behind. glass brings the
+// whole body up to it (1000: as close as it comes); what of the body
+// touches it shows a pale patch there, `patch` its size (0 for none), at
+// patchX across the body's front (-1000 its left rim, 1000 its right) and
+// patchY up it (0 its foot, 1000 its crown): a cheek, the forehead, the
+// whole front.
+//
+// Two hands, left and right, each part of the body: hidden in it at rest
+// (size 0), budding out as they grow, to x and y (px, y up) from the
+// middle of the body's front low down, where it holds things (Anchors'
+// handF); size in thousandths of a whole hand, as big again at 2000;
+// shape a fist (-1000), a ball (0) or an open palm (1000), and between;
+// and glass, how flat on the glass it's pressed (1000). A face may draw
+// only some: Pixel's draws neither x, reach, melt, the glass nor the hands.
 // charactergen.py reads this table to check a pack's files.
 struct ChannelInfo {
   const char* name;
   int16_t lo, hi, rest;
 };
-constexpr ChannelInfo kChannelInfo[kChannelCount] = {
-    {"squash", -1000, 1000, 0},  {"lean", -1000, 1000, 0},    {"lift", -240, 240, 0},
-    {"x", -400, 400, 0},         {"reach", -1000, 1000, 0},   {"melt", 0, 1000, 0},
-    {"eyeOpenL", 0, 1000, 1000}, {"eyeOpenR", 0, 1000, 1000}, {"eyeSize", 500, 1500, 1000},
-    {"gazeX", -1000, 1000, 0},   {"gazeY", -1000, 1000, 0},   {"mouthOpen", 0, 1000, 0}};
+constexpr ChannelInfo kChannelInfo[kChannelCount] = {{"squash", -1000, 1000, 0},     {"lean", -1000, 1000, 0},
+                                                     {"lift", -240, 240, 0},         {"x", -400, 400, 0},
+                                                     {"reach", -1000, 1000, 0},      {"melt", 0, 1000, 0},
+                                                     {"eyeOpenL", 0, 1000, 1000},    {"eyeOpenR", 0, 1000, 1000},
+                                                     {"eyeSize", 500, 1500, 1000},   {"gazeX", -1000, 1000, 0},
+                                                     {"gazeY", -1000, 1000, 0},      {"mouthOpen", 0, 1000, 0},
+                                                     {"glass", 0, 1000, 0},          {"patchX", -1000, 1000, 0},
+                                                     {"patchY", 0, 1000, 0},         {"patch", 0, 1000, 0},
+                                                     {"handLX", -400, 400, 0},       {"handLY", -240, 240, 0},
+                                                     {"handLSize", 0, 2000, 0},      {"handLShape", -1000, 1000, 0},
+                                                     {"handLGlass", 0, 1000, 0},     {"handRX", -400, 400, 0},
+                                                     {"handRY", -240, 240, 0},       {"handRSize", 0, 2000, 0},
+                                                     {"handRShape", -1000, 1000, 0}, {"handRGlass", 0, 1000, 0}};
 // The body's channels, whose springs are slower than the face's.
 constexpr bool body(Channel c) { return c <= Channel::kMelt; }
+// The hands' channels: a hand's, `side` 0 the left and 1 the right, by
+// its first (x) and how far past it (HandPart).
+enum class HandPart : uint8_t { kX, kY, kSize, kShape, kGlass, kCount };
+constexpr Channel hand(int side, HandPart part) {
+  return Channel(int(Channel::kHandLX) + side * int(HandPart::kCount) + int(part));
+}
+static_assert(hand(1, HandPart::kGlass) == Channel::kHandRGlass && hand(0, HandPart::kShape) == Channel::kHandLShape,
+              "each hand's channels in HandPart's order, the left's first");
 
 // A value for every channel.
 struct Channels {
@@ -220,11 +264,13 @@ struct Point {
 // middle of its front lower down, where it holds things; its eyes'
 // middles; and, on a face with them, two rings low on the body, each its
 // front half from its left side to its right in kRingPoints: where the pyjamas
-// start (lap) and the bottom of the body's outline (hem).
+// start (lap) and the bottom of the body's outline (hem); and the middle of
+// the patch where it touches the glass, (0, 0) while none does.
 struct Anchors {
   static constexpr int kRingPoints = 17;
   Point crown{}, brimL{}, brimF{}, brimR{}, handF{}, eyeL{}, eyeR{}, mouth{};
   Point lap[kRingPoints]{}, hem[kRingPoints]{};
+  Point patch{};
 };
 
 }  // namespace render::rig
