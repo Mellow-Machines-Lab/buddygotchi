@@ -67,9 +67,10 @@ jobs:
   python:
     name: Python tests
     # The tests that need only the standard library, on the Mac's own
-    # Python (3.9), which the build's scripts are kept to. boopctl's need
-    # its venv, the webcam recorder's build a Swift fixture, and the
-    # simulator's need PlatformIO, Emscripten and Node, so they're left out.
+    # Python (3.9), which the build's scripts are kept to, and the Studio's
+    # on Node. boopctl's need its venv, the webcam recorder's build a Swift
+    # fixture, and the simulator's need PlatformIO and Emscripten, so
+    # they're left out.
     runs-on: macos-15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
@@ -82,14 +83,13 @@ jobs:
         run: /usr/bin/python3 characters/charactergen.py --check
       - name: charactergen's tests
         run: /usr/bin/python3 -m unittest discover -s internal/characters
-      - name: The demo session's tests
-        run: /usr/bin/python3 -m unittest discover -s internal/tools/session/tests
-      - name: The pack's tool tests
-        run: |
-          for tests in characters/*/tests/tools; do
-            [ -d "$tests" ] || continue
-            /usr/bin/python3 -m unittest discover -s "$tests" || exit 1
-          done
+      - name: The demo session's tests, the slow ones too
+        run: BOOP_SLOW=1 /usr/bin/python3 -m unittest discover -s internal/tools/session/tests
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6
+        with:
+          node-version: "24"
+      - name: The Studio's logic and server
+        run: node --test characters/studio/tests/*.test.cjs
 
   firmware:
     name: Firmware tests

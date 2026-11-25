@@ -26,13 +26,11 @@
   // working, or needs you; a reaction is a `do` over a look; the board's own
   // are inputs, at their ms: a tap, taps in a row, a stroke across.
   //
-  // wire(cell, under, vol) is what the board is sent to show a cell, as
+  // wire(cell, vol) is what the board is sent to show a cell, as
   // [ms, message] pairs from when it's asked: a look's `state`, or the look
   // a reaction or input plays over (working, or idle for waking up and a
-  // stroke) and then it. As a transition's end, over its start's look
-  // (`under`), a reaction is asked in its own mood, as the Mac asks for one,
-  // and the start's `state` stays. `after` is how long the board takes to
-  // show it with nothing more said: no_app's window.
+  // stroke) and then it. `after` is how long the board takes to show it
+  // with nothing more said: no_app's window.
   const DOES = ['listening', 'starting', 'reply_ready', 'task_complete', 'wake_up', 'notice'];
   const NO_APP_MS = 30000;  // with no state this long, the board takes the Mac for gone (linkkit's kHostGoneMs)
   function wiring({acts, tap}) {
@@ -42,13 +40,13 @@
     const TOUCH = {t: 'dbg.touch', x: tap[0], y: tap[1], ms: 60};
     const INPUTS = {poked: [[0, TOUCH]], tap_spam: [[0, TOUCH], [200, TOUCH], [400, TOUCH]], gesture: [[0, STROKE]]};
     let ids = 0;
-    return function wire({mood, state, outcome = 'success', context = 'new_task'}, under = null, vol = 0) {
+    return function wire({mood, state, outcome = 'success', context = 'new_task'}, vol = 0) {
       if (looks[state]) return {look: looks[state], after: state === 'no_app' ? NO_APP_MS : 0, steps: [[0, {t: 'state', ...looks[state], mood, vol}]]};
-      const look = under || (state === 'wake_up' || state === 'gesture' ? looks.idle : WORKING);
-      const does = DOES.includes(state), steps = under && does ? [] : [[0, {t: 'state', ...look, mood, vol}]];
-      if (does) {
+      const look = state === 'wake_up' || state === 'gesture' ? looks.idle : WORKING;
+      const steps = [[0, {t: 'state', ...look, mood, vol}]];
+      if (DOES.includes(state)) {
         const args = state === 'task_complete' ? {outcome} : state === 'starting' ? {ctx: context} : {};
-        steps.push([0, {t: 'do', id: ++ids, name: state, play: 'now', args: under ? {...args, mood} : args}]);
+        steps.push([0, {t: 'do', id: ++ids, name: state, play: 'now', args}]);
       } else if (INPUTS[state]) steps.push(...INPUTS[state]);
       else throw Error(`The board has no state ${state}`);
       return {look, after: 0, steps};

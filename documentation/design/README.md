@@ -9,7 +9,7 @@ built yet; "What is built" below says what is.
 | [theory.md](theory.md) | The ideas: why Boop behaves as one thing in every state |
 | [animations.html](animations.html) | What to expect: every core state and event, moving. Open it in a browser |
 | [screen-guide.md](screen-guide.md) | How to build it: what sits where, sizes, shapes, colors, motion, what wins |
-| [brain.md](brain.md) | Who thinks for Boop: rules, the calling agent, the dream, skits, with no key. Not built |
+| [brain.md](brain.md) | Who thinks for Boop: rules, the calling agent, the dream, skits, with no key. Mostly built |
 
 The order to build it in is [plan/design-build.md](../../plan/design-build.md).
 
@@ -31,12 +31,13 @@ As of main `66d7fc1a`:
   none is you speaking); and going with you as a layer: typing along sways
   the body in every work pose and with a card held, its hands and eyes the
   pose's; a chat turn's end: a look up at you and "your turn" low; and
-  several agents: the watched one, pips, the name chip, the swipe, the pill;
-  and held pictures (plan, changes, helpers) in place of the text card.
-- Not built: the lean under a finger with a card held, the show on the
-  board (agents send it and the popover holds it up), the sideways slide on a switch, and
-  the arrows at the screen's sides. A finished turn of an agent you aren't
-  watching still plays its finish as well as the pill.
+  several agents: the watched one, pips, the name chip, the swipe, the pill,
+  and the sideways slide on a switch; and held pictures (plan, changes,
+  helpers) in place of the text card; and the show on the board, its picture
+  sent as a `blob`, LinkKit's image message.
+- Not built: the lean under a finger with a card held, and the arrows at
+  the screen's sides. A finished turn of an agent you aren't watching still
+  plays its finish as well as the pill.
 
 ## Keeping it alive
 
@@ -58,11 +59,8 @@ These are not design questions. They are things only a build can answer.
    `internal/tools/cards/trial.py`: fixed tasks, real sessions, and a score
    for each picture (true to the turn, readable). View the pictures on the
    Mac only.
-3. **The image message.** The link runs at 460,800 baud. A 420 by 190
-   picture at 16 colors is about 40 kB before packing. The firmware has no
-   message for an image yet.
-4. **The plan picture's data.** The Mac sends the to-do list as done and
+3. **The plan picture's data.** The Mac sends the to-do list as done and
    total. The picture also needs the current step's name.
-5. **Lane colors.** The samples use teal, violet and orange. Use the
+4. **Lane colors.** The samples use teal, violet and orange. Use the
    board's real lane colors, and keep them away from the needs-you amber.
-6. **Codex.** The card trial covered Claude Code only.
+5. **Codex.** The card trial covered Claude Code only.

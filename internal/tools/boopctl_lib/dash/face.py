@@ -1,5 +1,5 @@
 """The device's face in the terminal: the native simulator, fed
-the lines the app sends, screenshotted a dozen times a second and drawn
+the lines the app sends, screenshotted six times a second and drawn
 with half blocks."""
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from rich.text import Text
 from boopctl_lib.device import DeviceError, Sim
 from boopctl_lib.image import rgb888
 
-FPS = 12
+FPS = 6
 # The face sends its whole panel in RGB565, no palette: it's sampled one
 # pixel in every NATIVE_BLOCK×NATIVE_BLOCK block, a terminal's worth (about
 # 100×66 blocks for the AMOLED's 502×410), above its lane, which starts
@@ -104,9 +104,9 @@ class SimFace:
                         if message is None:
                             return
                         sim.send(message)
-                    shot = sim.shot()
-                    if shot != drawn:  # most frames don't move
-                        drawn = shot
+                    shot = sim.shot(unless=drawn)
+                    if shot is not None:  # most frames don't move
+                        drawn = sim.shot_crc
                         self.on_frame(render(shot))
                     time.sleep(max(0.0, 1 / FPS - (time.monotonic() - started)))
         except (DeviceError, OSError, ValueError) as exc:

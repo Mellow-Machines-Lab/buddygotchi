@@ -34,7 +34,7 @@ it never approves, denies or blocks anything an agent does.
 > [let us know →](https://tally.so/r/ZjprM5?src=readme)
 
 <p align="center">
-  <img src="documentation/media/moods.gif" width="720" alt="Boop in eight of its moods, each labelled">
+  <img src="documentation/media/moods.gif" width="720" alt="Boop in eight of its faces, each labelled">
 </p>
 
 A menu-bar app on your Mac does the thinking, and a cheap ESP32 board

@@ -1,8 +1,9 @@
 # LinkKit: the device library
 
-Updated 2026-10-15. The C++ half of LinkKit, for the small device a host
+Updated 2026-11-25. The C++ half of LinkKit, for the small device a host
 app drives: it reads the host's messages, keeps track of the links, sends
-`hello`, decides when each `do` plays (the queue), routes `ev` and answers
+`hello`, decides when each `do` plays (the queue), puts each `blob`'s
+parts together, routes `ev` and answers
 the kit's `dbg.*` messages, all as [../SPEC.md](../SPEC.md) says. What the
 device draws, plays and says is yours: you write an app that plugs into
 it. Boop's firmware is one; a lamp that fits on a page is below.
@@ -42,6 +43,7 @@ time their input and clock steps against ticks.
 | `onDo(d, t)` | The `do` starts playing, busy: play it. `d.args` is yours, `d.key` is what you report with |
 | `advance(t)`, `nextDue(from, to, at)` | Time moves on (in order). `nextDue` says when you'll rest or end the `do` playing by yourself, so a `do` waiting starts at that exact millisecond |
 | `tick(t)` | Once per pass, after `advance`: read inputs, draw |
+| `blobRoom(id, size)`, `onBlob(id, size, t)` | A `blob`'s part 0 (1–1024 parts): return room for `size` bytes, or null to refuse it (the default); then the blob, whole, in that room. The kit answers the host |
 | `debug(type, msg, from)`, `ping(obj)`, `state(obj, t)`, `reset()`, `shot(s, t)` | Your `dbg.*` types, your vitals and `dbg.state` fields, `dbg.reset`, and the frame `dbg.shot` sends |
 
 And what your app calls on `kit()`, from inside any hook: `rest(key)`

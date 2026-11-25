@@ -1,16 +1,15 @@
 # The brain: who thinks for Boop
 
-Updated 2026-11-24. How Boop decides what to feel, say and remember, with no
+Updated 2026-11-25. How Boop decides what to feel, say and remember, with no
 key and no bill. It says what each layer is for and how Boop should behave;
 the code and [architecture.html](../architecture.html) say how.
 
 ## What is built
 
-On the `brain` branch, not merged:
-
 - Built: layer 1, the rules brain (`RulesBrain`, `MoodMap`). Key or none,
-  it answers every pass, and the mood moves only as the mood files say. All
-  30 must scenarios pass with it (`boopdev eval --brain rules`).
+  it answers every pass, and the mood moves only as the mood files say. The
+  must scenarios ([internal/EVALS.md](../../internal/EVALS.md) §4) pass with
+  it (`boopdev eval --brain rules`).
 - Built: the dream by your own agent tool (`AgentToolModel`), behind
   Settings' "Your agent helps Boop think", on by default. On held-out
   questions it answered 61 of 64 right, against Apple Intelligence's 55
@@ -53,7 +52,7 @@ not run out.
 | 2. The calling agent | Offers Boop's line for the turn's end, says how you seemed, notes one thing worth remembering | While an agent's turn runs | None | The card tools the agent already calls |
 | 3. The dream | Writes Boop's memory, and fresh lines for the next day | While Boop sleeps | None | The buyer's own agent tool, run by Boop |
 | 4. Skits | Says a word at the few moments that call for one, each from takes of its own, and may invite one touch after | A long win, a failure, a fix, you back | None | Recorded takes on the board |
-| On top: Jev | A finer pick in five seats, for people who add a key | When a key is there and it answers in time | 0.3 s, never waited past the pass | A key |
+| On top: Jev | A finer pick in five seats, for people who add a key | When a key is there and it answers in time | Up to 1.4 s, the pass's deadline less a margin, never waited past it | A key |
 
 Each layer works without the ones below it in the table, and Boop is whole
 with only the first. A later layer adds life; it never adds a duty.

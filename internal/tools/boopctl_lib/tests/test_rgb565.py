@@ -34,3 +34,9 @@ class RGB565Tests(unittest.TestCase):
         self.assertEqual(to_image(shot).getpixel((1,1)), (0,0,255))
     def test_bad_length_is_rejected(self):
         with self.assertRaises(DeviceError): ShotLink(bytes(7),(2,2))._shot()
+    def test_the_same_picture_again_is_not_decoded(self):
+        link = ShotLink(struct.pack('<4H', 1, 2, 3, 4), (2,2))
+        self.assertIsNotNone(link.shot())
+        self.assertEqual(link.shot_crc, zlib.crc32(link.raw))
+        self.assertIsNone(link.shot(unless=link.shot_crc), 'the dash face draws only a changed frame')
+        self.assertIsNotNone(link.shot(unless=link.shot_crc ^ 1))

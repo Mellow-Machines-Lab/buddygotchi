@@ -46,7 +46,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 /* Layout */
 .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:28px;align-items:start}
 .stage-column{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px}
-.stage-frame{position:relative;background:var(--stage);border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3}
+.stage-frame{position:relative;background:var(--stage);border-radius:var(--radius);overflow:hidden;aspect-ratio:502/410}
 .stage{position:absolute;inset:0;touch-action:none}
 .stage canvas{display:block;width:100%;height:100%}
 .status{font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);min-height:18px}

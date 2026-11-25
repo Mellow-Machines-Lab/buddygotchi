@@ -8,6 +8,7 @@ projects and give their stories' test results. None of it runs an agent;
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -331,6 +332,9 @@ def play_project(case: unittest.TestCase, name: str, tests: str) -> list:
         return results
 
 
+# Each `npm test` of these projects takes 2 s on purpose (a video's
+# pause), so they run only when asked, as CI does.
+@unittest.skipUnless(os.environ.get("BOOP_SLOW") == "1", "slow: BOOP_SLOW=1 runs it")
 @unittest.skipUnless(shutil.which("node"), "needs node")
 class ProjectTests(unittest.TestCase):
     def test_landing_fails_one_then_passes(self):
