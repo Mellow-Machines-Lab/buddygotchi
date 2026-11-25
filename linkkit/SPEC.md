@@ -1,6 +1,6 @@
 # LinkKit: the spec
 
-Updated 2026-11-24. The contract between a host (a Mac app) and a small
+Updated 2026-11-25. The contract between a host (a Mac app) and a small
 device with a screen, a light or a speaker: five messages, how the device
 decides what plays when, and the rules both sides keep. It's language
 neutral: the Swift host library (`Sources/LinkKit`) and the C++ device
@@ -284,7 +284,9 @@ a message came in on.
   RX `…0002` host → device, written without response; TX `…0003` device →
   host, notified). The device is the peripheral and advertises as
   `<Prefix>-XXXX`, the prefix the app's. It asks for a 247-byte MTU and
-  cuts notifications to MTU − 3.
+  cuts notifications to MTU − 3. What the link can't take yet waits in a
+  small outbox, in order; past its room a packet is dropped, and its
+  line with it.
   - `XXXX` is the last two bytes of the device's Bluetooth MAC in
     uppercase hex, the same two bytes as its `hello.id` (§3) in lowercase
     after the app's id prefix: `Boop-54FE` says `"id":"b00p-54fe"`.

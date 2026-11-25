@@ -45,7 +45,7 @@ bool sameModel(const Model& a, const Model& b) {
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
          a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
          !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name) && !std::strcmp(a.buddy, b.buddy) && a.workAct.kind == b.workAct.kind &&
-         a.workAct.result == b.workAct.result && a.wish == b.wish && a.wishHow == b.wishHow && a.card.same(b.card) &&
+         a.workAct.result == b.workAct.result && a.wish == b.wish && a.card.same(b.card) &&
          a.pointer.same(b.pointer);
 }
 
@@ -275,7 +275,6 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
            : !std::strcmp(wish, "chat") ? render::WishShow::kChat
            : !std::strcmp(wish, "work") ? render::WishShow::kWork
                                         : render::WishShow::kNone;
-  m.wishHow = doc["wish_how"] | false;
   // Several agents: "w0i-c1", a kind and a slot ("-" for none) each.
   {
     const char* pips = doc["pips"] | "";
@@ -428,7 +427,6 @@ ReactionIn Device::parse(const Do& c, uint32_t t) {
     render::foldText(ask["a"].as<const char*>(), kAnswerGlyphs, mo.askA, sizeof(mo.askA));
     render::foldText(ask["b"].as<const char*>(), kAnswerGlyphs, mo.askB, sizeof(mo.askB));
     if (mo.askA[0] && mo.askB[0]) copyStr(mo.askQ, sizeof(mo.askQ), ask["q"].as<const char*>());
-    mo.askTouch = ask["touch"] | false;
   }
   // What it invites (`invite`), on a face that draws one: one with a pose,
   // a touch or a payoff the board doesn't know invites nothing.
@@ -1093,30 +1091,19 @@ bool Device::invited(TouchGesture::Kind kind, render::Gesture g, uint32_t t, boo
   return true;
 }
 
-// The touches that answer an ask that takes one: the kind ones.
-static bool caring(render::Gesture g) {
-  using G = render::Gesture;
-  return g == G::kStroke || g == G::kNose || g == G::kTickle || g == G::kRuffle || g == G::kPickup || g == G::kDizzy;
-}
-
 void Device::gestured(render::Gesture g, uint32_t t, bool injected, bool swipe) {
-  const bool answers = !swipe && caring(g) && b_.askTakesTouch(t);
   if (!swipe || b_.face().playsSwipe()) b_.gesture(g, t);
   input("gesture", t);
   tell("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, t, injected);
-  if (answers) b_.answer("touch", t, injected);
   drain();  // the gesture cuts an animation, as a poke does
 }
 
 // A touch the face leaned into, let go. It tells the Mac as a stroke does: care,
-// which meets a pet wish, and it answers an ask that takes a touch. Nothing
-// plays: the face is already waking.
+// which meets a pet wish. Nothing plays: the face is already waking.
 void Device::leaned(uint32_t t, bool injected) {
-  const bool answers = b_.askTakesTouch(t);
   input("gesture", t);
   b_.touchCaption(kLeanGesture, t);
   tell("gesture", kLeanGesture, nullptr, t, injected);
-  if (answers) b_.answer("touch", t, injected);
   drain();
 }
 

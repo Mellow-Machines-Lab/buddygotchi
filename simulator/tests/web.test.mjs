@@ -86,15 +86,11 @@ test('it says hello and draws in real time', { skip }, async () => {
   assert.equal(b.core._sim_parts(), 0, 'parts are told once, until one changes');
 });
 
-test('the face fills the panel it is given', { skip }, async () => {
+test("the face fills the AMOLED's panel", { skip }, async () => {
   const b = await board();
   b.send(WORKING);
   await b.run(300);
-  assert.deepEqual([...new Set(b.frames.map(String))], ['502,410'], "the AMOLED's panel, by default");
-  const small = await board({ BOOP_SIM_NATIVE: '400x300' });
-  small.send(WORKING);
-  await small.run(300);
-  assert.deepEqual([...new Set(small.frames.map(String))], ['400,300']);
+  assert.deepEqual([...new Set(b.frames.map(String))], ['502,410']);
 });
 
 // Boards side by side (the page's ?boards=…) each say their own id.

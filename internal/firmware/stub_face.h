@@ -204,17 +204,16 @@ class StubFace : public render::Face {
 
   // A bar along the top for the design (its state, mood and variation),
   // a block that moves a step at a time with a spark as each starts, and
-  // in the lane the bubble or the strip, the strip at its opacity by the
-  // dither and marked by what it says.
+  // in the lane the bubble or the strip, marked by what it says and keyed by
+  // its opacity.
   bool draw(render::Canvas& c, render::Surface*, const render::SceneShow& show, uint32_t, const char* bubble,
             const char*, const render::SignShow& sign, const render::DoneShow&, const render::Strip& strip,
             bool dirty) override {
-    const render::Dither lane = render::Dither::fade(strip.opacity, true);
     const uint32_t step = show.state == SceneState::kAsleep ? kAsleepStepMs : kStepMs;
     const bool spark = show.state != SceneState::kAsleep && show.t % step < kSparkMs;
     const uint32_t key[] = {uint32_t(show.state), uint32_t(show.mood), show.variant, show.t / step,
                             uint32_t(spark), uint32_t(show.mouthOpen), uint32_t(show.dy & 0xFFFF),
-                            uint32_t(bubble != nullptr), uint32_t(strip.shows()), lane.hi,
+                            uint32_t(bubble != nullptr), uint32_t(strip.shows()), uint32_t(strip.opacity),
                             uint32_t(sign.text != nullptr), says(strip)};
     if (!dirty && drawn_ && !std::memcmp(key, key_, sizeof key)) return false;
     std::memcpy(key_, key, sizeof key), drawn_ = true;
@@ -228,12 +227,10 @@ class StubFace : public render::Face {
     if (sign.text) c.fillRect(100, 60, 120, 30, render::kAmber);
     if (bubble) {
       c.fillRect(0, render::kLaneTop, render::kWidth, render::kHeight - render::kLaneTop, render::kAmber);
-    } else if (strip.shows()) {
-      c.setMask(lane);
+    } else if (strip.shows() && strip.opacity > 0) {
       c.fillRect(0, render::kStripTop, render::kWidth, render::kHeight - render::kStripTop,
                  strip.agent ? render::kAmber : render::kWhite);
       c.fillRect(int(says(strip) % uint32_t(render::kWidth - 8)), render::kStripTop + 8, 8, 8, render::kBlack);
-      c.setMask({});
     }
     return true;
   }

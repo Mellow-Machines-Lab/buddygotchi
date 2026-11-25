@@ -30,6 +30,26 @@ struct TouchCal {
 // another screen, like a portrait build's or one from before kRotation was
 // flipped, is never applied; the default map is used until `boopctl
 // calibrate` runs again.
+// The board's default map, before `boopctl calibrate`: a panel of
+// `panelWidth` × `panelHeight` pixels, portrait, that shows the whole
+// surface turned a quarter (render::packBand), its top on the panel's left
+// edge or its right, read back as the 320 × 240 screen the face is drawn
+// over (each canvas pixel `width / 320` surface pixels across).
+inline TouchCal wholePanelTouchCal(int panelWidth, int panelHeight, bool topOnLeft) {
+  const int32_t across = int32_t(int64_t(65536) * render::kWidth / panelHeight),
+                down = int32_t(int64_t(65536) * render::kHeight / panelWidth);
+  TouchCal c;
+  if (topOnLeft) {
+    c.bx = -across, c.cx = (panelHeight - 1) * across;  // x = (panelHeight - 1 - ry) · 320 / panelHeight
+    c.ay = down;                                        // y = rx · 240 / panelWidth
+  } else {
+    c.bx = across;                                 // x = ry · 320 / panelHeight
+    c.ay = -down, c.cy = (panelWidth - 1) * down;  // y = (panelWidth - 1 - rx) · 240 / panelWidth
+  }
+  c.valid = true;
+  return c;
+}
+
 struct SavedTouchCal {
   uint16_t w = 0, h = 0;
   uint8_t rotation = 0;

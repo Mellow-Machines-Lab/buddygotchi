@@ -138,6 +138,26 @@ static void test_touch_calibration_maps_raw_to_screen() {
   TEST_ASSERT_EQUAL(239, y);
 }
 
+// Pins the AMOLED's default map: a finger on the panel lands on the canvas
+// pixel the face drew there. The gel draws canvas (x, y) at surface
+// (x · 502 / 320, y · 410 / 240), and the surface is turned onto the
+// 410 × 502 panel its top on the left: panel (sy, 501 - sx).
+static void test_the_default_touch_map_is_the_whole_panels() {
+  for (const bool left : {true, false}) {
+    const app::TouchCal c = app::wholePanelTouchCal(410, 502, left);
+    TEST_ASSERT_TRUE(c.valid);
+    const int points[][2] = {{0, 0}, {319, 239}, {160, 120}, {20, 200}, {300, 30}};
+    for (const auto& p : points) {
+      const int sx = p[0] * 502 / 320, sy = p[1] * 410 / 240;
+      const int rx = left ? sy : 409 - sy, ry = left ? 501 - sx : sx;
+      int x, y;
+      c.map(rx, ry, x, y);
+      TEST_ASSERT_INT_WITHIN(1, p[0], x);
+      TEST_ASSERT_INT_WITHIN(1, p[1], y);
+    }
+  }
+}
+
 // A calibration is kept with the screen it was fitted on; one fitted on
 // another screen (the portrait build's) or another rotation is ignored.
 static void test_saved_touch_calibration_must_match_the_screen() {
@@ -2254,7 +2274,6 @@ static void test_a_tap_says_where_it_came_from() {
 // ---- Asks ------------------------------------------------------------------
 
 static const char* kSnack = "{\"sign\":\"fav snack?\",\"ask\":{\"q\":\"snack\",\"a\":\"cookie\",\"b\":\"pizza\"}}";
-static const char* kPet = "{\"sign\":\"pet me?\",\"ask\":{\"q\":\"pet\",\"a\":\"ok\",\"b\":\"later\",\"touch\":true}}";
 
 // `ev ask` for the question `q`, `pick` how it ended, `answer` its words.
 static std::string askLine(const char* q, const char* question, const char* pick, const char* answer = nullptr) {
@@ -2295,28 +2314,6 @@ static void test_a_tap_in_the_lane_answers_an_ask() {
     st = stateOf(r);
     TEST_ASSERT_TRUE(has(st, "\"ask\":null"));
     TEST_ASSERT_TRUE(has(st, "\"sign\":null"));
-  }
-}
-
-// A touch answers an ask that takes one (`touch`), as `touch`, with its
-// first answer's words; on one that doesn't, the stroke is only a stroke.
-static void test_a_touch_answers_only_an_ask_that_takes_one() {
-  for (int takes = 0; takes < 2; ++takes) {
-    Rig r;
-    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-    clockAt(r, 1000);
-    doLine(r, 1, "react", "next", takes ? kPet : kSnack);
-    r.usb.text.clear();
-    r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
-    for (int i = 0; i < 8; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":60}");
-    TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
-    if (takes) {
-      TEST_ASSERT_TRUE(has(r.usb.text, askLine("pet", "pet me?", "touch", "ok")));
-      TEST_ASSERT_TRUE(has(stateOf(r), "\"ask\":null"));
-    } else {
-      TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ask\""));
-      TEST_ASSERT_TRUE(has(stateOf(r), "\"ask\":\"cookie    pizza \""));
-    }
   }
 }
 
@@ -3429,7 +3426,6 @@ int main() {
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);
   RUN_TEST(test_a_tap_in_the_lane_answers_an_ask);
-  RUN_TEST(test_a_touch_answers_only_an_ask_that_takes_one);
   RUN_TEST(test_an_unanswered_ask_ends_ignored);
   RUN_TEST(test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac);
   RUN_TEST(test_face_down_is_do_not_disturb);
@@ -3445,6 +3441,7 @@ int main() {
   RUN_TEST(test_ping_reports_version_and_link);
   RUN_TEST(test_debug_is_ignored_over_ble);
   RUN_TEST(test_touch_calibration_maps_raw_to_screen);
+  RUN_TEST(test_the_default_touch_map_is_the_whole_panels);
   RUN_TEST(test_saved_touch_calibration_must_match_the_screen);
   RUN_TEST(test_touchcal_sets_reads_and_clears);
   RUN_TEST(test_pattern_target_draws_a_cross);

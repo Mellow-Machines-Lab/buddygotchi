@@ -67,15 +67,11 @@ export class Board extends EventTarget {
   }
 
   /// Power: on is a new boot with nothing remembered, as on a board, but
-  /// for the card, which stays in its slot. `native` is another panel
-  /// than the AMOLED's, `502x410`; `id` the board's own id, its hello's,
-  /// so boards side by side differ (`b00p-0000` without one).
-  power(on, { native, id } = {}) {
+  /// for the card, which stays in its slot. `id` is the board's own id,
+  /// its hello's, so boards side by side differ (`b00p-0000` without one).
+  power(on, { id } = {}) {
     clearInterval(this.#timer);
-    if (on) {
-      if (native) this.#env('BOOP_SIM_NATIVE', native);
-      if (id) this.#env('BOOP_SIM_ID', id);
-    }
+    if (on && id) this.#env('BOOP_SIM_ID', id);
     this.#core._sim_power(on ? 1 : 0);
     this.on = !!on;
     this.frame = null;
@@ -431,8 +427,7 @@ export class BoopSimulator extends Element {
 
   /// Power, and the RESET button: off and on again.
   power(on) {
-    this.board.power(on, { native: this.getAttribute('native') || undefined,
-                           id: this.getAttribute('board-id') || undefined });
+    this.board.power(on, { id: this.getAttribute('board-id') || undefined });
   }
   reset() { this.power(true); }
 

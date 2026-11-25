@@ -105,12 +105,14 @@ bool Ble::poll(Kit& kit) {
     }
     line_ = LineReader{};
     out_.clear();
+    outbox_.clear();
     if (up) {
       connected_ = true;
       kit.connected();  // the host's first message gets the hello
     }
   }
   if (connected_) {
+    outbox_.drain(notify, this);
     uint16_t m = mtu.load();
     out_.setPayload(m > 3 ? m - 3 : 20);
     // A host that's gone quiet: let go, so advertising starts again.
@@ -136,15 +138,14 @@ void Ble::write(const char* s, size_t n) {
   if (connected_ && linkUp.load()) out_.write(s, n);
 }
 
-void Ble::sendPacket(void*, const uint8_t* data, size_t n) {
-  // Notifications queue in NimBLE's buffers; if they're full, give the
-  // controller a moment and try again, then drop the packet.
-  for (int i = 0; i < 20; ++i) {
-    if (tx->notify(data, n)) return;
-    if (!linkUp.load()) return;
-    delay(2);
-  }
+// Notifications queue in NimBLE's buffers; while they're full, the packets
+// wait in the outbox for poll(), and the main loop goes on. A link gone
+// takes what's waiting with it.
+void Ble::sendPacket(void* ctx, const uint8_t* data, size_t n) {
+  static_cast<Ble*>(ctx)->outbox_.send(data, n, notify, ctx);
 }
+
+bool Ble::notify(void*, const uint8_t* data, size_t n) { return !linkUp.load() || tx->notify(data, n); }
 
 const char* Ble::state() const {
   if (!started_) return "off";

@@ -45,8 +45,6 @@ static void test_palette_ramps_run_from_black_to_the_ink() {
   TEST_ASSERT_EQUAL_HEX16(rgb565(kAmberRgb), paletteAt(inkAt(kInkAmber, kLevels)));
   TEST_ASSERT_EQUAL_INT(kBlack, inkAt(kInkEye, 0));
   TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), paletteAt(kRed));  // the bring-up pattern's colours stay
-  TEST_ASSERT_EQUAL_HEX16(rgb565(kSageRgb), paletteAt(kSage));
-  TEST_ASSERT_EQUAL_HEX16(rgb565(kClayRgb), paletteAt(kClay));
 }
 
 // The animations, each by its design's state's name, and

@@ -89,7 +89,7 @@ The AMOLED board, the one board Boop runs on:
 
 | Part | In the simulator |
 | --- | --- |
-| Screen | The face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`), its corners rounded as the AMOLED's are (in proportion to its height) and transparent, since the panel shows nothing there. Every pixel is the firmware's; the page draws nothing on it |
+| Screen | The face's panel: 502×410, the AMOLED's, its corners rounded as the AMOLED's are and transparent, since the panel shows nothing there. Every pixel is the firmware's; the page draws nothing on it |
 | Touch | The pointer on the screen: a touch is a poke, as on the boards, and letting go is a lift, which ends the touch at once, as the AMOLED's touch chip reports one, and a drag or a wiggle another touch (a stroke, a quick one a swipe, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it; held on the gel's face, it leans in, and dozes past 5 s. A click or a drag answers an invite as a tap or a stroke does on the board (firmware/README.md, The invite). On the gel, dragged up from the strip, it pulls out the agents' drawer, a drag on its rows scrolls them, and a click on a row picks it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
 | Motion | The AMOLED's motion sensor, lying flat on the desk from power-on; with `motion`, buttons that move the board as it feels it: Shake, Pick up and Put down, Thump, Face down and Face up |
@@ -123,7 +123,6 @@ itself to the board.
 | Attribute | What |
 | --- | --- |
 | `zoom` | How many times as big the screen is drawn (1 without it), shrunk to fit a narrower page |
-| `native` | A panel other than the AMOLED's, `WxH` |
 | `voice` | A voice file to fetch for the card |
 | `usb` | A WebSocket that is the board's USB cable, one WebSocket message per LinkKit message each way |
 | `controls` | Adds the Power, Reset and card buttons. Sound on is always there |
@@ -304,7 +303,7 @@ Three things a cable does that the port does too:
 ## The core's settings
 
 In its environment, or from the page's attributes:
-`BOOP_SIM_NATIVE` (`WxH`), `BOOP_SIM_ID` (the device's ID, `b00p-0000`
+`BOOP_SIM_ID` (the device's ID, `b00p-0000`
 without it; the page's `board-id`), and on the Mac `BOOP_SIM_CARD` (the card's folder) and
 `BOOP_SIM_PORT`.
 

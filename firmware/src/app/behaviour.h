@@ -90,7 +90,6 @@ struct Model {
   } show;
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
-  bool wishHow = false;  // it shows how, its icon moving (`wish_how`)
   // Boop's energy (`energy`): the Mac's rule, which the face draws on its
   // lids and in its tempo (render::Energy).
   render::Energy energy = render::Energy::kNormal;
@@ -284,13 +283,11 @@ struct ReactionIn {
   // It asks for the agents' drawer (`show` "drawer"), the rest of its
   // answer: Device opens it once the sign has been read.
   bool showDrawer = false;
-  // It asks you something (`ask`): the question's id, "" for none, its two
-  // answers, and whether a touch (a stroke, a boop…) answers it too. The
-  // question is its sign.
+  // It asks you something (`ask`): the question's id, "" for none, and its
+  // two answers. The question is its sign.
   char askQ[kAskIdBytes] = "";
   char askA[kAnswerBytes] = "";
   char askB[kAnswerBytes] = "";
-  bool askTouch = false;
   // It asks for one touch once the rest of it has played (`invite`).
   InviteIn invite;
 };
@@ -468,15 +465,12 @@ class Behaviour {
   // An ask is up: its answers in the lane, waiting for a tap. Not with no
   // app or while something needs you.
   bool asking(uint32_t t) const;
-  // Answers the ask that's up: `pick` "a", "b" or "touch" (which picks
-  // `a`; only when the ask takes a touch). False when there's none to
-  // answer. Its end waits in takeAskEnd.
+  // Answers the ask that's up: `pick` "a" or "b". False when there's none
+  // to answer. Its end waits in takeAskEnd.
   bool answer(const char* pick, uint32_t t, bool injected);
   // A newer reaction is about to play: the ask ends unanswered, so its end
   // goes before the kit ends its reaction.
   void dropAsk(uint32_t t);
-  // Whether a touch answers the ask that's up.
-  bool askTakesTouch(uint32_t t) const { return asking(t) && ask_.touch; }
   // How the last ask ended, once, before its reaction's PlayedOut.
   bool takeAskEnd(AskEnd& e);
   // The invite (InviteIn): once no other part of its reaction plays, the
@@ -762,7 +756,6 @@ class Behaviour {
     char question[kSignBytes] = "";
     char a[kAnswerBytes] = "", b[kAnswerBytes] = "";
     char lane[kSignBytes] = "";
-    bool touch = false;
     uint32_t at = 0, key = 0;
   };
   Ask ask_;

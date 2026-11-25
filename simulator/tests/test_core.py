@@ -104,13 +104,9 @@ class CoreTests(unittest.TestCase):
         board.pump(1.5)
         self.assertGreater(board.request({"t": "dbg.ping"})["fps"], 0, "the working face moves on its own, with no line asking")
 
-    def test_the_native_face_fills_the_panel_it_is_given(self) -> None:
-        board = self.board()
-        shot = board.request({"t": "dbg.shot"}, 1.5)
-        self.assertEqual((shot["w"], shot["h"]), (502, 410), "the AMOLED's panel, by default")
-        small = self.board(BOOP_SIM_NATIVE="400x300")
-        shot = small.request({"t": "dbg.shot"}, 1.5)
-        self.assertEqual((shot["w"], shot["h"]), (400, 300))
+    def test_the_face_fills_the_amoleds_panel(self) -> None:
+        shot = self.board().request({"t": "dbg.shot"}, 1.5)
+        self.assertEqual((shot["w"], shot["h"]), (502, 410))
 
     def test_every_power_on_is_a_new_boot(self) -> None:
         first = self.board().request({"t": "hello"})

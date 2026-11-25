@@ -3,7 +3,6 @@
 #pragma once
 #include <atomic>
 #include <chrono>
-#include <cstdio>
 #include <cstdlib>
 #include <string>
 
@@ -59,16 +58,6 @@ struct SimHal : app::Hal {
   // board's is 0, so every run is the same.
   uint32_t boot = 0;
   uint32_t bootId() override { return boot; }
-
-  // The panel a native face draws: the AMOLED's, or BOOP_SIM_NATIVE=WxH,
-  // its corners rounded in proportion.
-  render::Size nativeSize() override {
-    render::Size size = app::Hal::nativeSize();
-    const int height = size.height;
-    if (const char* s = std::getenv("BOOP_SIM_NATIVE")) std::sscanf(s, "%dx%d", &size.width, &size.height);
-    size.corner = size.corner * size.height / height;
-    return size;
-  }
 
   // The panel's finger and the BOOT button, as whoever holds them last
   // said. A press is seen at least once, however soon it's let go: a click

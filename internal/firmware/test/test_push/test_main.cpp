@@ -231,13 +231,8 @@ struct Rig {
   }
 };
 
-// A gel rig: Device makes the face BOOP_SIM_FACE names.
-std::unique_ptr<Rig> gelRig() {
-  setenv("BOOP_SIM_FACE", "gel", 1);
-  auto r = std::make_unique<Rig>();
-  unsetenv("BOOP_SIM_FACE");
-  return r;
-}
+// A gel rig: Device makes the staged pack's face, the gel.
+std::unique_ptr<Rig> gelRig() { return std::make_unique<Rig>(); }
 
 // Frames sent, and of those planned from changes, on average: the pixels
 // that truly changed, the pixels sent, and what the tile hash this
