@@ -123,14 +123,26 @@ final class NormalsTests: XCTestCase {
         XCTAssertEqual(reader.open(day: "2026-11-18", carry: n), n, "the day open opens nothing new")
     }
 
-    /// Pins the best run: `wins_in_a_row` at a finish, the most ever; at
-    /// the finish that set it, the best before it.
-    func testYourBestRun() {
-        let n = fold([Self.won(1, minutes: 3, inARow: 3), Self.won(2, minutes: 3, inARow: 5), Self.won(3, minutes: 3, inARow: 4),
-                      Self.won(4, minutes: 3, inARow: 7, outcome: "failed")])
-        XCTAssertEqual(n.bestRun, Normals.Kept(seq: 2, value: 5), "a failure's run isn't a win's")
-        XCTAssertEqual(n.usual(before: 2, minutes: { _ in 0 }).bestRun, 3, "before the finish that set it")
-        XCTAssertEqual(n.usual(before: 3, minutes: { _ in 0 }).bestRun, 5)
+    /// Pins the run of wins: the wins your usual counts (a success with
+    /// tools) in a row, whatever the view's quick wins in a row say; a
+    /// failed turn ends it, and a chat turn, a turn with no calls or a stop
+    /// neither counts nor ends it. The run now is the latest win's; the
+    /// best is the most ever, and at the win that set it, the best before it.
+    func testYourRunOfWins() {
+        var chat = Self.won(3, minutes: 1, inARow: 9)
+        chat.1.facts["message"] = .object(["kind": "question"])
+        var n = fold([Self.won(1, minutes: 3, inARow: 0), Self.won(2, minutes: 3, inARow: 0), chat, Self.won(4, minutes: 3, tools: 0, inARow: 9),
+                      Self.won(5, minutes: 9, outcome: "stopped"), Self.won(6, minutes: 3, inARow: 0)])
+        XCTAssertEqual(n.run, Normals.Kept(seq: 6, value: 3), "three wins; the turns between count nothing")
+        XCTAssertEqual(n.usual(before: 6, minutes: { _ in 0 }).run, 3, "at the win that made it")
+        XCTAssertEqual(n.usual(before: 7, minutes: { _ in 0 }).run, 0, "at an event that's no win")
+        XCTAssertEqual(n.usual(before: 6, minutes: { _ in 0 }).bestRun, 2, "the best before the win that set it")
+        n = fold([Self.won(7, minutes: 3, inARow: 7, outcome: "failed")], into: n)
+        XCTAssertNil(n.run, "a failed turn ends it")
+        n = fold([Self.won(8, minutes: 3), Self.won(9, minutes: 3)], into: n)
+        XCTAssertEqual(n.run?.value, 2)
+        XCTAssertEqual(n.bestRun, Normals.Kept(seq: 6, value: 3), "the most ever")
+        XCTAssertEqual(n.usual(before: 9, minutes: { _ in 0 }).bestRun, 3)
     }
 
     /// Pins the skits since the last remark: none counted before the first
@@ -145,6 +157,30 @@ final class NormalsTests: XCTestCase {
         XCTAssertEqual(n.skitsSinceRemark, 1)
         n = fold([Self.record(7, [Normals.remarkFact: "early"])], into: n)
         XCTAssertEqual(n.skitsSinceRemark, 0, "a remark on a skit that didn't speak")
+    }
+
+    /// Pins that a record counts once the board played it: one in progress
+    /// counts at its `ended` done; one skipped late or cut, never.
+    func testOnlyWhatPlayedCounts() {
+        func open(_ seq: Int, _ facts: Facts) -> (Event, Line?) {
+            var r = Self.record(seq, facts)
+            r.0.data["open"] = true
+            return r
+        }
+        func ended(_ seq: Int, failed: String? = nil) -> (Event, Line?) {
+            (Event.ended(seq, action: MomentOutput.outputName, by: "brain", failed: failed), nil)
+        }
+        var n = fold([Self.record(1, ["skit": "win", Normals.remarkFact: "fast"])])
+        XCTAssertEqual(n.skitsSinceRemark, 0)
+        n = fold([open(2, ["skit": "win"]), open(3, [Normals.remarkFact: "fast"])], into: n)
+        XCTAssertEqual(n.skitsSinceRemark, 0, "neither has played yet")
+        n = fold([ended(2), ended(3, failed: "waited too long")], into: n)
+        XCTAssertEqual(n.skitsSinceRemark, 1, "the skit played, its remark was skipped late")
+        n = fold([open(4, ["skit": "back"]), ended(4, failed: "cut short: something needed you")], into: n)
+        XCTAssertEqual(n.skitsSinceRemark, 1, "cut")
+        n = fold([open(5, ["skit": "win", Normals.remarkFact: "run"]), ended(5)], into: n)
+        XCTAssertEqual(n.skitsSinceRemark, 0)
+        XCTAssertTrue(n.playing.open.isEmpty)
     }
 
     /// Pins the median: the middle one, or the mean of the middle two.

@@ -444,7 +444,6 @@ public final class Runtime: @unchecked Sendable {
         mind.inviting = MomentOutput.Inviting(board: { link.hello.map { DeviceInfo($0).invites } ?? false },
                                               onCall: { core.along.onCall },
                                               ledger: { remembersNow().map { $0.invites.state ?? InviteLedger() } },
-                                              sameDay: { time.boopDay(core.wall($0)) == time.boopDay(core.wall($1)) },
                                               careRoom: { core.growth().map { $0.adds(.care) > 0 } ?? false })
         // A skit's remark: against your usual, the memory's.
         mind.remarking = MomentOutput.Remarking(normals: { remembersNow()?.normals.state },

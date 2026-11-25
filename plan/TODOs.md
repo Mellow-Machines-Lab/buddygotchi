@@ -1,6 +1,6 @@
 # TODOs: the last pieces
 
-Updated 2026-11-09. Two pieces the owner keeps for the end, after Boop's
+Updated 2026-11-24. Two pieces the owner keeps for the end, after Boop's
 behaviour is settled. They come from [product-review.md](product-review.md).
 What's next before them stays in [TODO.md](TODO.md).
 
@@ -27,5 +27,5 @@ What's next before them stays in [TODO.md](TODO.md).
       strings; the 437 espeak placeholder takes; the label words ("Verify",
       "Probe"); the `say` kinds nothing picks; and whether takes are
       recorded or made ([product-review.md](product-review.md) §4.3, §8.2,
-      idea X6; [voice-range.md](voice-range.md)). It waits for the same
+      idea X6). It waits for the same
       reason: the words to record follow from what Boop does.

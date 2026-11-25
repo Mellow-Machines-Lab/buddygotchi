@@ -315,10 +315,10 @@ brief is a must.
 - **Code checks** (`92`, `93`, `115`–`117`, `160`, `164`, `166`, `168`, `187`, `188`):
   `scripted`, the code's rules, which need no Jev: the screen, your lock's wave (a real one, a slight one, good night and the nap asleep at once), one reaction at a long unlock, a boop and a cheer from the world, a wish
   dealt as the idle beat with no agents open.
-- **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `61`, `122`, `126`,
+- **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `122`, `126`,
   `127`, `129`, `136`, `139`, `143`, `150`, `155`): would be plain wrong, so
   exact checks stay. A failed turn is never celebrated, and neither is an agent
-  giving up. No wrong face, and no swearing at the person. Talked to, Boop
+  giving up. No wrong face (when Boop swears is a rule's, `SkitTests`). Talked to, Boop
   answers, and rightly about agents. Quiet holds, the setting's and half an hour's after a hush. The moments
   the owner loves stay. Never lonely after a night or while agents work, and
   never sad about a wish you couldn't answer.

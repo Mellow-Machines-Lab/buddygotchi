@@ -167,8 +167,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   repository's `make` runs: `characters/boop/tools/voicegen/voicegen.py`
   (the voice file and the Mac's take table; SlimeBuddy's `make voice`;
   beside it `placeholders.py`, which speaks the planned lines not recorded
-  yet and needs `brew install espeak-ng`, and `reply_slots.py`, which turns
-  the replies' lines in `plan/voice-range.md` into the bank's slots),
+  yet and needs `brew install espeak-ng`),
   `characters/pixel/tools/facegen/facegen.py` (Pixel's faces, about
   7 minutes; PixelBuddy's `make faces`, which runs sfxgen after it),
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects) and
@@ -319,7 +318,9 @@ gets at least one scenario. Their pictures are the golden images in
 `characters/boop/tests/golden-gel/<scenario>/` for gel. The gel's
 invite has four, one for each way it ends: `invite-answered`,
 `invite-missed`, `invite-late` and `invite-cut`, which `expect` the
-stage `dbg.state`'s `invite` says. The engine's own rules for it, with a
+stage `dbg.state`'s `invite` says, and `behind-a-finish`, where a busy
+board plays a finish and then the low Moment queued behind it, with the
+Mac's ttls, so the invite it carries still plays. The engine's own rules for it, with a
 face that draws invites, are `test_device`'s invite tests.
 
 ## 5. The levels in detail

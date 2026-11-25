@@ -109,6 +109,67 @@ final class SeatedBrainTests: XCTestCase {
         XCTAssertEqual(got[MomentOutput.replyKey], alone[MomentOutput.replyKey], "left out: the rules'")
     }
 
+    /// Pins that a seat takes Jev's answer only as sure as its output
+    /// needs: you say "thanks!", the rules reply thanks, sure; a Jev
+    /// guessing at 0.3, under `MomentOutput.replyFloor`, leaves the rules'
+    /// reply, which plays, where taking it would have played a `huh`. At
+    /// the floor it's Jev's. Every other seat takes any probability.
+    func testAnUnsureJevLeavesTheRulesSureReply() async throws {
+        XCTAssertEqual(MomentOutput.replyFloor, 0.35)
+        var said = Event(at: 0, source: .mic, type: .said, specificType: "said", data: ["words": "thanks!"])
+        said.seq = 1
+        let replies = question(MomentOutput.replyKey, MomentOutput.replies.map(\.name))
+        func jev(_ p: Double) -> ScriptedBrain {
+            ScriptedBrain(id: "jev-test") { _, _ in
+                [MomentOutput.replyKey: Answer(choice: "hehe", probabilities: ["hehe": p, "thanks": p]),
+                 MoodOutput.outputName: Answer(choice: "proud", probabilities: ["proud": 0.1])]
+            }
+        }
+        func reply(_ jev: (any Brain)?) async throws -> Answers {
+            let seated = SeatedBrain(rules: rules([:]), jev: jev)
+            return try await seated.reading(now: said, log: Log().view(now: 0))
+                .answer(state: "", questions: [replies, questions[0]], deadline: .seconds(1))
+        }
+        let alone = try await reply(nil)
+        XCTAssertEqual(MomentOutput.reply(alone), "thanks", "the rules, sure")
+        let unsure = try await reply(jev(0.3))
+        XCTAssertEqual(unsure[MomentOutput.replyKey], alone[MomentOutput.replyKey], "under the floor: the rules' reply")
+        XCTAssertEqual(MomentOutput.reply(unsure), "thanks", "not a huh")
+        XCTAssertEqual(unsure[MoodOutput.outputName]?.choice, "proud", "the mood has no floor")
+        let sure = try await reply(jev(0.35))
+        XCTAssertEqual(MomentOutput.reply(sure), "hehe", "at the floor: Jev's")
+    }
+
+    /// Pins the pass's brain as the transcript keeps it: whose answers the
+    /// pass played. `rules` when Jev was absent, late or failing, or took
+    /// no seat; else `rules+` Jev's id and the seats it took. Through the
+    /// harness, each pass of a run says the same.
+    func testThePassSaysWhoseAnswersItPlayed() async throws {
+        func id(_ jev: (any Brain)?, deadline: Duration = .seconds(1)) async throws -> String {
+            let call = SeatedBrain(rules: rules(), jev: jev, margin: .milliseconds(100)).reading(now: Self.end, log: Log().view(now: 0))
+            _ = try await call.answer(state: "", questions: questions, deadline: deadline)
+            return call.id
+        }
+        let absent = try await id(nil)
+        let late = try await id(Sleepy(answering: Self.last, for: .seconds(5)), deadline: .milliseconds(150))
+        let failing = try await id(ScriptedBrain(id: "jev-test") { _, _ in throw BrainError("jev: HTTP 503", status: 503) })
+        let none = try await id(ScriptedBrain(id: "jev-test") { _, _ in [MomentOutput.emotionKey: Answer(choice: "elated", probabilities: ["elated": 1])] })
+        XCTAssertEqual([absent, late, failing, none], ["rules", "rules", "rules", "rules"])
+        let all = try await id(Self.last)
+        XCTAssertEqual(all, "rules+jev-test:mood,react.face,react.reply,react.sign,skit.take")
+        let one = try await id(ScriptedBrain(id: "jev-test") { _, _ in [MoodOutput.outputName: Answer(choice: "proud", probabilities: ["proud": 1])] })
+        XCTAssertEqual(one, "rules+jev-test:mood", "only the seat it took")
+
+        try requirePack("boop")
+        let scenario = try XCTUnwrap(try Scenario.load(directory: try EvalTests.scenarios()).first { $0.file.hasPrefix("04-") })
+        let timedOut = try await Self.brains(scenario, jev: Sleepy(answering: Self.last, for: .seconds(5)), margin: .milliseconds(1480),
+                                             steering: RuntimeTests.steering)
+        XCTAssertEqual(timedOut, ["rules"], "Jev late: every pass is the rules'")
+        let inTime = try await Self.brains(scenario, jev: Self.last, margin: .milliseconds(100), steering: RuntimeTests.steering)
+        XCTAssertFalse(inTime.isEmpty)
+        XCTAssertTrue(inTime.allSatisfy { $0.hasPrefix("rules+jev-test:") && $0.contains("mood") }, "\(inTime)")
+    }
+
     /// With no Jev it is the rules brain alone, answer for answer, over
     /// many passes of every kind of event, and says nothing of Jev.
     func testNoJevIsTheRulesAlone() async throws {
@@ -132,6 +193,17 @@ final class SeatedBrainTests: XCTestCase {
 }
 
 extension SeatedBrainTests {
+    /// The brains every pass of `scenario` says it played, with Jev seated.
+    nonisolated static func brains(_ scenario: Scenario, jev: any Brain, margin: Duration, steering: Steering) async throws -> Set<String> {
+        let seen = Lines()
+        var eval = Eval(brain: ScriptedBrain { _, _ in [:] }, steering: steering)
+        eval.rules = true
+        eval.seated = { rules in SeatedBrain(rules: rules, jev: jev, margin: margin) }
+        eval.onPass = { _, pass in if let brain = pass.brain { seen.add(brain) } }
+        _ = try await eval.run(scenario)
+        return Set(seen.all)
+    }
+
     /// What every pass of `scenario` did, with each run's rules brain put
     /// in `seated`: its line, its answers and each output's message and
     /// facts, the Moments included.

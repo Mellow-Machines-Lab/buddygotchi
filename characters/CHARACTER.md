@@ -476,13 +476,15 @@ moment, and everything else plays in silence:
 - A skit: one of the few moments that always speak, each from takes of its
   own (`skits`, below). The brain can't veto one: when it picks no face,
   the Moment plays in the rules brain's first face for the moment, as the
-  mood colours it. With more than one thing it may say, the brain may pick
-  which (`skit.take`): its options are the texts of the skit's takes of
-  the kind the size asks, at most 6, the one not said longest first, which
-  is the rules' answer and leaves the pick to Voice. A text the chosen face
-  has no take of says Voice's own pick.
+  mood colours it. With more than one thing it may say, Jev may pick which
+  (`skit.take`): its options are the texts of the skit's takes of the kind
+  the size asks, at most 6, those not said lately first. The rules leave
+  it unanswered, so with no key Voice picks. A text the chosen face has no
+  take of says Voice's own pick.
 - Your words: the reply's own words (§7).
-- A real wave at your lock or unlock: its hello's or bye's own words.
+- A real wave at your lock or unlock: the `hello` or `bye` reply's own
+  takes (part `reply`), as to your words; before skits it said the `hello`
+  topic's.
 
 The Moment's size, which the app's rules pick (`MomentRule.size`), picks
 the kind: a sound small, a word medium, a phrase big. With none of that

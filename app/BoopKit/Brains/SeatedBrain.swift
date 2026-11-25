@@ -5,8 +5,10 @@ import MellowHarness
 /// and with no network (`RulesBrain`), and Jev, with a key, may replace an
 /// answer in one of its seats (`seats`). Jev is asked the same state and
 /// questions; its answer to a seat replaces the rules' only if it comes
-/// within the pass's deadline, less `margin`, and names one of that
-/// question's options. A slow, failing, absent or wrong Jev changes nothing
+/// within the pass's deadline, less `margin`, names one of that
+/// question's options and is as sure as the output needs (`floor`). A
+/// pass's brain, as the transcript keeps it, says whose answers it played
+/// (`Call.id`). A slow, failing, absent or wrong Jev changes nothing
 /// a person sees: the pass plays on the rules' answers, and how Jev did
 /// goes to `report`, never to the harness as a dropped pass. It keeps
 /// nothing between passes: each reads the transcript and the pass alone.
@@ -49,13 +51,28 @@ public final class SeatedBrain: ReadingBrain, @unchecked Sendable {
         try await Call(rules: rules, jev: jev, margin: margin, report: report).answer(state: state, questions: questions, deadline: deadline)
     }
 
+    /// How sure Jev's answer to `key` must be for its output to play it:
+    /// below `MomentOutput.replyFloor` a reply is a guess the output turns
+    /// into a `huh`, so the rules' reply stands instead. Any other seat
+    /// takes an answer at any probability.
+    static func floor(_ key: String) -> Double { key == MomentOutput.replyKey ? MomentOutput.replyFloor : 0 }
+
     /// One pass's answers: the rules' first, then Jev's in its seats.
     struct Call: Brain {
-        var id: String { jev?.id ?? rules.id }
+        /// Whose answers the pass played, once it has: `rules` when Jev took
+        /// no seat (late, failing, absent, or no answer it could take), else
+        /// the rules and Jev with the seats it took, `rules+jev:…:mood,react.face`.
+        /// The harness reads it as the pass ends, for the pass's `brain`.
+        var id: String {
+            let seats = took.seats
+            guard let jev, !seats.isEmpty else { return rules.id }
+            return "\(rules.id)+\(jev.id):\(seats.sorted().joined(separator: ","))"
+        }
         let rules: any Brain
         let jev: (any Brain)?
         let margin: Duration
         let report: @Sendable (BrainError?) -> Void
+        let took = Took()
 
         func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
             var out = try await rules.answer(state: state, questions: questions, deadline: deadline)
@@ -66,11 +83,27 @@ public final class SeatedBrain: ReadingBrain, @unchecked Sendable {
                 report(error)
             case .success(let answers):
                 report(nil)
+                var seats: [String] = []
                 for q in questions where SeatedBrain.seats.contains(q.key) {
-                    if let a = answers[q.key], q.options.contains(where: { $0.name == a.choice }) { out[q.key] = a }
+                    if let a = answers[q.key], q.options.contains(where: { $0.name == a.choice }), a.p >= SeatedBrain.floor(q.key) {
+                        out[q.key] = a
+                        seats.append(q.key)
+                    }
                 }
+                took.seats = seats
             }
             return out
+        }
+    }
+
+    /// The seats Jev took in one pass, set as its answers are merged and
+    /// read once the pass ends.
+    final class Took: @unchecked Sendable {
+        private let lock = NSLock()
+        private var all: [String] = []
+        var seats: [String] {
+            get { lock.withLock { all } }
+            set { lock.withLock { all = newValue } }
         }
     }
 

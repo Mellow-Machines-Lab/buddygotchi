@@ -11,10 +11,11 @@ public struct Take: Equatable, Sendable {
         case sound, word, phrase, swear
     }
 
-    /// What a take says: how Boop feels, or what a moment is about (the
-    /// `hello` topic is your hello and bye at a lock); a reply's own words,
-    /// to what you said on push-to-talk, its meaning the reply's name; or a
-    /// skit's (`Skit`), its meaning the skit's id.
+    /// What a take says: how Boop feels, or what a moment is about; a
+    /// reply's own words, to what you said on push-to-talk and at a lock's
+    /// real wave (the `hello` and `bye` replies), its meaning the reply's
+    /// name; or a skit's (`Skit`), its meaning the skit's id. Only a reply's
+    /// and a skit's are said now.
     /// Needs you's takes (`attention`) Boop never says: Boop's voice has
     /// none now, and Pixel's older copy of it still lists them.
     public enum Part: String, CaseIterable, Sendable {

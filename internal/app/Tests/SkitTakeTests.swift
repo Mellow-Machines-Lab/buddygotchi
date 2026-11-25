@@ -5,8 +5,9 @@ import XCTest
 @testable import BoopKit
 
 /// Which take a skit says (`skit.take`, a seat of `SeatedBrain`): the texts
-/// it may say now, the rules' pick first; the brain's pick said in the face
-/// it chose, or today's pick when that face lacks it.
+/// it may say now, those not said lately first, which the rules leave
+/// unanswered; Jev's pick, any of them, said in the face it chose, or
+/// today's pick when that face lacks it.
 final class SkitTakeTests: XCTestCase {
     typealias Facts = [String: JSONValue]
 
@@ -46,8 +47,8 @@ final class SkitTakeTests: XCTestCase {
 
     /// At a skit: its texts, each once, at most 6, no `none`, the one not
     /// said longest first; what it just said goes to the end. The rules
-    /// answer with the first.
-    func testTheQuestionOffersTheSkitsTextsTheRulesPickFirst() async throws {
+    /// leave it unanswered: Voice picks, as with no key.
+    func testTheQuestionOffersTheSkitsTextsTheRulesAnswerNone() async throws {
         try requireVoice()
         XCTAssertEqual(MomentOutput.takesOffered, 6)
         let out = output()
@@ -60,10 +61,10 @@ final class SkitTakeTests: XCTestCase {
         XCTAssertFalse(names.contains("none"))
         let own = Set(Take.all.filter { $0.part == .skit && $0.meaning == "win" }.map(\.text))
         XCTAssertTrue(Set(names).isSubset(of: own), "\(names)")
-        // The rules' answer: the first.
+        // The rules leave it to Voice.
         let rules = RulesBrain(seed: 1, facts: { _ in Self.won }, mood: { _ in ("calm", 1) })
         let a = try await rules.reading(now: e, log: Self.log).answer(state: "", questions: [q], deadline: .seconds(1))
-        XCTAssertEqual(a[MomentOutput.takeKey]?.choice, names.first)
+        XCTAssertNil(a[MomentOutput.takeKey])
         // Once it said one, that one is the last offered, or past the six.
         let face = try XCTUnwrap(RulesBrain.faces[.doneLong]?.first)
         _ = out.run([MomentOutput.emotionKey: self.face(face)], now: e, log: Self.log)
@@ -107,7 +108,7 @@ final class SkitTakeTests: XCTestCase {
         let takes = Take.all.filter { $0.part == .skit && $0.meaning == "win" && ($0.finish == nil || $0.finish == "success") }
         for face in CharacterPack.active.faces.map(\.name) {
             let mine = Set(takes.filter { $0.moods.contains(face) }.map(\.text))
-            if let has = options.dropFirst().first(where: mine.contains), let lacks = options.dropFirst().first(where: { !mine.contains($0) }) {
+            if let has = options.first(where: mine.contains), let lacks = options.first(where: { !mine.contains($0) }) {
                 return (face, has, lacks)
             }
         }
@@ -122,9 +123,9 @@ final class SkitTakeTests: XCTestCase {
         return queued.all.first?.say?.takes.map(\.text) ?? []
     }
 
-    /// The brain's pick is said in the face it chose; one that face has no
-    /// take of, or the rules' own (the first), says today's pick, as no
-    /// answer does.
+    /// Jev's pick is said in the face it chose, the first option too; one
+    /// that face has no take of, or one not offered, says today's pick, as
+    /// no answer does.
     func testThePickIsSaidInTheChosenFaceElseTodaysPick() throws {
         try requireVoice()
         let options = try XCTUnwrap(takeQuestion(output(), event(.turn, .end))).options.map(\.name)
@@ -134,8 +135,13 @@ final class SkitTakeTests: XCTestCase {
         XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face(has)]).last, has)
         XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face(lacks)]), todays,
                        "\(lacks) isn't in \(face): today's pick")
-        XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face(options[0])]), todays,
-                       "the rules' pick: today's")
+        // The first option, in a face that has it and whose own pick today is another.
+        let first = try XCTUnwrap(CharacterPack.active.faces.map(\.name).first { f in
+            Take.all.contains { $0.part == .skit && $0.meaning == "win" && $0.text == options[0] && $0.moods.contains(f) }
+                && said([MomentOutput.emotionKey: self.face(f)]).last != options[0]
+        }, "a face that has \(options[0]) and picks another today")
+        XCTAssertEqual(said([MomentOutput.emotionKey: self.face(first), MomentOutput.takeKey: self.face(options[0])]).last, options[0],
+                       "Jev may pick the first")
         XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face("Not a take.")]), todays,
                        "not offered: today's")
     }

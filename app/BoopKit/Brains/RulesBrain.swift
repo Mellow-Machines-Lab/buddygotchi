@@ -274,8 +274,8 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
                 case MomentOutput.emotionKey: pick = face.flatMap { names.contains($0) ? $0 : nil } ?? (names.contains("none") ? "none" : names.first)
                 case MomentOutput.replyKey: pick = read.reply.flatMap { names.contains($0) ? $0 : nil } ?? (names.contains("huh") ? "huh" : names.first)
                 case Signs.questionKey: pick = sign(q)
-                // Its first, the rules' own pick: Voice's, as with no answer.
-                case MomentOutput.takeKey: pick = names.first
+                // Left to Voice, as with no key: only Jev answers it.
+                case MomentOutput.takeKey: pick = nil
                 default: pick = q.options.first { $0.name == "none" }?.name ?? names.first
                 }
                 if let pick { out[q.key] = Answer(choice: pick, probabilities: [pick: 1]) }

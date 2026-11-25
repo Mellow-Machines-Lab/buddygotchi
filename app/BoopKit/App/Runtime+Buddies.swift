@@ -308,6 +308,21 @@ extension Runtime {
         react.inviting = m.inviting
         react.remarking = m.remarking
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
+        // The low Moment queued behind a finish has a record of its own,
+        // right after the finish's, about the same event and in progress
+        // until the board says how that Moment ended, as the harness ends
+        // the finish's.
+        h.on(Event.did) { [weak h, weak react] e in
+            guard let h, let react, e.action == react.name, let next = react.following else { return }
+            react.following = nil
+            let by = e["by"]?.string ?? "brain"
+            let d = h.emit(Event.did(next.message, for: e.about, action: react.name, by: by, open: true, facts: next.facts))
+            next.pending.bind { [weak h] end in
+                guard let h, h.log.openDids.contains(d.seq) else { return }
+                let why: String? = if case .failed(let why) = end { why } else { nil }
+                h.emit(Event.ended(d.seq, action: react.name, by: by, failed: why))
+            }
+        }
         // The Moments the rules make whole, with no pass: your bye at a
         // lock and your hello at an unlock, a working check-in, another
         // buddy's gesture. Each plays

@@ -165,6 +165,10 @@ public struct Moment: Equatable, Sendable {
     /// A clip of the pack's to play as its face starts, as a reply's does
     /// (`reply-<name>`), with none of a reply's rights. Nil sends none.
     public var clip: String?
+    /// Queued behind a finish, as the agent's line or a remark is: it waits
+    /// in the device's queue as long as the finish waits and plays
+    /// (`BoopDevice.behindFinishTTL`). Not sent.
+    public var behindFinish = false
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,

@@ -1838,25 +1838,13 @@ final class RuntimeTests: XCTestCase {
     /// 57.2 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
         let held = Int64(MomentOutput.sizes.map(\.loops).max() ?? 0)
-        let assets = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../../../characters/pixel/firmware/include").standardizedFileURL
-        func longest(_ file: String, _ start: String, _ pattern: String) throws -> Int64 {
-            let text = try String(contentsOf: assets.appendingPathComponent(file), encoding: .utf8)
-            let from = try XCTUnwrap(text.range(of: start)).upperBound
-            let table = String(text[from..<(try XCTUnwrap(text.range(of: "};", range: from..<text.endIndex))).lowerBound])
-            let re = try NSRegularExpression(pattern: pattern)
-            return re.matches(in: table, range: NSRange(table.startIndex..., in: table))
-                .compactMap { Int64(table[Range($0.range(at: 1), in: table)!]) }.max() ?? 0
-        }
-        let longestLoop = try longest("faces.h", "static const Scene kScenes[", #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+, \d+\}"#)
-        let latestVoice = try longest("sfx.h", "static const Score kScore[] = {", #"\{k\w+, \d+, \w+, \d+, \d+, (\d+)\},"#)
+        let longestLoop = try FirmwareTables.pixelLongestLoopMs()
+        let latestVoice = try FirmwareTables.pixelLatestVoiceMs()
         XCTAssertEqual(longestLoop, 14_300)
         // A reaction says one take, or a sound and a word within maxSayMs.
         let longestLine = Int64(max(Take.all.map(\.ms).max() ?? 0, Voice.maxSayMs))
         // The bubble stays up after the take (firmware `Behaviour::kBubbleReadMs`).
-        let behaviour = try String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../../../firmware/src/app/behaviour.h").standardizedFileURL, encoding: .utf8)
-        let bubbleRead = try XCTUnwrap(behaviour.firstMatch(of: /kBubbleReadMs = (\d+);/).flatMap { Int64($0.1) })
+        let bubbleRead = try FirmwareTables.bubbleReadMs()
         XCTAssertEqual(bubbleRead, 1200)
         let longestPlay = max(held * longestLoop, latestVoice + longestLine + bubbleRead)
         XCTAssertGreaterThan(longestPlay, 30_000)

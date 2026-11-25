@@ -37,9 +37,15 @@ public enum BoopDevice {
     /// How long a finish may wait: it names its thread, and plays about 5 s,
     /// so three agents ending together each get theirs, in turn.
     public static let finishTTL = 15_000
+    /// How long a Moment queued behind a finish may wait (`Moment.behindFinish`):
+    /// the finish's own wait, `finishTTL`, then 10 s for the finish to play.
+    /// On the gel a finish plays once, its take and bubble inside that
+    /// (`InviteTests.testBehindAFinishWaitsForIt`); with a reaction's ttl,
+    /// the Moment after it would be skipped late before it began.
+    public static let behindFinishTTL = finishTTL + 10_000
     /// How long `reaction` may wait in the device's queue.
     public static func ttl(_ reaction: Moment) -> Int {
-        finishes.contains(reaction.name) ? finishTTL : reactionTTL
+        reaction.behindFinish ? behindFinishTTL : finishes.contains(reaction.name) ? finishTTL : reactionTTL
     }
     /// The moments that are a turn's finish.
     public static let finishes: Set<String> = ["task_complete", "reply_ready"]
