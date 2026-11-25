@@ -119,6 +119,7 @@ int Device::does(const char* const*& names) const {
 void Device::hello(JsonObject extra) {
   extra["voice"] = voice::assetsVersion();
   extra["face"] = b_.face().name();
+  if (b_.face().drawsInvites()) extra["invites"] = 1;  // the Mac sends a `do`'s invite only then
   // The character pack it was built with, as `id version`.
   static char pack[48];
   if (!*pack) std::snprintf(pack, sizeof pack, "%s %s", render::kPackId, render::kPackVersion);
@@ -151,8 +152,18 @@ void Device::reset() {
 }
 
 void Device::drain() {
-  // An ask's end goes first: the Mac hears the answer before the reaction's
-  // `ended`.
+  // An invite's end and an ask's go first: the Mac hears the answer before
+  // the reaction's `ended`.
+  InviteEnd v;
+  while (b_.takeInviteEnd(v)) {
+    JsonDocument d;
+    d["skit"] = v.skit;
+    d["touch"] = v.stroke ? "stroke" : "tap";
+    d["ms"] = v.ms;
+    char data[80];
+    serializeJson(d, data, sizeof(data));
+    kit().emit("invite", v.did, data, v.injected);
+  }
   AskEnd a;
   if (b_.takeAskEnd(a)) {
     JsonDocument d;
@@ -419,6 +430,23 @@ ReactionIn Device::parse(const Do& c, uint32_t t) {
     if (mo.askA[0] && mo.askB[0]) copyStr(mo.askQ, sizeof(mo.askQ), ask["q"].as<const char*>());
     mo.askTouch = ask["touch"] | false;
   }
+  // What it invites (`invite`), on a face that draws one: one with a pose,
+  // a touch or a payoff the board doesn't know invites nothing.
+  JsonObjectConst invite = args["invite"];
+  if (invite && b_.face().drawsInvites()) {
+    InviteIn& v = mo.invite;
+    const char* touch = invite["touch"] | "";
+    const render::InvitePose pose = render::invitePoseFromName(invite["pose"]);
+    const render::InvitePayoff payoff = render::invitePayoffFromName(invite["payoff"]);
+    const bool known = !std::strcmp(touch, "tap") || !std::strcmp(touch, "stroke");
+    if (pose != render::InvitePose::kNone && payoff != render::InvitePayoff::kNone && known) {
+      v.pose = pose, v.payoff = payoff, v.stroke = !std::strcmp(touch, "stroke");
+      copyStr(v.skit, sizeof(v.skit), invite["skit"].as<const char*>());
+      render::foldText(invite["label"].as<const char*>(), kInviteLabelGlyphs, v.label, sizeof(v.label));
+      v.waitMs = uint32_t(heldTo(invite["ms"], 1000, 30000, 4000));
+      v.xp = heldTo(invite["xp"], 0, 999, 0);
+    }
+  }
   return mo;
 }
 
@@ -433,8 +461,10 @@ const char* Device::refuse(const Do& c, uint32_t t) {
   if (c.what == kWishGone) return b_.faceDown() ? "facedown" : nullptr;
   live_.parsed = parse(c, t);
   const char* why = b_.admit(live_.parsed, t);
-  if (!why) b_.dropAsk(t);  // it replaces the ask: its answer, `ignored`, before its `ended`
-  drain();                  // a listening reaction the reply ended, or the ask's
+  // It replaces the ask, its answer `ignored`, and cuts the invite waiting,
+  // each before its reaction's `ended`.
+  if (!why) b_.dropAsk(t), b_.dropInvite(t);
+  drain();  // a listening reaction the reply ended, or the ask's
   if (why) live_.parsed = ReactionIn{};
   return why;
 }
@@ -494,6 +524,11 @@ void Device::onDo(const Do& c, uint32_t t) {
   if (!startSay(t) && b_.reactionSeq() != seq) hush();  // a new reaction replaces the `say`
   dirty_ = true;
   live_.restKey = 0;
+  // One that invites plays through: its pose and payoff are its point.
+  if (b_.invites(c.key) && c.what != kListening && c.what != kStopListening) {
+    drain();
+    return;
+  }
   switch (c.what) {
     case kReact:
       live_.restKey = c.key;
@@ -576,6 +611,13 @@ void Device::tellWayUp(uint32_t t) {
 }
 
 void Device::tapped(uint32_t t, bool injected, bool button, const char* was) {
+  // BOOT, when it would poke, is a tap like any.
+  const Model& m = b_.model();
+  if (button && !(m.attn || m.idle > 0) && b_.inviteTouch(false, t, injected)) {
+    input("invite", t);
+    drain();
+    return;
+  }
   uint32_t finish = b_.finishShown(t);
   const char* did = button ? b_.press(t, kit().rng()) : b_.tap(t, kit().rng());
   input("tap", t);
@@ -805,6 +847,8 @@ void Device::readInputs(uint32_t t) {
           tapDrawer(live_.lastTouch.x0, live_.lastTouch.y0, t);
         else
           live_.drawerTouchedAt = t;  // a drag across it: it lets go, picking nothing
+      } else if (!live_.touchOnNeedsYou && invited(kind, g, t, live_.touchInjected)) {
+        live_.lastTouchWas = "invite";
       } else if (kind == TouchGesture::kLean) {
         leaned(t, live_.touchInjected);
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t) || !brief))) {
@@ -1032,6 +1076,22 @@ void Device::tendDrawer(uint32_t t) {
 }
 
 bool Device::needsYouShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
+
+// A touch of an invite's kind is the invite's, the Mac's poke or stroke: a
+// tap, a boop on the nose or a tickle; a stroke, a ruffle or a finger the
+// face leaned into. It plays the payoff and nothing else: no tap or gesture
+// goes to the Mac, the invite's end does.
+bool Device::invited(TouchGesture::Kind kind, render::Gesture g, uint32_t t, bool injected) {
+  using G = render::Gesture;
+  const bool gesture = kind == TouchGesture::kGesture;
+  const bool tap = kind == TouchGesture::kTap || (gesture && (g == G::kNose || g == G::kTickle));
+  const bool stroke = kind == TouchGesture::kLean || (gesture && (g == G::kStroke || g == G::kRuffle));
+  if (!(tap || stroke) || !b_.inviteTouch(stroke, t, injected)) return false;
+  input("invite", t);
+  dirty_ = true;
+  drain();
+  return true;
+}
 
 // The touches that answer an ask that takes one: the kind ones.
 static bool caring(render::Gesture g) {

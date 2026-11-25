@@ -147,6 +147,8 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
     if (sign_.text[0]) consider(sign_.at + sign_.ms);
   if (reason_.text[0]) consider(reason_.at + reason_.ms);
     if (ask_.q[0]) consider(ask_.at + kAskMs);
+    uint32_t inviteAt;
+    if (inviteDue(inviteAt)) consider(inviteAt);
     consider(lastState_ + kNoAppMs);
     if (stale_ && !aloneAsleep_) consider(aloneFrom_ + kAloneSleepMs);
     uint32_t faceAt;
@@ -197,7 +199,9 @@ void Behaviour::resync(uint32_t t) {
 // and heard. Only
 // the reaction that last played is followed: it's the one the kit has
 // playing, and the kit ended any before it when the queue started this one.
-bool Behaviour::holds(uint32_t key, uint32_t t) const {
+bool Behaviour::holds(uint32_t key, uint32_t t) const { return partsHold(key, t) || inviteHolds(key); }
+
+bool Behaviour::partsHold(uint32_t key, uint32_t t) const {
   return (reactionOn(t) && reaction_.key == key) || (sayDue(t) && say_.key == key) || (exprOn(t) && exprKey_ == key) ||
          (signDue(t) && sign_.key == key) || (askOn(t) && ask_.key == key);
 }
@@ -234,6 +238,8 @@ bool Behaviour::nextEnd(uint32_t from, uint32_t to, uint32_t& at) const {
   if (expr_) consider(exprAt_ + exprMs_);
   if (sign_.text[0]) consider(sign_.at + sign_.ms);
   if (ask_.q[0]) consider(ask_.at + kAskMs);
+  uint32_t inviteAt;
+  if (inviteDue(inviteAt)) consider(inviteAt);
   return found;
 }
 
@@ -275,6 +281,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       greetKey_ = 0;
       say_ = Say{};  // no `say`, sign or ask while something needs you
       if (ask_.q[0]) endAsk("ignored", t);
+      cutInvite(CutBy::kNeedsYou, t);
       sign_ = gone_ = reason_ = gold_ = Sign{};
       expr_ = false;
     }
@@ -334,6 +341,7 @@ Behaviour::Parts Behaviour::partsOf(const ReactionIn& in, uint32_t t) const {
   p.say = in.take >= 0 && !model_.attn && !noApp(t);
   p.face = in.expr && !heldFrom(in, t);  // listening, if it's still on, holds the face
   p.sign = (in.sign[0] || in.gold[0]) && !heldFrom(in, t);
+  p.invite = in.invite.pose != render::InvitePose::kNone && face_->drawsInvites() && !listen && !noApp(t) && !held(t);
   return p;
 }
 
@@ -363,8 +371,16 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
                    !std::strcmp(in.reason, ownReason_);
   const Sign ownUp = own && within(t, reason_.at, reason_.ms) ? reason_ : Sign{};
   change(t, [&] {
-    // A newer reaction ends the ask that's up, unanswered.
+    // A newer reaction ends the ask that's up, unanswered, and takes the
+    // face from another's invite and from a late payoff.
     if (ask_.q[0]) endAsk("ignored", t);
+    if (invite_.stage != Invite::kWindow && invite_.key != in.key) cutInvite(CutBy::kNone, t);
+    // Its own waits for the rest of it to play (followInvite). A new one
+    // closes the window after the last one's miss.
+    if (parts.invite) {
+      invite_ = Invite{};
+      invite_.stage = Invite::kAhead, invite_.in = in.invite, invite_.key = in.key, invite_.at = t;
+    }
     // A reaction from the Mac takes the finished turn named down, unless
     // it names one itself: its animation a finish, or none.
     const bool finish = in.anim == render::SceneState::kTaskComplete || in.anim == render::SceneState::kReplyReady;
@@ -620,7 +636,7 @@ void Behaviour::setReason(const char* text, uint32_t t) {
 
 bool Behaviour::noteOnly(const ReactionIn& in) {
   return in.reason[0] && in.anim == render::SceneState::kNone && !in.expr && !in.said && !in.empty && !in.sign[0] &&
-         !in.askQ[0] && !in.wishMet;
+         !in.askQ[0] && !in.wishMet && in.invite.pose == render::InvitePose::kNone;
 }
 
 void Behaviour::note(const char* text, uint32_t t) {
@@ -640,6 +656,7 @@ void Behaviour::talkOn(uint32_t t, Rng& rng) {
     } else {
       uint8_t v = pick(render::SceneState::kListening, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
       if (ask_.q[0]) endAsk("ignored", t);
+      cutInvite(CutBy::kMicOn, t);
       greetingSignCut(CutBy::kMicOn, t);
       endSay(t, CutBy::kTap);
       playAnim(render::SceneState::kListening, t, CutBy::kTap, 1, model_.mood, v);
@@ -694,7 +711,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.mood = model_.mood;
   c.look = model_.look();
   c.working = model_.base == render::SceneState::kWorking;
-  c.mayVary = !held(t) && !reactionOn(t) && !exprOn(t);
+  c.mayVary = !held(t) && !reactionOn(t) && !exprOn(t) && invite_.stage == Invite::kOff;
   c.base = model_.base;
   c.act = model_.act;
   c.attention = model_.attn;
@@ -707,6 +724,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
     c.act = render::FaceContext{}.act;
   }
   if (c.borrowed) c.reply = exprReply_, c.replyAt = exprAt_;
+  c.invite = inviteShow(t);
   c.attentionId = model_.attnId;
   c.attentionKind = model_.attnKind;
   c.agent = model_.agent;
@@ -765,6 +783,7 @@ void Behaviour::setFaceDown(bool down, uint32_t t) {
   change(t, [&] {
     faceDown_ = down;
     if (down) greetingSignCut(CutBy::kFaceDown, t);
+    if (down) cutInvite(CutBy::kFaceDown, t);
     if (down && say_.take >= 0) endSay(t, CutBy::kNone);
     if (down && signOn(t)) signGoes(t);
     if (down && ask_.q[0]) endAsk("ignored", t);
@@ -871,7 +890,10 @@ render::Strip Behaviour::strip(uint32_t t) const {
 render::CardShow Behaviour::cardShow(uint32_t t) const {
   render::CardShow show;
   const Model::CardIn& c = model_.card;
-  show.on = c.on && !noApp(t) && !held(t) && !faceDown_ && !reactionOn(t) && !signDue(t) && !goldOn(t) && !asking(t);
+  // An invite is a Moment's too: it holds the screen as its reaction did.
+  const bool screenFree = !noApp(t) && !held(t) && !faceDown_ && !reactionOn(t) && !signDue(t) && !goldOn(t) && !asking(t) &&
+                    !inviteShow(t).shows();
+  show.on = c.on && screenFree;
   show.result = c.result, show.over = c.over, show.slot = c.slot;
   show.index = c.index, show.count = c.count, show.text = c.text, show.small = c.small, show.agent = c.agent;
   show.ms = t - cardAt_;
@@ -880,14 +902,14 @@ render::CardShow Behaviour::cardShow(uint32_t t) const {
   if (model_.show.on) {
     const Model::ShowIn& w = model_.show;
     show = render::CardShow{};
-    show.on = !noApp(t) && !held(t) && !faceDown_ && !reactionOn(t) && !signDue(t) && !goldOn(t) && !asking(t);
+    show.on = screenFree;
     show.pic = 's', show.slot = w.slot, show.agent = w.agent, show.headline = w.headline, show.ms = t - cardAt_;
     return show;
   }
   // No card of words: the live picture of the work, under the same rules.
   if (!c.on && model_.pic.kind) {
     const Model::PicIn& p = model_.pic;
-    show.on = !noApp(t) && !held(t) && !faceDown_ && !reactionOn(t) && !signDue(t) && !goldOn(t) && !asking(t);
+    show.on = screenFree;
     show.pic = p.kind, show.slot = p.slot, show.agent = p.agent, show.a = p.a, show.b = p.b, show.left = p.left;
     show.step = p.step, show.rows = p.rows;
     for (int i = 0; i < p.rows; ++i) show.file[i] = p.file[i], show.added[i] = p.added[i], show.removed[i] = p.removed[i];
@@ -964,6 +986,160 @@ bool Behaviour::takeAskEnd(AskEnd& e) {
   e = askEnd_;
   askEnded_ = false;
   return true;
+}
+
+// ---- The invite --------------------------------------------------------------
+
+bool Behaviour::inviteHolds(uint32_t key) const {
+  const Invite& v = invite_;
+  return key && v.key == key && v.stage >= Invite::kAhead && v.stage <= Invite::kShrug;
+}
+
+bool Behaviour::invites(uint32_t key) const { return inviteHolds(key); }
+
+void Behaviour::endInvite(const char* did, uint32_t at, bool injected) {
+  if (inviteEndCount_ == 2) inviteEnds_[0] = inviteEnds_[1], inviteEndCount_ = 1;
+  InviteEnd& e = inviteEnds_[inviteEndCount_++];
+  e = InviteEnd{};
+  e.did = did;
+  copyStr(e.skit, sizeof(e.skit), invite_.in.skit);
+  e.stroke = invite_.in.stroke;
+  e.ms = invite_.stage == Invite::kAhead ? 0 : at - invite_.poseAt;
+  e.injected = injected;
+}
+
+bool Behaviour::takeInviteEnd(InviteEnd& e) {
+  if (!inviteEndCount_) return false;
+  e = inviteEnds_[0];
+  inviteEnds_[0] = inviteEnds_[1];
+  --inviteEndCount_;
+  return true;
+}
+
+void Behaviour::followInvite(uint32_t t) {
+  using render::InviteShow;
+  Invite& v = invite_;
+  for (;;) {
+    const uint32_t missAt = v.poseAt + v.in.waitMs;
+    switch (v.stage) {
+      case Invite::kAhead:
+        if (partsHold(v.key, t)) return;
+        // The face is the invite's: a finished turn named leaves, as for
+        // an animation.
+        v.stage = Invite::kPose, v.poseAt = v.at = t;
+        takeDown(t);
+        return;
+      case Invite::kPose:
+        if (within(t, v.poseAt, v.in.waitMs)) return;
+        endInvite("missed", missAt);
+        v.stage = Invite::kShrug, v.at = missAt;
+        continue;
+      case Invite::kShrug:  // its reaction is over with it
+        if (within(t, v.at, InviteShow::kShrugMs)) return;
+        v.stage = Invite::kWindow, v.key = 0;
+        continue;
+      case Invite::kWindow:
+        if (within(t, missAt, kLateWindowMs)) return;
+        v = Invite{};
+        return;
+      case Invite::kPayoff:
+      case Invite::kLate:
+        if (within(t, v.at, v.stage == Invite::kPayoff ? InviteShow::kPayoffMs : InviteShow::kLateMs)) return;
+        v = Invite{};
+        return;
+      default:
+        return;
+    }
+  }
+}
+
+bool Behaviour::inviteDue(uint32_t& at) const {
+  using render::InviteShow;
+  const Invite& v = invite_;
+  const uint32_t missAt = v.poseAt + v.in.waitMs;
+  switch (v.stage) {
+    case Invite::kPose: at = missAt; return true;
+    case Invite::kShrug: at = v.at + InviteShow::kShrugMs; return true;
+    case Invite::kWindow: at = missAt + kLateWindowMs; return true;
+    case Invite::kPayoff: at = v.at + InviteShow::kPayoffMs; return true;
+    case Invite::kLate: at = v.at + InviteShow::kLateMs; return true;
+    default: return false;
+  }
+}
+
+void Behaviour::cutInvite(CutBy by, uint32_t t) {
+  Invite& v = invite_;
+  switch (v.stage) {
+    case Invite::kAhead:
+    case Invite::kPose:
+      if (!v.told) endInvite("cut", t);
+      if (by != CutBy::kNone) cut(v.key, by);
+      v = Invite{};
+      break;
+    case Invite::kPayoff:
+    case Invite::kLate:
+      if (by != CutBy::kNone && v.key) cut(v.key, by);
+      v = Invite{};
+      break;
+    case Invite::kShrug:
+      if (by != CutBy::kNone) cut(v.key, by);
+      v.stage = Invite::kWindow, v.key = 0;
+      break;
+    default:
+      break;
+  }
+}
+
+// Its end goes now, before the kit's `ended` for its reaction; it holds its
+// reaction until the newer one plays, so that `ended` is the kit's cut.
+void Behaviour::dropInvite(uint32_t t) {
+  Invite& v = invite_;
+  if ((v.stage == Invite::kAhead || v.stage == Invite::kPose) && !v.told)
+    change(t, [&] { endInvite("cut", t), v.told = true; });
+}
+
+// A touch of its kind, while it waits: answered, and the payoff at once.
+// After a miss, while the shrug plays or the window is open: late, and
+// Boop turns round into the payoff, its reaction over. Either takes the
+// face from the board's own touch playing, or a Moment's animation, as a
+// poke does. Not while something needs you, listening, face down, with no
+// Mac, or over an ask that's up.
+bool Behaviour::inviteTouch(bool stroke, uint32_t t, bool injected) {
+  Invite& v = invite_;
+  const bool waiting = v.stage == Invite::kPose, late = v.stage == Invite::kShrug || v.stage == Invite::kWindow;
+  if (!(waiting || late) || v.in.stroke != stroke || noApp(t) || held(t) || faceDown_ || asking(t)) return false;
+  touchAlone(t);
+  change(t, [&] {
+    endInvite(waiting ? "answered" : "late", t, injected);
+    v.stage = waiting ? Invite::kPayoff : Invite::kLate, v.at = t;
+    if (late) v.key = 0;
+    if (reactionOn(t)) cut(reaction_.key, CutBy::kTap), reaction_.anim = render::SceneState::kNone;
+  });
+  return true;
+}
+
+render::InviteShow Behaviour::inviteShow(uint32_t t) const {
+  using render::InviteShow;
+  InviteShow s;
+  const Invite& v = invite_;
+  if (noApp(t)) return s;
+  switch (v.stage) {
+    case Invite::kPose: s.phase = InviteShow::kPose, s.ms = t - v.poseAt; break;
+    case Invite::kPayoff: s.phase = InviteShow::kPayoff, s.ms = t - v.at; break;
+    case Invite::kShrug: s.phase = InviteShow::kShrug, s.ms = t - v.at; break;
+    case Invite::kLate: s.phase = InviteShow::kLate, s.ms = t - v.at; break;
+    default: return s;
+  }
+  s.pose = v.in.pose, s.payoff = v.in.payoff, s.xp = v.in.xp;
+  s.label = v.in.label[0] ? v.in.label : nullptr;
+  return s;
+}
+
+const char* Behaviour::inviteStage(uint32_t t, uint32_t& poseMs) const {
+  static constexpr const char* kStages[] = {nullptr, "ahead", "pose", "payoff", "shrug", "window", "late"};
+  const Invite& v = invite_;
+  poseMs = v.stage == Invite::kAhead ? 0 : t - v.poseAt;
+  return kStages[v.stage];
 }
 
 void Behaviour::signGoes(uint32_t at) {

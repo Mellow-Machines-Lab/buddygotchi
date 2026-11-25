@@ -272,6 +272,17 @@ void Device::state(JsonObject d, uint32_t t) {
     d["ask"] = lane;
   else
     d["ask"] = nullptr;
+  // The invite: how it stands, its pose and touch, and how long since its
+  // pose began; null for none.
+  uint32_t poseMs;
+  if (const char* stage = b_.inviteStage(t, poseMs)) {
+    const render::InviteShow show = b_.inviteShow(t);
+    d["invite"]["stage"] = stage;
+    d["invite"]["ms"] = poseMs;
+    if (show.shows()) d["invite"]["pose"] = render::invitePoseName(show.pose);
+  } else {
+    d["invite"] = nullptr;
+  }
   static constexpr const char* kWishNames[] = {nullptr, "pet", "chat", "work"};
   if (const char* wish = kWishNames[b_.wishShow(t).kind]) d["wish"] = wish;
   else d["wish"] = nullptr;

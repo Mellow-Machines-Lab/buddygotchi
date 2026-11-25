@@ -2824,6 +2824,272 @@ static void test_the_pointer_and_the_newest_tags_are_read() {
                 "the newest tags after the Mac's side, so no pack's numbering of the others moves");
 }
 
+// ---- Invites, on a face that draws them (wrapped_face.h) ---------------------
+
+namespace {
+
+std::unique_ptr<render::Face> invitingFace(bool draws) {
+  auto f = std::make_unique<testface::WrappedFace>();
+  f->invites = draws;
+  return f;
+}
+
+// A board whose face draws invites (or doesn't), on USB, its clock frozen
+// at 0 and stepped 20 ms a tick, the Mac here and silent.
+struct InviteRig {
+  FakeHal hal;
+  Capture usb;
+  std::vector<uint8_t> px = std::vector<uint8_t>(size_t(render::kWidth) * render::kHeight);
+  app::Device dev;
+  linkkit::Kit kit{hal, dev, true};
+  uint32_t t = 0;
+  explicit InviteRig(bool draws = true) : dev(hal, px.data(), invitingFace(draws)) {
+    kit.setOut(linkkit::Link::kUsb, &usb);
+    line("{\"t\":\"dbg.clock\",\"freeze\":0}");
+    line(kIdle);
+  }
+  static constexpr const char* kIdle = "{\"t\":\"state\",\"base\":\"idle\",\"vol\":0}";
+  void line(const char* s) {
+    kit.handleLine(s, std::strlen(s), linkkit::Link::kUsb);
+    kit.tick();
+  }
+  void line(const std::string& s) { line(s.c_str()); }
+  // The clock on to `to`, a tick every 20 ms, the Mac's state every second
+  // so it stays.
+  void runTo(uint32_t to) {
+    while (t < to) {
+      t = std::min(to, t + 20);
+      line("{\"t\":\"dbg.clock\",\"freeze\":" + std::to_string(t) + "}");
+      if (t % 1000 == 0) line(kIdle);
+    }
+  }
+  void run(uint32_t ms) { runTo(t + ms); }
+  void doLine(int id, const char* play, const std::string& args) {
+    line("{\"t\":\"do\",\"id\":" + std::to_string(id) + ",\"name\":\"react\",\"play\":\"" + play +
+         "\",\"args\":" + args + "}");
+  }
+  // A tap on the face, or a stroke across it, let go.
+  void tap() {
+    line("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":100}");
+    run(200);
+  }
+  void stroke() {
+    line("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+    run(500);
+  }
+  // dbg.state's invite: its stage, "null" for none.
+  std::string stage() {
+    usb.text.clear();
+    line("{\"t\":\"dbg.state\"}");
+    JsonDocument d;
+    deserializeJson(d, usb.text);
+    return d["invite"].isNull() ? "null" : d["invite"]["stage"].as<std::string>();
+  }
+};
+
+// A skit's react: its take (638 ms) and its bubble (1.2 s more), then the
+// invite, `pose` waiting for `touch`, to pay off with `payoff`.
+std::string skitWith(const char* pose, const char* touch, const char* payoff, const char* more = "") {
+  return std::string("{\"say\":{\"take\":\"previous.go\"},\"invite\":{\"skit\":\"win\",\"pose\":\"") + pose +
+         "\",\"touch\":\"" + touch + "\",\"payoff\":\"" + payoff + "\",\"label\":\"tap\"" + more + "}}";
+}
+const std::string kPalm = skitWith("palm", "tap", "highfive", ",\"ms\":4000,\"xp\":3");
+constexpr uint32_t kSaid = 638 + app::Behaviour::kBubbleReadMs;  // the take and its bubble
+
+std::string inviteLine(const char* did, const char* touch, const char* ms = nullptr) {
+  std::string s = std::string("{\"t\":\"ev\",\"kind\":\"invite\",\"did\":\"") + did +
+                  "\",\"data\":{\"skit\":\"win\",\"touch\":\"" + touch + "\",\"ms\":";
+  return ms ? s + ms + "}}\n" : s;
+}
+
+}  // namespace
+
+// A face that draws invites says so in hello (`invites`); one that doesn't
+// says nothing, and the Mac never sends it one.
+static void test_hello_says_the_face_draws_invites() {
+  InviteRig yes(true), no(false);
+  TEST_ASSERT_TRUE(has(yes.usb.text, ",\"invites\":1"));
+  TEST_ASSERT_FALSE(has(no.usb.text, "\"invites\""));
+  Rig pixel;
+  pixel.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  TEST_ASSERT_FALSE(has(pixel.usb.text, "\"invites\""));
+}
+
+// The skit plays first; once nothing else of it plays the pose begins, and
+// a tap answers it: the payoff, no poke, no `ev tap`, the invite's end and
+// only then, as the payoff ends, the do's `ended`, done. It never rests.
+static void test_an_invite_answered_pays_off_then_ends() {
+  InviteRig r;
+  r.runTo(1000);
+  r.doLine(1, "next", kPalm);
+  r.run(kSaid - 20);
+  TEST_ASSERT_EQUAL_STRING("ahead", r.stage().c_str());
+  r.run(20);
+  TEST_ASSERT_EQUAL_STRING("pose", r.stage().c_str());
+  r.run(500);
+  r.doLine(2, "next", "{\"mood\":\"proud\"}");  // waits: the invite's reaction is busy
+  r.usb.text.clear();
+  r.tap();
+  const std::string said = r.usb.text;
+  TEST_ASSERT_TRUE_MESSAGE(has(said, inviteLine("answered", "tap")), said.c_str());
+  TEST_ASSERT_FALSE_MESSAGE(has(said, "\"kind\":\"tap\""), said.c_str());
+  TEST_ASSERT_FALSE(has(said, "\"kind\":\"ended\""));
+  TEST_ASSERT_EQUAL_STRING("payoff", r.stage().c_str());
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"moment\":null"));  // no poke
+  r.usb.text.clear();
+  r.run(render::InviteShow::kPayoffMs);
+  TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, endedLine(1, "done")), r.usb.text.c_str());
+  TEST_ASSERT_EQUAL_STRING("null", r.stage().c_str());
+}
+
+// No touch: missed as the wait runs out (its `ms`, from the pose), a shrug,
+// then `ended`. For 30 s after, a tap pays off late, no `ev tap`; after
+// that a tap is a poke again.
+static void test_an_invite_missed_may_come_late() {
+  InviteRig r;
+  r.runTo(1000);
+  r.doLine(1, "next", kPalm);
+  r.run(kSaid);
+  r.usb.text.clear();
+  r.run(4000);
+  TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, inviteLine("missed", "tap", "4000")), r.usb.text.c_str());
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ended\""));
+  TEST_ASSERT_EQUAL_STRING("shrug", r.stage().c_str());
+  r.usb.text.clear();
+  r.run(render::InviteShow::kShrugMs);
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "done")));
+  TEST_ASSERT_EQUAL_STRING("window", r.stage().c_str());
+  r.run(10000);
+  r.usb.text.clear();
+  r.tap();
+  TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, inviteLine("late", "tap")), r.usb.text.c_str());
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+  TEST_ASSERT_EQUAL_STRING("late", r.stage().c_str());
+  r.run(render::InviteShow::kLateMs);
+  TEST_ASSERT_EQUAL_STRING("null", r.stage().c_str());
+  r.usb.text.clear();
+  r.tap();  // one late is all
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\""));
+
+  InviteRig q;
+  q.runTo(1000);
+  q.doLine(1, "next", kPalm);
+  q.run(kSaid + 4000 + app::Behaviour::kLateWindowMs);
+  TEST_ASSERT_EQUAL_STRING("null", q.stage().c_str());
+  q.usb.text.clear();
+  q.tap();
+  TEST_ASSERT_TRUE(has(q.usb.text, "\"kind\":\"tap\",\"did\":\"poked\""));
+  TEST_ASSERT_FALSE(has(q.usb.text, "\"kind\":\"invite\""));
+}
+
+// Needs you, face down, listening and a `now` reaction each cut the invite
+// during its wait: its end `cut`, then the do's `ended` cut by that, and
+// no late window after.
+static void test_an_invite_is_cut_by_what_takes_the_screen() {
+  struct Cause {
+    const char* why;
+    void (*cut)(InviteRig&);
+  } causes[] = {
+      {"needs_you",
+       [](InviteRig& r) { r.line("{\"t\":\"state\",\"base\":\"idle\",\"vol\":0,\"attn\":{\"agent\":\"claude\",\"project\":\"boop\"}}"); }},
+      {"facedown",
+       [](InviteRig& r) {
+         r.line("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":-1000}");
+         for (int i = 0; i < 40; ++i) r.run(50);
+       }},
+      {"mic_on",
+       [](InviteRig& r) {
+         r.line("{\"t\":\"dbg.press\",\"ms\":800}");
+         r.run(500);
+       }},
+      {"now", [](InviteRig& r) { r.doLine(2, "now", "{\"mood\":\"proud\"}"); }},
+  };
+  for (const Cause& c : causes) {
+    InviteRig r;
+    r.line("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+    r.runTo(2000);
+    r.doLine(1, "next", kPalm);
+    r.run(kSaid + 500);
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("pose", r.stage().c_str(), c.why);
+    r.usb.text.clear();
+    c.cut(r);
+    const std::string said = r.usb.text;
+    TEST_ASSERT_TRUE_MESSAGE(before(said, inviteLine("cut", "tap"), endedLine(1, "cut", c.why)), (c.why + said).c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("null", r.stage().c_str(), c.why);
+  }
+}
+
+// A touch of the other kind is what it is today, and the wait goes on: a
+// stroke on a palm is a stroke; a tap on a lean is a poke; then a stroke
+// answers the lean, as `stroke`.
+static void test_a_touch_of_the_other_kind_passes_through() {
+  InviteRig r;
+  r.runTo(1000);
+  r.doLine(1, "next", kPalm);
+  r.run(kSaid + 200);
+  r.usb.text.clear();
+  r.stroke();
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"invite\""));
+  TEST_ASSERT_EQUAL_STRING("pose", r.stage().c_str());
+
+  InviteRig q;
+  q.runTo(1000);
+  q.doLine(1, "next", skitWith("lean", "stroke", "purr"));
+  q.run(kSaid + 200);
+  q.usb.text.clear();
+  q.tap();
+  TEST_ASSERT_TRUE(has(q.usb.text, "\"kind\":\"tap\",\"did\":\"poked\""));
+  TEST_ASSERT_EQUAL_STRING("pose", q.stage().c_str());
+  q.usb.text.clear();
+  q.stroke();
+  TEST_ASSERT_TRUE_MESSAGE(has(q.usb.text, inviteLine("answered", "stroke")), q.usb.text.c_str());
+  TEST_ASSERT_FALSE(has(q.usb.text, "\"kind\":\"gesture\""));
+}
+
+// An invite with a pose, touch or payoff the board doesn't know is none,
+// and so is any on a face that draws none: the skit plays and ends as it
+// would with no invite, resting once its words are read.
+static void test_an_invite_it_cannot_play_is_ignored() {
+  const std::string unknown[] = {skitWith("wave", "tap", "highfive"), skitWith("palm", "poke", "highfive"),
+                                 skitWith("palm", "tap", "dance")};
+  for (const std::string& args : unknown) {
+    InviteRig r;
+    r.runTo(1000);
+    r.doLine(1, "next", args);
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("null", r.stage().c_str(), args.c_str());
+    r.doLine(2, "next", "{\"mood\":\"proud\"}");
+    r.usb.text.clear();
+    r.run(kSaid + app::Device::kReactGapMs + 40);
+    TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, endedLine(1, "done")), args.c_str());
+    TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"invite\""));
+  }
+  InviteRig none(false);
+  none.runTo(1000);
+  none.doLine(1, "next", kPalm);
+  none.run(kSaid + 100);
+  TEST_ASSERT_EQUAL_STRING("null", none.stage().c_str());
+}
+
+// The wait is held to 1 to 30 s, 4 s with none; a label is cut to 7.
+static void test_an_invites_wait_is_held_in_range() {
+  const struct {
+    const char* ms;
+    uint32_t wait;
+  } cases[] = {{"", 4000}, {",\"ms\":10", 1000}, {",\"ms\":99000", 30000}, {",\"ms\":2500", 2500}};
+  for (const auto& c : cases) {
+    InviteRig r;
+    r.runTo(1000);
+    r.doLine(1, "next", skitWith("back", "stroke", "sigh", c.ms));
+    r.run(kSaid);
+    r.usb.text.clear();
+    r.run(c.wait - 20);
+    TEST_ASSERT_FALSE_MESSAGE(has(r.usb.text, "\"did\":\"missed\""), c.ms);
+    r.run(20);
+    TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, inviteLine("missed", "stroke", std::to_string(c.wait).c_str())), c.ms);
+  }
+}
+
 // ---- The agents' drawer, on a face that has one (wrapped_face.h) -----------
 
 namespace {
@@ -3283,5 +3549,12 @@ int main() {
   RUN_TEST(test_latency_follows_each_event_to_its_frame);
   RUN_TEST(test_dbg_latency_times_inputs_and_messages);
   RUN_TEST(test_a_shows_picture_comes_as_a_blob);
+  RUN_TEST(test_hello_says_the_face_draws_invites);
+  RUN_TEST(test_an_invite_answered_pays_off_then_ends);
+  RUN_TEST(test_an_invite_missed_may_come_late);
+  RUN_TEST(test_an_invite_is_cut_by_what_takes_the_screen);
+  RUN_TEST(test_a_touch_of_the_other_kind_passes_through);
+  RUN_TEST(test_an_invite_it_cannot_play_is_ignored);
+  RUN_TEST(test_an_invites_wait_is_held_in_range);
   return UNITY_END();
 }

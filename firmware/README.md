@@ -192,6 +192,35 @@ board's env builds:
 
 How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.md).
 
+## The invite
+
+After a skit the Mac may send a `do` with an `invite` (`app/behaviour.h`,
+`InviteIn`): Boop asks for one touch, and the touch pays off. Only a board
+whose face draws invites gets one: its `hello` says `"invites":1`
+(`render::Face::drawsInvites`). The gel does; Pixel doesn't, and plays a
+`do`'s invite not at all.
+
+1. The `do`'s face, words and sign play as ever.
+2. Once none of them plays, the pose: Boop comes up to the glass, the place
+   to touch glowing, the `label`'s word by it.
+3. The wait, the invite's `ms` (1 to 30 s, 4 s with none). A touch of its
+   kind answers it: a `tap` is a tap, a boop on the nose or a tickle (BOOT
+   too, when it would poke); a `stroke` is a stroke, a ruffle or a finger
+   the face leaned into. That touch is the invite's: no `ev tap` or
+   `ev gesture` and no poke. Any other touch is what it always is.
+4. The payoff at once, or with no touch a shrug, and only then the `do`'s
+   `ended`. It never rests, so nothing queued replaces it.
+5. For 30 s after a miss (`Behaviour::kLateWindowMs`), a touch of its kind
+   still pays off, late.
+
+Needs you, face down, listening or a `now` reaction cut it before its
+answer. The board says how it ended before the `do`'s `ended`:
+`{"t":"ev","kind":"invite","did":"answered","data":{"skit":"win","touch":"tap","ms":1300}}`,
+`did` `answered`, `missed`, `late` or `cut` (`ms` from the pose, 0 when
+cut before it). `dbg.state`'s `invite` says how it stands: `stage`
+(`ahead`, `pose`, `payoff`, `shrug`, `window` or `late`), `ms` since the
+pose began, and the `pose` while one shows.
+
 ## Known quirks
 
 - **Blank screen but backlight on:** usually wrong panel settings or pins.
@@ -221,6 +250,9 @@ How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.
   over 32 GB come that way; format it FAT32). `no pack`, no voice file: copy the character
   pack's `voice/voice.bin` onto the card as `boop/voice.bin`. Press the
   board's reset button once the card is back in.
+- **A touch doesn't answer the invite:** it was the other kind (a tap on
+  one that wants a stroke), or a swipe, which is too quick to be a stroke;
+  `dbg.state`'s `invite.stage` says whether it was still waiting.
 - **Backlight flickers:** unstable USB power, or PWM under 5 kHz.
 - **Download mode:** hold BOOT while pressing RESET. Normal flashing
   doesn't need it.

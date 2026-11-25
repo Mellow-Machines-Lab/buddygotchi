@@ -186,6 +186,33 @@ struct AskEnd {
   char answer[kAnswerBytes] = "";
   bool injected = false;
 };
+// An invite's skit (`invite.skit`), sent back as it came, and its label
+// (`invite.label`), the word by the glow, cut as an ask's answer is.
+constexpr size_t kSkitBytes = 16;
+constexpr int kInviteLabelGlyphs = 7;
+constexpr size_t kInviteLabelBytes = 2 * kInviteLabelGlyphs + 1;
+// An invite as Device parsed it (`invite`): its skit, pose, the touch it
+// takes (a tap, or a stroke), its payoff, its label ("" for the glow alone),
+// how long it waits and the XP it shows. pose kNone for none: one with a
+// pose, touch or payoff the board doesn't know is none.
+struct InviteIn {
+  char skit[kSkitBytes] = "";
+  render::InvitePose pose = render::InvitePose::kNone;
+  bool stroke = false;
+  render::InvitePayoff payoff = render::InvitePayoff::kNone;
+  char label[kInviteLabelBytes] = "";
+  uint32_t waitMs = 4000;
+  int xp = 0;
+};
+// How an invite ended (`ev invite`): `did` answered, missed, late or cut,
+// its skit and touch, and how long after its pose began.
+struct InviteEnd {
+  const char* did = nullptr;
+  char skit[kSkitBytes] = "";
+  bool stroke = false;
+  uint32_t ms = 0;
+  bool injected = false;
+};
 // A reply's name (`reply`), with room for the longest, "comfort".
 constexpr size_t kReplyBytes = 12;
 // A finished turn's thread (`who.thread`), as long as the Mac sends it, with
@@ -264,6 +291,8 @@ struct ReactionIn {
   char askA[kAnswerBytes] = "";
   char askB[kAnswerBytes] = "";
   bool askTouch = false;
+  // It asks for one touch once the rest of it has played (`invite`).
+  InviteIn invite;
 };
 
 class Behaviour {
@@ -451,6 +480,32 @@ class Behaviour {
   bool askTakesTouch(uint32_t t) const { return asking(t) && ask_.touch; }
   // How the last ask ended, once, before its reaction's PlayedOut.
   bool takeAskEnd(AskEnd& e);
+  // The invite (InviteIn): once no other part of its reaction plays, the
+  // pose, waiting the invite's time for a touch of its kind, then the payoff
+  // or a shrug, and only then is its reaction played out. For
+  // kLateWindowMs after a miss, a touch of its kind still pays off, late.
+  // Needs you, face down and listening cut it, and so does a newer reaction
+  // (dropInvite), before its answer; a payoff or a shrug they only stop.
+  static constexpr uint32_t kLateWindowMs = 30000;
+  // A touch, a tap or a stroke, at t: true when it's the invite's, which
+  // answers it (or, after a miss, pays off late): it plays nothing else and
+  // goes to the Mac as no touch. Its end waits in takeInviteEnd.
+  bool inviteTouch(bool stroke, uint32_t t, bool injected);
+  // A newer reaction is about to play: the invite before its answer is
+  // cut, its end before the kit ends its reaction; the window after a miss
+  // stays.
+  void dropInvite(uint32_t t);
+  // Whether the reaction `key` has an invite still to play out: it never
+  // rests, as its pose and payoff are its point.
+  bool invites(uint32_t key) const;
+  // The invite as the face draws it at t (render::InviteShow), and how it
+  // stands, by name, for dbg.state: "ahead" (its reaction still plays),
+  // "pose", "payoff", "shrug", "window" (after a miss) or "late"; null for
+  // none. `poseMs` is how long since its pose began.
+  render::InviteShow inviteShow(uint32_t t) const;
+  const char* inviteStage(uint32_t t, uint32_t& poseMs) const;
+  // How the invite ended, each once, in order, before its reaction's PlayedOut.
+  bool takeInviteEnd(InviteEnd& e);
   // The sign a reaction holds up, while it shows, and for the rig's fade
   // after it goes (a reaction's end, a tap's, being put face down), fading
   // out: no text with no app or while something needs you, which take it
@@ -599,6 +654,7 @@ class Behaviour {
     uint8_t lit = backlight(t);
     bool overridden = blOverride_;
     f();
+    followInvite(t);
     face_->sync(sourceAt(t), contextAt(t), t);
     followLane(t);
     uint8_t level = blTarget(t);
@@ -633,8 +689,8 @@ class Behaviour {
   static render::Strip stripOf(const Model& m, bool noApp, const Done* finish);
   bool sleptThrough() const;  // meaningful with no app
   struct Parts {
-    bool anim = false, say = false, face = false, sign = false;
-    bool any() const { return anim || say || face || sign; }
+    bool anim = false, say = false, face = false, sign = false, invite = false;
+    bool any() const { return anim || say || face || sign || invite; }
   };
   Parts partsOf(const ReactionIn& in, uint32_t t) const;
   // The work stream as the Mac last said it, but held back while a greeting
@@ -713,6 +769,32 @@ class Behaviour {
   Ask ask_;
   AskEnd askEnd_;
   bool askEnded_ = false;
+  // The invite: what it asks, its reaction's key (0 once that's played
+  // out: the window after a miss, a late payoff), when its pose began and
+  // when its stage did.
+  struct Invite {
+    enum Stage : uint8_t { kOff, kAhead, kPose, kPayoff, kShrug, kWindow, kLate };
+    Stage stage = kOff;
+    InviteIn in;
+    uint32_t key = 0, poseAt = 0, at = 0;
+    bool told = false;  // its cut already went (dropInvite)
+  };
+  Invite invite_;
+  // Its ends not yet taken: a miss may be followed by a late at once.
+  InviteEnd inviteEnds_[2];
+  int inviteEndCount_ = 0;
+  void endInvite(const char* did, uint32_t at, bool injected = false);
+  // Its stages that have run out by t, each at its own instant.
+  void followInvite(uint32_t t);
+  // When its stage next runs out; false for never.
+  bool inviteDue(uint32_t& at) const;
+  // It ends early, by `by` (kNone for a newer reaction's, which the kit has
+  // ended): cut before its answer, a payoff stopped, a shrug ended into the
+  // window after it.
+  void cutInvite(CutBy by, uint32_t t);
+  // Whether a part of `key` other than its invite plays at t.
+  bool partsHold(uint32_t key, uint32_t t) const;
+  bool inviteHolds(uint32_t key) const;
   bool askOn(uint32_t t) const;
   // The ask ends, `pick` how; its sign comes down with it.
   void endAsk(const char* pick, uint32_t t, bool injected = false);
