@@ -1,5 +1,5 @@
 // Touch calibration: an affine map from the touch controller's
-// raw readings to screen pixels. `boopctl calibrate` fits it from 4 taps and
+// raw readings to screen pixels. A tool can fit it from 4 taps and
 // sends it with dbg.touchcal; the board keeps it in NVS. Until then the
 // board's default map is used (BoardHal). Pure C++.
 #pragma once
@@ -28,9 +28,9 @@ struct TouchCal {
 
 // What NVS keeps: the map and the screen it was fitted on. A map fitted on
 // another screen, like a portrait build's or one from before kRotation was
-// flipped, is never applied; the default map is used until `boopctl
-// calibrate` runs again.
-// The board's default map, before `boopctl calibrate`: a panel of
+// flipped, is never applied; the default map is used until one is
+// fitted again.
+// The board's default map, before one is fitted: a panel of
 // `panelWidth` × `panelHeight` pixels, portrait, that shows the whole
 // surface turned a quarter (render::packBand), its top on the panel's left
 // edge or its right, read back as the 320 × 240 screen the face is drawn

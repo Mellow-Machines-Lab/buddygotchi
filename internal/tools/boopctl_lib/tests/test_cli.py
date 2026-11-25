@@ -19,7 +19,7 @@ from fake_board import FakeBoard  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
 COMMANDS = ["ping", "board", "state", "factory", "shot", "send", "play", "takes", "card", "sim", "mirror", "run", "perf", "latency", "soak", "e2e",
-            "cam", "dash", "day", "reference", "calibrate"]
+            "cam", "dash", "day", "reference"]
 
 
 def firmware_names(path: str, start: str, item: str = r'"(\w+)"', end: str = "};") -> list:

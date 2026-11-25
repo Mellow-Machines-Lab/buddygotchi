@@ -130,17 +130,6 @@ def a_date(text: str) -> str:
         raise argparse.ArgumentTypeError(f"{text!r} isn't a date like 2026-09-28")
 
 
-def cmd_calibrate(args: argparse.Namespace) -> int:
-    from boopctl_lib import calibrate
-
-    if args.show:
-        with Device(args.port) as dev:
-            emit(dev.request({"t": "dbg.touchcal", **({"clear": True} if args.clear else {})}))
-        return 0
-    emit(calibrate.run(args.port))
-    return 0
-
-
 def build_sim() -> None:
     result = subprocess.run([str(PIO), "run", "-e", "native"], capture_output=True, text=True)
     if result.returncode != 0:
@@ -1331,10 +1320,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("file", nargs="*", help="read these debug logs instead, oldest launch first")
     p.set_defaults(func=cmd_day)
     reference.add_parser(sub)
-    p = sub.add_parser("calibrate", help="touch calibration: tap 4 crosses (needs a person); kept in NVS")
-    p.add_argument("--show", action="store_true", help="print the stored calibration instead")
-    p.add_argument("--clear", action="store_true", help="with --show: forget it (back to the default raw range)")
-    p.set_defaults(func=cmd_calibrate)
     return parser
 
 

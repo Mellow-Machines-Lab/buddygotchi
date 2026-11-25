@@ -72,7 +72,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
 | `make eval` | Every eval scenario against Jev at the full level (L5, [EVALS.md](EVALS.md) §2), only when the owner asks or before a release. It needs `BOOP_JEV_KEY`, and `BOOP_JEV_OVER_LIMIT=1`, which it never sets |
 | `make clean` | Deletes every build's output. It keeps `internal/tools/.venv` and `firmware/.platformio-core` |
-| `make -C internal build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon`, `linkkit-bridge` and `linkkit-flash`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
+| `make -C internal build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `linkkit-bridge`, `linkkit-flash` and `boop-cards`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
 | `make -C internal app` | What `make dev` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
 | `make -C internal simulator` | The board in a browser at `http://127.0.0.1:8206/`, alone, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`. No Bluetooth, so agents may run it |
 | `make -C internal packs` | The character packs the engine is tested with (`characters/packs.json`), each fetched from its repository if it's missing: a clone in `characters/.repos/`, and `characters/<id>` a link to its pack (`internal/tools/packs.py`; `--update` pulls them, `ID=PATH` links a pack of yours in its place) |
@@ -92,7 +92,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 **Tools.**
 
 - `internal/tools/boopctl`: the board over USB (`ping`, `state`, `shot`,
-  `send`, `play`, `takes`, `card`, `calibrate`), who has the board and
+  `send`, `play`, `takes`, `card`), who has the board and
   what was flashed on it (`board`, below), a board's factory test,
   pass or fail (`factory`; `--auto` asks a person nothing), the scenarios (`sim`,
   `run`, and `mirror`), measurements (`perf`, `latency`, `soak`), the pipeline check
@@ -129,7 +129,8 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   `copy`; and `{"dev":"anchor",…}`, where Boop sits: `place`
   (Settings' "Show Boop where it sits"; the next `{"dev":"tap"}` is the
   spot), `at` [x, y] with its `display`, or `clear`.
-- `.build/debug/beacon` and `.build/debug/mellowharness-emit`:
+- `.build/debug/beacon` and `.build/debug/mellowharness-emit`, each built when wanted
+  (`swift build --product beacon`):
   MellowHarness's worked example and its event sender
   ([mellowharness/README.md](../mellowharness/README.md)).
 - `.build/debug/linkkit-bridge`: the USB bridge (below).
@@ -559,7 +560,7 @@ slowest pass is under the 1.5 s deadline; and the sample reads well.
 ### L6: the owner
 
 Only a person can check Bluetooth (`make dev`), real touches and
-calibration (`boopctl calibrate`), sound by ear (`boopctl takes`,
+calibration, sound by ear (`boopctl takes`,
 `takes --board-volume`, `takes --levels`, `play needs`), real Claude
 Code and Codex sessions, the Mac app in the real menu bar, and how Boop
 feels. A day of real

@@ -10,8 +10,7 @@ PIO := firmware/tools/pio.sh
 
 # The whole package in one `swift build`: the Mac app, boopdev and the
 # BoopTests runner, whose main is generated first; then agent-hooks' hook
-# client, agent-hook, which the app copies from next to it, MellowHarness'
-# tools, mellowharness-emit and beacon (mellowharness/README.md), and LinkKit's USB
+# client, agent-hook, which the app copies from next to it, and LinkKit's USB
 # bridge, linkkit-bridge, and its flasher, linkkit-flash (linkkit/README.md).
 # SWIFT_CHECK makes importing a target that isn't a declared dependency an
 # error, not a warning, so app/ can't reach internal/ code (internal/README.md).
@@ -24,7 +23,7 @@ build:
 	cd $(ROOT) && firmware/tools/mirror.sh --if-stale
 	cd $(ROOT) && python3 internal/app/tools/gen-test-runner.py
 	cd $(ROOT) && swift build $(SWIFT_CHECK)
-	cd $(ROOT) && for product in agent-hook mellowharness-emit beacon linkkit-bridge linkkit-flash boop-cards; do \
+	cd $(ROOT) && for product in agent-hook linkkit-bridge linkkit-flash boop-cards; do \
 	  swift build $(SWIFT_CHECK) --product $$product || exit 1; \
 	done
 
