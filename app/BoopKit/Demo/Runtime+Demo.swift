@@ -6,8 +6,9 @@ extension Runtime {
     /// Who a demo's answers and moods are by, in the transcript and the log.
     public static let demoBy = "demo"
 
-    /// After a demo's last step, time for what it starts to play out.
-    public static let demoTail = 6.0
+    /// After a demo's last step, time for what it starts to play out. A
+    /// variable only so a test of the ending needn't wait it out.
+    nonisolated(unsafe) public static var demoTail = 6.0
 
     /// Whether an agent's process still runs: a demo's made-up agent's
     /// always does (`DemoPlayer.agentProcess`).

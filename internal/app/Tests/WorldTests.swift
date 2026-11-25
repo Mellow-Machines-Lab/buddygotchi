@@ -104,7 +104,7 @@ final class WorldTests: XCTestCase {
     /// The send before a quit asks the server to keep the gestures waiting:
     /// the app won't live to play them.
     func testTheQuitsSendKeepsTheGestures() throws {
-        let client = WorldClient(base: URL(string: "http://world.test")!, queue: queue, protocols: [Stub.self])
+        let client = client()
         let request = client.request("PUT", "v1/buddies/me", query: [URLQueryItem(name: "keep_gestures", value: "1")], key: "k", body: nil)
         XCTAssertEqual(request.url?.absoluteString, "http://world.test/v1/buddies/me?keep_gestures=1")
         XCTAssertEqual(client.request("PUT", "v1/buddies/me", key: "k", body: nil).url?.absoluteString, "http://world.test/v1/buddies/me")
@@ -265,12 +265,33 @@ final class WorldTests: XCTestCase {
     override func tearDownWithError() throws { try? FileManager.default.removeItem(at: dir) }
 
     func link() -> WorldLink {
-        WorldLink(client: WorldClient(base: URL(string: "http://world.test")!, queue: queue, protocols: [Stub.self]), stateDir: dir)
+        WorldLink(client: client(), stateDir: dir)
     }
 
     static let me = WorldLink.Now(name: "Mochi", level: 2, utcOffset: 60, activity: .coding, day: "2026-11-08", xpToday: 40)
 
-    func settle() { for _ in 0..<50 { queue.sync {}; Thread.sleep(forTimeInterval: 0.01) } }
+    /// Every client the test made, for `settle` to wait on.
+    var clients: [WorldClient] = []
+    func client() -> WorldClient {
+        let made = WorldClient(base: URL(string: "http://world.test")!, queue: queue, protocols: [Stub.self])
+        clients.append(made)
+        return made
+    }
+
+    /// Waits until every call's answer has landed on the queue, and any call
+    /// that answer started has too: no fixed wait.
+    func settle() {
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline {
+            queue.sync {}
+            if clients.allSatisfy({ $0.inFlight == 0 }) {
+                queue.sync {}
+                if clients.allSatisfy({ $0.inFlight == 0 }) { return }
+            }
+            usleep(500)
+        }
+        XCTFail("the world's calls never settled")
+    }
 
     /// Last week's place comes in a send's reply and is told once, as a
     /// `league` world event: not while quiet, and not again for the same week
@@ -511,7 +532,7 @@ final class WorldTests: XCTestCase {
             XCTAssertEqual(calls(), ["PUT /v1/buddies/me"], "\(status): once, then it waits: \(calls())")
             XCTAssertTrue(FileManager.default.fileExists(atPath: key), "\(status): the key stays")
         }
-        let fresh = WorldLink(client: WorldClient(base: URL(string: "http://world.test")!, queue: queue, protocols: [Stub.self]),
+        let fresh = WorldLink(client: client(),
                               stateDir: try newDir())
         Stub.seen = []
         Stub.answer = { _, _ in (404, "not here") }

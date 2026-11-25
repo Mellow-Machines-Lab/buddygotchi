@@ -29,6 +29,17 @@ OUT = os.path.join(TESTS_DIR, "GeneratedTestRunner.swift")
 # Fewer than this and the build fails. Raise it now and then; it's a floor, not a count.
 FLOOR = 700
 
+# The tests that take seconds, slowest first: the runners share them out
+# (BOOP_TEST_SHARD). A name that's no longer a test only stops being spread.
+HEAVY = [
+    "SeatedBrainTests.testAJevThatAlwaysTimesOutChangesNoMoment",
+    "EvalTests.testEveryScenarioPassesWithTheExpectBrain",
+    "GoldenStateTests.testEveryScenarioBuildsTheStatesItDid",
+    "CoreFuzzTests.testRandomTrafficKeepsTheRecordAndTheScreenInStep",
+    "CorePersonalityTests.testTheWorkingCheckInKeepsThePersonalitysPace",
+    "NoticesTests.testARoughHourCountsTurnsNotChecks",
+]
+
 CLASS_RE = re.compile(r"^\s*(?:@\w+\s+)*(?:public\s+|final\s+|open\s+)*class\s+(\w+)\s*:\s*([^{]+)")
 # zero-arg `func test…()` with optional async / throws, optionally @MainActor-prefixed
 FUNC_RE = re.compile(r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*func\s+(test\w+)\s*\(\s*\)\s*(async\s+)?(throws\s+)?")
@@ -91,10 +102,12 @@ def main() -> None:
         "        // run them all (internal/app/tools/run-tests.sh). A test is its own instance, so",
         "        // any split is safe within a process; across them, each test keeps to its own files.",
         '        let shard = (ProcessInfo.processInfo.environment["BOOP_TEST_SHARD"] ?? "").split(separator: "/").compactMap { Int($0) }',
+        "        // The slowest tests, each to a runner of its own turn, so no runner gets two.",
+        "        let heavy = [" + ", ".join(f'"{name}"' for name in HEAVY) + "]",
         "        var index = 0",
-        "        func run(_ name: String, _ body: () async throws -> Void) async {",
+        "        func run(_ name: String, _ body: @MainActor () async throws -> Void) async {",
         "            defer { index += 1 }",
-        "            if shard.count == 2, shard[1] > 0, index % shard[1] != shard[0] { return }",
+        "            if shard.count == 2, shard[1] > 0, (heavy.firstIndex(of: name) ?? index) % shard[1] != shard[0] { return }",
         "            if let filter, !name.contains(filter) { return }",
         '            FileHandle.standardError.write("\\u{25B6} \\(name)\\n".data(using: .utf8)!)',
         "            do { try await body(); passed += 1 }",
@@ -108,24 +121,41 @@ def main() -> None:
         '            catch { print("FAIL \\(name) — \\(error)"); exit(1) }',
         "        }",
         "",
+        "        var all: [(String, @MainActor () async throws -> Void)] = []",
     ]
 
-    for cls, method, is_async, is_throws in tests:
+    # Each test is a small function of its own, and main only calls them by
+    # name: one function holding every test's closure took the compiler
+    # minutes to check each time a test was added.
+    bodies = []
+    for i, (cls, method, is_async, is_throws) in enumerate(tests):
         prefix = ("try " if is_throws else "") + ("await " if is_async else "")
-        name = f"{cls}.{method}"
-        lines.append(
-            f'        await run("{name}") {{ '
-            f"let t = {cls}(); do {{ try t.setUpWithError(); try await t.setUp(); "
-            f"{prefix}t.{method}() }} catch {{ try await t.tearDown(); try t.tearDownWithError(); throw error }}; "
-            f"try await t.tearDown(); try t.tearDownWithError() }}"
-        )
+        if i % 50 == 0:
+            if i:
+                lines.append("        ]")
+            lines.append("        all += [")
+        lines.append(f'            ("{cls}.{method}", test{i}),')
+        bodies += [
+            "@MainActor",
+            f"private func test{i}() async throws {{",
+            f"    let t = {cls}()",
+            f"    do {{ try t.setUpWithError(); try await t.setUp(); {prefix}t.{method}() }}",
+            "    catch { try await t.tearDown(); try t.tearDownWithError(); throw error }",
+            "    try await t.tearDown(); try t.tearDownWithError()",
+            "}",
+        ]
 
     lines += [
+        "        ]",
+        "        // One await for them all: an await a test made this function take minutes to compile.",
+        "        for (name, body) in all { await run(name, body) }",
         "",
         f"        let total = {len(tests)}",
         '        print("\\n\\u{2713} \\(passed) passed, \\(skipped) skipped of \\(total) tests")',
         "    }",
         "}",
+        "",
+        *bodies,
         "#endif",
         "",
     ]

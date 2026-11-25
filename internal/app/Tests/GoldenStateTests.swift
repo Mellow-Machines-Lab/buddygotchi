@@ -84,21 +84,31 @@ final class GoldenStateTests: XCTestCase {
 
     func testEveryScenarioBuildsTheStatesItDid() async throws {
         let record = ProcessInfo.processInfo.environment["BOOP_GOLDEN_RECORD"] == "1"
-        let states = Lines()
-        let brain = ScriptedBrain(id: "golden") { state, questions in
-            states.add(state)
-            return try GoldenStateTests.brain.script(state, questions)
-        }
-        let eval = Eval(brain: brain, steering: RuntimeTests.steering)
+        let steering = RuntimeTests.steering
         let scenarios = try Scenario.load(directory: try EvalTests.scenarios())
             .filter { Self.pinned.contains(String($0.file.prefix { $0 != "-" })) }
         XCTAssertEqual(scenarios.count, Self.pinned.count)
         if record { try FileManager.default.createDirectory(at: Self.folder, withIntermediateDirectories: true) }
+        // Side by side: each run has a brain, a core, a view and a clock of its own.
+        let runs = try await withThrowingTaskGroup(of: (String, [String]).self) { group in
+            for scenario in scenarios {
+                group.addTask {
+                    let states = Lines()
+                    let brain = ScriptedBrain(id: "golden") { state, questions in
+                        states.add(state)
+                        return try GoldenStateTests.brain.script(state, questions)
+                    }
+                    _ = try await Eval(brain: brain, steering: steering).run(scenario)
+                    return (scenario.file, states.all)
+                }
+            }
+            var runs: [String: [String]] = [:]
+            for try await (file, built) in group { runs[file] = built }
+            return runs
+        }
         var passes = 0
         for scenario in scenarios {
-            let before = states.all.count
-            _ = try await eval.run(scenario)
-            let built = Array(states.all[before...])
+            let built = runs[scenario.file] ?? []
             passes += built.count
             let file = Self.folder.appendingPathComponent(scenario.file.replacingOccurrences(of: ".json", with: ".txt"))
             let text = Self.text(built)

@@ -2287,6 +2287,9 @@ final class RuntimeTests: XCTestCase {
     /// The script's readings stand in front of the runtime's labeler
     /// until it's over.
     func testALiveDemoKeepsToTheAgent() throws {
+        let tail = Runtime.demoTail
+        Runtime.demoTail = 0.3
+        defer { Runtime.demoTail = tail }
         let runtime = try makeRuntime(FakeTransport())
         let script = try DemoScript("""
             {"agent": "prompt", "text": "Go", "reading": {"kind": "carry_on"}}

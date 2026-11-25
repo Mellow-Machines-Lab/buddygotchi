@@ -49,10 +49,25 @@ public final class WorldClient: @unchecked Sendable {
 
     func call<T: Decodable>(_ method: String, _ path: String, key: String? = nil, body: Encodable? = nil, as: T.Type,
                             _ done: @escaping (Result<T, Failure>) -> Void) {
-        session.dataTask(with: request(method, path, key: key, body: body)) { [queue] data, response, error in
+        pending.add(1)
+        session.dataTask(with: request(method, path, key: key, body: body)) { [queue, pending] data, response, error in
             let result = Self.result(T.self, data, response, error)
-            queue.async { done(result) }
+            queue.async {
+                done(result)
+                pending.add(-1)
+            }
         }.resume()
+    }
+
+    /// The calls whose answer hasn't reached its `done` yet. Nothing in the
+    /// app reads it: the tests wait for 0 rather than for a fixed time.
+    var inFlight: Int { pending.count }
+    private let pending = Pending()
+    private final class Pending: @unchecked Sendable {
+        private let lock = NSLock()
+        private var n = 0
+        var count: Int { lock.withLock { n } }
+        func add(_ d: Int) { lock.withLock { n += d } }
     }
 
     func request(_ method: String, _ path: String, query: [URLQueryItem] = [], key: String?, body: Encodable?) -> URLRequest {

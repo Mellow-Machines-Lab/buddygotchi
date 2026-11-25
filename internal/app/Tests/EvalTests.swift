@@ -523,11 +523,21 @@ final class EvalTests: XCTestCase {
     /// that each step wakes the brain as it says, that the moods it expects
     /// are offered, and the whole-run checks a run can fail without Jev.
     func testEveryScenarioPassesWithTheExpectBrain() async throws {
-        for scenario in try Scenario.load(directory: try Self.scenarios()) {
-            let result = try await Eval(brain: ExpectBrain(), steering: RuntimeTests.steering).run(scenario)
-            XCTAssertTrue(result.passed, "\(scenario.file):\n" + (result.checks.filter { !$0.passed }.map(\.summary)
-                + result.runChecks.filter { !$0.passed }.map(\.summary)).joined(separator: "\n"))
+        // Side by side: each run has a core, a view and a clock of its own.
+        let steering = RuntimeTests.steering
+        let failures = try await withThrowingTaskGroup(of: String?.self) { group in
+            for scenario in try Scenario.load(directory: try Self.scenarios()) {
+                group.addTask {
+                    let result = try await Eval(brain: ExpectBrain(), steering: steering).run(scenario)
+                    return result.passed ? nil : "\(scenario.file):\n" + (result.checks.filter { !$0.passed }.map(\.summary)
+                        + result.runChecks.filter { !$0.passed }.map(\.summary)).joined(separator: "\n")
+                }
+            }
+            var failures: [String] = []
+            for try await failure in group { if let failure { failures.append(failure) } }
+            return failures
         }
+        XCTAssertEqual(failures.sorted(), [])
     }
 
     /// An eval's hooks say which process the agent is, as a real agent's
