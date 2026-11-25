@@ -204,9 +204,6 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The to-do list of the longest turn working that has one, while
     /// nothing needs you; nil sends none.
     public var todo: Todo?
-    /// Today's ring, the day's XP in whole percent (`Growth.percent`): the
-    /// board's bar, which comes when it moves. Nil sends none.
-    public var xp: Int?
     /// The wish waiting, by its kind, while its wait counts: the board
     /// shows its icon then, and times nothing.
     public var wish: String?
@@ -412,7 +409,6 @@ public struct StateSnapshot: Equatable, Sendable {
         if let pointer {
             fields["ptr"] = .array([.int(pointer.x), .int(pointer.y)] + (pointer.near ? [.int(1)] : []))
         }
-        if let xp { fields["xp"] = .int(xp) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if let buddy { fields["buddy"] = .string(buddy) }
         if let wish { fields["wish"] = .string(wish) }

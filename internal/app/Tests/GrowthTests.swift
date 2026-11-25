@@ -181,10 +181,10 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(again.week(to: "2024-03-01").map(\.day).suffix(2), ["2024-02-29", "2024-03-01"], "a leap day")
     }
 
-    /// What growing sends through the runtime: a `state` with today's ring
-    /// as a turn's XP moves it; at a level, a `level` event and its moment,
-    /// `level 2!` held low in gold; at 100 today, the ring's, the same
-    /// moment, the ring's words held low in gold. A demo sends no ring.
+    /// What growing does through the runtime: today's XP, which the core
+    /// reads, moves with a turn's; at a level, a `level` event and its
+    /// moment, `level 2!` held low in gold; at 100 today, the ring's, the
+    /// same moment, the ring's words held low in gold. A demo has no growth.
     func testALevelUpAndTheRingThroughTheRuntime() throws {
         try requirePack("boop")
         let dir = URL(fileURLWithPath: "/tmp/boop-grow-\(UUID().uuidString.prefix(8))")
@@ -206,7 +206,7 @@ final class GrowthTests: XCTestCase {
         let runtime = try Runtime(options)
         let core = runtime.core
         var now: Int64 { clock.now }
-        XCTAssertEqual(core.snapshot(at: now).xp, 90)
+        XCTAssertEqual(core.growth()?.today, 90)
         func turn() {
             runtime.home.sync {
                 runtime.hook(HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
@@ -218,7 +218,7 @@ final class GrowthTests: XCTestCase {
         func events(_ type: Event.Kind) -> [Event] { runtime.harness.log.view(now: now).events.filter { $0.type == type } }
         turn()
         XCTAssertEqual(runtime.growth.growth.xp, 495)
-        XCTAssertEqual(core.snapshot(at: now).xp, 95)
+        XCTAssertEqual(core.growth()?.today, 95)
         XCTAssertTrue(events(.growth).isEmpty)
         turn()
         XCTAssertEqual(runtime.growth.growth, Growth(xp: 500, today: 100))
@@ -228,22 +228,22 @@ final class GrowthTests: XCTestCase {
         turn()
         XCTAssertEqual(events(.growth).count, 1, "once a day")
         XCTAssertEqual(runtime.growth.growth, Growth(xp: 505, today: 105), "XP counts past the ring")
-        XCTAssertEqual(core.snapshot(at: now).xp, 100)
+        XCTAssertEqual(core.growth()?.today, 105)
 
         // Across 5:00, by the runtime's own clock: a new Boop day, an empty
         // ring, and yesterday's full one in the week.
         let yesterday = options.time.boopDay(clock.now)
         while options.time.boopDay(clock.now) == yesterday { clock.now += 10 * 60_000 }
-        XCTAssertEqual(core.snapshot(at: now).xp, 0, "the new day's ring")
+        XCTAssertEqual(core.growth()?.today, 0, "the new day's ring")
         turn()
         XCTAssertEqual(runtime.growth.growth, Growth(xp: 510, today: 5))
-        XCTAssertEqual(core.snapshot(at: now).xp, 5)
+        XCTAssertEqual(core.growth()?.today, 5)
         let week = runtime.growth.week(to: options.time.boopDay(clock.now))
         XCTAssertEqual(week.suffix(2).map(\.xp), [105, 5])
         XCTAssertEqual(week.suffix(2).first?.day, yesterday)
 
         runtime.playingDemo = true
-        XCTAssertNil(core.snapshot(at: now).xp, "a demo sends none")
+        XCTAssertNil(core.growth(), "a demo has none")
     }
 
     /// A level-up is celebrated when the board plays it, not when it's

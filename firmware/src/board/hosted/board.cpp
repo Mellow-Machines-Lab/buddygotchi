@@ -13,9 +13,10 @@ const char* Said::take() {
   return taken_.c_str();
 }
 
-Board::Board(app::Hal& hal, linkkit::Out& usb, bool frozenClock)
-    : hal_(hal), canvas_(size_t(render::kWidth) * render::kHeight, 0) {
-  device_ = std::make_unique<app::Device>(hal, canvas_.data());
+// No canvas: the gel draws its own surfaces, and dbg.pattern has one from
+// the Hal when it asks, as on the board.
+Board::Board(app::Hal& hal, linkkit::Out& usb, bool frozenClock) : hal_(hal) {
+  device_ = std::make_unique<app::Device>(hal, nullptr);
   kit_ = std::make_unique<linkkit::Kit>(hal, *device_, frozenClock);
   kit_->setOut(linkkit::Link::kUsb, &usb);
   kit_->tick();
@@ -81,10 +82,11 @@ bool Board::tickRgba() {
         out[4 * (size_t(y) * w + x) + 3] = 0;
         out[4 * (size_t(y) * w + w - 1 - x) + 3] = 0;
       }
-  } else {
-    const uint8_t* index = device_->canvas().pixels();
+  } else if (const uint8_t* index = device_->canvas().pixels()) {
     const uint16_t* palette = render::palette().c;
     for (size_t i = 0; i < n; ++i) put(i, palette[index[i]]);
+  } else {
+    for (size_t i = 0; i < n; ++i) put(i, 0);
   }
   picture_ = {out, w, h};
   device_->shown(hal_.realMs());

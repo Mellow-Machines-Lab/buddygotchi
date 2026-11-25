@@ -1,6 +1,6 @@
 # LinkKit: the device library
 
-Updated 2026-10-15. The C++ half of LinkKit, for the small device a host
+Updated 2026-11-25. The C++ half of LinkKit, for the small device a host
 app drives: it reads the host's messages, keeps track of the links, sends
 `hello`, decides when each `do` plays (the queue), routes `ev` and answers
 the kit's `dbg.*` messages, all as [../SPEC.md](../SPEC.md) says. What the
@@ -19,7 +19,7 @@ It never includes an app's headers: its build fails if it does
 | --- | --- |
 | `kit.h`, `kit.cpp` | `Kit`, `App`, `Platform`, `Do`: the protocol and the queue |
 | `limits.h` | The spec's numbers (§9): 512-byte messages, 4 waiting, `ttl` 5000 and 1–60000, 60 s `hello`, 30 s host gone |
-| `line_reader.h`, `packets.h` | Lines out of a byte stream, and lines into Bluetooth packets |
+| `line_reader.h`, `packets.h` | Lines out of a byte stream, lines into Bluetooth packets, and the outbox the packets wait in while the link's buffers are full, so the main loop never waits on it |
 | `clock.h` | The device clock tools freeze and step (`dbg.clock`), and randomness reseeded with it (from the boot id on a running device's power-on) |
 | `codec.h`, `codec.cpp` | CRC-32 and base64, for `dbg.shot` and an app's own debug messages |
 | `ble.h`, `ble.cpp` | The Nordic UART peripheral (§8), `<Prefix>-XXXX`; empty off the ESP32 |

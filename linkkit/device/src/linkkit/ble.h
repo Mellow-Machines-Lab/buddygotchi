@@ -39,6 +39,7 @@ class Ble : public Out {
 
  private:
   static void sendPacket(void* ctx, const uint8_t* data, size_t n);
+  static bool notify(void* ctx, const uint8_t* data, size_t n);
 
   char name_[24] = "";  // both from the MAC, in begin()
   char id_[24] = "";
@@ -47,6 +48,7 @@ class Ble : public Out {
   uint32_t advCheckedAt_ = 0;
   LineReader line_;
   PacketWriter out_;
+  PacketOutbox<2048> outbox_;  // a hello's two packets and a burst of events
 };
 
 }  // namespace linkkit

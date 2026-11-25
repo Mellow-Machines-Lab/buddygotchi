@@ -13,21 +13,9 @@ namespace board {
 
 namespace {
 
-// The FT3168 reads in panel pixels; this undoes the picture's scaling and
-// turning (board/config.h) to give canvas pixels.
-app::TouchCal panelToCanvas() {
-  constexpr int32_t k = 65536 * 2 / 3;
-  app::TouchCal c;
-  if (kTopOnPanelLeft) {
-    c.bx = -k, c.cx = (kPicY + kPicH - 1) * k;  // x = (picY + picH - 1 - ry) · 2/3
-    c.ay = k, c.cy = -kPicX * k;                // y = (rx - picX) · 2/3
-  } else {
-    c.bx = k, c.cx = -kPicY * k;
-    c.ay = -k, c.cy = (kPicX + kPicW - 1) * k;
-  }
-  c.valid = true;
-  return c;
-}
+// The FT3168 reads in panel pixels; this undoes the face's turning onto the
+// whole panel (board/config.h) to give canvas pixels.
+app::TouchCal panelToCanvas() { return app::wholePanelTouchCal(kPanelWidth, kPanelHeight, kTopOnPanelLeft); }
 
 }  // namespace
 

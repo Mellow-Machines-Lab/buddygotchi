@@ -291,27 +291,6 @@ static ReactionIn animated(SceneState a, int variant = 0, const char* take = nul
   return m;
 }
 
-// The lane draws its opacity as a dither level, and so a frame is keyed by
-// it: one whose strip's opacity differs from the last frame's only within a
-// level isn't drawn again; another level is.
-static void test_a_lane_at_the_same_dither_level_isnt_drawn_again() {
-  Rig r;
-  r.state(base("idle"));
-  r.at(1000);
-  std::vector<uint8_t> px(size_t(render::kWidth) * render::kHeight);
-  render::Canvas c{px.data()};
-  render::Strip strip = r.b.strip(r.t);
-  auto draw = [&](int opacity, bool dirty) {
-    strip.opacity = opacity;
-    return r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, nullptr, nullptr, r.b.sign(r.t), r.b.done(r.t), strip, dirty);
-  };
-  TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(500, true).hi);
-  TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(530, true).hi);
-  TEST_ASSERT_TRUE(draw(500, true));
-  TEST_ASSERT_FALSE(draw(530, false));
-  TEST_ASSERT_TRUE(draw(600, false));
-}
-
 // Alone holds however long the Mac stays away, even past the 24.9 days where
 // the clock's differences wrap, and whatever had finished stays finished when
 // they come round again at 49.7 days: resting, then asleep, with no old `say`
@@ -1160,11 +1139,6 @@ static void test_the_wish_shows_and_pops() {
   m.wish = render::WishShow::kPet;
   r.state(m);
   TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
-  TEST_ASSERT_FALSE(r.b.wishShow(r.t).how);
-  m.wishHow = true;
-  r.state(m);
-  TEST_ASSERT_TRUE(r.b.wishShow(r.t).how);
-  m.wishHow = false;
   m.wish = render::WishShow::kNone;
   r.state(m);
   r.b.wishPopped(true, r.t);
@@ -1869,8 +1843,8 @@ static void test_a_todo_list_alone_shows_the_strip() {
 // board drawing every 16 ms and one drawing every 200 ms show the same lane
 // wherever both draw, mid-fade and settled, its strip coming and going
 // between their frames. Each draws as Device does, dirty only after a
-// message, so a frame drawn mid-fade isn't skipped. The canvas has no
-// alpha: half way, half the strip's pixels, by its dither.
+// message, so a frame drawn mid-fade isn't skipped: half way, the strip at
+// half its opacity.
 static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
   struct Run {
     Rig r;
@@ -1878,6 +1852,7 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
     render::Canvas c{px.data()};
     bool dirty = true;
     std::vector<std::vector<uint8_t>> lanes;
+    std::vector<int> opacity;
     void play(uint32_t every) {
       const uint32_t messages[] = {1100, 2300}, shots[] = {1200, 1600, 2400, 2800};
       int next = 0;
@@ -1893,7 +1868,10 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
         r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.caption(t), r.b.sign(t), r.b.done(t), r.b.strip(t), dirty);
         dirty = false;
         for (uint32_t shot : shots)
-          if (shot == t) lanes.emplace_back(px.begin() + render::kStripTop * render::kWidth, px.end());
+          if (shot == t) {
+            lanes.emplace_back(px.begin() + render::kStripTop * render::kWidth, px.end());
+            opacity.push_back(r.b.strip(t).shows() ? r.b.strip(t).opacity : 0);
+          }
       }
     }
   };
@@ -1907,11 +1885,14 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
   seldom.play(200);
   TEST_ASSERT_EQUAL(4, int(often.lanes.size()));
   TEST_ASSERT_EQUAL(4, int(seldom.lanes.size()));
-  for (int i = 0; i < 4; ++i) TEST_ASSERT_TRUE(often.lanes[i] == seldom.lanes[i]);
-  const int whole = lit(often.lanes[1]);
-  TEST_ASSERT_TRUE(whole > 100);
-  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often.lanes[0]));  // fading in
-  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often.lanes[2]));  // fading out
+  for (int i = 0; i < 4; ++i) {
+    TEST_ASSERT_TRUE(often.lanes[i] == seldom.lanes[i]);
+    TEST_ASSERT_EQUAL(often.opacity[i], seldom.opacity[i]);
+  }
+  TEST_ASSERT_TRUE(lit(often.lanes[1]) > 100);
+  TEST_ASSERT_EQUAL(1000, often.opacity[1]);
+  TEST_ASSERT_INT_WITHIN(100, 500, often.opacity[0]);  // fading in
+  TEST_ASSERT_INT_WITHIN(100, 500, often.opacity[2]);  // fading out
   TEST_ASSERT_EQUAL(0, lit(often.lanes[3]));
 }
 
@@ -3116,7 +3097,6 @@ int main() {
   RUN_TEST(test_needs_you_wins_over_reactions);
   RUN_TEST(test_changes_mid_motion_start_the_new_design);
   RUN_TEST(test_no_app_holds_for_weeks);
-  RUN_TEST(test_a_lane_at_the_same_dither_level_isnt_drawn_again);
   RUN_TEST(test_push_to_talk_listens_then_waits);
   RUN_TEST(test_listening_holds_until_the_reply);
   RUN_TEST(test_listening_plays_while_something_needs_you);

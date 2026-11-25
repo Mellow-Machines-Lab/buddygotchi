@@ -5,7 +5,8 @@
 // which feeds them to a LineReader: one writer, one reader, no locks.
 // PacketWriter collects a reply until its newline, then hands it out in
 // packets no bigger than the link's payload size, so a line never
-// interleaves with another.
+// interleaves with another. PacketOutbox keeps the packets the link can't
+// take yet, so the main loop never waits on it.
 #pragma once
 #include <atomic>
 #include <cstddef>
@@ -103,6 +104,53 @@ class PacketWriter {
   char buf_[LineReader::kMax + 1] = {};
   size_t len_ = 0;
   bool overflow_ = false;
+};
+
+// Packets waiting for a link that can't take them yet (Bluetooth's
+// notifications, while its buffers are full), in order, on the main loop
+// alone. Each is sent as soon as the link takes it, and the rest wait for
+// the next drain(). A packet with no room left is dropped whole and
+// counted; the line it was part of then fails to parse, like any other
+// lost message.
+template <size_t N>
+class PacketOutbox {
+ public:
+  // Sends one packet; false when the link can't take it now.
+  using TrySend = bool (*)(void* ctx, const uint8_t* data, size_t n);
+
+  // Queues a packet behind any waiting, then sends what the link takes.
+  void send(const uint8_t* data, size_t n, TrySend trySend, void* ctx) {
+    if (n > 0xffff || used_ + 2 + n > N) {
+      ++dropped_;
+    } else {
+      buf_[used_] = uint8_t(n >> 8), buf_[used_ + 1] = uint8_t(n);
+      for (size_t i = 0; i < n; ++i) buf_[used_ + 2 + i] = data[i];
+      used_ += 2 + n;
+    }
+    drain(trySend, ctx);
+  }
+
+  // Sends from the front for as long as the link takes them.
+  void drain(TrySend trySend, void* ctx) {
+    size_t at = 0;
+    while (at < used_) {
+      const size_t n = size_t(buf_[at]) << 8 | buf_[at + 1];
+      if (!trySend(ctx, buf_ + at + 2, n)) break;
+      at += 2 + n;
+    }
+    for (size_t i = at; i < used_; ++i) buf_[i - at] = buf_[i];
+    used_ -= at;
+  }
+
+  // Forgets every packet waiting, e.g. on disconnect.
+  void clear() { used_ = 0; }
+  size_t waiting() const { return used_; }
+  uint32_t dropped() const { return dropped_; }
+
+ private:
+  uint8_t buf_[N] = {};
+  size_t used_ = 0;
+  uint32_t dropped_ = 0;
 };
 
 }  // namespace linkkit

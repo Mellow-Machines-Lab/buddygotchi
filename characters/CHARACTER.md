@@ -406,7 +406,7 @@ the level then held up: the rules' own, needing nothing of the pack's.
 
 **XP** shows only on low signs (plan/xp-league.md §5): a `do`'s `xp`, what its
 event earned, is a chip at the right end of the finish's sign or of a low
-sign, `+5 XP`. There is no bar: the board ignores `state.xp`, today's ring in percent, which the Mac still sends.
+sign, `+5 XP`. There is no bar, and a `state` carries no XP.
 
 - Each line is `- [tags] words`. The tags (optional) must all be on: the
   reading's kind, tone and length, `named` when you said this buddy's own

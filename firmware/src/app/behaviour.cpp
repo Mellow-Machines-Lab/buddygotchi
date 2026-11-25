@@ -474,7 +474,6 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       // to the longer, so the gap between them sits where a tap splits.
       const int la = int(std::strlen(ask_.a)), lb = int(std::strlen(ask_.b)), w = std::max(la, lb);
       std::snprintf(ask_.lane, sizeof(ask_.lane), "%*s    %-*s", w, ask_.a, w, ask_.b);
-      ask_.touch = in.askTouch;
       ask_.at = t, ask_.key = in.key;
       sign_.ms = std::max(sign_.ms, kAskMs);
       reason_ = Sign{};
@@ -916,8 +915,6 @@ render::WishShow Behaviour::wishShow(uint32_t t) const {
     show.kind = lastWish_, show.pop = wishPop_, show.popAge = t - wishPopAt_;
   } else {
     show.kind = model_.wish;
-    show.how = model_.wishHow;
-    show.ms = t;
   }
   return show;
 }
@@ -947,7 +944,7 @@ const char* Behaviour::caption(uint32_t t) const {
 bool Behaviour::asking(uint32_t t) const { return askOn(t) && !noApp(t) && !model_.attn; }
 
 bool Behaviour::answer(const char* pick, uint32_t t, bool injected) {
-  if (!asking(t) || (!std::strcmp(pick, "touch") && !ask_.touch)) return false;
+  if (!asking(t)) return false;
   change(t, [&] { endAsk(pick, t, injected); });
   return true;
 }
@@ -957,7 +954,7 @@ void Behaviour::endAsk(const char* pick, uint32_t t, bool injected) {
   copyStr(askEnd_.q, sizeof(askEnd_.q), ask_.q);
   copyStr(askEnd_.question, sizeof(askEnd_.question), ask_.question);
   askEnd_.pick = pick;
-  if (!std::strcmp(pick, "a") || !std::strcmp(pick, "touch")) copyStr(askEnd_.answer, sizeof(askEnd_.answer), ask_.a);
+  if (!std::strcmp(pick, "a")) copyStr(askEnd_.answer, sizeof(askEnd_.answer), ask_.a);
   if (!std::strcmp(pick, "b")) copyStr(askEnd_.answer, sizeof(askEnd_.answer), ask_.b);
   askEnd_.injected = injected;
   askEnded_ = true;

@@ -152,9 +152,8 @@ public struct DeviceInfo: Equatable, Sendable {
     public static let troubledResets: Set<String> = ["panic", "watchdog", "brownout", "other"]
 
     public init(_ hello: Hello) {
-        // `id version`; firmware from before says the version on its own.
-        let pack = hello.fields["pack"]?.string.map { p in hello.fields["pack_version"]?.string.map { "\(p) \($0)" } ?? p }
-        self.init(id: hello.id, fw: hello.fw, voice: hello.fields["voice"]?.string, pack: pack,
+        // `id version`.
+        self.init(id: hello.id, fw: hello.fw, voice: hello.fields["voice"]?.string, pack: hello.fields["pack"]?.string,
                   reset: hello.fields["reset"]?.string, board: hello.fields["board"]?.string,
                   invites: (hello.fields["invites"]?.int ?? 0) >= 1)
     }

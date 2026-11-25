@@ -74,18 +74,12 @@ void drawGlyph(Canvas& c, const Font& f, int x, int y, int g, const Inked& ink) 
   const uint8_t* src = f.data + size_t(g) * rowBytes * f.h;
   const int row0 = std::max(0, -y), row1 = std::min<int>(f.h, kHeight - y);
   const int col0 = std::max(0, -x), col1 = std::min<int>(f.w, kWidth - x);
-  // Drawn whole, the mask is no test.
-  const bool whole = c.mask().all();
   for (int row = row0; row < row1; ++row) {
     const uint8_t* bits = src + row * rowBytes;
     uint8_t* line = c.pixels() + (y + row) * kWidth;
     for (int col = col0; col < col1; ++col) {
       const uint8_t color = ink.at[(col & 1) ? (bits[col / 2] & 15) : (bits[col / 2] >> 4)];
-      if (!color) continue;
-      if (whole)
-        line[x + col] = color;
-      else
-        c.plot(x + col, y + row, color);
+      if (color) line[x + col] = color;
     }
   }
 }

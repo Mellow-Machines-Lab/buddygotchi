@@ -153,6 +153,48 @@ static void test_packet_writer_drops_overlong_lines_and_clears() {
   TEST_ASSERT_EQUAL_STRING("new\n", pkts.back().c_str());
 }
 
+// A link that takes `room` packets, then none until it's given more.
+struct FakeLink {
+  std::vector<std::string> sent;
+  int room = 0;
+  static bool take(void* ctx, const uint8_t* data, size_t n) {
+    FakeLink& l = *static_cast<FakeLink*>(ctx);
+    if (l.room <= 0) return false;
+    --l.room;
+    l.sent.emplace_back(reinterpret_cast<const char*>(data), n);
+    return true;
+  }
+};
+
+// A link that can't take a packet keeps it waiting, in order, and never
+// waits on it; one with no room left drops whole packets, and counts them.
+static void test_the_outbox_keeps_what_the_link_cant_take_yet() {
+  linkkit::PacketOutbox<16> box;
+  FakeLink link;
+  link.room = 1;
+  box.send(reinterpret_cast<const uint8_t*>("abc"), 3, FakeLink::take, &link);
+  box.send(reinterpret_cast<const uint8_t*>("de"), 2, FakeLink::take, &link);
+  box.send(reinterpret_cast<const uint8_t*>("fghi"), 4, FakeLink::take, &link);
+  TEST_ASSERT_EQUAL_INT(1, int(link.sent.size()));
+  TEST_ASSERT_EQUAL_INT(2 + 2 + 2 + 4, int(box.waiting()));
+  box.send(reinterpret_cast<const uint8_t*>("jklmno"), 6, FakeLink::take, &link);  // no room: dropped
+  TEST_ASSERT_EQUAL_UINT32(1, box.dropped());
+  link.room = 1;
+  box.drain(FakeLink::take, &link);
+  TEST_ASSERT_EQUAL_STRING("de", link.sent[1].c_str());
+  link.room = 5;
+  box.drain(FakeLink::take, &link);
+  TEST_ASSERT_EQUAL_INT(3, int(link.sent.size()));
+  TEST_ASSERT_EQUAL_STRING("fghi", link.sent[2].c_str());
+  TEST_ASSERT_EQUAL_INT(0, int(box.waiting()));
+  box.send(reinterpret_cast<const uint8_t*>("p"), 1, FakeLink::take, &link);
+  TEST_ASSERT_EQUAL_STRING("p", link.sent[3].c_str());
+  link.room = 0;
+  box.send(reinterpret_cast<const uint8_t*>("q"), 1, FakeLink::take, &link);
+  box.clear();
+  TEST_ASSERT_EQUAL_INT(0, int(box.waiting()));
+}
+
 static void sink(void* ctx, const char* text, size_t n) { static_cast<std::string*>(ctx)->append(text, n); }
 
 static void test_base64_matches_rfc4648() {
@@ -206,6 +248,7 @@ int main() {
   RUN_TEST(test_ring_drops_what_does_not_fit_and_wraps);
   RUN_TEST(test_packet_writer_sends_whole_lines_in_payload_chunks);
   RUN_TEST(test_packet_writer_drops_overlong_lines_and_clears);
+  RUN_TEST(test_the_outbox_keeps_what_the_link_cant_take_yet);
   RUN_TEST(test_base64_matches_rfc4648);
   RUN_TEST(test_crc32_matches_zlib);
   RUN_TEST(test_clock_freezes_steps_and_runs);

@@ -65,9 +65,8 @@ public final class Core {
     /// resting mood's until it's set.
     var mood: () -> String
     /// Boop's growth now, which the runtime reads from the growth store:
-    /// every `state` carries today's ring for the board's bar (`state.xp`),
-    /// and CONTEXT its level. Nil for a demo and a core with no store: no
-    /// bar.
+    /// CONTEXT's level, and care's XP for the invite's payoff. Nil for a demo
+    /// and a core with no store.
     var growth: () -> Growth? = { nil }
     /// The days in a row with a full ring today (`GrowthStore.daysInARow`).
     var daysInARow: () -> Int = { 0 }
@@ -652,7 +651,6 @@ public final class Core {
         let energy = self.energy(at: now, workingSince: stretchStart(working, at: now))
         snapshot.energy = energy == .normal ? nil : energy.rawValue
         snapshot.pointer = along.pointer
-        snapshot.xp = growth()?.percent
         if config.pack.name != config.pack.ownName { snapshot.buddy = config.pack.name }
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue

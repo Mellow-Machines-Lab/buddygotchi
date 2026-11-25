@@ -313,10 +313,6 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheCharacter, true, "the same character, another version")
         link.receive(hello(nil), now: 400)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, true, "firmware that doesn't say")
-        // Firmware from before said the version on its own.
-        let before = String(FakeTransport.hello.dropLast()) + #","pack":"\#(CharacterPack.active.id)","pack_version":"\#(CharacterPack.active.version)"}"#
-        link.receive(before, now: 500)
-        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.pack, DeviceInfo.appPack)
     }
 
     /// The widest name the Mac sends: 47 bytes that JSON escapes to two
@@ -359,12 +355,10 @@ final class DeviceLinkTests: XCTestCase {
         var needs = StateSnapshot(doing: "working", mood: "determined",
                                   attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                                   working: 999, idle: 999, helpers: 999, vol: 10, when: every)
-        needs.xp = 100  // the growth bar's percent, at its widest
-        XCTAssertTrue(needs.jsonLine.contains(#""xp":100"#))
+        XCTAssertFalse(needs.jsonLine.contains(#""xp""#), "the board has no bar: a state carries no XP")
         XCTAssertLessThanOrEqual(needs.jsonLine.utf8.count, Wire.maxLine)
         var todo = StateSnapshot(doing: "working", activity: "analyzing", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
                                  vol: 10, when: every, todo: .init(done: Int(Int32.max), total: Int(Int32.max)))
-        todo.xp = 100
         XCTAssertLessThanOrEqual(todo.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertTrue(todo.jsonLine.hasSuffix(#""todo":{"done":2147483647,"total":2147483647}}"#), todo.jsonLine)
     }

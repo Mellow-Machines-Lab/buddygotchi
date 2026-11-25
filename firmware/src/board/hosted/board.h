@@ -66,7 +66,7 @@ class Board {
 
  private:
   app::Hal& hal_;
-  std::vector<uint8_t> canvas_, rgba_;
+  std::vector<uint8_t> rgba_;
   std::unique_ptr<app::Device> device_;
   std::unique_ptr<linkkit::Kit> kit_;
   linkkit::LineReader line_;

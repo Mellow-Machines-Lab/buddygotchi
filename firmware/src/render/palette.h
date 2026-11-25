@@ -1,7 +1,7 @@
 // The canvas palette: index → RGB565. Every colour on
 // the screen comes from this one table: "Warm Terminal", black glass with
-// grey text and one amber accent, plus the bring-up colours; the finish's
-// sage and clay in its last two entries; the entries between are black.
+// grey text and one amber accent, plus the bring-up colours; the entries
+// past the ramps are black.
 //
 // Anti-aliased edges (the text, and the strip's round icons) use ramps: 8 steps
 // from black up to an ink colour. The table is computed with integer maths
@@ -71,8 +71,6 @@ constexpr int kInkBase = 16;        // ink i, level k at kInkBase + i * 8 + k - 
 constexpr int kOnAmberBase = 8;
 constexpr int kInkOnAmber = 0x40;
 static_assert(kOnAmberBase >= kFixedCount && kOnAmberBase + kLevels <= kInkBase, "the amber ramp fits before the inks");
-// The finish's marks, flat, in the last two entries.
-constexpr uint8_t kSage = 254, kClay = 255;
 
 // The index for ink `ink` at coverage `level` (0..8) over black.
 constexpr uint8_t inkAt(int ink, int level) {
@@ -114,7 +112,6 @@ constexpr PaletteTable makePalette() {
     for (int k = 1; k <= kLevels; ++k) p.c[inkAt(ink, k)] = rgb565(mix(kGlass, inkRgb(ink), k, kLevels));
   }
   for (int k = 1; k <= kLevels; ++k) p.c[textAt(kInkOnAmber, k)] = rgb565(mix(kAmberRgb, kGlass, k, kLevels));
-  p.c[kSage] = rgb565(kSageRgb), p.c[kClay] = rgb565(kClayRgb);
   return p;
 }
 

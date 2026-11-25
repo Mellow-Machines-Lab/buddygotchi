@@ -44,9 +44,9 @@ constexpr int kMainButton = 0;
 namespace board {
 
 // The CO5300 AMOLED: 410×502, portrait, its columns 22 in from the
-// controller's first. The 320×240 canvas is drawn 1.5 times as large
-// (480×360) and turned a quarter, so Boop fills the screen held sideways;
-// amoled206/display.cpp does the scaling and turning as it pushes.
+// controller's first. The face draws the whole panel, landscape, turned a
+// quarter as amoled206/display.cpp pushes it, so Boop fills the screen held
+// sideways.
 constexpr uint32_t kSpiWriteHz = 40000000;
 constexpr int kPanelWidth = 410, kPanelHeight = 502, kPanelOffsetX = 22;
 // Which way up: true puts the canvas's top on the panel's left edge, so
@@ -54,11 +54,6 @@ constexpr int kPanelWidth = 410, kPanelHeight = 502, kPanelOffsetX = 22;
 constexpr bool kTopOnPanelLeft = true;
 // Only names the touch calibration's screen (app::SavedTouchCal).
 constexpr uint8_t kRotation = 0;
-// Where the turned picture sits on the panel, in panel pixels: 360 wide
-// (the canvas's rows) by 480 tall (its columns), centred. The CO5300 takes
-// windows only at even addresses with even sizes, so both are even.
-constexpr int kPicW = render::kHeight * 3 / 2, kPicH = render::kWidth * 3 / 2;
-constexpr int kPicX = (kPanelWidth - kPicW) / 2 & ~1, kPicY = (kPanelHeight - kPicH) / 2 & ~1;
 // A face that draws natively (the gel) gets the whole panel, landscape:
 // 502 × 410, turned a quarter as it's pushed.
 constexpr int kNativeWidth = kPanelHeight, kNativeHeight = kPanelWidth;
