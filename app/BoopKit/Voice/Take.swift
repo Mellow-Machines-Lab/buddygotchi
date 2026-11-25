@@ -11,17 +11,19 @@ public struct Take: Equatable, Sendable {
         case sound, word, phrase, swear
     }
 
-    /// Which of `say`'s answers a take says: how Boop feels, or what NOW
-    /// is about; or a reply's own words, to what you said on push-to-talk,
-    /// its meaning the reply's name.
+    /// What a take says: how Boop feels, or what a moment is about (the
+    /// `hello` topic is your hello and bye at a lock); a reply's own words,
+    /// to what you said on push-to-talk, its meaning the reply's name; or a
+    /// skit's (`Skit`), its meaning the skit's id.
     /// Needs you's takes (`attention`) Boop never says: Boop's voice has
     /// none now, and Pixel's older copy of it still lists them.
     public enum Part: String, CaseIterable, Sendable {
-        case feeling, about, reply, attention
+        case feeling, about, reply, skit, attention
     }
 
     /// The board's id for it, as `say.take` sends it. A take that's also a
-    /// reply's words is in the table again under its id, as that reply.
+    /// reply's words or a skit's is in the table again under its id, as
+    /// that reply or skit.
     public let id: String
     /// What it says, as the bubble shows it and HISTORY reads it.
     public let text: String

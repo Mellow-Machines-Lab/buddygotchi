@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-22. The contract a character pack meets, so that any
+Updated 2026-11-24. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -211,8 +211,8 @@ Boop's, cut to two of its 7 lasting moods and two of its 18 faces:
 | `version` | yes | The pack's version, at most 16 characters. A Mac and a board with different versions of the same pack fall back safely (§10) |
 | `default_mood` | yes | The resting mood: a new state folder starts in it, every mood fades toward it, and an unknown mood reads as it |
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood` |
-| `remember_word` | no | The word of its voice it says as it brings up something it remembers, with `rig/clips/reply-remember.json` as its look. For now the bank's `Hey`, standing in until a "hey!" is recorded |
-| `claims_a_fix` | no | The words of its voice that say something was fixed. Boop says one only on a turn that got past a failed check |
+| `claims_a_fix` | no | The words of its voice that say something was fixed. Boop says one only on a turn that got past a failed check, or at the check passing again |
+| `skits` | no | The few moments that always speak, each from takes of its own, by the slots they play at (§8). Without it, its Moments say nothing but your replies' and its waves' words |
 | `moods` | yes | Every face the pack draws, once (§5). Its order is the firmware's `Mood` order |
 | `lasting` | no | The moods the buddy settles into, with their fades (§5). Without it (Pixel's, from before), the faces with a `meaning` are its lasting moods, and none fades by itself |
 | `acts` | no | What the pack draws for each work act, as Jev reads it: by kind (`push`, `tests`, `build`), then by `start`, `pass` and `fail`, a sentence with `{name}` for the creature's name. The engine says what the agent did and adds this. Without it, Jev reads the agent's clause alone |
@@ -448,45 +448,85 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 - A `hush` makes Talk quiet for half an hour (`Core.quiet`), as the app's
   Hush button does. Talking to the buddy, the popover or choosing a Talk
   ends it.
-- The board plays the reply's clip (§15). If `say` says something, Voice
-  says the reply's own words, its takes in the voice (§8): a yes says "Yep",
-  a no "Tsk". With none in the voice, it says a feeling `say` picked, else
-  one the reply borrows (`MomentOutput.replyWords`: thanks a glad sound),
-  and never a topic.
+- The board plays the reply's clip (§15), and Voice says the reply's own
+  words, its takes in the voice (§8): a yes says "Yep", a no "Tsk". With
+  none in the face, it says nothing: never another feeling's words, nor a
+  topic.
 
 ## 8. Voice (optional)
 
 A pack with a voice has recorded takes, each tagged with the moods it plays
-in, a feeling or a topic (what the brain's `say` picks), or a reply it's the
-words of (§7), and a kind (sound, word, phrase or swear). The Moment's size,
-which the app's rules pick (`MomentRule.size`), picks the kind: a sound
-small, a word medium, a phrase big. A swear
-plays only when the brain's `say` asks for one, and the person has turned
-swearing on in Settings (it's off by default).
+in, a part and a meaning, and a kind (sound, word, phrase or swear). The
+brain never picks what the buddy says: a rule does, at three kinds of
+moment, and everything else plays in silence:
+
+- A skit: one of the few moments that always speak, each from takes of its
+  own (`skits`, below). The brain can't veto one: when it picks no face,
+  the Moment plays in the rules brain's first face for the moment, as the
+  mood colours it.
+- Your words: the reply's own words (§7).
+- A real wave at your lock or unlock: its hello's or bye's own words.
+
+The Moment's size, which the app's rules pick (`MomentRule.size`), picks
+the kind: a sound small, a word medium, a phrase big. With none of that
+kind in the face, Voice takes the nearest, plainer first. A swear plays
+only in the `upset` skit, once failures pile up (the third failed check in
+a row, or a failed turn with two or more failed checks), and only when the
+person has turned swearing on in Settings (it's off by default); on Quiet
+nothing swears. With no swear in the face, it says a plain take, never
+nothing.
+
+A take's part says what it is:
+
+| Part | Its meaning | Said |
+| --- | --- | --- |
+| `skit` | The skit's id | At the skit |
+| `reply` | The reply's name, or `dunno`, a huh to a question | To your words, and at a lock's real wave |
+| `feeling`, `about` | How it feels (`upset`, `glad`, `tickled`, `shaken`), or a topic (`hello`, `work`, `tests`, `done`, `retry`, `quiet`) | Never now: kept in the table from before skits |
+| `attention` | `attention` | Never: only Pixel's older copy lists them |
+
+`skits` in `character.json` names each skit and the slots it plays at,
+the rules' readings of an event (`RulesBrain.Slot`); code says when each
+plays and whether it swears (`Skits.play`). An id missing, a slot that
+isn't one, or a slot in two skits, and the pack doesn't load. Boop's:
+
+```json
+"skits": [
+  {"id": "win",   "slots": ["doneLong", "doneVeryLong"]},
+  {"id": "upset", "slots": ["failed", "failedVeryLong", "gaveUp", "checkFailing"]},
+  {"id": "fix",   "slots": ["checkFixed"]},
+  {"id": "back",  "slots": ["back", "backDays", "backAfterADay"]}
+]
+```
+
+`win` is a turn of a minute or more done ("Done", "Nailed it"), `upset` a
+failed turn, the agent giving up, or the third failed check in a row ("Oh
+no", "Not again"), `fix` a check passing after it failed ("Phew...",
+"Fixed"), and `back` you back at the Mac after a break ("Hello", "Hey").
+Every other moment has none.
 
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the
   voice file's version on its first line after the comments, the same one
   the board reports, then a take a line, tab separated: id, text, part,
   meaning, kind, moods (space separated), finish (empty for any) and ms. A
-  take that's also a reply's words is in it again, by the same id, as part
-  `reply`, and one that's also a second feeling (the slime's `shaken`, from
-  its startled and cross words) again as that feeling: the voice file has
-  it once. `say` offers a pack only the feelings its table has takes of.
-  The table may list fewer takes than the voice file holds: `say` offers 4
-  feelings and 6 topics (hello, work, tests, done, retry, quiet,
-  `MomentOutput.topics`), and a take of any other meaning stays on the card
-  and off the table, so nothing picks it.
+  take that's also a reply's words or a skit's is in it again, by the same
+  id, as part `reply` or `skit` (voicegen's `REPLY_OF`, `SKIT_OF`), and one
+  that's also a second feeling (the slime's `shaken`, from its startled and
+  cross words) again as that feeling: the voice file has it once. The
+  table may list fewer takes than the voice file holds: a take of an older
+  topic stays on the card and off the table.
 
 Both are built files and checked in, and a pack has both or neither. Boop's
 pack holds the recordings and voicegen, the tool that makes the two files;
 espeak-ng placeholders stand in for lines not recorded yet
 (`plans/regenerate.json` in its `design/assets/boop-voice-v1/`). Pixel's has
-a copy of the two built files.
+an older copy of the two built files, which still holds needs you's takes:
+voicegen rebuilds its table, its voice file unchanged, with `--pack` and
+`--keep-attention`, and lends Pixel's takes by its own `tools/borrowed.json`.
 
-A pack without a voice leaves both out. The brain is then never asked what
-to say (`react` drops its `say` question), and Moments play faces and sound
-effects only.
+A pack without a voice leaves both out, and its Moments play faces and
+sound effects only.
 
 A pack with a voice has takes for every mood: Voice picks only takes whose
 moods include the emotion's. The table's moods column lists every mood a

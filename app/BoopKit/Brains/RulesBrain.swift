@@ -1,8 +1,8 @@
 import Foundation
 import MellowHarness
 
-/// The brain in the box: Boop's mood, the emotion at each event, what it
-/// says and which sign it holds up, by rules, with no key and no network
+/// The brain in the box: Boop's mood, the emotion at each event and which
+/// sign it holds up, by rules, with no key and no network
 /// (documentation/design/brain.md, layer 1). It answers the questions Jev
 /// is asked, so every output's code rules still apply after it. The mood
 /// moves only by the pack's mood map (`MoodMap`); the move and the size
@@ -154,8 +154,7 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
         if read.cues == [.agentStarts], !working(log) { moodTo = [] }
         let shown = moodTo.first { $0 != MoodOutput.missing } ?? current
         let face = pickFace(read, mood: shown, level: level)
-        return Call(read: read, mood: current, moodTo: moodTo, face: face, say: say(read, face: face, mood: shown),
-                    roll: lock.withLock { rng.next() })
+        return Call(read: read, mood: current, moodTo: moodTo, face: face, roll: lock.withLock { rng.next() })
     }
 
     /// Asked with no reading, as a forced pass from outside is: the mood
@@ -254,31 +253,6 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
         }
     }
 
-    /// What Boop says at `read`, one of `say`'s option names, or nil for
-    /// nothing. `MomentOutput` drops what the pack or Talk doesn't allow.
-    func say(_ read: Read, face: String?, mood: String) -> String? {
-        guard face != nil else { return nil }
-        switch read.slot {
-        case .doneVeryShort, .chat, .echo, .prompt, .idle, .other: return nil
-        case .doneShort: return "glad"
-        case .doneLong, .doneVeryLong: return "done"
-        case .failed, .failedVeryLong, .gaveUp: return mood == "cross" ? "swear" : "upset"
-        case .checkFailed: return "tests"
-        case .checkFailing: return "retry"
-        case .checkFixed: return "tests"
-        case .promptFrustrated: return "retry"
-        case .promptPlayful, .poke: return mood == "cross" ? "shaken" : "tickled"
-        case .promptPolite, .promptNamed, .stroke, .hold, .pickup, .answered, .wishMet: return "glad"
-        case .pokes, .pokesMany: return mood == "cross" ? "shaken" : "upset"
-        case .shake: return "shaken"
-        case .otherTouch: return "tickled"
-        case .back, .backDays, .wordsHello: return "hello"
-        case .backAfterADay, .wordsSad, .wishGone: return nil
-        case .wordsRude: return "upset"
-        case .words, .wordsKind, .wordsSorry, .wordsThanks, .wordsBye, .wordsQuestion: return "glad"
-        }
-    }
-
     /// One call's answers, fixed as it was prepared.
     struct Call: Brain {
         let id = "rules"
@@ -286,7 +260,6 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
         var mood: String
         var moodTo: [String]
         var face: String?
-        var say: String?
         var roll: UInt64
 
         func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
@@ -297,7 +270,6 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
                 switch q.key {
                 case MoodOutput.outputName: pick = moodTo.first { names.contains($0) } ?? (names.contains(mood) ? mood : names.first)
                 case MomentOutput.emotionKey: pick = face.flatMap { names.contains($0) ? $0 : nil } ?? (names.contains("none") ? "none" : names.first)
-                case MomentOutput.sayKey: pick = say.flatMap { names.contains($0) ? $0 : nil } ?? "none"
                 case MomentOutput.replyKey: pick = read.reply.flatMap { names.contains($0) ? $0 : nil } ?? (names.contains("huh") ? "huh" : names.first)
                 case Signs.questionKey: pick = sign(q)
                 default: pick = q.options.first { $0.name == "none" }?.name ?? names.first

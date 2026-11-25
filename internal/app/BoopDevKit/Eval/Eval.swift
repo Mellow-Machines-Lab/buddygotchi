@@ -82,9 +82,6 @@ public struct Scenario: Sendable {
         /// How big the moment was (`react.intensity`'s pick), or `none` when
         /// Boop didn't react.
         public var intensity: Set<String>?
-        /// What it asked to say (`say`'s pick, when it reached the floor: a
-        /// feeling, `swear` or a topic), or `none`.
-        public var say: Set<String>?
         /// A take Boop said, by its text as the bubble shows it (`Tsk...`):
         /// the step passes when any of the `say`'s takes is one of these;
         /// with `some`, when it said anything; with `none`, when it said
@@ -133,15 +130,14 @@ public struct Scenario: Sendable {
         /// Whether it checks one of Jev's own choices, which a feel scenario
         /// leaves to the judge.
         var checksAChoice: Bool {
-            react != nil || move != nil || intensity != nil || say != nil || said != nil || mood != nil || sign != nil
+            react != nil || move != nil || intensity != nil || said != nil || mood != nil || sign != nil
         }
 
-        public init(react: Set<String>? = nil, move: Set<String>? = nil, intensity: Set<String>? = nil, say: Set<String>? = nil,
+        public init(react: Set<String>? = nil, move: Set<String>? = nil, intensity: Set<String>? = nil,
                     said: Set<String>? = nil, mood: Set<String>? = nil, offered: Set<String>? = nil, opens: Set<String>? = nil) {
             self.react = react
             self.move = move
             self.intensity = intensity
-            self.say = say
             self.said = said
             self.mood = mood
             self.offered = offered
@@ -447,8 +443,7 @@ public struct Scenario: Sendable {
             if let e = s["expect"] as? [String: Any] {
                 // What `!` takes away from: every value a key may be.
                 // `none` first, as the expect brain answers with the first.
-                let every: [String: [String]] = ["react": ["none"] + pack.moods.map(\.id), "mood": lastingMoods,
-                                                 "say": ["none"] + MomentOutput.says.map(\.name)]
+                let every: [String: [String]] = ["react": ["none"] + pack.moods.map(\.id), "mood": lastingMoods]
                 func set(_ key: String) throws -> Set<String>? {
                     guard let v = e[key] else { return nil }
                     guard let text = v as? String else { throw badStep("expect.\(key) is like \"proud|excited\"") }
@@ -464,11 +459,11 @@ public struct Scenario: Sendable {
                     step.expectOrder[key] = all.filter { !values.contains($0) }
                     return Set(step.expectOrder[key] ?? [])
                 }
-                let keys = ["react", "move", "intensity", "say", "said", "mood", "offered", "opens", "idle",
+                let keys = ["react", "move", "intensity", "said", "mood", "offered", "opens", "idle",
                             "helpers", "when", "needs", "todo", "doing", "dream", "sign"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
-                step.expect = Expectation(react: try set("react"), move: try set("move"), intensity: try set("intensity"), say: try set("say"),
+                step.expect = Expectation(react: try set("react"), move: try set("move"), intensity: try set("intensity"),
                                           said: try set("said"), mood: try set("mood"), offered: try set("offered"))
                 let opens = try set("opens"), idle = try set("idle"), helpers = try set("helpers"), when = try set("when")
                 step.expect?.opens = opens
@@ -489,8 +484,7 @@ public struct Scenario: Sendable {
                 step.expect?.sign = sign
                 let unknownTags = (when ?? []).subtracting(Tags.all)
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
-                for (key, values, known) in [("say", step.expect?.say, MomentOutput.says.map(\.name)),
-                                             ("intensity", step.expect?.intensity, MomentOutput.sizes.map(\.name)),
+                for (key, values, known) in [("intensity", step.expect?.intensity, MomentOutput.sizes.map(\.name)),
                                              ("move", step.expect?.move, MomentOutput.moves + MomentOutput.replies.map(\.name) + [MomentOutput.wave])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
@@ -567,11 +561,10 @@ public struct Eval {
         public var line: String
         public var expected: Scenario.Expectation
         /// What happened: the react.face pick, the move played, how big,
-        /// what it asked to say, the `say` and its takes, the mood after.
+        /// the `say` and its takes, the mood after.
         public var react: String?
         public var move: String?
         public var intensity: String?
-        public var say: String?
         public var said: String?
         public var saidTakes: [String] = []
         /// The sign the reaction held up.
@@ -605,7 +598,6 @@ public struct Eval {
             if let r = expected.react, !r.contains(react ?? "none") { return false }
             if let m = expected.move, !m.contains(move ?? "none") { return false }
             if let i = expected.intensity, !i.contains(intensity ?? "none") { return false }
-            if let s = expected.say, !s.contains(say ?? "none") { return false }
             if let s = expected.said, !(saidTakes.isEmpty ? s.contains("none") : s.contains("some") || saidTakes.contains(where: s.contains)) {
                 return false
             }
@@ -620,7 +612,6 @@ public struct Eval {
             let want = [expected.react.map { "react \($0.sorted().joined(separator: "|"))" },
                         expected.move.map { "move \($0.sorted().joined(separator: "|"))" },
                         expected.intensity.map { "intensity \($0.sorted().joined(separator: "|"))" },
-                        expected.say.map { "say \($0.sorted().joined(separator: "|"))" },
                         expected.said.map { "said \($0.sorted().joined(separator: "|"))" },
                         expected.mood.map { "mood \($0.sorted().joined(separator: "|"))" },
                         expected.offered.map { "offered \($0.sorted().joined(separator: "|"))" },
@@ -635,7 +626,7 @@ public struct Eval {
             let got = opened.map { "opened \($0)" }
                 ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " ")), needs \($0.needs ? "shown" : "none"), todo \($0.todo), doing \($0.doing)" }
                 ?? dropped.map { "dropped: \($0)" }
-                ?? "react \(react ?? "none"), move \(move ?? "none"), intensity \(intensity ?? "none"), say \(say ?? "none"), said \(said ?? "none"), mood \(mood)"
+                ?? "react \(react ?? "none"), move \(move ?? "none"), intensity \(intensity ?? "none"), said \(said ?? "none"), mood \(mood)"
                 + (expected.offered == nil ? "" : ", offered \(offered.sorted().joined(separator: "|"))")
                 + (expected.sign == nil ? "" : ", sign \(sign ?? "none")")
             return "  step \(step): \(line)\n    wanted \(want.joined(separator: ", ")); got \(got)"
@@ -719,6 +710,8 @@ public struct Eval {
     /// Each run answered by the rules brain (`RulesBrain`), built for its
     /// own harness and mood: `--brain rules`, no Jev request.
     public var rules = false
+    /// Whether Boop may swear, Settings' switch: on, as the evals keep it.
+    public var swears = true
 
     public init(brain: any Brain, steering: Steering) {
         self.brain = brain
@@ -852,7 +845,7 @@ public struct Eval {
                 } else {
                     pending.finish(end)
                 }
-            }, talk: { scenario.talk }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) },
+            }, talk: { scenario.talk }, swears: { [swears] in swears }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) },
             // Its own words' order by its file, so a rerun says the same, and
             // no two scenarios open on the same word.
             remembers: remembers, seed: SplitMix64.seed(of: scenario.file), felt: { _ in scenario.felt }, digests: { scenario.days }, wall: { clock.now })
@@ -1005,7 +998,7 @@ public struct Eval {
             guard let record = last else {
                 // No pass: the step is the rules' (your lock, a working
                 // check-in, a boop from the world), and their Moment is
-                // what's checked. `say` reads as `none`: nobody was asked.
+                // what's checked.
                 guard let (m, line) = ruled else {
                     // Nothing played: only an `expect` that wants nothing passes.
                     guard let e = home.sync(execute: { harness.log.events.last { !$0.fromHarness } }), TranscriptView.isRuled(e) else {
@@ -1015,7 +1008,7 @@ public struct Eval {
                     continue
                 }
                 checks.append(Check(step: i + 1, line: line, expected: expect, react: m.mood, move: Eval.moved(m),
-                                    intensity: MomentOutput.size(loops: m.loops).name, say: nil, said: m.say?.text,
+                                    intensity: MomentOutput.size(loops: m.loops).name, said: m.say?.text,
                                     saidTakes: m.say?.takes.map(\.text) ?? [], sign: m.sign, mood: moodNow(), latencyMs: 0))
                 continue
             }
@@ -1024,7 +1017,6 @@ public struct Eval {
             checks.append(Check(step: i + 1, line: record.line ?? "", expected: expect, react: react,
                                 move: ran ? lastMoment.flatMap(Eval.moved) : nil,
                                 intensity: ran ? MomentOutput.size(loops: lastMoment?.loops).name : nil,
-                                say: ran ? MomentOutput.saying(record.answers) : nil,
                                 said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [], sign: ran ? lastSign : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,
                                 latencyMs: record.latencyMs,

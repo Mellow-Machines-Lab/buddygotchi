@@ -223,7 +223,7 @@ final class RulesBrainTests: XCTestCase {
 
     /// Every answer is one of its question's options, at 1.
     func testAnswersAreOptions() async throws {
-        let qs = [question(MomentOutput.emotionKey, ["none", "calm"]), question(MomentOutput.sayKey, ["none", "glad"]),
+        let qs = [question(MomentOutput.emotionKey, ["none", "calm"]), question(MomentOutput.replyKey, ["huh", "yes"]),
                   question("mood", ["calm", "happy"]), question(Signs.questionKey, ["none", "yay!"]), question("other", ["a", "b"])]
         let a = try await answers(brain(facts: finish(length: "long")), event(.turn, .end, "Stop"), qs)
         for q in qs {

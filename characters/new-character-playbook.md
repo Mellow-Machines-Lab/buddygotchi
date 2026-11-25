@@ -1,6 +1,6 @@
 # A new character: the playbook, and what would make it repeatable
 
-Updated 2026-11-14. Written while building Pixel Bro
+Updated 2026-11-24. Written while building Pixel Bro
 ([Mellow-Machines-Lab/PixelBro](https://github.com/Mellow-Machines-Lab/PixelBro)),
 the third character: Pixel's body with a new soul, on the AMOLED. The first
 half is the playbook as it ran, so the next character can follow it. The
@@ -53,8 +53,8 @@ pick from. Nothing here is decided.
 | The simulator page maps a click to the canvas in proportion to the native picture (`CANVAS` in `boop-simulator.js`), while the board maps through its picture window (`panelToCanvas`); a centred 1.5× canvas is then off by up to 15 canvas pixels at its top and bottom edges, in the simulator only | One touch map for both: the board's |
 | Pixel's steering is much thinner than Boop's (no `replies.md`, no `talk/`); the real template is Boop's | Make one pack the complete steering template, or a `characters/template/steering/` with every file and a comment on what each is for |
 | `signs.md` and `diary.md` get the mood files' token budget (225) by falling through `Steering.Budget`, though only 6 signs and 8 diary lines are ever offered, so good lines were cut | Budgets of their own for `signs.md`, `replies.md` and `diary.md`, sized by what's offered |
-| There is no voice builder in the engine: each pack copies SlimeBuddy's voicegen, and the lists of what `say` offers (feelings, topics, replies) are copied from Swift | A pack-agnostic voicegen in `internal/tools/`, reading a pack's phrase bank (Pixel Bro's `design/bro-voice/lines.txt` format) or its recordings, with `boopdev` printing `say`'s options as JSON so no list is copied by hand |
-| The voice's rules are checked only by `VoiceTests`, pinned to Boop's pack (counts, ids), and the XCTest shim stops at the first failure | Split the pack-generic voice rules (every face has every feeling and topic, swears only on failures, replies' words) into a test that runs for every pack, `boopdev check` included |
+| There is no voice builder in the engine: each pack copies SlimeBuddy's voicegen, and the lists of what a take may mean (the replies, and the skits' ids, which `character.json` names) are copied by hand | A pack-agnostic voicegen in `internal/tools/`, reading a pack's phrase bank (Pixel Bro's `design/bro-voice/lines.txt` format) or its recordings, with `boopdev` printing the replies and the pack's skits as JSON so no list is copied by hand |
+| The voice's rules are checked only by `VoiceTests`, pinned to Boop's pack (counts, ids), and the XCTest shim stops at the first failure | Split the pack-generic voice rules (every face a skit plays in has its takes, swears only in the upset skit, replies' words) into a test that runs for every pack, `boopdev check` included |
 | `make -C internal check` fails with any third pack chosen: boopctl's tests expect Boop's take ids in the chosen pack's voice, and the session tests' `scripts.find("context-wall")` finds two packs with that demo. PixelBro's `make check` runs `tools-test` with `CHARACTER=pixel` to get past it | Pin the tools' tests to the pack they're written against, as `make -C internal test` pins Boop's, and have `scripts.find` prefer the chosen pack |
 | A character repository's `engine/` submodule gets its own PlatformIO core (`firmware/tools/pio-core.sh`), 5 GB more on a disk that had 8 GB free | Find the main checkout's core, or a shared one in `~/.cache`, from a submodule too |
 | `boopdev eval` and `boopdev check` read the staged pack, so a renamed eval or a new demo is "missing" until a restage | Have both restage first, or read the pack in use directly |

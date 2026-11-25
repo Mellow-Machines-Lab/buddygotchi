@@ -275,11 +275,12 @@ final class DemoTests: XCTestCase {
             """)
         let pack = try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel"))
         let problems = script.problems(for: pack)
-        XCTAssertEqual(problems.count, 4, "\(problems)")
+        XCTAssertEqual(problems.count, 5, "\(problems)")
         XCTAssertTrue(problems[0].hasPrefix("line 2: the brain is never asked react.dance"))
         XCTAssertTrue(problems[1].hasPrefix("line 2: react.face has no choice jolly; it has none, \(pack.moods[0].id)"))
-        XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no lasting mood ecstatic"))
-        XCTAssertTrue(problems[3].hasPrefix("line 4: react.reply has no choice dance"))
+        XCTAssertTrue(problems[2].hasPrefix("line 2: the brain is never asked say"), "what it says is never the brain's")
+        XCTAssertTrue(problems[3].hasPrefix("line 3: pixel has no lasting mood ecstatic"))
+        XCTAssertTrue(problems[4].hasPrefix("line 4: react.reply has no choice dance"))
     }
 
     /// characters/DEMOS.md: a header's `start` is when the demo's clock

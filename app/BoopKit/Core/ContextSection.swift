@@ -48,12 +48,13 @@ public enum ContextSection {
             + (specialDays.isEmpty ? "" : "; " + specialDays.joined(separator: ", ")) + "."
     }
 
-    /// The Talk row, while Talk is quiet: what it asks; with `forMs`, for
-    /// how much longer ("shh" or the popover's button, `Core.quiet`).
+    /// The Talk row, while Talk is quiet, a fact for the brain, which never
+    /// picks what Boop says; with `forMs`, for how much longer ("shh" or
+    /// the popover's button, `Core.quiet`).
     static func talk(_ t: Talk, forMs: Int64? = nil, name: String) -> String? {
         guard t == .quiet else { return nil }
         let span = forMs.flatMap { $0 > 0 ? " for \(max(1, ($0 + 59_999) / 60_000)) more min" : nil } ?? ""
-        return "Talk: quiet\(span). You asked \(name) to say less: nothing at small moments, and never a swear."
+        return "Talk: quiet\(span). You asked \(name) to say less."
     }
 
     /// The buddy's row: "Boop: level 12, 40 days old; today's ring 82 of 100."

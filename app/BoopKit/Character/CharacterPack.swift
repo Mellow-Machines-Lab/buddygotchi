@@ -76,9 +76,10 @@ public struct CharacterPack: Sendable {
     /// The words of its voice that say a fix: never where no failed check
     /// came first (`claims_a_fix`).
     public let claimsAFix: Set<String>
-    /// What it says as it brings up something it remembers: the word of its
-    /// voice (`remember_word`), or nil for none.
-    public let rememberWord: String?
+    /// The few moments that always speak, each from takes of its own
+    /// (`skits`, `Skits.play`): none for a pack without, whose Moments are
+    /// silent.
+    public let skits: [Skit]
     /// What the board shows before the Mac sends a mood (CHARACTER.md §4):
     /// the pack's `startup_mood`, else its default mood.
     public let startupMood: String
@@ -124,8 +125,9 @@ extension CharacterPack {
     /// Reads `character.json` from a pack's folder, and throws if it isn't
     /// a pack: a key missing, a face or a mood named twice, a lasting mood
     /// with no face to rest in, a default mood or a fade's end that isn't a
-    /// lasting one, or a face that settles into none. Everything the pack
-    /// has is in the one folder.
+    /// lasting one, a face that settles into none, or a skit with no id, a
+    /// slot that isn't one or a slot another skit has too. Everything the
+    /// pack has is in the one folder.
     public init(directory: URL) throws {
         let file = directory.appendingPathComponent("character.json")
         let data: Data
@@ -157,7 +159,7 @@ extension CharacterPack {
         defaultMood = try string("default_mood")
         startupMood = json["startup_mood"] as? String ?? defaultMood
         claimsAFix = Set(json["claims_a_fix"] as? [String] ?? [])
-        rememberWord = json["remember_word"] as? String
+        skits = try CharacterPack.skits(json["skits"] as? [[String: Any]] ?? [], in: source)
         moods = try (json["moods"] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
         acts = json["acts"] as? [String: [String: String]] ?? [:]
         // The board reports the id, and the firmware names each mood in code.
@@ -214,6 +216,21 @@ extension CharacterPack {
     /// levelled mood's counts): what the board and the popover show.
     public func restingFace(_ id: String, level: Int = 1) -> String {
         lastingById[id]?.face(level: level) ?? id
+    }
+
+    /// The pack's skits, each with an id and slots that are the rules'
+    /// (`RulesBrain.Slot`), no slot in two.
+    static func skits(_ rows: [[String: Any]], in source: String) throws -> [Skit] {
+        var taken: Set<RulesBrain.Slot> = []
+        return try rows.map { row in
+            guard let id = row["id"] as? String, !id.isEmpty else { throw CharacterPackError("\(source): a skit without an id") }
+            let slots = try (row["slots"] as? [String] ?? []).map { name in
+                guard let slot = RulesBrain.Slot(rawValue: name) else { throw CharacterPackError("\(source): skit \(id) plays at \(name), which isn't a slot") }
+                guard taken.insert(slot).inserted else { throw CharacterPackError("\(source): skit \(id) plays at \(name), which another skit has") }
+                return slot
+            }
+            return Skit(id: id, slots: slots)
+        }
     }
 
     static func mood(_ m: [String: Any], in source: String) throws -> Mood {

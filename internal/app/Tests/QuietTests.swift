@@ -60,22 +60,30 @@ final class QuietTests: XCTestCase {
         XCTAssertNil(core.quietUntil(at: 8000))
     }
 
-    /// On Quiet, the setting's or for a while: `say` offers no topic and no
-    /// swear, a small moment and a finish say nothing, and a bigger one may.
-    func testQuietSaysLittle() {
-        let asked = MomentOutput.asked(in: .active)
-        let says = { (talk: Talk) in
-            MomentOutput.speech(asked, talk: talk, in: .active).first { $0.key == MomentOutput.sayKey }?.options.map(\.name) ?? []
-        }
-        guard !says(.normal).isEmpty else { return }  // a pack with no voice has no `say`
-        XCTAssertTrue(says(.normal).contains("work"))
-        XCTAssertEqual(Set(says(.quiet)).intersection(Set(MomentOutput.topics.map(\.name) + ["swear"])), [], "no topic, no swear")
-        XCTAssertTrue(says(.quiet).contains("glad"), "a feeling still")
+    /// On Quiet, the setting's or for a while: a small moment and a finish
+    /// say nothing, a bigger skit may, and nothing swears.
+    func testQuietSaysLittle() throws {
+        try requireVoice()
         var sent: [Moment] = []
-        let react = MomentOutput(queue: { m, _ in sent.append(m) }, blocked: { nil }, talk: { .quiet })
+        var facts: [String: JSONValue] = [:]
+        let react = MomentOutput(queue: { m, _ in sent.append(m) }, blocked: { nil }, talk: { .quiet }, line: { _ in Line("", facts: facts) })
+        let log = Transcript.log().view(now: 0)
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
-        _ = react.run([MomentOutput.emotionKey: a("amused"), MomentOutput.sayKey: a("tickled")], now: poke, log: Transcript.log().view(now: 0))
+        _ = react.run([MomentOutput.emotionKey: a("amused")], now: poke, log: log)
         XCTAssertEqual(sent.last?.say?.takes.count, 0, "a small moment says nothing")
         XCTAssertEqual(sent.last?.mood, "amused", "its face goes on")
+        let finish = Event(at: 0, source: .claude, type: .turn, phase: .end, specificType: "Stop")
+        facts = ["outcome": "done", "length_ms": 180_000, "length": "long", "tools": 3]
+        _ = react.run([MomentOutput.emotionKey: a("proud")], now: finish, log: log)
+        XCTAssertEqual(sent.last?.say?.takes.count, 0, "a finish says nothing, the win skit's included")
+        let check = Event(at: 0, source: .claude, type: .tool, phase: .end, specificType: "PostToolUse")
+        facts = ["topic": "tests", "result": "ok", "failed_before": 2]
+        _ = react.run([MomentOutput.emotionKey: a("proud")], now: check, log: log)
+        XCTAssertEqual(sent.last?.say?.takes.map(\.meaning), ["fix"], "a bigger skit may, with no sound before it")
+        facts = ["topic": "tests", "result": "failed", "failed_before": 2]
+        _ = react.run([MomentOutput.emotionKey: a("grumpy")], now: check, log: log)
+        let upset = try XCTUnwrap(sent.last?.say?.takes.last)
+        XCTAssertEqual(upset.meaning, "upset")
+        XCTAssertNotEqual(upset.kind, .swear, "nothing swears")
     }
 }

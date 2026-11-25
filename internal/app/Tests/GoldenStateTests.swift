@@ -57,9 +57,6 @@ final class GoldenStateTests: XCTestCase {
             case Signs.questionKey:
                 // It asks whenever it may, so asks show in the states.
                 out[q.key] = pick(q, q.options.first { $0.what.hasPrefix("Ask:") }?.name ?? q.options[0].name)
-            case MomentOutput.sayKey:
-                out[q.key] = pick(q, failed ? "upset" : won ? "glad" : poked ? "tickled" : now.contains("tests") ? "tests"
-                                  : now.contains(" finished turn ") ? "done" : "work")
             default:
                 out[q.key] = pick(q, q.options[0].name)
             }

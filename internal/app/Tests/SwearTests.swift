@@ -21,36 +21,27 @@ final class SwearTests: XCTestCase {
         XCTAssertTrue(back.swearing)
     }
 
-    /// Off, `say` offers no swear, at any talk; on, as before.
-    func testOffTheBrainIsNeverOfferedASwear() {
-        let asked = MomentOutput.asked(in: .active)
-        func says(_ swears: Bool, _ talk: Talk) -> [String] {
-            MomentOutput.speech(asked, talk: talk, swears: swears, in: .active)
-                .first { $0.key == MomentOutput.sayKey }?.options.map(\.name) ?? []
-        }
-        for talk in Talk.allCases {
-            XCTAssertFalse(says(false, talk).contains("swear"), "\(talk)")
-        }
-        XCTAssertTrue(says(true, .normal).contains("swear"))
-        XCTAssertEqual(says(false, .normal), says(true, .normal).filter { $0 != "swear" }, "only the swear goes")
-        // The default, as the evals and every caller that doesn't say, swears.
-        XCTAssertEqual(MomentOutput.speech(asked, talk: .normal, in: .active).first { $0.key == MomentOutput.sayKey }?.options.map(\.name),
-                       says(true, .normal))
+    /// Off, no skit swears, at any talk; on, the upset skit swears where
+    /// its rule says (`Skits.play`). The brain is never asked.
+    func testOffNoSkitSwears() {
+        let piled: [String: JSONValue] = ["checks_failed": 2]
+        XCTAssertEqual(Skits.play(slot: .failed, facts: piled, swears: false, in: CharacterPack.active.skits)?.swears, false)
+        XCTAssertEqual(Skits.play(slot: .failed, facts: piled, swears: true, in: CharacterPack.active.skits)?.swears, true)
+        XCTAssertFalse(MomentOutput(queue: { _, _ in }, blocked: { nil }).questions(now: nil, log: Self.log)
+            .contains { $0.options.contains { $0.name == "swear" } })
     }
 
-    /// Off, even a swear answered plays no swear take: the upset feeling
-    /// in a plainer kind. On, a failed turn's swear is a swear.
+    /// Off, a failed turn whose checks piled up plays no swear take: the
+    /// upset skit's plain words. On, a swear.
     func testOffNoSwearTakePlays() throws {
         try requireVoice()
         for swears in [false, true] {
             var queued: [Moment] = []
-            // NOW is a failed turn: a swear plays only on a failure.
+            // NOW is a failed turn, after two failed checks.
             let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, swears: { swears },
-                                     line: { _ in Line("", facts: ["outcome": "failed", "length_ms": 0]) })
-            let asked = react.questions(now: nil, log: Self.log).first { $0.key == MomentOutput.sayKey }?.options.map(\.name) ?? []
-            XCTAssertEqual(asked.contains("swear"), swears)
+                                     line: { _ in Line("", facts: ["outcome": "failed", "length_ms": 0, "checks_failed": 2]) })
             let failed = Event(at: 0, source: .claude, type: .turn, phase: .end, specificType: "StopFailure")
-            _ = react.run(["react.face": a("grumpy"), "say": a("swear")], now: failed, log: Self.log)
+            _ = react.run(["react.face": a("grumpy")], now: failed, log: Self.log)
             let kind = queued.last?.say?.takes.last?.kind
             if swears {
                 XCTAssertEqual(kind, .swear)

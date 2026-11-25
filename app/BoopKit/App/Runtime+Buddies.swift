@@ -288,6 +288,7 @@ extension Runtime {
         },
         moodFace: { [mood] log in MoodOutput.face(mood, log, pack: pack) },
         moodID: { [mood] log in MoodOutput.value(mood, log, pack: pack) },
+        moodLevel: { [mood] log in MoodOutput.level(mood, log) },
         today: m.company, seed: m.seed)
         h.output(mood)
         react.earned = { e in e.flatMap { m.earned($0.seq) } }

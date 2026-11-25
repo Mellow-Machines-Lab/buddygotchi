@@ -138,26 +138,22 @@ final class MomentRuleTests: XCTestCase {
         }
     }
 
-    /// Pins the working check-in: a small Moment with a word about the
-    /// work and no sign; focused for the first half of its round of 4,
-    /// determined for the rest; a sad, cross or lonely mood keeps its own
-    /// face; the word is the tests' when they're what the turn is at.
+    /// Pins the working check-in: a small Moment in silence and no sign;
+    /// focused for the first half of its round of 4, determined for the
+    /// rest; a sad, cross or lonely mood keeps its own face.
     func testTheWorkingCheckInIsARule() throws {
         XCTAssertEqual(EventLine.round, 4)
-        func pick(_ rung: Int, topic: String? = nil, mood: String = "calm", face: String = "calm") -> [String] {
-            let p = MomentRule.checkIn(rung: rung, topic: topic, mood: mood, face: face)
-            return [p.face, p.say]
+        func pick(_ rung: Int, mood: String = "calm", face: String = "calm") -> String {
+            MomentRule.checkIn(rung: rung, mood: mood, face: face)
         }
-        XCTAssertEqual((1...4).map { pick($0)[0] }, ["focused", "focused", "determined", "determined"])
-        XCTAssertEqual(pick(1, mood: "focused", face: "focused"), ["focused", "work"])
-        XCTAssertEqual(pick(3, topic: "tests", mood: "happy", face: "happy"), ["determined", "tests"])
-        XCTAssertEqual(pick(2, topic: "build"), ["focused", "work"])
-        XCTAssertEqual(pick(4, mood: "cross", face: "grumpy"), ["grumpy", "work"], "cross: its level's face")
-        XCTAssertEqual(pick(1, mood: "sad", face: "sad")[0], "sad")
-        XCTAssertEqual(pick(1, mood: "lonely", face: "lonely")[0], "lonely")
-        XCTAssertTrue(["work", "tests"].allSatisfy(MomentOutput.topics.map(\.name).contains), "words `say` has")
+        XCTAssertEqual((1...4).map { pick($0) }, ["focused", "focused", "determined", "determined"])
+        XCTAssertEqual(pick(1, mood: "focused", face: "focused"), "focused")
+        XCTAssertEqual(pick(3, mood: "happy", face: "happy"), "determined")
+        XCTAssertEqual(pick(4, mood: "cross", face: "grumpy"), "grumpy", "cross: its level's face")
+        XCTAssertEqual(pick(1, mood: "sad", face: "sad"), "sad")
+        XCTAssertEqual(pick(1, mood: "lonely", face: "lonely"), "lonely")
 
-        // As it plays: small, a word however small, no sign, no move.
+        // As it plays: small, in silence, no sign, no move.
         var queued: [Moment] = []
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, moodFace: { _ in "calm" }, moodID: { _ in "calm" })
         let log = Transcript.log().view(now: 0)
@@ -168,11 +164,7 @@ final class MomentRuleTests: XCTestCase {
         XCTAssertEqual(queued.last?.loops, 1)
         XCTAssertNil(queued.last?.sign)
         XCTAssertNil(queued.last?.anim)
-        if !Take.all.isEmpty {
-            let takes = try XCTUnwrap(queued.last?.say?.takes)
-            XCTAssertEqual(takes.map(\.meaning), ["tests"], "one word, no sound before it at a small moment")
-            XCTAssertEqual(takes.first?.kind, .word)
-        }
+        XCTAssertEqual(queued.last?.say?.takes, [], "in silence")
         XCTAssertNil(react.ruled(Event(at: 0, source: .clock, type: .checkIn, specificType: "check_in"), facts: [:], log: log),
                      "the idle check-in is Jev's")
     }
@@ -209,17 +201,18 @@ final class MomentRuleTests: XCTestCase {
         XCTAssertTrue(["boop back!", "hi, world!"].contains(queued.last?.sign ?? ""), "its kind's, or any's")
         XCTAssertEqual(queued.last?.loops, 1)
         XCTAssertNil(queued.last?.reply)
+        XCTAssertEqual(queued.last?.say?.takes, [], "in silence")
     }
 
-    /// Jev is asked for neither: no question's key or text names a move or
-    /// a size.
+    /// Jev is asked for neither, nor what Boop says: no question's key or
+    /// text names a move, a size or a `say`.
     func testNeitherIsAsked() {
         let react = MomentOutput(queue: { _, _ in }, blocked: { nil })
         let log = Transcript.log().view(now: 0)
         for e in [event(.poke), event(.turn, .end, "Stop"), event(.said, nil, "device", data: ["words": "hi"]), event(.checkIn, nil, "check_in")] {
             let keys = react.questions(now: e, log: log).map(\.key)
             XCTAssertFalse(keys.contains("react.move") || keys.contains("react.intensity"), "\(keys)")
-            XCTAssertEqual(keys.filter { $0 != "react.reply" && $0 != Signs.questionKey }, ["react.face"] + (Take.all.isEmpty ? [] : ["say"]))
+            XCTAssertEqual(keys.filter { $0 != "react.reply" && $0 != Signs.questionKey }, ["react.face"])
         }
     }
 

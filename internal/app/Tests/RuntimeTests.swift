@@ -657,7 +657,6 @@ final class RuntimeTests: XCTestCase {
         var options = try options(transport, brain: ScriptedBrain(id: "scripted", always: [
             "mood": Answer(choice: "focused", probabilities: ["focused": 0.7]),
             "react.face": Answer(choice: "grumpy", probabilities: ["grumpy": 0.6]),
-            "say": Answer(choice: "work", probabilities: ["work": 0.5]),
         ]))
         options.debug = true
         options.log = { line in lines.lock.withLock { lines.log.append(line) } }
@@ -689,9 +688,7 @@ final class RuntimeTests: XCTestCase {
         func opening(_ mood: String) -> String { String(Self.steering.mood(mood).split(separator: "\n")[1].prefix(24)) }
         XCTAssertTrue(heads[0].contains(opening("calm")), "the first pass read calm")
         XCTAssertTrue(heads[1].contains(opening("focused")), "the next reads the new mood's file")
-        XCTAssertTrue(Take.all.contains { $0.meaning == "work" && $0.moods.contains("grumpy")
-                          && passes()[1].contains(#"\#(Self.name) had a grumpy moment (small), and said \"\#($0.text)\"."#) },
-                      "HISTORY shows what the outputs did")
+        XCTAssertTrue(passes()[1].contains("\(Self.name) had a grumpy moment (small)."), "HISTORY shows what the outputs did")
         XCTAssertFalse(lines.lock.withLock { lines.log.contains { $0.contains("PERSONALITY") } }, "the state stays out of boop.log")
     }
 
@@ -830,10 +827,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(pass.contains("react.face excited 1.00"), pass)
         XCTAssertTrue(pass.contains("    │ You are the mind of \(creature)"), "the first state in full")
         let started = try XCTUnwrap(printed.first { $0.hasPrefix("  … react: \(Self.name) had an excited moment (small)") }, "\(printed)")
-        if !Take.all.isEmpty {  // a pack with a voice says a work take with it
-            let word = String(started.dropFirst("  … react: \(Self.name) had an excited moment (small), and said \"".count).dropLast(2))
-            XCTAssertTrue(Take.all.contains { $0.text == word && $0.meaning == "work" && $0.moods.contains("excited") }, "a work take: \(word)")
-        }
+        XCTAssertFalse(started.contains("said"), "a prompt is no skit: in silence")
         XCTAssertTrue(printed.contains { $0.hasPrefix("  ✗ react (") && $0.hasSuffix(") didn't happen: no device connected") },
                       "the fake device never connected: \(printed)")
         let p = try XCTUnwrap(debugLines().compactMap { $0["pass"] as? [String: Any] }.first)
@@ -1139,7 +1133,7 @@ final class RuntimeTests: XCTestCase {
                        MoodOutput.options(from: "calm", mayMiss: false).map(\.name), "staying calm, then every other mood but lonely")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
-        XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, and may say something.")
+        XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? A moment: it shows one emotion in this mood's way.")
         let none = try XCTUnwrap((questions[1]["options"] as? [[String: Any]])?.first)
         XCTAssertEqual(none["name"] as? String, "none")
         XCTAssertEqual(none["what"] as? String, "Stay quiet: most check-ins where nothing has happened; nothing in NOW is worth a moment, "
@@ -1252,8 +1246,8 @@ final class RuntimeTests: XCTestCase {
         eventually("no brain") { runtime.home.sync { runtime.jevKey != nil } }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
 
-        dev(#"{"dev":"answer","answers":{"react.face":"grumpy","say":"work"}}"#)
-        eventually("a take with no brain") { transport.dos("react").contains { $0.contains(#""say":{"take":"#) && $0.contains(#""mood":"grumpy""#) } }
+        dev(#"{"dev":"answer","answers":{"react.face":"grumpy"}}"#)
+        eventually("a face with no brain") { transport.dos("react").contains { $0.contains(#""mood":"grumpy""#) } }
         dev(#"{"dev":"mood","mood":"grumpy"}"#)
         eventually("cross, the mood a grumpy face is of") { runtime.home.sync { runtime.moodNow == "cross" } }
         dev(#"{"dev":"mood","mood":"happy"}"#)
@@ -1265,12 +1259,11 @@ final class RuntimeTests: XCTestCase {
         let pass = try XCTUnwrap(lines.compactMap { $0["pass"] as? [String: Any] }.first)
         XCTAssertTrue(pass["for"] is NSNull)
         XCTAssertEqual(pass["by"] as? String, "dashboard")
-        XCTAssertEqual(pass["questions"] as? [String], ["react.face", "say"])
+        XCTAssertEqual(pass["questions"] as? [String], ["react.face"])
         XCTAssertEqual((pass["answers"] as? [String: [String: Any]])?["react.face"]?["p"] as? [String: Double], ["grumpy": 1])
         let actions = debugActions().filter { $0.actionPhase != .end && $0["by"] == "dashboard" }
         let worked = try XCTUnwrap(actions.first?["message"]?.string)
-        XCTAssertTrue(Take.all.contains { worked == "\(Self.name) had a grumpy moment (small), and said \"\($0.text)\"." && $0.meaning == "work"
-            && $0.moods.contains("grumpy") }, worked)
+        XCTAssertEqual(worked, "\(Self.name) had a grumpy moment (small).")
         XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["\(Self.name)'s mood changed: calm → cross.",
                                                               "\(Self.name)'s mood changed: cross → happy.",
                                                               "\(Self.name)'s mood changed: happy → proud."])
@@ -1438,7 +1431,7 @@ final class RuntimeTests: XCTestCase {
         try runtime.start()
         defer { runtime.stop() }
         dev(#"{"dev":"mood","mood":"grumpy"}"#)
-        dev(#"{"dev":"answer","answers":{"react.face":"grumpy","say":"upset"}}"#)
+        dev(#"{"dev":"answer","answers":{"react.face":"grumpy"}}"#)
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         eventually("the hook after them") { transport.sent.contains { $0.contains(#""base":"working""#) } }
         runtime.home.sync {}

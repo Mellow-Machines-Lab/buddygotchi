@@ -1,6 +1,6 @@
 # The brain: who thinks for Boop
 
-Updated 2026-11-22. How Boop decides what to feel, say and remember, with no
+Updated 2026-11-24. How Boop decides what to feel, say and remember, with no
 key and no bill. It says what each layer is for and how Boop should behave;
 the code and [architecture.html](../architecture.html) say how.
 
@@ -19,8 +19,10 @@ On the `brain` branch, not merged:
   card's `boop_lines`, `you_seemed` and `remember`, Boop's pick of a line
   after the finish (`MomentRule.offeredLine`), the read of you as a mood
   fact, and the note judged by the dream.
-- Not built: the dream writing tomorrow's lines, layer 4, and Jev composed
-  on top of the rules.
+- Built: layer 4, skits (`Skits`, the pack's `skits`). It replaces the
+  babble plan.
+- Not built: the dream writing tomorrow's lines, and Jev composed on top
+  of the rules.
 
 ## The aim
 
@@ -49,7 +51,7 @@ not run out.
 | 1. Rules | The mood and its fades, the face at every event, sizes, moves, touches, locks | Always | None | Nothing |
 | 2. The calling agent | Offers Boop's line for the turn's end, says how you seemed, notes one thing worth remembering | While an agent's turn runs | None | The card tools the agent already calls |
 | 3. The dream | Writes Boop's memory, and fresh lines for the next day | While Boop sleeps | None | The buyer's own agent tool, run by Boop |
-| 4. Babble | Gives every line a voice, in Boop's own sounds | Whenever Boop holds up a line | None | Syllable takes on the board |
+| 4. Skits | Says a word at the few moments that call for one, each from takes of its own | A long win, a failure, a fix, you back | None | Recorded takes on the board |
 | On top: Jev | A finer pick of emotion, for people who add a key | When a key is there | 0.3 s | A key |
 
 Each layer works without the ones below it in the table, and Boop is whole
@@ -92,7 +94,7 @@ optional:
 
 | The agent gives | Boop does with it |
 | --- | --- |
-| Two short lines Boop might say about this turn, in different feelings, one of them doubtful | Picks one by its own mood and by what it saw (a failed check, a long fight), or picks neither. Holds it up at the finish and babbles it |
+| Two short lines Boop might say about this turn, in different feelings, one of them doubtful | Picks one by its own mood and by what it saw (a failed check, a long fight), or picks neither. Holds it up at the finish |
 | How you seemed this turn, from a short list | Counts it as a fact the mood map already knows ("the person sounding frustrated"). The map decides the move, or none |
 | One plain sentence about you or your work that is worth keeping | Keeps it for the dream, which decides whether it becomes a memory |
 
@@ -141,21 +143,29 @@ thinking happens, because nobody is waiting.
 How it should feel: Boop knows you a little better each morning, and says
 so in words it did not have yesterday.
 
-## Layer 4: babble
+## Layer 4: skits
 
-> On hold: Boop's voice is being redesigned. Syllable babble was turned down
-> as uncanny; whole recorded lines of nonsense that end on a real word are
-> the likely direction. This layer will follow that design.
+This replaces the babble plan: syllable babble was turned down as uncanny.
 
-Boop has a voice of its own, and it is not speech. When it holds up a line,
-it babbles it: one sound for each syllable, so a longer line babbles longer.
-The mood sets the pitch and the pace. The words are the caption.
+What Boop says is no brain's question. A skit is one kind of moment that
+has takes of its own and always speaks, and a plain rule says when each
+plays (`Skits.play`, from the slot the rules read an event as). There are
+four:
 
-- The board plays short recorded syllables in an order the Mac sends. No
-  sound is streamed and no speech service is called.
-- Babble is for moments that earn it. Small moments keep their single sound.
-- Talking to Boop gets the same answer: it listens, thinks for a few seconds
-  in character, then babbles a short reply with its caption.
+| Skit | When it plays | What it says |
+| --- | --- | --- |
+| `win` | A turn of a minute or more done | "Done", "Nailed it", "Ta-da-da" |
+| `upset` | A failed turn, the agent giving up, or the third failed check in a row | "Oh no", "Not again"; a swear only when the failures pile up and swearing is on |
+| `fix` | A check passing after it failed | "Phew...", "Fixed" |
+| `back` | You back at the Mac after a break | "Hello", "Hey" |
+
+- No brain can veto one: when Jev picks no face, the skit plays in the
+  rules brain's face for it.
+- Every other Moment is silent but your words' reply and a lock's real
+  wave, which say their own words. On Quiet a small moment or a finish says
+  nothing, as before.
+- The takes are the recorded voice's, listed again as the skit's
+  (voicegen's `SKIT_OF`): no new recordings, and no board needs a new card.
 
 ## Jev, on top
 
@@ -201,7 +211,7 @@ This changes one promise, and the README must say it plainly.
 | May Boop's memory go to the agent? | Yes, said plainly, with a switch |
 | Who dreams? | The buyer's agent tool, run by Boop asleep. A long turn is the fallback |
 | Why not the Mac's own model? | Its notes were not good enough |
-| Does Boop speak? | It babbles, with a caption. Never natural speech |
+| Does Boop speak? | A recorded word at a skit, with a caption. Never natural speech |
 | A paid speech service? | No. Nothing that needs a subscription |
 | Where does a long sentence show? | 40 characters on the board; whole in the popover |
 
@@ -213,5 +223,5 @@ This changes one promise, and the README must say it plainly.
    real week. And whether the tool runs unseen with only a plan's login.
 3. **Does the rules brain hold up?** The eval scenarios, with no Jev.
 4. **The provider's terms** for an app that runs a buyer's agent tool.
-5. **On the board:** is babble at a finish a charm or a noise, and how many
-   syllables keep it from sounding looped.
+5. **On the board:** is a skit's word a charm or a noise, and how many takes
+   a skit needs so two in a row rarely repeat.

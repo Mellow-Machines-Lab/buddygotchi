@@ -20,8 +20,7 @@ func requireVoice() throws {
     try XCTSkipUnless(!Take.all.isEmpty, "needs a character pack with a voice")
 }
 
-/// The brain's questions, in order: a pack with no voice is never asked
-/// what to say.
+/// The brain's questions, in order: never what to say.
 var askedKeys: [String] {
-    ["mood", MomentOutput.emotionKey] + (Take.all.isEmpty ? [] : [MomentOutput.sayKey])
+    ["mood", MomentOutput.emotionKey]
 }

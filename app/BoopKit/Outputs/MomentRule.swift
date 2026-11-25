@@ -4,7 +4,8 @@ import MellowHarness
 /// What code decides of a Moment, so Jev is never asked: its move and its
 /// size at every pass, your hello and your bye (`hello`, `bye`), and the
 /// whole Moment at your lock or unlock, a working check-in and a boop from
-/// the world, which have no pass. Plain
+/// the world, which have no pass. What it says is code's too (`Skits`).
+/// Plain
 /// functions of the event, its line's facts and the mood: the tables are
 /// here and nowhere else (`MomentRuleTests` pins them).
 public enum MomentRule {
@@ -258,16 +259,14 @@ public enum MomentRule {
 
     // MARK: The working check-in
 
-    /// The face and the word of a working check-in, the `rung`th of its
-    /// round on the turn (from 1, of `EventLine.round`), whose latest
-    /// `topic` is the agent's, with the mood's own resting `face`: a small
-    /// Moment, never a sign. A sad, cross or lonely mood keeps its own
-    /// face; any other is focused for the round's first half and
-    /// determined for the rest. The word is about the tests when they're
-    /// what the turn is at, else about the work.
-    public static func checkIn(rung: Int, topic: String?, mood: String?, face: String) -> (face: String, say: String) {
+    /// The face of a working check-in, the `rung`th of its round on the
+    /// turn (from 1, of `EventLine.round`), with the mood's own resting
+    /// `face`: a small Moment in silence, never a sign. A sad, cross or
+    /// lonely mood keeps its own face; any other is focused for the round's
+    /// first half and determined for the rest.
+    public static func checkIn(rung: Int, mood: String?, face: String) -> String {
         let own = mood == cross || mood == sad || mood == MoodOutput.missing
-        return (own ? face : rung > EventLine.round / 2 ? "determined" : "focused", topic == "tests" ? "tests" : "work")
+        return own ? face : rung > EventLine.round / 2 ? "determined" : "focused"
     }
 
     // MARK: A boop from the world
@@ -275,7 +274,7 @@ public enum MomentRule {
     /// The face and the size for another buddy's gesture of `kind`: warm
     /// and small, proud and medium for a cheer; cross, it softens to a
     /// curious look, small. A sign answers it either way (`Signs.world`),
-    /// and it says how glad it is.
+    /// in silence.
     public static func world(kind: String, mood: String?) -> (face: String, size: Int) {
         if mood == cross { return ("curious", small) }
         switch kind {

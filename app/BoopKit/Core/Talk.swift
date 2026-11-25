@@ -3,11 +3,10 @@ import Foundation
 /// How much the character says, chosen in Settings: quiet or normal.
 /// "Shh", the hush reply and the popover's button make it quiet for half
 /// an hour, and then it's the setting's again (`Core.quiet`). CONTEXT's
-/// Talk row (`ContextSection.talk`) tells the brain when it's quiet, which
-/// outranks what PERSONALITY and MOOD say of words, and the setting has
-/// its check-in pace (`pace`). On Quiet `MomentOutput` holds to it in
-/// code: `say` offers no topic and no swear, a small moment or a finish
-/// says nothing, and no idle beat comes but an agent waiting on you
+/// Talk row (`ContextSection.talk`) tells the brain when it's quiet, and
+/// the setting has its check-in pace (`pace`). On Quiet `MomentOutput`
+/// holds to it in code: a small moment or a finish says nothing, nothing
+/// swears, and no idle beat comes but an agent waiting on you
 /// (`IdleBeat`). Nothing in code holds a reaction back.
 public enum Talk: String, CaseIterable, Codable, Sendable {
     case quiet, normal

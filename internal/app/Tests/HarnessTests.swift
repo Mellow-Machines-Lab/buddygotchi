@@ -139,8 +139,9 @@ final class HarnessTests: XCTestCase {
                        #"{"outcome":"success","variant":1,"mood":"happy","loops":3}"#)
     }
 
-    /// `none` does nothing; the meaning counts over 0.35, and Voice says a
-    /// take of it in the face's mood, else nothing; the reaction carries
+    /// `none` does nothing; a reply counts over 0.35; what it says is a
+    /// rule's (a skit's takes, a reply's own words), and Voice says a take
+    /// of it in the face's mood, else nothing; the reaction carries
     /// the expression as its `mood`, the size the rule gives NOW as its
     /// loops (small to big: 1–3), the take as big as it, and a `say`
     /// whether or not there's a take, and goes to the queue with the
@@ -149,7 +150,7 @@ final class HarnessTests: XCTestCase {
     /// in the face.
     func testReact() throws {
         try requireVoice()
-        XCTAssertEqual(MomentOutput.sayFloor, 0.35)
+        XCTAssertEqual(MomentOutput.replyFloor, 0.35)
         var queued: [(reaction: Moment, pending: Pending)] = []
         var sent: [Moment] { queued.map(\.reaction) }
         var why: String?
@@ -164,13 +165,14 @@ final class HarnessTests: XCTestCase {
         let back = Event(at: 0, source: .mac, type: .presence, phase: .end, specificType: "unlocked")
         /// A finish's facts: how it ended, after `minutes`, with `tools` calls.
         func finished(_ outcome: String, minutes: Int64, tools: Int64 = 3, kind: String? = nil) -> [String: JSONValue] {
-            var f: [String: JSONValue] = ["outcome": .string(outcome), "length_ms": .int(minutes * 60_000), "tools": .int(tools)]
+            var f: [String: JSONValue] = ["outcome": .string(outcome), "length_ms": .int(minutes * 60_000),
+                                          "length": .string(Band.length(ms: minutes * 60_000)), "tools": .int(tools)]
             if let kind { f["message"] = .object(["kind": .string(kind)]) }
             return f
         }
         /// Runs `answers` at `now`, and checks the result is started with
         /// `message` and the handle its reaction was queued with.
-        func starts(_ answers: Answers, at now: Event, _ message: String, line: UInt = #line) {
+        func starts(_ answers: Answers, at now: Event, _ message: String, skit: String? = nil, line: UInt = #line) {
             let before = queued.count
             let result = react.run(answers, now: now, log: Self.log)
             XCTAssertEqual(queued.count, before + 1, "one reaction queued", line: line)
@@ -178,25 +180,28 @@ final class HarnessTests: XCTestCase {
             // The start carries the takes' ids.
             let said = queued.last?.reaction.say?.text ?? "?"
             var expected: [String: JSONValue] = ["takes": .array((queued.last?.reaction.say?.takes ?? []).map { .string($0.id) })]
+            if let skit { expected["skit"] = .string(skit) }
             if let reply = queued.last?.reaction.reply { expected["reply"] = .string(reply) }
             XCTAssertEqual(result, queued.last.map { q in
                 .started(message.replacingOccurrences(of: "SAID", with: said), q.pending, facts: expected)
             }, line: line)
         }
         XCTAssertNil(react.run(["react.face": a("none")], now: poke, log: Self.log))
-        // What you said is a medium moment: a word.
-        starts(["react.face": a("grumpy"), "react.reply": a("no"), "say": a("upset", 0.57)], at: said,
+        // What you said is a medium moment: a word, the reply's own.
+        starts(["react.face": a("grumpy"), "react.reply": a("no")], at: said,
                #"\#(creature) had a grumpy moment (medium), replying no, and said "SAID"."#)
-        // A turn of 9 minutes that failed is a big one.
+        // A turn of 9 minutes that failed is a big one: the upset skit.
         facts = finished("failed", minutes: 9)
-        starts(["react.face": a("sad"), "say": a("glad", 0.31)], at: finish, "\(creature) had a sad moment (big), playing a failure.")
+        starts(["react.face": a("sad")], at: finish, #"\#(creature) had a sad moment (big), playing a failure, and said "SAID"."#,
+               skit: "upset")
         XCTAssertEqual(sent.count, 2)
         XCTAssertEqual(Set(queued.map { ObjectIdentifier($0.pending) }).count, 2, "a handle each")
         let grumbled = try XCTUnwrap(sent[0].say?.takes)
         XCTAssertEqual(grumbled.last?.kind, .word, "as big as the moment: medium is a word")
-        XCTAssertTrue(grumbled.allSatisfy { $0.moods.contains("grumpy") }, "in the face's mood")
-        XCTAssertNotNil(sent[1].say, "a reaction that says nothing still has a say")
-        XCTAssertEqual(sent[1].say?.takes, [], "below the floor, Jev is guessing: nothing")
+        XCTAssertTrue(grumbled.allSatisfy { $0.moods.contains("grumpy") && $0.part == .reply && $0.meaning == "no" }, "in the face's mood")
+        let upset = try XCTUnwrap(sent[1].say?.takes.last)
+        XCTAssertEqual([upset.part.rawValue, upset.meaning], ["skit", "upset"])
+        XCTAssertEqual(upset.kind, .phrase, "big: a phrase, and no swear with no failed checks")
         XCTAssertEqual(sent.map(\.mood), ["grumpy", "sad"], "each wears its face")
         XCTAssertEqual(sent.map(\.loops), [2, 3], "held as long as the moment is big")
         let failure = sent[1]
@@ -212,20 +217,20 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(Set(MomentOutput.scenes.keys), Set(MomentOutput.moves), "each plays a scene")
         queued.removeAll()
         facts = finished("done", minutes: 9)
-        starts(["react.face": a("proud"), "say": a("glad")], at: finish,
-               #"\#(creature) had a proud moment (big), playing a success, and said "SAID"."#)
+        starts(["react.face": a("proud")], at: finish,
+               #"\#(creature) had a proud moment (big), playing a success, and said "SAID"."#, skit: "win")
         XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .phrase, "a proud phrase, at a big success")
         let success = try XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(MomentOutput.move(of: success), "success")
         let line = success.line(id: 7, play: .next)
         XCTAssertTrue(line.hasPrefix(#"{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","turn":2,"who":{"agent":"codex","thread":"fix-nav"},"say":"#), line)
         XCTAssertTrue(line.hasSuffix(#","mood":"proud","loops":3}}"#), line)
-        // Saying nothing is `say`'s none: the face, and a finish, play in silence.
+        // A quick win is no skit: the face, and its finish, play in silence.
         facts = finished("done", minutes: 0)
-        starts(["react.face": a("pleased"), "say": a("none")], at: finish, "\(creature) had a pleased moment (small), playing a success.")
+        starts(["react.face": a("pleased")], at: finish, "\(creature) had a pleased moment (small), playing a success.")
         XCTAssertEqual(sent.last?.say?.takes, [], "a face in silence")
         facts = finished("done", minutes: 2, tools: 0, kind: "answer")
-        starts(["react.face": a("curious"), "say": a("none")], at: finish, "\(creature) had a curious moment (small), playing a notice.")
+        starts(["react.face": a("curious")], at: finish, "\(creature) had a curious moment (small), playing a notice.")
         let reply = try XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(reply.anim, "notice", "a chat turn plays no finish: a look up at you")
         XCTAssertNil(reply.outcome)
@@ -233,8 +238,8 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(reply.sign, MomentOutput.yourTurn, "it holds \"your turn\" low, in the strip's place")
         XCTAssertTrue(reply.low)
         facts = ["away_ms": .int(2 * 60 * 60_000)]
-        starts(["react.face": a("happy"), "say": a("hello")], at: back,
-               #"\#(creature) had a happy moment (medium), playing a wake up, and said "SAID"."#)
+        starts(["react.face": a("happy")], at: back,
+               #"\#(creature) had a happy moment (medium), playing a wake up, and said "SAID"."#, skit: "back")
         let woke = try XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(woke.anim, "wake_up")
         XCTAssertNil(woke.outcome, "a wake-up has no outcome")
@@ -255,34 +260,26 @@ final class HarnessTests: XCTestCase {
         }
         XCTAssertEqual(sent.count, 0, "no face or take while something needs you")
         why = nil
-        // A success take only on a success, a swear only on a failure: a
-        // grumpy swear at a check failing mid-turn is a phrase, and at a
-        // failed turn a swear, however small the moment.
-        starts(["react.face": a("grumpy"), "say": a("swear")], at: poke,
-               #"\#(creature) had a grumpy moment (small), and said "SAID"."#)
-        XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .phrase)
-        facts = finished("failed", minutes: 0)
-        let swore = react.run(["react.face": a("grumpy"), "say": a("swear")], now: finish, log: Self.log)
+        // A poke is no skit: a face in silence. A failed turn swears once
+        // its failed checks pile up, however small the moment; before,
+        // a plain take.
+        starts(["react.face": a("grumpy")], at: poke, "\(creature) had a grumpy moment (small).")
+        facts = finished("failed", minutes: 0).merging(["checks_failed": 1]) { $1 }
+        _ = react.run(["react.face": a("grumpy")], now: finish, log: Self.log)
+        XCTAssertNotEqual(queued.last?.reaction.say?.takes.last?.kind, .swear)
+        XCTAssertNotNil(queued.last?.reaction.say?.takes.last, "a plain take")
+        facts = finished("failed", minutes: 0).merging(["checks_failed": 2]) { $1 }
+        let swore = react.run(["react.face": a("grumpy")], now: finish, log: Self.log)
         XCTAssertEqual(queued.last?.reaction.say?.takes.last?.kind, .swear, "\(String(describing: swore))")
         queued.removeAll()
-        // The two questions, the same at every event; what you said adds its reply.
-        XCTAssertEqual(react.questions(now: poke, log: Self.log).map(\.key), ["react.face", "say"])
-        XCTAssertEqual(react.questions(now: said, log: Self.log).map(\.key), ["react.face", "react.reply", "say"])
+        // The one question, the same at every event; what you said adds its
+        // reply. What it says is never asked.
+        XCTAssertEqual(react.questions(now: poke, log: Self.log).map(\.key), ["react.face"])
+        XCTAssertEqual(react.questions(now: said, log: Self.log).map(\.key), ["react.face", "react.reply"])
         XCTAssertEqual(react.questions(now: poke, log: Self.log)[0].options.map(\.name), ["none"] + CharacterPack.active.moods.map(\.id),
                        "the faces are every mood's")
-        XCTAssertEqual(react.questions(now: poke, log: Self.log)[1].options.map(\.name),
-                       ["none", "swear", "upset", "glad", "tickled", "shaken"] + MomentOutput.topics.map(\.name))
-        XCTAssertEqual(react.questions(now: poke, log: Self.log)[1].options.count, 12, "none, 4 feelings, a swear and the 6 topics")
-        XCTAssertEqual(MomentOutput.topics.map(\.name), ["retry", "work", "tests", "done", "quiet", "hello"])
         XCTAssertEqual(MomentOutput.replies.map(\.name), ["yes", "no", "huh", "hello", "bye", "thanks", "ouch", "comfort", "hehe", "status", "hush"])
         XCTAssertLessThanOrEqual(MomentOutput.sizes.map(\.loops).max() ?? 0, Moment.maxLoops, "the device plays them all")
-        XCTAssertEqual(Set(MomentOutput.feelings.map(\.name)), Voice.answers(.feeling), "a feeling for every take's, and none without one")
-        // A pack's say offers only the feelings its voice has: Pixel's
-        // older copy of the voice has no shaken takes.
-        if let pixel = try? CharacterPack.named(id: "pixel") {
-            XCTAssertEqual(MomentOutput.feelings(in: pixel).map(\.name), ["upset", "glad", "tickled"])
-        }
-        XCTAssertEqual(Set(MomentOutput.topics.map(\.name)), Voice.answers(.about), "a topic for every take's, and none without one")
     }
 
     /// Only the brain's reactions carry an expression; a

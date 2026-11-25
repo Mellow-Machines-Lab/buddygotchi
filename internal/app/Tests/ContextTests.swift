@@ -61,9 +61,9 @@ final class ContextTests: XCTestCase {
     func testTheTalkAndBoopRows() {
         XCTAssertNil(ContextSection.talk(.normal, name: "Boop"))
         XCTAssertEqual(ContextSection.talk(.quiet, name: "Boop"),
-                       "Talk: quiet. You asked Boop to say less: nothing at small moments, and never a swear.")
+                       "Talk: quiet. You asked Boop to say less.")
         XCTAssertEqual(ContextSection.talk(.quiet, forMs: 8 * minute - 1000, name: "Boop"),
-                       "Talk: quiet for 8 more min. You asked Boop to say less: nothing at small moments, and never a swear.")
+                       "Talk: quiet for 8 more min. You asked Boop to say less.")
         XCTAssertEqual(ContextSection.talk(.normal, forMs: 0, name: "Boop"), nil)
         XCTAssertEqual(ContextSection.buddy(.init(level: 12, today: 82, daysOld: 40), name: "Boop"), "Boop: level 12, 40 days old; today's ring 82 of 100.")
         XCTAssertEqual(ContextSection.buddy(.init(level: 1, today: 0, daysOld: 0), name: "Boop"), "Boop: level 1, hatched today; today's ring 0 of 100.")

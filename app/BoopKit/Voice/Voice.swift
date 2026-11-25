@@ -1,13 +1,14 @@
 import Foundation
 
 /// Boop's voice: the recorded takes the board has, and what a
-/// reaction says. The only code that knows what Boop can say. The brain
-/// answers what Boop says (a feeling, a swear or what NOW is about) and how
-/// big the moment is, which picks the kind; the face picks the mood; Voice
-/// finds a take of it that plays in that mood. Which moods a take plays in
-/// is the pack's table's to say; Voice never borrows one from another mood.
+/// reaction says. The only code that knows what Boop can say. A rule says
+/// what a Moment says (a skit's takes, a reply's own words, the hello at a
+/// lock), how big the moment is picks the kind, and the face picks the
+/// mood; Voice finds a take of it that plays in that mood. Which moods a
+/// take plays in is the pack's table's to say; Voice never borrows one from
+/// another mood.
 public enum Voice {
-    /// Every answer to `part`'s question that has a take, each once.
+    /// Every meaning of `part` that has a take, each once.
     public static func answers(_ part: Take.Part) -> Set<String> {
         Set(Take.all.filter { $0.part == part }.map(\.meaning))
     }
@@ -22,7 +23,7 @@ public enum Voice {
             .map { all[$0] }.filter { $0 != .swear || kind == .swear }
     }
 
-    /// What a reaction says, `say`'s answer: `part`'s `meaning`,
+    /// What a reaction says: `part`'s `meaning`,
     /// that plays in the `face`'s mood, fit for the turn's `finish` (a
     /// success take only on a success, a swear only on a failure), of the
     /// nearest kind to `kind` that has one, at random, and not one whose
@@ -50,11 +51,6 @@ public enum Voice {
         if !unsaid.isEmpty { return unsaid }
         let oldest = pool.compactMap { avoiding.firstIndex(of: $0.text) }.max()
         return pool.filter { avoiding.firstIndex(of: $0.text) == oldest }
-    }
-
-    /// The take of `word` that plays in the `face`'s mood, or nil.
-    public static func word(_ word: String, face: String, in pack: CharacterPack = .active) -> Take? {
-        Take.all(in: pack).first { $0.text == word && $0.part != .reply && $0.moods.contains(face) && $0.finish == nil }
     }
 
     /// The pause between a `say`'s two takes, in milliseconds, as the board

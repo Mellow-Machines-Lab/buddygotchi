@@ -13,7 +13,7 @@ import Foundation
 /// of the three:
 ///
 ///     {"agent": "prompt", "text": "Add keyboard shortcuts"}
-///     {"brain": {"react.face": "calm", "say": "work"}}
+///     {"brain": {"react.face": "calm"}}
 ///     {"you": "poke"}
 ///     {"agent": "read", "file": "src/editor.js", "say": "I'll start by reading the editor."}
 ///     {"you": "talk", "text": "You suck at this!", "hold": 2}
@@ -21,7 +21,7 @@ import Foundation
 ///     {"agent": "todo", "todos": "2/4"}
 ///     {"you": "wait", "minutes": 8}
 ///     {"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}
-///     {"brain": {"react.face": "annoyed", "say": "upset"}, "mood": "cross"}
+///     {"brain": {"react.face": "annoyed"}, "mood": "cross"}
 ///
 /// - `agent` steps are what the agent does, in words both agents share:
 ///   `prompt` (you ask it, `text`), `read` and `edit` (a `file`; an edit's
@@ -421,9 +421,7 @@ extension DemoScript {
 
     /// What in the script `pack` can't play, each with its line: an answer
     /// to a question the brain is never asked, a choice it isn't offered,
-    /// or a mood the pack doesn't have. Empty when every step plays. A
-    /// pack with no voice takes `say` answers and leaves them out
-    /// (characters/CHARACTER.md §8), so one script plays with or without.
+    /// or a mood the pack doesn't have. Empty when every step plays.
     public func problems(for pack: CharacterPack = .active) -> [String] {
         let offered = Self.choices(in: pack)
         var found: [String] = []

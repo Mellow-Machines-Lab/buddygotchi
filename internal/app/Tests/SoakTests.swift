@@ -188,7 +188,7 @@ struct SoakWork {
             Answer(choice: pick, probabilities: Dictionary(uniqueKeysWithValues: names.map { ($0, $0 == pick ? 0.62 : 0.38 / Double(names.count - 1)) }))
         }
         return ["mood": spread(moods, moods[n % moods.count]), MomentOutput.emotionKey: spread(faces, "happy"),
-                MomentOutput.sayKey: spread(["none", "glad", "upset", "tickled"] + (0..<16).map { "topic\($0)" }, "topic3")]
+                MomentOutput.replyKey: spread(MomentOutput.replies.map(\.name), "thanks")]
     }
 
     /// Writes every event from the work's start until `end`, one file a

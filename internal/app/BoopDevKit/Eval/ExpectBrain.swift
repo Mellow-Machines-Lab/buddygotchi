@@ -29,7 +29,7 @@ public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
     /// and the size, are the rules' (`MomentRule`), which an `expect`
     /// checks and no brain answers.
     public static let questions = ["react": MomentOutput.emotionKey, "move": MomentOutput.replyKey,
-                                   "say": MomentOutput.sayKey, "mood": MoodOutput.outputName, "sign": Signs.questionKey]
+                                   "mood": MoodOutput.outputName, "sign": Signs.questionKey]
 
     /// What `step` answers for each question, in the order to try:
     /// its `brain`'s, then its `expect`'s.

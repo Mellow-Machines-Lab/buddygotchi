@@ -256,15 +256,14 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(lines.first?.facts["away_ms"]?.int, 26 * 60 * minute)
     }
 
-    /// `hello` is a topic Jev is
-    /// offered, every face has four or more of its takes, all greetings,
-    /// and a glad sound then hello, as boop's Example asks, is a sound and
-    /// a greeting in a happy face.
+    /// You coming back is the `back` skit's, whose takes are all
+    /// greetings, four or more in every face: a small hello is a sound or
+    /// the nearest, a greeting in a happy face.
     func testEveryFaceCanSayHello() throws {
         try requireVoice()
-        let greetings: Set = ["Hello", "Hey", "Hi", "Howdy", "Salut", "Hello hello", "Oh, hello", "Hey hey"]
-        XCTAssertTrue(MomentOutput.topics.map(\.name).contains("hello"))
-        let hello = Take.all.filter { $0.part == .about && $0.meaning == "hello" }
+        let greetings: Set = ["Hello", "Hey", "Hi", "Howdy", "Salut", "Hello hello", "Oh, hello", "Hey hey", "Hullo"]
+        XCTAssertEqual(CharacterPack.active.skits.first { $0.slots.contains(.back) }?.id, "back")
+        let hello = Take.all.filter { $0.part == .skit && $0.meaning == "back" }
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
         XCTAssertTrue(hello.allSatisfy { $0.finish == nil })
         for mood in CharacterPack.active.moods.map(\.id) {
@@ -272,7 +271,7 @@ final class PresenceTests: XCTestCase {
         }
         var rng = SplitMix64(seed: 1)
         for _ in 0..<20 {
-            let take = Voice.take(.about, meaning: "hello", kind: .sound, face: "happy", finish: nil, rng: &rng)
+            let take = Voice.take(.skit, meaning: "back", kind: .sound, face: "happy", finish: nil, rng: &rng)
             XCTAssertTrue(greetings.contains(take?.text ?? ""), "\(take?.text ?? "nothing")")
         }
     }

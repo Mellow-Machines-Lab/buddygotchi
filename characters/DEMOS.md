@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-11-15. A demo is a short, scripted stretch of work that a
+Updated 2026-11-24. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to
 Boop, and it reacts. Use demos to record videos, to show
 Boop off, and to check that everything works end to end.
@@ -30,11 +30,11 @@ This is all of `hello.jsonl`:
 // Half a minute: a read, an approved test run, done. A quick check that a demo plays end to end.
 {"demo": 1, "title": "Run the tests"}
 {"agent": "prompt", "text": "Run the tests"}
-{"brain": {"react.face": "curious", "say": "work"}}
+{"brain": {"react.face": "curious"}}
 {"agent": "read", "file": "README.md", "say": "Let me look at the project first."}
 {"agent": "run", "cmd": "npm test", "about": "Run the tests", "ask": 2, "say": "I'll run the tests."}
 {"agent": "reply", "text": "The one test passes."}
-{"brain": {"react.face": "proud", "say": "done"}, "mood": "proud"}
+{"brain": {"react.face": "proud"}, "mood": "proud"}
 ```
 
 ## Steps
@@ -115,17 +115,16 @@ A brain step answers the questions that the real brain gets:
 | --- | --- |
 | `react.face` | a mood of the pack that has a face, or `none` |
 | `react.reply` | after talk only, its reply: `yes`, `no`, `huh`, `hello`, `bye`, `thanks`, `ouch`, `comfort`, `hehe`, `status` or `hush` |
-| `say` | what it says: `none`, a feeling (`glad`, `upset`, `tickled`, `shaken`), `swear`, or a topic (`hello`, `work`, `tests`, `done`, `retry`, `quiet`); only a pack with a voice says it |
 
-The move (a finish, a wake-up, a notice) and the size are never a brain
-step's: the app's rules pick them from the step above (`MomentRule`), as
-they do for the real brain. Your lock or unlock, a working check-in and a
+The move (a finish, a wake-up, a notice), the size and what Boop says
+are never a brain step's: the app's rules pick them from the step above
+(`MomentRule`, and a skit's takes, `Skits`), as they do for the real
+brain. Your lock or unlock, a working check-in and a
 boop from the world play by rule alone, with no brain step.
 
 The choices and what each means are in
 `app/BoopKit/Outputs/MomentOutput.swift`. `boopdev check` lists them when
-an answer is wrong. A pack with no voice ignores the `say` answer, so
-one script plays with or without a voice.
+an answer is wrong.
 
 ## Play it
 

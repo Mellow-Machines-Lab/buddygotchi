@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-11-22. How we check that Jev decides as Boop should: short
+Updated 2026-11-24. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
@@ -28,8 +28,8 @@ scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
 say how long Boop has been in it, and how much it says (normal unless the file says quiet),
 told in CONTEXT's Talk row and held in code, with swearing on
-(the app's Settings switch, off there by default, so `say` offers the swear
-as it always has here). The runner (`Eval` in
+(the app's Settings switch, off there by default, so the upset skit swears
+where its rule says, as it always has here). The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
 that a Moment goes to a fake device, which answers at once with the
@@ -88,10 +88,9 @@ step's `session`, with the step's `workspace` if it has one.
 woken on the way to it and by it, so a `wait` checks the check-in its
 ticks brought: an idle one, or while a thread works, the working
 one. Each expectation is a set of acceptable values (`proud|happy`), so
-a scenario holds wherever more than one answer is right. For `react`,
-`mood` and `say`, a leading `!` takes values away from everything the
-key may be: `!none` is any face, `!lonely` any lasting mood but lonely,
-`!swear` anything but a swear. Write the set the scenario means, not a
+a scenario holds wherever more than one answer is right. For `react`
+and `mood`, a leading `!` takes values away from everything the
+key may be: `!none` is any face, `!lonely` any lasting mood but lonely. Write the set the scenario means, not a
 long list that checks little:
 
 | Checked | Against |
@@ -99,9 +98,8 @@ long list that checks little:
 | `react` | Jev's pick for the `react.face` question: `none` or an emotion |
 | `move` | The move the Moment played. At an event the rule's pick (`MomentRule.move`): a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name. To what you said the reply, Jev's `react.reply` pick (`huh` below the floor, and for the shrug a question gets); with the expect brain, the first reply listed is its answer. At your lock or unlock the wave: `wave` for the slight one, `bye` or `hello` for a real one. Or `none` when it played none or Boop didn't react |
 | `intensity` | The Moment's size, the rule's pick (`MomentRule.size`; `small` to `big`: how long the emotion held and how big what it said), or `none` when Boop didn't react |
-| `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
 | `sign` | The sign the Moment held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
-| `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
+| `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. What it says is never Jev's: a skit's takes (`Skits`), a reply's own words, a lock's wave. A scenario that names a text no take has doesn't load |
 | `mood` | Boop's mood after the pass |
 | `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every other lasting mood, lonely only when its gate allows |
 
@@ -244,14 +242,14 @@ file-name order:
 ```json
 {
   "name": "Pokes make Boop curious, then miffed, then fed up",
-  "case": "The person pokes Boop once, again a second later, and a third time a second after that. The first poke makes Boop curious or glad: a curious or happy face, and its mood stays calm or turns happy. The second, two in a row, leaves it a little miffed: an annoyed face, maybe a huff, and its mood turns cross. The third, three in a row, makes it fed up: a grumpy face, maybe a grumble, never a swear, and it stays cross, a level up, which the app counts. Four minutes later, when the agent starts a new turn, it has cooled by itself, a level or to calm, and doesn't react to the start with anything but a calm or annoyed face.",
+  "case": "The person pokes Boop once, again a second later, and a third time a second after that. A poke is no skit: Boop says nothing. The first poke makes Boop curious or glad: a curious or happy face, and its mood stays calm or turns happy. The second, two in a row, leaves it a little miffed: an annoyed face, and its mood turns cross. The third, three in a row, makes it fed up: a grumpy face, and it stays cross, a level up, which the app counts. Four minutes later, when the agent starts a new turn, it has cooled by itself, a level or to calm, and doesn't react to the start with anything but a calm or annoyed face.",
   "always": true,
   "why": "PERSONALITY's Examples and react.face: one poke gets a cheeky grin (the temperament's Example: mischievous), two in a row an annoyed huff, three or more a grumpy face. character/steering/mood/: 2 pokes in a row move calm to cross; how cross is the app's count, and it fades a level at a time. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one. The mood question offers staying and every other mood but lonely",
   "steps": [
     {"event": "session started", "at": "0s"},
-    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "move": "none", "offered": "calm|happy|focused|proud|cross|sad", "mood": "calm|happy", "said": "some"}},
-    {"event": "poke", "at": "1s", "expect": {"react": "annoyed|grumpy", "move": "none", "say": "upset|tickled", "mood": "cross", "said": "some"}},
-    {"event": "poke", "at": "2s", "expect": {"react": "grumpy|angry|annoyed", "move": "none", "say": "upset|tickled", "mood": "cross", "said": "some"}},
+    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "move": "none", "offered": "calm|happy|focused|proud|cross|sad", "mood": "calm|happy", "said": "none"}},
+    {"event": "poke", "at": "1s", "expect": {"react": "annoyed|grumpy", "move": "none", "mood": "cross", "said": "none"}},
+    {"event": "poke", "at": "2s", "expect": {"react": "grumpy|angry|annoyed", "move": "none", "mood": "cross", "said": "none"}},
     {"event": "turn started", "at": "4m", "expect": {"react": "none|calm|annoyed", "mood": "cross|calm"}}
   ]
 }
@@ -294,12 +292,12 @@ file-name order:
 | `steps[].expect.dream` | `told` when a pass of the step (a check-in's on the way included) answered the line that told the dream, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo`, `doing` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), the working agent's to-do list (`3/7`, or `none`), and the Doing (`asleep`, `idle`, `working`) |
-| `steps[].expect` | Any of `react` (the emotion), `move`, `intensity`, `say`, `said` (a take's text, or `some` or `none`), `mood`, `offered` and `sign`, each a `\|`-separated list |
+| `steps[].expect` | Any of `react` (the emotion), `move`, `intensity`, `said` (a take's text, or `some` or `none`), `mood`, `offered` and `sign`, each a `\|`-separated list |
 
 A file with no `case`, an unknown key, event, personality, `expect` key
 or check, a starting `mood`, or an expected `react`, `mood` or `offered`,
-that isn't a mood (`none` is a `react` too), a `move`, `intensity` or
-`say` that isn't one of its question's options or `none` (a `move` may
+that isn't a mood (`none` is a `react` too), a `move` or `intensity`
+that isn't one of its question's options or `none` (a `move` may
 be a reply), a `said` that isn't a take's text, `some` or `none`, a bad
 `at`, `reaction` or check value, a `prompt`, `reading` or `message` on a step that can't carry it, a
 finish's `reading` with no `message`, a

@@ -88,7 +88,7 @@ final class CollisionTests: XCTestCase {
     }
 
     /// Bringing up a note: at an idle check-in only, the line low on the
-    /// board, its word the pack's, its clip the look, the note the narration.
+    /// board, in silence, its clip the look, the note the narration.
     func testBringingUpANote() throws {
         let felt = Memory.Felt(line: "u stay up late fridays", note: "You stay up late on Fridays.")
         var sent: Moment?
@@ -99,14 +99,14 @@ final class CollisionTests: XCTestCase {
         let sign = try XCTUnwrap(react.questions(now: checkIn, log: log).first { $0.key == Signs.questionKey })
         XCTAssertTrue(sign.options.contains { $0.name == felt.line })
         XCTAssertNil(react.questions(now: back, log: log).first { $0.key == Signs.questionKey }?.options.first { $0.name == felt.line }, "at a check-in only")
-        let result = react.run(answers([MomentOutput.emotionKey: "amused", MomentOutput.sayKey: "quiet", Signs.questionKey: felt.line]),
+        let result = react.run(answers([MomentOutput.emotionKey: "amused", Signs.questionKey: felt.line]),
                                now: checkIn, log: log)
         let moment = try XCTUnwrap(sent)
         XCTAssertEqual(moment.sign, felt.line)
         XCTAssertTrue(moment.low)
         XCTAssertEqual(moment.clip, MomentOutput.rememberClip)
         XCTAssertNil(moment.reason, "the board shows the line")
-        if let word = CharacterPack.active.rememberWord { XCTAssertEqual(moment.say?.text, word) }
+        XCTAssertEqual(moment.say?.takes, [], "no word of its own")
         XCTAssertEqual(result?.facts["felt"], .string(felt.line))
         XCTAssertEqual(result?.facts[IdleBeat.fact], "remembered")
         XCTAssertEqual(result?.facts["reason"]?.string, "\(CharacterPack.active.name) is amused. \(CharacterPack.active.name) remembers you stay up late on Fridays.")
