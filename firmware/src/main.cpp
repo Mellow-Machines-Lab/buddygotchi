@@ -1,6 +1,5 @@
-// Board entry point: the face, then the canvas if it draws into one, bring
-// up the screen and Bluetooth, then run Boop on LinkKit with USB serial and
-// BLE as its links.
+// Board entry point: the face, then bring up the screen and Bluetooth, then
+// run Boop on LinkKit with USB serial and BLE as its links.
 #include <Arduino.h>
 #include <esp_heap_caps.h>
 
@@ -66,31 +65,25 @@ void setup() {
 #ifdef BOOP_GEL_PROFILE
   render::profileClock = []() { return uint32_t(micros()); };
 #endif
-  // The canvas, 76.8 KB, only for a face that draws into it (one that draws
-  // natively gets one only if dbg.pattern asks: Device), and first, while
-  // one contiguous block is still free. MALLOC_CAP_8BIT takes it from
-  // internal RAM while there's room, before PSRAM.
+  // The face draws natively, into the panel's own surfaces (Device
+  // allocates them); the 8-bit canvas comes only if dbg.pattern asks.
   auto face = render::makeFace();
-  const bool drawsCanvas = !face->drawsNative();
-  const size_t canvasBytes = size_t(render::kWidth) * render::kHeight;
-  auto* pixels = drawsCanvas ? static_cast<uint8_t*>(heap_caps_malloc(canvasBytes, MALLOC_CAP_8BIT)) : nullptr;
 
   Serial.setRxBufferSize(2048);
 #ifdef BOOP_GEL_PROFILE
   Serial.setTxBufferSize(kProfileTxBytes);
 #endif
-  Serial.begin(460800);  // the CH340 on macOS can't do 921600
+  Serial.begin(460800);
   hal.begin();
-  if ((drawsCanvas && !pixels) || !board::displayBegin()) {
-    // Nothing to draw with: say so on USB and keep what light there is on.
-    board::displayFailed();
+  if (!face->drawsNative() || !board::displayBegin()) {
+    // Nothing to draw with: say so on USB.
     for (;;) {
-      Serial.println("{\"t\":\"dbg.fatal\",\"why\":\"canvas or display init failed\"}");
+      Serial.println("{\"t\":\"dbg.fatal\",\"why\":\"no native face, or display init failed\"}");
       delay(2000);
     }
   }
   board::audioBegin();  // dbg.state audio.out.ready says whether it worked
-  static app::Device dev(hal, pixels, std::move(face));
+  static app::Device dev(hal, nullptr, std::move(face));
   if (!dev.ready()) {
     for (;;) {
       Serial.println("{\"t\":\"dbg.fatal\",\"why\":\"native surface allocation failed\"}");
@@ -101,7 +94,6 @@ void setup() {
   device = &dev;
   kit = &k;
   kit->setOut(linkkit::Link::kUsb, &usbOut);
-  // Bluetooth after the canvas, so a canvas got its contiguous block.
   if (ble.begin(app::kBleNamePrefix, app::kIdPrefix)) kit->setOut(linkkit::Link::kBle, &ble);
   hal.setBle(&ble);
   // From here a loop that stops coming round for 5 s (the core's task
@@ -132,7 +124,7 @@ void loop() {
   const bool drew = device->takeFrame();
   if (drew) {
     const uint32_t t1 = micros();
-    uint32_t pushed, waited = 0;
+    uint32_t pushed = 0, waited = 0;
     if (auto* frames = device->frames()) {
       // A native frame is sent by the board's push task while the loop
       // draws the next: this waits only for the frame
@@ -140,10 +132,6 @@ void loop() {
       board::displayPush(*frames);
       waited = micros() - t1;
       pushed = board::displayPushUs();
-    } else {
-      board::displayPush(device->canvas());
-      pushed = micros() - t1;
-      device->shown(millis());  // the canvas is on the panel once its push returns
     }
     device->noteFrame(t1 - t0, pushed);
 #ifdef BOOP_GEL_PROFILE

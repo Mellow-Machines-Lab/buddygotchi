@@ -12,7 +12,7 @@ public struct BoardFirmware: Decodable, Equatable, Sendable {
         public var file: String
     }
 
-    /// The board's env name in firmware/platformio.ini: `cyd24`, `amoled206`.
+    /// The board's env name in firmware/platformio.ini: `amoled206`.
     public var board: String
     public var chip: Flasher.Chip
     public var flashSize: Int
@@ -53,11 +53,10 @@ public struct BoardFirmware: Decodable, Equatable, Sendable {
         return all(in: Bundle.main.url(forResource: "firmware", withExtension: nil))
     }
 
-    /// Which board a device is: its `hello` says (`board`); from firmware
-    /// from before it did, its face does, since only the AMOLED draws the
-    /// gel.
+    /// Which board a device is: its `hello` says (`board`); firmware from
+    /// before it did runs on the AMOLED, the one board.
     public static func board(of device: DeviceInfo) -> String {
-        device.board ?? (device.face == .gel ? "amoled206" : "cyd24")
+        device.board ?? "amoled206"
     }
 
     /// The firmware to update `device` with: its board's, when that's a

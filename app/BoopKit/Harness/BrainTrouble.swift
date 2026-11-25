@@ -1,9 +1,9 @@
 import Foundation
 import MellowHarness
 
-/// The brain failing for long enough that the popover says so:
-/// Boop is down to its rule reactions until it
-/// answers again.
+/// Jev failing for long enough that the popover says so, to the key's
+/// owner: Jev isn't helping, and every Moment still plays on the rules'
+/// answers (`SeatedBrain`). With no key there's none.
 public struct BrainTrouble: Equatable, Sendable {
     public enum Kind: Equatable, Sendable {
         /// The server turned the key down (HTTP 401 or 403).
@@ -15,9 +15,9 @@ public struct BrainTrouble: Equatable, Sendable {
     }
 
     public var kind: Kind
-    /// The last pass's `dropped`, such as `jev: HTTP 402`.
+    /// Why Jev failed the last pass, such as `jev: HTTP 402`.
     public var why: String
-    /// Passes dropped in a row, this one included.
+    /// Passes Jev failed in a row, this one included.
     public var inARow: Int
 
     public init(kind: Kind, why: String, inARow: Int) {
@@ -27,11 +27,12 @@ public struct BrainTrouble: Equatable, Sendable {
     }
 
     /// Failures that fix themselves (a slow answer, a busy server) show
-    /// only once this many passes in a row have dropped.
+    /// only once Jev has failed this many passes in a row.
     public static let showAfter = 3
 
-    /// After a pass that asked the brain: nil once one runs; at once for a
-    /// status only the person can fix; else after `showAfter` in a row.
+    /// After a pass that asked Jev: nil once it answers in time; at once
+    /// for a status only the person can fix; else after `showAfter` in a
+    /// row.
     static func after(_ error: BrainError?, previous: Int) -> (inARow: Int, trouble: BrainTrouble?) {
         guard let error else { return (0, nil) }
         let inARow = previous + 1

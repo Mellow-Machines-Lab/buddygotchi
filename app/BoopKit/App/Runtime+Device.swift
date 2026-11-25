@@ -174,7 +174,7 @@ extension Runtime {
     }
 
     /// A reaction from the brain, sent at once to wait in the device's
-    /// queue (`next`, for up to 5 s), and its handle, ended once it's
+    /// queue (`next`, for up to its `BoopDevice.ttl`), and its handle, ended once it's
     /// known how it went (read Boop's way by `Reactions`): at once when it
     /// can't be sent. On `home`.
     func queue(_ reaction: Moment, _ pending: Pending) {

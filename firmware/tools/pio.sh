@@ -2,7 +2,7 @@
 # Runs PlatformIO with its core and packages in the main checkout's
 # firmware/.platformio-core (tools/pio-core.sh), shared by every worktree,
 # and its builds in this checkout's .pio. All paths are git-ignored.
-#   firmware/tools/pio.sh run -e cyd24
+#   firmware/tools/pio.sh run -e amoled206
 # Uses the `pio` on PATH if there is one. Without one, the first run
 # installs PlatformIO with pip into the core's venv, with the first
 # Python 3.10 or later it finds: the ESP32 platform refuses the Mac's

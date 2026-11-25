@@ -9,9 +9,8 @@ brew install emscripten      # once: it builds the firmware for a browser
 make -C internal simulator   # builds it, then serves http://127.0.0.1:8206/
 ```
 
-It draws the staged pack's face: Boop's gel, or Pixel's pixel face with
-`pixel` in `.character` (a pack with both picks with `?face=gel`). Add
-`?zoom=3` for a bigger one. It uses no Bluetooth, so an agent's shell may
+It draws the staged pack's face, Boop's gel, on the AMOLED board. Add
+`?zoom=2` for a bigger one. It uses no Bluetooth, so an agent's shell may
 run it.
 
 **Every mood and state alongside.** The same server serves the
@@ -88,17 +87,15 @@ board.
 
 ## The board it simulates
 
-The board its face is drawn for: with a native face (the gel), the AMOLED
-board, and with the pixel face, the CYD. Where they differ is below:
+The AMOLED board, the one board Boop runs on:
 
 | Part | In the simulator |
 | --- | --- |
-| Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`), its corners rounded as the AMOLED's are (in proportion to its height) and transparent, since the panel shows nothing there. Every pixel is the firmware's; the page draws nothing on it |
+| Screen | The face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`), its corners rounded as the AMOLED's are (in proportion to its height) and transparent, since the panel shows nothing there. Every pixel is the firmware's; the page draws nothing on it |
 | Touch | The pointer on the screen: a touch is a poke, as on the boards, and letting go is a lift, which ends the touch at once, as the AMOLED's touch chip reports one, and a drag or a wiggle another touch (a stroke, a quick one a swipe, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it; held on the gel's face, it leans in, and dozes past 5 s. A click or a drag answers an invite as a tap or a stroke does on the board (firmware/README.md, The invite). On the gel, dragged up from the strip, it pulls out the agents' drawer, a drag on its rows scrolls them, and a click on a row picks it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
-| Motion | The AMOLED's motion sensor, lying flat on the desk from power-on; with `motion`, buttons that move the board as it feels it: Shake, Pick up and Put down, Thump, Face down and Face up. The CYD's board has no sensor until something tilts it |
+| Motion | The AMOLED's motion sensor, lying flat on the desk from power-on; with `motion`, buttons that move the board as it feels it: Shake, Pick up and Put down, Thump, Face down and Face up |
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click, so the first touch of the board, its screen or BOOT, turns it on, as Sound on does; once Sound on or off is clicked, that's the choice |
-| Light | The dot under the screen, in the LED's colour. The AMOLED board has none, so its page has no dot |
 | Backlight | The screen dims as the firmware dims it |
 | Card | A voice file: the page fetches one (`voice="…"`), and it can be ejected and put back. On the Mac, the chosen character pack's voice file (its `voice/voice.bin`), or with `BOOP_SIM_CARD=DIR` a folder that is the card, where `dbg.card` copies a voice file as on a board |
 | Power, reset | Power off and Reset. The card stays in its slot through both |
@@ -111,11 +108,10 @@ local page, in `web/dist/`:
 
 ```html
 <script type="module" src="boop-simulator.js"></script>
-<boop-simulator face="pixel" voice="voice.bin" controls></boop-simulator>
+<boop-simulator voice="voice.bin" controls></boop-simulator>
 ```
 
-The board is drawn as a thing on a desk: a native face's (the
-AMOLED's) panel under black glass with round corners, BOOT with "hold
+The board is drawn as a thing on a desk: the AMOLED's panel under black glass with round corners, BOOT with "hold
 to talk · Space" beside it, and Sound on, which stands out until the
 sound is on. The Power, Reset and card buttons (`controls`) and the
 motion sensor's (`motion`) sit in a row under them, wrapping at the
@@ -128,26 +124,25 @@ itself to the board.
 
 | Attribute | What |
 | --- | --- |
-| `face` | `pixel` (the default) or `gel`, of the faces the build's pack has: a pack with one draws it whatever this says, and the page takes its size and look from the frames the board draws |
-| `zoom` | How many times as big the screen is drawn (2 for the pixel face, 1 for a native one), shrunk to fit a narrower page |
-| `native` | A native face's panel, `WxH` |
+| `zoom` | How many times as big the screen is drawn (1 without it), shrunk to fit a narrower page |
+| `native` | A panel other than the AMOLED's, `WxH` |
 | `voice` | A voice file to fetch for the card |
 | `usb` | A WebSocket that is the board's USB cable, one WebSocket message per LinkKit message each way |
 | `controls` | Adds the Power, Reset and card buttons. Sound on is always there |
 | `motion` | Adds the motion sensor's buttons. The page's own `index.html` has them |
-| `demo` | A recording to play (below). The board's face is then the recording's |
+| `demo` | A recording to play (below) |
 | `board-id` | The board's id, its `hello`'s, so boards on one page differ (`b00p-0000` without it) |
 | `pack` | The character pack whose build it runs, `boop-sim-PACK.js` (below); the staged pack's `boop-sim.js` without it |
 
 `web/build.sh` builds the staged pack. `web/build.sh PACK` builds a
 pack by its name in `characters/` beside it, as `boop-sim-PACK.js` and
-`.wasm`, and leaves what's staged alone (`charactergen.py --firmware-to`),
-so two packs can run on one page: `<boop-simulator pack="pixel">`.
+`.wasm`, and leaves what's staged alone (`charactergen.py --firmware-to`):
+`<boop-simulator pack="boop">` runs it. The demos play on these builds.
 
 The element's `board` (once it has fired `ready`) is the board itself:
 `send(line)` is a host's message on USB, and it fires `line` for each the
-board says, `frame`, `parts` (`{"led":0,"backlight":255,"amp":false,"card":"ok"}`,
-whenever one changes, with no `led` on the AMOLED board) and `power`. The script knows nothing of what the
+board says, `frame`, `parts` (`{"backlight":255,"amp":false,"card":"ok"}`,
+whenever one changes) and `power`. The script knows nothing of what the
 board's messages mean: they pass through it. The script exports the
 rest of a page's hand: `SHAKE`, a shake as the motion sensor reads it,
 for `board.motion`; `TAP`, where a poke lands, beside the nose (on it is
@@ -165,7 +160,7 @@ Mac app plays, and the app can't run in a browser, so the page plays a
 **recording** of it: every message the app sent the board, with when,
 so the firmware in the page does what it did, with no app behind it.
 The screen is still the firmware's own drawing, and you can still poke
-it. The page opens at `http://127.0.0.1:8206/?demo=pixel/landing` (the
+it. The page opens at `http://127.0.0.1:8206/?demo=boop/finishes` (the
 pack, then the name), and `?demos=all` plays every one, one after
 another, with a list to jump to one.
 
@@ -174,7 +169,7 @@ lists them, plays them and records them. A recording is checked in beside
 its script, `characters/PACK/demo/recordings/NAME.json`. It's made by
 playing the script through the real headless app
 (`Boop --headless --demo SCRIPT --record FILE`) with the Mac build's board
-as its device, on the face the pack gives the AMOLED board, and takes as
+as its device, and takes as
 long as the demo runs; `make -C internal demos` records several at once.
 To play, `demos.py` lays the recording out in `web/dist/demo/PACK/`, with
 `NAME-voice.bin`, a voice file with only the takes it says, cut from the
@@ -266,15 +261,13 @@ so nothing outside it is served.
 cable: `--cable NAME=SOCKET`, once for each, in place of `--socket`. Each
 cable is a WebSocket at `/usb/NAME` and its own socket, and there's no
 `/usb`. The page shows them side by side with `?boards=NAME,NAME`, each
-with the id `b00p-NAME`, `&packs=PACK,PACK` gives each board its
-pack's build and voice (`/voice/PACK.bin`), and `&faces=FACE,FACE` its
-face (`pixel` by default, or `gel`):
+with the id `b00p-NAME`:
 
 ```sh
 python3 characters/charactergen.py --stage
-simulator/web/build.sh boop && simulator/web/build.sh pixel
+simulator/web/build.sh
 python3 simulator/web/serve.py --cable left=/tmp/boop-sim-left.sock --cable right=/tmp/boop-sim-right.sock
-open 'http://127.0.0.1:8206/?boards=left,right&packs=boop,pixel&faces=gel,pixel'
+open 'http://127.0.0.1:8206/?boards=left,right'
 BOOP_BRIDGE=/tmp/boop-sim-right.sock internal/tools/boopctl ping
 ```
 
@@ -313,7 +306,7 @@ Three things a cable does that the port does too:
 
 ## The core's settings
 
-In its environment, or from the page's attributes: `BOOP_SIM_FACE` (`pixel` or `gel`),
+In its environment, or from the page's attributes:
 `BOOP_SIM_NATIVE` (`WxH`), `BOOP_SIM_ID` (the device's ID, `b00p-0000`
 without it; the page's `board-id`), and on the Mac `BOOP_SIM_CARD` (the card's folder) and
 `BOOP_SIM_PORT`.
@@ -325,7 +318,7 @@ make -C internal sim-test
 ```
 
 - **`tests/test_core.py`**, the Mac build in real time, driven over its
-  serial port as a board is: it says hello and draws by itself, a native
+  serial port as a board is: it says hello and draws by itself, the
   face fills the panel it's given, every power-on is a new boot, and a
   `say` plays at the pace a DAC would (the output's time within 10% of
   the `say`'s length, as the boards' takes check holds them). Of the port:
@@ -341,15 +334,13 @@ make -C internal sim-test
   cable whose socket is live stops the server and takes back the sockets
   it made; and a cable needs a name and a socket of its own.
 - **`tests/web.test.mjs`**, the WebAssembly build under Node, driven as
-  the page drives it: hello and drawing (on Pixel's build when the
-  staged pack is a gel one), a native face's panel, a touch
+  the page drives it: hello and drawing, the face's panel, a touch
   that's a poke however soon it lifts, BOOT held as talking, a new boot, a
   shake and face down and up through the motion sensor, a
   `say`'s sound asked for a chunk at a time, and the card staying in its
-  slot through a reset. The gel's board is the AMOLED's: no LED among its
-  parts, its motion sensor flat from power-on, and a finger's lift ending
-  its touch on the next look; the pixel face's has an LED and no sensor. Boards side by side each say their own id, and
-  Pixel's build (`build.sh pixel`, which `sim-test` makes) says its pack.
+  slot through a reset. The board is the AMOLED's: its motion sensor flat
+  from power-on, and a finger's lift ending its touch on the next look.
+  Boards side by side each say their own id.
   Then the page's cable carrying whole messages both
   ways, a board plugged in or out hanging up on the clients, a 900 KB one among them, and keeping a bridge's rules: a client
   that stops reading dropped while another hears every message, and a

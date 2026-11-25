@@ -1,17 +1,17 @@
 // Boop Simulator in a page (simulator/README.md): the board's firmware,
 // built to WebAssembly, with this script as its screen, finger, BOOT
-// button, speaker, light and card.
+// button, speaker, motion sensor and card.
 //
 //   <script type="module" src="boop-simulator.js"></script>
-//   <boop-simulator face="pixel"></boop-simulator>
+//   <boop-simulator></boop-simulator>
 //
 // Nothing here draws on the screen: every pixel there is the firmware's.
 // And nothing here knows what the board's lines mean: they pass through.
 
 const CHUNK = 512;       // app::Sound::kChunk
 const OUT_RATE = 22050;  // voice::kOutRate
-const CANVAS = [320, 240];  // a touch is in the canvas's pixels on every board
-const PANEL = { pixel: CANVAS, gel: [502, 410] };  // each face's panel, until its first frame says
+const CANVAS = [320, 240];  // a touch is in the canvas's pixels, which the board scales to its panel
+const PANEL = [502, 410];  // the AMOLED's panel, until the first frame says
 /// A shake, as the motion sensor reads it: each reading in mg, held so many
 /// ms, in the shapes the board knows (firmware/src/app/motion_gesture.h).
 export const SHAKE = [[1700, 60], [300, 60], [1700, 60], [300, 60], [1700, 60], [300, 60], [1000, 0]];
@@ -35,8 +35,7 @@ const compiled = {};
 /// lines in and out. A page can have several. It fires `power` (on or
 /// off), `frame` (an ImageData, the same one each time for a size),
 /// `line` (each line the board says on USB) and `parts`
-/// (`{led, backlight, amp, card}`, whenever one changes; no `led` on the
-/// AMOLED board, which has none).
+/// (`{backlight, amp, card}`, whenever one changes).
 export class Board extends EventTarget {
   #core; #usb; #env; #input; #timer = 0;
   #audio = null; #soundAt = 0; #muted = false;
@@ -68,13 +67,12 @@ export class Board extends EventTarget {
   }
 
   /// Power: on is a new boot with nothing remembered, as on a board, but
-  /// for the card, which stays in its slot. `face` is `pixel` or `gel`;
-  /// `native` a native face's panel, `502x410`; `id` the board's own id,
-  /// its hello's, so boards side by side differ (`b00p-0000` without one).
-  power(on, { face = 'pixel', native, id } = {}) {
+  /// for the card, which stays in its slot. `native` is another panel
+  /// than the AMOLED's, `502x410`; `id` the board's own id, its hello's,
+  /// so boards side by side differ (`b00p-0000` without one).
+  power(on, { native, id } = {}) {
     clearInterval(this.#timer);
     if (on) {
-      this.#env('BOOP_SIM_FACE', face);
       if (native) this.#env('BOOP_SIM_NATIVE', native);
       if (id) this.#env('BOOP_SIM_ID', id);
     }
@@ -311,10 +309,9 @@ const STYLE = `
      unless --fit says none, as a window that fits itself to the board does. */
   :host { display: inline-block; max-width: var(--fit, 100%); font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
           color: #999; outline: none; }
-  .body { background: linear-gradient(#2a2a2a, #1c1c1c); border-radius: 22px; padding: 20px 20px 14px;
+  /* The AMOLED board: its panel under black glass with round corners, as on the board. */
+  .body { background: linear-gradient(#2a2a2a, #1c1c1c); border-radius: 46px; padding: 18px 18px 14px;
           box-shadow: inset 0 1px 0 #3a3a3a, 0 20px 50px rgba(0, 0, 0, .5); }
-  /* A native face's board, the AMOLED's: its panel under black glass with round corners, as on the board. */
-  .body.native { border-radius: 46px; padding: 18px 18px 14px; }
   /* The board moved as the motion buttons move it: shaken, held up off the desk, a thump on it. */
   .body { transition: transform .25s ease-out, box-shadow .25s ease-out; }
   .body.held { transform: translateY(-10px) rotate(-1deg); box-shadow: inset 0 1px 0 #3a3a3a, 0 36px 64px rgba(0, 0, 0, .6); }
@@ -324,13 +321,12 @@ const STYLE = `
                      60% { transform: translateX(-6px) rotate(-1deg); } 80% { transform: translateX(6px) rotate(1deg); } }
   @keyframes thump { 40% { transform: translateY(4px) scale(.995); } }
   @media (prefers-reduced-motion: reduce) { .body { transition: none; animation: none !important; } }
-  .body.native .screen { background: #000; border-radius: 34px; padding: 14px; box-shadow: inset 0 0 0 1px #2a2a2a; }
+  .screen { background: #000; border-radius: 34px; padding: 14px; box-shadow: inset 0 0 0 1px #2a2a2a; }
   /* On a screen narrower than the board, it shrinks to fit rather than scroll sideways. */
-  @media (max-width: 600px) { .body, .body.native { padding: 12px 12px 8px; } .body.native .screen { padding: 8px; } }
+  @media (max-width: 600px) { .body { padding: 12px 12px 8px; } .screen { padding: 8px; } }
   .screen { position: relative; }
-  canvas { display: block; background: #000; border-radius: 6px; image-rendering: pixelated; touch-action: none;
+  canvas { display: block; background: transparent; touch-action: none;
            cursor: pointer; width: var(--w); max-width: var(--fit, 100%); height: auto; }
-  .body.native canvas { background: transparent; border-radius: 0; image-rendering: auto; }
   .finger { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px; border-radius: 50%;
             border: 2px solid #fff; opacity: 0; pointer-events: none; }
   .finger.down { animation: finger .6s ease-out; }
@@ -343,7 +339,6 @@ const STYLE = `
   .hands:not(:has(button)) { display: none; }
   .tools { display: flex; flex-wrap: wrap; gap: 6px; }
   .chin .sound { margin-left: auto; }
-  .chin .sound + .led { margin-left: 0; }
   button { font: 500 12px system-ui, -apple-system, sans-serif; color: #d0d0d0; background: #323232; border: 1px solid #3e3e3e;
            border-radius: 8px; padding: 5px 11px; cursor: pointer; transition: background .15s, color .15s; }
   button:hover { background: #3c3c3c; }
@@ -353,7 +348,6 @@ const STYLE = `
   button.call { background: #f0b956; border-color: #f0b956; color: #1d1d1d; }
   button.call:hover { background: #f5c873; }
   .hint { font: 12px system-ui, -apple-system, sans-serif; color: #7a7a7a; }
-  .led { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: #333; }
   .status { padding: 6px 4px 0; min-height: 1.3em; }
   .demo { margin-top: 10px; width: 0; min-width: 100%; color: #bbb; }
   .bar { display: flex; align-items: center; gap: 8px; }
@@ -375,30 +369,29 @@ const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊',
 // Outside a browser (the tests, under Node) there's no element to be.
 const Element = globalThis.HTMLElement ?? class {};
 
-/// <boop-simulator face="pixel|gel" zoom="2" voice="voice.bin" usb="ws://…/usb" demo="demo.json"
-///                 board-id="b00p-left" pack="pixel" controls motion>
+/// <boop-simulator zoom="2" voice="voice.bin" usb="ws://…/usb" demo="demo.json"
+///                 board-id="b00p-left" controls motion>
 /// The board, drawn as a thing on a desk, with its BOOT button and a Sound
 /// button (a browser plays nothing until a click). `voice` is a voice file
 /// to fetch for its card; `usb` a WebSocket that is its USB cable, one
 /// line a message each way (serve.py's, which leads to the Mac app and the
 /// tools); `controls` adds power, reset and card buttons, and `motion`
 /// the motion sensor's: shake, pick up and put down, a thump on the desk,
-/// face down and up (the AMOLED board's; the CYD has none). `demo` is a
+/// face down and up. `demo` is a
 /// recording to play (DemoPlayer), told as a story under the board: what
-/// happens, and what the creature does about it. The board's face is then
-/// the recording's. `board-id` is the board's id, its hello's, so boards on
-/// one page differ; `pack` the character pack's build to run (Board.make).
+/// happens, and what the creature does about it. `board-id` is the board's
+/// id, its hello's, so boards on one page differ; `pack` the character
+/// pack's build to run (Board.make).
 /// `element.board` is its Board, and `element.demo` its
 /// DemoPlayer, once `ready` has fired.
 export class BoopSimulator extends Element {
-  static observedAttributes = ['face', 'zoom'];
+  static observedAttributes = ['zoom'];
   board = null;
   demo = null;
-  #root; #canvas; #context; #led; #status;
+  #root; #canvas; #context; #status;
   #parts = {}; #recording = null; #plugged = false;
   #labels = [];  // each button's words, and its look, to show again when something changes
-  #soundChosen = false;
-  #drawn = null;  // the size of the board's last frame  // Sound on or off was clicked: the first touch no longer turns it on
+  #soundChosen = false;  // Sound on or off was clicked: the first touch no longer turns it on
 
   connectedCallback() {
     if (this.#root) return;
@@ -409,7 +402,7 @@ export class BoopSimulator extends Element {
         <div class="chin">
           <button class="boot" title="BOOT: a tap, or hold to talk (Space)">BOOT</button>
           <span class="hint">hold to talk · Space</span>
-          <span class="tools sound"></span><span class="led"></span>
+          <span class="tools sound"></span>
         </div>
         <div class="hands"><span class="tools power"></span><span class="tools motion"></span></div>
       </div>
@@ -420,7 +413,6 @@ export class BoopSimulator extends Element {
       </div>`;
     this.#canvas = this.#root.querySelector('canvas');
     this.#context = this.#canvas.getContext('2d');
-    this.#led = this.#root.querySelector('.led');
     this.#status = this.#root.querySelector('.status');
     this.tabIndex = 0;
     this.#start();
@@ -432,21 +424,14 @@ export class BoopSimulator extends Element {
   }
   attributeChangedCallback(name, was, now) {
     if (!this.board || was === now) return;
-    if (name === 'face') this.reset();
     if (name === 'zoom') this.#size(this.#canvas.width, this.#canvas.height);
   }
 
-  get face() { return (this.#recording?.face ?? this.getAttribute('face')) === 'gel' ? 'gel' : 'pixel'; }
-  /// Whether the board draws a native face: what its frames say once it has
-  /// drawn, since a pack with one face draws it whatever `face` asks; until
-  /// then, what `face` asks.
-  get native() { return this.#drawn ? !(this.#drawn[0] === CANVAS[0] && this.#drawn[1] === CANVAS[1]) : this.face === 'gel'; }
-  get zoom() { return Number(this.getAttribute('zoom')) || (this.native ? 1 : 2); }
+  get zoom() { return Number(this.getAttribute('zoom')) || 1; }
 
   /// Power, and the RESET button: off and on again.
   power(on) {
-    this.#root.querySelector('.body').classList.toggle('native', this.native);
-    this.board.power(on, { face: this.face, native: this.getAttribute('native') || undefined,
+    this.board.power(on, { native: this.getAttribute('native') || undefined,
                            id: this.getAttribute('board-id') || undefined });
   }
   reset() { this.power(true); }
@@ -456,7 +441,7 @@ export class BoopSimulator extends Element {
     if (demo) {
       try { this.#recording = await (await fetch(demo)).json(); } catch { this.#status.textContent = `no demo at ${demo}`; }
     }
-    this.#size(...PANEL[this.face]);
+    this.#size(...PANEL);
     // The voice file comes while the core does, and goes in the slot before
     // the first power-on, as a board boots with its card in: its first
     // hello names the voice, so a host that asks at once hears it.
@@ -492,10 +477,6 @@ export class BoopSimulator extends Element {
   }
 
   #draw(frame) {
-    if (this.#drawn?.[0] !== frame.width || this.#drawn?.[1] !== frame.height) {
-      this.#drawn = [frame.width, frame.height];
-      this.#root.querySelector('.body').classList.toggle('native', this.native);
-    }
     this.#size(frame.width, frame.height);
     this.#context.putImageData(frame, 0, 0);
   }
@@ -503,16 +484,11 @@ export class BoopSimulator extends Element {
   // The board's parts, and every button's words, as they are now.
   #show() {
     const p = this.#parts, on = this.board.on;
-    // The AMOLED board has no LED, and its parts say none.
-    this.#led.hidden = on && !('led' in p) && Object.keys(p).length > 0;
-    const led = p.led ? `#${p.led.toString(16).padStart(6, '0')}` : '';
-    this.#led.style.background = led || '#333';
-    this.#led.style.boxShadow = led ? `0 0 10px 2px ${led}` : '';
     // The backlight dims the panel; the firmware's pixels stay what they are.
     this.#canvas.style.filter = (p.backlight ?? 255) < 255 ? `brightness(${p.backlight / 255})` : '';
     const usb = this.hasAttribute('usb') ? ` · usb ${this.#plugged ? 'plugged in' : 'unplugged'}` : '';
     const who = [this.getAttribute('board-id'), this.getAttribute('pack')].filter(Boolean).map(w => `${w} · `).join('');
-    this.#status.textContent = on ? `${who}${this.native ? 'gel' : 'pixel'}${usb} · card: ${p.card ?? '…'} · sound ${this.board.audible ? 'on' : 'off'}` : 'off';
+    this.#status.textContent = on ? `${who}gel${usb} · card: ${p.card ?? '…'} · sound ${this.board.audible ? 'on' : 'off'}` : 'off';
     for (const [button, words, call] of this.#labels) {
       button.textContent = words();
       button.classList.toggle('call', !!call?.());

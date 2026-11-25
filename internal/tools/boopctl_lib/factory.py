@@ -19,9 +19,8 @@ from boopctl_lib.common import REPO, VOICE_FILE, do, takes
 # Restarts that mean something went wrong (the Mac's
 # DeviceInfo.troubledResets says the same).
 TROUBLED_RESETS = {"panic", "watchdog", "brownout", "other"}
-# The least free heap a board may have, napping, in bytes: the CYD runs
-# with about 50 KB and the AMOLED about 75 KB, and under 20 KB a board
-# starts failing to draw or connect.
+# The least free heap a board may have, napping, in bytes: the AMOLED runs
+# with about 75 KB, and under 20 KB a board starts failing to draw or connect.
 HEAP_FLOOR = 20_000
 # The speaker check's volume, of 10: heard on a bench, not across a room.
 SPEAKER_VOL = 3

@@ -261,28 +261,6 @@ final class ReplyTests: XCTestCase {
         XCTAssertNil(queued.last?.show)
     }
 
-    /// With no brain (no key), what you said gets a shrug, the `huh`
-    /// reply in Boop's mood, holding up the pack's no-brain line, never
-    /// over the needs-you screen; the brain's own replies never offer it.
-    func testWithNoBrainItShrugs() throws {
-        let rig = CoreRig()
-        let shrug = try XCTUnwrap(moments(rig.core.shrug(sign: "no brain yet :(", at: rig.now)).first)
-        XCTAssertEqual(shrug.reply, "huh")
-        XCTAssertEqual(shrug.sign, "no brain yet :(")
-        XCTAssertNotNil(shrug.mood, "a face, so the board plays the reply's clip")
-        XCTAssertEqual(BoopDevice.play(shrug), .next)
-        rig.send(.turnStart)
-        rig.send(.needsYou, tool: "Bash")
-        XCTAssertTrue(rig.core.shrug(sign: "no brain yet :(", at: rig.now).isEmpty, "not over needs you")
-
-        let pack = TaggedLine.parse("""
-            - [huh] huh?
-            - [huh nobrain] no brain yet :(
-            """)
-        XCTAssertEqual(Signs.replies(pack, Core.noBrainReply, calendar: ["night", Core.noBrain]), ["no brain yet :("])
-        XCTAssertEqual(Signs.replies(pack, "huh", calendar: ["night"]), ["huh?"], "the brain's huh never says it has none")
-    }
-
     /// Talked to, Boop says the reply's own words, with nothing asked of
     /// the brain; with none of them in the face, nothing: never a feeling it
     /// borrows, nor a topic. On Quiet too, as your words are a medium moment.

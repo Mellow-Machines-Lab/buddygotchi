@@ -1,6 +1,6 @@
 // The AMOLED board's own part of BoardHal: the shared
 // I2C bus, touch and card, the touch map from panel pixels, the drawing
-// helper on the other core, and no LED.
+// helper on the other core.
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -41,7 +41,5 @@ void BoardHal::beginBoard() {
   defaultCal_ = panelToCanvas();
   startHelper();  // the other core draws part of each native frame
 }
-
-void BoardHal::setLed(uint32_t) {}  // no LED on this board
 
 }  // namespace board

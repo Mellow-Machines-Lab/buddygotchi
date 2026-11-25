@@ -315,14 +315,6 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.pack, DeviceInfo.appPack)
     }
 
-    /// The AMOLED draws the work stream and the agents' drawer, whatever
-    /// face it runs (Pixel Bro's pixel face among them); the CYD doesn't.
-    func testTheDrawerIsTheAmoleds() {
-        XCTAssertTrue(DeviceInfo(id: "b", fw: "1", voice: nil, face: .pixel, pack: nil, reset: nil, board: "amoled206").drawsTheDrawer)
-        XCTAssertFalse(DeviceInfo(id: "b", fw: "1", voice: nil, face: .pixel, pack: nil, reset: nil, board: "cyd24").drawsTheDrawer)
-        XCTAssertTrue(DeviceInfo(id: "b", fw: "1", voice: nil, face: .gel, pack: nil, reset: nil, board: nil).drawsTheDrawer, "older firmware: by its face")
-    }
-
     /// The widest name the Mac sends: 47 bytes that JSON escapes to two
     /// each. Control characters, six bytes escaped, clip turns to spaces.
     private let widest = StateSnapshot.clip(String(repeating: "\"", count: 60), max: StateSnapshot.maxSignBytes)

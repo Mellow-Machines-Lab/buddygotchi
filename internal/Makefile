@@ -3,7 +3,7 @@
 # them as `make -C internal <target>` from the repo root. Every recipe runs
 # from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: build app simulator check boards test tools packs new-character fw fw-test sim sim-test mirror demos e2e tools-test
+.PHONY: build app simulator check boards test tools packs fw fw-test sim sim-test mirror demos e2e tools-test
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -48,29 +48,23 @@ simulator:
 
 # Every check that needs no board, camera or Jev key, one after another:
 # the Swift tests, the firmware's, the tools', the simulator's scenarios
-# against the goldens and the Mac's mirror of the board. Some stage another
-# pack than the chosen one, so it's staged again at the end.
+# against the goldens and the Mac's mirror of the board. Some stage Boop's
+# pack, which they're written against, so the chosen one is staged again
+# at the end.
 check: packs test fw-test tools-test sim mirror
 	cd $(ROOT) && python3 characters/charactergen.py --stage
 
-# Both boards' firmware, as CI builds them, each with its own pack: apart
-# from `check`, as it takes minutes, and then the chosen pack staged again.
+# The board's firmware, as CI builds it, with Boop's pack: apart from
+# `check`, as it takes minutes, and then the chosen pack staged again.
 boards:
-	cd $(ROOT) && CHARACTER=pixel $(PIO) run -e cyd24
 	cd $(ROOT) && CHARACTER=boop $(PIO) run -e amoled206
 	cd $(ROOT) && python3 characters/charactergen.py --stage
 
-# The character packs the engine is tested with, each in a repository of
-# its own (characters/packs.json): any that's missing, fetched into
-# characters/ (internal/tools/packs.py). Every check needs both.
+# The character pack the engine is tested with, in a repository of its
+# own (characters/packs.json): fetched into characters/ if it's missing
+# (internal/tools/packs.py). Every check needs it.
 packs:
 	cd $(ROOT) && python3 internal/tools/packs.py
-
-# A new character from a working pack: a copy of Pixel's as ID and NAME
-# (TO=DIR, by default beside this repository), linked into characters/ and
-# checked (characters/new-character-playbook.md).
-new-character: build
-	cd $(ROOT) && python3 internal/tools/new_character.py $(ID) "$(NAME)" $(if $(TO),--to $(TO))
 
 # Swift unit tests through the XCTest shim (there's no Xcode here):
 # `build` (one `swift build` of the whole package, the tests' runner
@@ -114,41 +108,36 @@ tools/.venv/.ok: tools/requirements.txt
 	cd $(ROOT) && internal/tools/.venv/bin/pip install --quiet -r internal/tools/requirements.txt
 	touch $@
 
-# Firmware for every board the chosen pack has a face for (its `faces`).
+# Firmware for every board the chosen pack has a face for (its `faces`):
+# the AMOLED's.
 fw:
 	cd $(ROOT) && $(PIO) run $$(for board in $$(python3 characters/charactergen.py --boards); do printf -- '-e %s ' $$board; done)
 
-# Firmware unit tests on the Mac: the chosen pack's own (its
-# tests/firmware/), then the engine's, which are written against the pixel
-# face, with Pixel's pack (and its own), then LinkKit's device library's
-# own (linkkit/device/platformio.ini). pio.sh stages each pack.
+# Firmware unit tests on the Mac: the engine's (internal/firmware/test/,
+# on the stub face in internal/firmware/stub_face.h, whatever the pack)
+# and the chosen pack's own (its tests/firmware/), which pio.sh stages
+# side by side, then LinkKit's device library's own
+# (linkkit/device/platformio.ini).
 fw-test:
-	cd $(ROOT) && python3 characters/charactergen.py --stage && pack=$$(python3 characters/charactergen.py --which) && \
-	  if [ "$$(basename "$$pack")" != pixel ]; then for suite in "$$pack"/tests/firmware/test_*; do \
-	    [ -d "$$suite" ] || continue; $(PIO) test -e native -f "$$(basename "$$suite")" || exit 1; \
-	  done; fi
-	cd $(ROOT) && CHARACTER=pixel $(PIO) test -e native
+	cd $(ROOT) && $(PIO) test -e native
 	cd $(ROOT) && $(PIO) test -d $(ROOT)/linkkit/device -e native
 
 # Every device scenario in the simulator, against the goldens (L1): the
-# pixel face's, with Pixel's pack, then the gel face's, with Boop's
-# (characters/boop/tests/golden-gel/, its pinned shots only). The PNGs land in
-# /tmp/boop-sim/<checkout>/<face>/<scenario>/; internal/tools/boopctl sim NAME
-# runs one, on the face of the pack in use.
+# gel face's, with Boop's pack (characters/boop/tests/golden-gel/, its
+# pinned shots only). The PNGs land in
+# /tmp/boop-sim/<checkout>/gel/<scenario>/; internal/tools/boopctl sim NAME
+# runs one.
 sim:
-	cd $(ROOT) && CHARACTER=pixel internal/tools/boopctl sim
 	cd $(ROOT) && CHARACTER=boop internal/tools/boopctl sim
 
 # The simulator (simulator/tests/): its core on the Mac in real time, with
 # the test as its front end and at its serial port; then the same core as
 # the browser runs it, built to WebAssembly (it needs Emscripten: brew
-# install emscripten), with Pixel's pack built beside the staged one, and
-# the page's USB cables.
+# install emscripten), and the page's USB cables.
 sim-test:
 	cd $(ROOT) && $(PIO) run -e native
 	cd $(ROOT) && python3 -m unittest discover -s simulator/tests
 	cd $(ROOT) && simulator/web/build.sh
-	cd $(ROOT) && simulator/web/build.sh pixel
 	cd $(ROOT) && node --test simulator/tests/*.test.mjs
 
 # The Mac's mirror of the board (characters/CHARACTER.md §9): its page's

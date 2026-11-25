@@ -88,7 +88,7 @@ def find_screen(lit: Image.Image, dark: Image.Image) -> tuple[int, int, int, int
     return xs[0] * 4, ys[0] * 4, (xs[-1] + 1) * 4, (ys[-1] + 1) * 4
 
 
-SCREEN = (320, 240)  # the screen as drawn: landscape, USB-C on the left (board/cyd24/config.h kRotation)
+SCREEN = (320, 240)  # the screen as drawn: landscape, USB-C on the left (board/amoled206/config.h kTopOnPanelLeft)
 
 
 def upright(img: Image.Image, box: tuple[int, int, int, int], usb: str) -> Image.Image:
@@ -167,9 +167,9 @@ def judge(colors: dict[str, tuple[float, float, float]]) -> list[str]:
     if not (r > g > b and r > 1.5 * b):
         problems.append(f"amber block reads {colors['amber']}")
     if sum(colors["arrow"]) < sum(colors["below"]) + 60:
-        problems.append("the UP arrow isn't at the top with USB-C on the left: rotation (board/cyd24/config.h kRotation)")
+        problems.append("the UP arrow isn't at the top with USB-C on the left: rotation (board/amoled206/config.h kTopOnPanelLeft)")
     if sum(colors["usb"]) + 60 > sum(colors["below"]):
-        problems.append("the black USB-C bar isn't on the USB-C side: rotation (board/cyd24/config.h kRotation)")
+        problems.append("the black USB-C bar isn't on the USB-C side: rotation (board/amoled206/config.h kTopOnPanelLeft)")
     return problems
 
 

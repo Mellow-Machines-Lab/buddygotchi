@@ -229,7 +229,7 @@ final class DemoTests: XCTestCase {
         clock.now = 7250
         recorder.sent(#"{"t":"do","id":2,"name":"react","play":"next","args":{"say":{"take":"t.go","then":"t.now"},"mood":"excited"}}"#)
         clock.now = 9000
-        let recording = recorder.recording(character: "pixel", face: "pixel")
+        let recording = recorder.recording(character: "boop", face: "gel")
         XCTAssertEqual(recording.events.map(\.at), [0, 2, 2.25])
         XCTAssertEqual(recording.events[0].line, #"{"t":"state","base":"asleep","mood":"calm"}"#, "the device's picture, as a board that just connected is told")
         XCTAssertEqual(recording.events[1].cause?.text, "You poke Pip")
@@ -257,7 +257,7 @@ final class DemoTests: XCTestCase {
             #"{"t":"do","id":7,"name":"starting"}"#,
             #"{"t":"do","id":9,"name":"wake_up","args":{"mood":"happy"}}"#,
         ] { recorder.sent(message) }
-        XCTAssertEqual(recorder.recording(character: "pixel", face: "pixel").events.map(\.effect), [
+        XCTAssertEqual(recorder.recording(character: "boop", face: "gel").events.map(\.effect), [
             nil, nil, "Pip makes an excited face and says “Go”", "Pip makes a curious face",
             "Pip shows that it needs you", "Pip's mood is now proud", "Pip celebrates", "Pip slumps", "Pip listens", nil,
             "Pip stretches and yawns",
@@ -273,13 +273,13 @@ final class DemoTests: XCTestCase {
             {"mood": "ecstatic"}
             {"brain": {"react.face": "none", "react.reply": "dance"}, "mood": "calm"}
             """)
-        let pack = try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel"))
+        let pack = try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/boop"))
         let problems = script.problems(for: pack)
         XCTAssertEqual(problems.count, 5, "\(problems)")
         XCTAssertTrue(problems[0].hasPrefix("line 2: the brain is never asked react.dance"))
         XCTAssertTrue(problems[1].hasPrefix("line 2: react.face has no choice jolly; it has none, \(pack.moods[0].id)"))
         XCTAssertTrue(problems[2].hasPrefix("line 2: the brain is never asked say"), "what it says is never the brain's")
-        XCTAssertTrue(problems[3].hasPrefix("line 3: pixel has no lasting mood ecstatic"))
+        XCTAssertTrue(problems[3].hasPrefix("line 3: boop has no lasting mood ecstatic"))
         XCTAssertTrue(problems[4].hasPrefix("line 4: react.reply has no choice dance"))
     }
 

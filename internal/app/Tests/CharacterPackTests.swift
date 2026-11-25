@@ -25,8 +25,7 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(MoodOutput.moods.map(\.name), CharacterPack.active.lasting.map(\.id))
     }
 
-    /// The popover's still face (the pack's mac/faces.json) cross-fades
-    /// into a new one over the board's dissolve between pictures
+    /// The popover's still face cross-fades into a new one over the board's dissolve between pictures
     /// (rig::kFadeMs in firmware/src/render/rig/rig.h), so the two change
     /// faces in step: changing either fails here.
     func testThePopoversFaceFadesAsLongAsTheBoards() throws {
@@ -87,61 +86,24 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertNil(pack.settled("sleepy"), "not one of its faces")
     }
 
-    /// CHARACTER.md §6: each pack stands alone, each in a repository of
-    /// its own: every file the engine reads is in its own folder, its voice
-    /// (the table and its pack) included, and it uses nothing of another's.
-    /// Pixel's has the pixel face's mac/faces.json; Boop's, whose face is
-    /// the gel, has its mirror instead.
-    func testEachPackStandsAlone() throws {
+    /// CHARACTER.md §6: the pack stands alone, in a repository of its
+    /// own: every file the engine reads is in its own folder, its voice
+    /// (the table and its pack) included, and the mirror of the board that
+    /// the popover shows.
+    func testThePackStandsAlone() throws {
         try requirePack("boop")
-        let boopFolder = Self.repo.appendingPathComponent("characters/boop")
-        let pixelFolder = Self.repo.appendingPathComponent("characters/pixel")
-        let boop = try CharacterPack(directory: boopFolder)
-        let pixel = try CharacterPack(directory: pixelFolder)
-        // Pixel keeps the moods and faces it had: a pack names its own.
-        XCTAssertEqual(pixel.moods.count, 42)
-        XCTAssertEqual(pixel.lasting.count, 16)
-        XCTAssertTrue(pixel.lasting.allSatisfy { $0.fade == nil && !$0.levelled }, "a pack from before `lasting`: nothing fades by itself")
-        XCTAssertEqual(pixel.startupMood, "happy")
-        for folder in [boopFolder, pixelFolder] {
-            for path in ["mac/takes.tsv", "voice/voice.bin"] {
-                XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent(path).path), "\(folder.lastPathComponent) \(path)")
-            }
+        let folder = Self.repo.appendingPathComponent("characters/boop")
+        for path in ["mac/takes.tsv", "voice/voice.bin", "mac/mirror/board.js"] {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent(path).path), path)
         }
-        XCTAssertTrue(FileManager.default.fileExists(atPath: pixelFolder.appendingPathComponent("mac/faces.json").path))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: boopFolder.appendingPathComponent("mac/mirror/board.js").path))
-        XCTAssertEqual(boop.id, "boop")
+        let pack = try CharacterPack(directory: folder)
+        XCTAssertEqual(pack.id, "boop")
     }
 
-    /// CHARACTER.md §7, §8: Pixel stands on its own. Its steering has the
-    /// guide, its personality and a file for each of its moods, every one
-    /// within the budgets, it names the creature
-    /// Pixel and never Boop, and it has a voice: the table and the pack
-    /// it's the table of.
-    func testPixelsSteeringIsComplete() throws {
-        let folder = Self.repo.appendingPathComponent("characters/pixel")
-        let pixel = try CharacterPack(directory: folder)
-        let steering = try Steering(directory: folder.appendingPathComponent("steering"), pack: pixel)
-        XCTAssertTrue(steering.guide.contains("Pixel"))
-        for (path, text) in steering.files {
-            XCTAssertFalse(text.contains("Boop"), path)
-            let budget = path == "guide" ? Steering.Budget.guide : path == "personality" ? Steering.Budget.personality : Steering.Budget.mood
-            XCTAssertLessThanOrEqual(Steering.tokens(text), budget, path)
-        }
-        let table = try String(contentsOf: folder.appendingPathComponent("mac/takes.tsv"), encoding: .utf8)
-        let version = try XCTUnwrap(table.split(separator: "\n").first { !$0.hasPrefix("#") })
-        let pack = try Data(contentsOf: folder.appendingPathComponent("voice/voice.bin"))
-        XCTAssertEqual(PackCheck.voiceFileVersion(pack), String(version))
-    }
-
-    /// Every pack in the repo plugs in, as `boopdev check` sees it: its
-    /// files, its steering, its voice and its demos.
-    func testEveryPackPassesTheCheck() throws {
-        let folder = Self.repo.appendingPathComponent("characters")
-        let packs = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-            .filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent("character.json").path) }
-        XCTAssertFalse(packs.isEmpty)
-        for pack in packs { XCTAssertEqual(PackCheck(pack).problems, [], pack.lastPathComponent) }
+    /// Boop's pack plugs in, as `boopdev check` sees it: its files, its
+    /// steering, its voice and its demos.
+    func testThePackPassesTheCheck() throws {
+        XCTAssertEqual(PackCheck(Self.repo.appendingPathComponent("characters/boop")).problems, [])
     }
 
     /// A pack that's missing what the engine needs says what, and a mood
@@ -149,10 +111,10 @@ final class CharacterPackTests: XCTestCase {
     func testTheCheckSaysWhatAPackLacks() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("pack-check-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: dir) }
-        let pixel = Self.repo.appendingPathComponent("characters/pixel")
+        let boop = Self.repo.appendingPathComponent("characters/boop")
         for path in ["character.json", "steering", "firmware", "mac"] {
             try FileManager.default.createDirectory(at: dir.appendingPathComponent(path).deletingLastPathComponent(), withIntermediateDirectories: true)
-            try FileManager.default.copyItem(at: pixel.appendingPathComponent(path), to: dir.appendingPathComponent(path))
+            try FileManager.default.copyItem(at: boop.appendingPathComponent(path), to: dir.appendingPathComponent(path))
         }
         var check = PackCheck(dir)
         XCTAssertEqual(check.problems, ["mac/takes.tsv has no voice/voice.bin: keep both, or neither for no voice"])
@@ -162,7 +124,7 @@ final class CharacterPackTests: XCTestCase {
         check = PackCheck(dir)
         XCTAssertEqual(check.problems.count, 1)
         XCTAssertTrue(check.problems[0].hasPrefix("guide.md is missing"), "\(check.problems)")
-        try FileManager.default.copyItem(at: pixel.appendingPathComponent("steering/guide.md"), to: dir.appendingPathComponent("steering/guide.md"))
+        try FileManager.default.copyItem(at: boop.appendingPathComponent("steering/guide.md"), to: dir.appendingPathComponent("steering/guide.md"))
         check = PackCheck(dir)
         XCTAssertEqual(check.problems, [])
         XCTAssertTrue(check.notes.contains("steering/mood/sad.md is missing: sad reads as calm's"), "\(check.notes)")
@@ -170,8 +132,8 @@ final class CharacterPackTests: XCTestCase {
 
     /// CHARACTER.md §4, §5: a pack that names a face or a mood twice, whose
     /// mood rests in a face it doesn't draw, fades to a word that isn't a
-    /// mood, or whose face settles into none, is refused. One with no
-    /// `lasting` reads its faces with a meaning as its moods.
+    /// mood, whose face settles into none, or that has no `lasting`, is
+    /// refused.
     func testABrokenPackSaysWhy() {
         let moods: [[String: Any]] = [["id": "calm", "face": "A calm face."], ["id": "happy", "face": "A happy face."],
                                       ["id": "annoyed", "face": "An annoyed face.", "settles": "cross"],
@@ -198,13 +160,9 @@ final class CharacterPackTests: XCTestCase {
                        "test: happy's fade has no minutes")
         XCTAssertEqual(refusal(with("moods", moods.map { $0["id"] as? String == "grumpy" ? ["id": "grumpy", "face": "A grumpy face."] : $0 })),
                        "test: grumpy is no lasting mood, and settles into none")
-        // From before `lasting`: a face with a meaning is a lasting mood.
         var old = json
         old["lasting"] = nil
-        old["moods"] = [["id": "calm", "meaning": "Calm.", "face": "A calm face.", "moves": ["ordinary": ["sulky"]]],
-                        ["id": "dozy", "face": "A dozy face.", "settles": "calm"]]
-        XCTAssertNil(refusal(old))
-        XCTAssertEqual(try? CharacterPack(json: old, from: "test").lasting.map(\.id), ["calm"])
+        XCTAssertEqual(refusal(old), "test: lasting is missing")
         var noFace = json
         noFace["moods"] = [["id": "calm"]] + Array(moods.dropFirst())
         XCTAssertEqual(refusal(noFace), "test: a face without an id or a face")

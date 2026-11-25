@@ -70,6 +70,7 @@ final class RenameTests: XCTestCase {
         try Runtime.setUp(stateDir: dir, name: "Mochi")
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path,
                                       link: FakeTransport(), steering: RuntimeTests.steering)
+        options.alone = true
         options.readJevKey = { _ in nil }
         options.wallClock = { Self.t0 }
         let first = try Runtime(options)

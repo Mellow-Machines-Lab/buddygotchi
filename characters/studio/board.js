@@ -91,7 +91,7 @@
     const kit = await load(), staged = window.StudioData.staged === pack;
     const build = `simulator/web/build.sh${staged ? '' : ' ' + pack}`;
     const board = await kit.sim.Board.make(staged ? {} : {pack}).catch(() => { throw Error(`There's no build of ${pack} for the board: run ${build}.`); });
-    board.power(true, {face});
+    board.power(true);
     const hello = await request(board, {t: 'hello'}), built = String(hello.pack).split(' ')[0];  // `id version`
     if (built !== pack || hello.face !== face) {
       board.power(false);

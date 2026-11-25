@@ -19,8 +19,8 @@ cheap ESP32 board with a screen is the body.
 | How Boop works: the model (Doing, Mood, Moment), one turn through every piece, what Jev reads, memory, the rules | [documentation/architecture.html](documentation/architecture.html) |
 | How to build, test and work across the repositories | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | How everything is checked, every make target and tool | [internal/VERIFICATION.md](internal/VERIFICATION.md), [internal/EVALS.md](internal/EVALS.md) |
-| What a character pack holds | [characters/CHARACTER.md](characters/CHARACTER.md), [characters/new-character-playbook.md](characters/new-character-playbook.md) |
-| The boards and flashing | [firmware/README.md](firmware/README.md) |
+| What a character pack holds | [characters/CHARACTER.md](characters/CHARACTER.md) |
+| The board and flashing | [firmware/README.md](firmware/README.md) |
 | The board with no board | [simulator/README.md](simulator/README.md) |
 | What's next | [plan/design-build.md](plan/design-build.md) (the design, step by step), [plan/TODO.md](plan/TODO.md), [plan/product-ideas.md](plan/product-ideas.md) |
 | Agents' cards: what one is, the rules, how agents did | [plan/agent-cards.md](plan/agent-cards.md) |
@@ -31,10 +31,10 @@ cheap ESP32 board with a screen is the body.
 | Path | What it is |
 | --- | --- |
 | `app/` | What ships on the Mac: the menu-bar app (`Boop`) and `BoopKit`, with the world's client in `app/BoopKit/World/`, and `boop-cards`, the tool server agents hand Boop cards through (`app/BoopCards/`) |
-| `firmware/` | PlatformIO firmware for the two boards |
+| `firmware/` | PlatformIO firmware for the board |
 | `linkkit/` | The device link, a package of its own: protocol, host library, device library ([SPEC](linkkit/SPEC.md)) |
 | `agent-hooks/`, `mellowharness/` | Submodules: reading agents' hooks, and the brain's harness. Each depends on nothing else here |
-| `characters/` | The pack contract, `charactergen.py`, the Studio; the packs are fetched into `characters/.repos/` (`boop`, `pixel`) |
+| `characters/` | The pack contract, `charactergen.py`, the Studio; the pack is fetched into `characters/.repos/` (`boop`) |
 | `simulator/` | The board with no board, for development, tests and demos |
 | `internal/` | Everything that doesn't ship: tests, evals, `boopdev`, tools (`boopctl`), skills ([README](internal/README.md)) |
 | `internal/world/` | The world's server: Hono on Vercel, Postgres, PGlite in its tests (`npm test` there; [README](internal/world/README.md)) |
@@ -54,8 +54,8 @@ the owner's. For agents:
 ```sh
 git submodule update --init && make -C internal packs  # first, in every new worktree
 make -C internal build                                # everything Swift
-make -C internal check                                # the tests that need no board, camera or Jev key; not the boards' builds
-make -C internal boards                               # both boards' firmware, as CI builds them
+make -C internal check                                # the tests that need no board, camera or Jev key; not the board's build
+make -C internal boards                               # the board's firmware, as CI builds it
 make -C internal test                                 # the Swift tests
 .build/debug/Boop --headless --state-dir DIR --debug  # the whole runtime with no UI or Bluetooth
 .build/debug/Boop --snapshots DIR                     # the popover and onboarding as PNGs, then exits
@@ -97,7 +97,7 @@ no check fails on a stale one, and `simulator/tools/demos.py check` lists them.
 
 ## Repositories
 
-Boop is five public repositories; the steps for working across them are in
+Boop is four public repositories, and a fifth is archived; the steps for working across them are in
 [CONTRIBUTING.md](CONTRIBUTING.md#working-across-the-repositories).
 
 | Repository | Here at | What goes in it |
@@ -106,13 +106,18 @@ Boop is five public repositories; the steps for working across them are in
 | Mellow-Machines-Lab/AgentHooks | `agent-hooks/` | Reading agents' hooks. Nothing of Boop |
 | Mellow-Machines-Lab/MellowHarness | `mellowharness/` | The generic multiple-choice brain. Nothing of Boop |
 | Mellow-Machines-Lab/SlimeBuddy | `characters/boop` | The gel slime's own words, art, engine, sounds and evals |
-| Mellow-Machines-Lab/PixelBuddy | `characters/pixel` | Pixel, the open example |
+| Mellow-Machines-Lab/PixelBuddy | (none) | Archived: Pixel, the second character |
+
+Boop is one character, the gel slime, on one board, the AMOLED
+(`amoled206`). Pixel and the CYD board (`cyd24`) are archived. Restore
+them from commit `c71ccc5e`, the last that has them. The PixelBuddy
+repository stays as it is, with its own pin.
 
 - Only what's a character's own goes in its repository; anything another
   character could use stays here. Anything another app could use about
   hooks goes in AgentHooks, about a personality brain in MellowHarness.
 - A change that spans repositories lands in this order: a package; the
-  character's content (this repo's CI fetches the packs' main); here; then
+  character's content (this repo's CI fetches the pack's main); here; then
   each character's `engine/` pin, to the commit here (its CI fails on the
   old pin until then). Never commit a pointer to a commit that isn't pushed.
 - Every repository squash-merges. **Only the owner pushes, tags or
@@ -216,7 +221,7 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| mood | One of the pack's 7 lasting moods: calm, happy, focused, proud, cross, sad, lonely (`CharacterPack.lasting`). Jev keeps it or moves it to any other; with no key the rules brain moves it only as the pack's mood files say (`MoodMap`); the wire carries the face it rests in | (a Moment's emotion) | `mood` |
+| mood | One of the pack's 7 lasting moods: calm, happy, focused, proud, cross, sad, lonely (`CharacterPack.lasting`). The rules brain moves it only as the pack's mood files say (`MoodMap`), and Jev, in its seat, may keep it or move it to any other; the wire carries the face it rests in | (a Moment's emotion) | `mood` |
 | resting mood | Calm, where moods settle | default mood | |
 | level | How cross it is, 1 to 3, which code counts and Jev never picks: pokes and shakes in a row, failed checks and turns, rude words; a stroke takes it one down. It picks cross's resting face: annoyed, grumpy, angry (`MoodOutput.level`) | intensity, step | `level` (the transcript's) |
 | fade | A mood settling by itself after its minutes in `character.json`, to calm (proud to happy, cross a level down), run by code on the Mac's clock, never by Jev (`MoodOutput.fade`) | drift | `fade` (the transcript's) |
@@ -227,16 +232,16 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| moment | A beat on top of Doing: event, emotion, size, voice and sign; made by the board, the rules or Jev. Jev picks only the emotion and the sign; the move, the size and the voice are the rules' (`MomentRule`, `Skits`), and so is the whole Moment at your lock or unlock, a working check-in, a boop from the world and Boop's growth, and which idle beat is due (`IdleBeat`) | reaction (for the beat), one-shot | `do` |
+| moment | A beat on top of Doing: event, emotion, size, voice and sign; made by the board or the rules, Jev in its seats. Jev may pick only the emotion, the sign and a skit's take; the move, the size and when it speaks are the rules' (`MomentRule`, `Skits`), and so is the whole Moment at your lock or unlock, a working check-in, a boop from the world and Boop's growth, and which idle beat is due (`IdleBeat`) | reaction (for the beat), one-shot | `do` |
 | event | What happened: a finish, a check, you came back, your words, your prompt naming Boop, a touch, or Boop's own beat | | |
 | Boop's own beat | A Moment with no outside event: an idle beat | | |
-| idle beat | The one thing Boop may hold up at an idle check-in, which code deals: the first that's due of an agent waiting on you (the `waiting` notice), the wish, another notice, an ask, a remembered line, a musing; at most one an hour and four a Boop day, on Quiet only the first. Jev says only whether to hold it up (`IdleBeat`) | | `beat` |
+| idle beat | The one thing Boop may hold up at an idle check-in, which code deals: the first that's due of an agent waiting on you (the `waiting` notice), the wish, another notice, an ask, a remembered line, a musing; at most one an hour and four a Boop day, on Quiet only the first. The brain says only whether to hold it up (`IdleBeat`) | | `beat` |
 | emotion | The expression for one Moment, any of the pack's 18 faces in `moods`; the board draws six more, the meme faces (`board_faces`), which no rule or brain picks yet | face | `react.face`, a `do`'s `mood` |
 | size | How much the Moment matters: small, medium, big. A rule's pick, never Jev's: a finish by its turn's length, your words medium, a touch small (`MomentRule.size`) | intensity | `loops` |
 | finish | The animation a turn's end plays, the rule's pick by how the turn ended (`MomentRule.move`), one for each size by the turn's length: Little Win, Confetti, Gold Rush; the low sign and rim glow name the thread. A chat turn (its last message a question or an answer, or quick with no calls) plays none and names nothing: Boop looks up at you once (the notice) and holds "your turn" low, in the strip's place (`MomentOutput.yourTurn`) | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
-| hello | You came: your unlock, your coming back from an away, or your first touch of Boop's day. The rule picks its size by the time away (small; medium with the wake-up after an hour; big after a day) and at most one extra: a special day's sign, else the dream told, else what happened while you were away. The first of Boop's day, and one that tells the dream, plays whole. An unlock's is the rule's alone, a slight wave; Jev picks the face only after a real away, 10 min or more, and the `back` skit says the hello (`MomentRule.hello`, `TranscriptView.hello`) | greeting, wave, the day's greeting, the telling | `wake_up`, `reply`: `hello` and `wave`, `greeting` |
+| hello | You came: your unlock, your coming back from an away, or your first touch of Boop's day. The rule picks its size by the time away (small; medium with the wake-up after an hour; big after a day) and at most one extra: a special day's sign, else the dream told, else what happened while you were away. The first of Boop's day, and one that tells the dream, plays whole. An unlock's is the rule's alone, a slight wave; the brain picks the face only after a real away, 10 min or more, and the `back` skit says the hello (`MomentRule.hello`, `TranscriptView.hello`) | greeting, wave, the day's greeting, the telling | `wake_up`, `reply`: `hello` and `wave`, `greeting` |
 | bye | You went: your lock of the Mac, by rule and with no pass (`MomentRule.bye`): a real wave with a word and a sign at a first lock in an hour, good night and the nap at a lock at night, else `reply-wave`, slighter and silent; cross, a snub, which has none. Stepping away has none | wave | `reply`: `bye` and `wave` |
-| reply | Boop's answer to your words, Jev's pick of 11 (yes, no, huh, hello, bye, thanks, ouch, comfort, hehe, status, hush), with its clip, its sign and its own words, when the face has some (`MomentOutput.replies`) | answer (that's a topic), response | `react.reply`, `reply` |
+| reply | Boop's answer to your words, the brain's pick of 11 (yes, no, huh, hello, bye, thanks, ouch, comfort, hehe, status, hush), with its clip, its sign and its own words, when the face has some (`MomentOutput.replies`) | answer (that's a topic), response | `react.reply`, `reply` |
 | ask | A sign that is a question, with two answers you tap, from the pack's `asks.md`, dealt as an idle beat; never needs an answer | quiz, prompt | `ask` |
 | wish | Boop's want, one a Boop day, kind pet, chat or work, dealt as an idle beat, never while it's cross; a rule meets it at once by a touch on its face, push-to-talk or working with an agent; left too long it sighs and slumps (`Core.Wish`, `[wish …]` in `asks.md`, `state.wish`, `wish_met`, `wish_gone`) | need, request | `wish` |
 | invite | Boop asking with its body for one touch after a skit, never a word or a question: a pose (a palm on the glass, its cheek on the glass, its back turned), the place to touch glowing, the pack's word by it until you know it ("tap", "pet", `[invite …]` in `signs.md`), a wait of 4 s, 12 s the very first time. The pack's skit has it (`win` a palm for a tap, `upset` its back for a stroke, `back` a lean for a stroke, `fix` none); code asks it on the last Moment the skit queues, only of a board that says `invites`, never on a call or while something needs you, at most 10 a Boop day, and after 3 misses in a row of a pose every second one skipped (`InviteLedger`, a view of the transcript). The board plays it inside that Moment's `do` and says how it ended: answered, missed, late or cut (`Moment.invite`, `ev invite`); it wakes no pass | request, prompt, ask (that's a question) | `invite`, `ev invite` |
@@ -250,14 +255,14 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| voice | What Boop says aloud: none, a sound, a word, a phrase, a swear (only with Settings' swearing on), as big as the Moment. Never Jev's pick: a rule says it, at a skit, to your words (the reply's own) and at a lock's real wave; every other Moment is silent | say | `say` |
+| voice | What Boop says aloud: none, a sound, a word, a phrase, a swear (only with Settings' swearing on), as big as the Moment. A rule says when: at a skit, to your words (the reply's own) and at a lock's real wave; every other Moment is silent. Only which of a skit's takes is a seat's (`skit.take`) | say | `say` |
 | skit | One kind of moment that has takes of its own and always speaks, by a plain rule from the slot the rules read the event as, the brain unable to veto it (`Skits.play`, the pack's `skits`): `win` (a turn of a minute or more done), `upset` (a failed turn, the agent giving up, the third failed check in a row; a swear only when failures pile up), `fix` (a check passing after it failed) and `back` (you back after a break); all but `fix` may invite a touch after (`invite`), and `win` and `back` may carry a remark (`remark`) | scene (that's a board animation), babble | `skit` (the record's) |
 | take | One recorded clip; a lead sound may come first. Its part says what it is: a skit's, a reply's, or a feeling's or topic's from before skits | line | `take` |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack | |
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
 | low sign | A card Boop holds up in the strip's place, two lines at most, one under the rim's glow: a finish's thread, a ship or a fix, a remembered line, a win's remark, a level or the ring in gold; with an XP chip, `+5 XP`, when its moment earned (`gel::LowSign`) | ticket | `low`, `gold`, `mark`, `xp` |
 | bubble | The voice's words as text in the lane | | |
-| remark | The one short thing Boop says about how now differs from your usual, as text on a skit that plays anyway, a plain rule's pick (`Remarks`): on a `win` a turn far faster or slower than yours, the 3rd win in a row or a new best run, today's 5th or 10th win or a new best day, as a low sign after the finish unless the agent offered a line; on a `back` you first here 45 minutes early or late, or back from a break far shorter or longer than yours, as its sign unless the hello holds up one of its own. At most one skit in three, never `upset` or `fix`, none on Quiet or with your usual empty; never a take yet; the pack's words (`[remark …]` in `signs.md`) | comment, quip, observation | `remark` (the record's) |
+| remark | The one short thing Boop says about how now differs from your usual, as text on a skit that plays anyway, a plain rule's pick (`Remarks`): on a `win` a turn far faster or slower than yours, the 3rd win in a row or a new best run, today's 5th or 10th win or a new best day, as a low sign after the finish unless the agent offered a line; on a `back` you first here 45 minutes early or late, or back from a break far shorter or longer than yours, as its sign over the dream's, unless it's a special day's. At most one skit in three, never `upset` or `fix`, none on Quiet or with your usual empty; never a take yet; the pack's words (`[remark …]` in `signs.md`) | comment, quip, observation | `remark` (the record's) |
 | talk | How much Boop says: quiet or normal. "Shh", the hush reply and the popover's Hush make it quiet for half an hour, then it's the setting's again; talking to Boop ends that sooner (`Talk`, `Core.quiet`) | chattiness, mute (that's the volume), hush (as a state) | `talk` |
 | narration | The plain words for why, the Mac's and the gel's board's own for a touch, never Jev's or Boop's voice (`Narration`, `app/touch_reason.h`); on the board, the caption | explanation | `reason` |
 
@@ -271,11 +276,12 @@ things on three channels, **voice**, **sign** and **narration**.
 | message | One JSON line on the wire: `hello`, `state`, `do`, `ev` | line | |
 | the prompt | What Jev reads: guide, PERSONALITY, MEMORY, MOOD (the mood's file, then cross's level now), CONTEXT, HISTORY, NOW | the state | |
 | CONTEXT | The prompt's section for how things stand: When, Talk, the buddy, you, the agents, the day so far (`ContextSection`) | NOW (that's the event), status | |
-| pass | One request to the brain: its mood and its emotion; to your words, its reply too; at some events a sign. Never what Boop says | | |
-| rules brain | The brain with no Jev key: the same questions answered by rules on the Mac, from the event's facts and the mood map, never the prompt's prose (`RulesBrain`, `MoodMap`) | rules engine | `rules` (the brain's id) |
-| wake, hold | Whether an event asks Jev at all. What wakes it: your prompt's reading, a finish, your words, a failed check or a fix, a touch, your coming back, an answered ask, a wish's end, a push's result, an answered request, and the idle check-in (`TranscriptView.wakes`). A turn's start, your lock and unlock, the working check-in, a boop from the world and Boop's growth never do | | |
-| check-in | Boop looking in by itself: working (during a turn), the rule's small Moment in silence and no pass (`MomentRule.checkIn`); or idle (while you're here), where the idle beat is dealt and Jev picks the face | heartbeat | `check_in`, `working` |
-| output | What Jev's answers drive (MellowHarness's `Output`; Boop's `mood` and `react`) | action | |
+| pass | One request to the brain: its mood and its emotion; to your words, its reply too; at some events a sign; at a skit with more than one, which take. The rules answer it whole, and Jev's answers replace theirs in its seats when they come in time; never whether Boop speaks | | |
+| rules brain | The brain every Boop has, key or none: each pass's questions answered at once by rules on the Mac, from the event's facts and the mood map, never the prompt's prose (`RulesBrain`, `MoodMap`) | rules engine | `rules` (the brain's id) |
+| seat | One question whose answer Jev may improve, of five: the mood, the face, a reply to your words, the sign on every pass that asks one (a reply's, a prompt's caption, the idle beat held up, an answered ask's, the dream's), and which take a skit says. Jev picks from the rules' own options, and its answer replaces theirs only when it comes within the pass's deadline, is one of them and is as sure as the output needs (a reply's floor); slow, failing or absent, it changes nothing you see, and a key's owner gets a notice (`SeatedBrain`, `BrainTrouble`). Everything else is the rules' | upgrade, fallback | `mood`, `react.face`, `react.reply`, `react.sign`, `skit.take` |
+| wake, hold | Whether an event gets a pass at all. What wakes the brain: your prompt's reading, a finish, your words, a failed check or a fix, a touch, your coming back, an answered ask, a wish's end, a push's result, an answered request, and the idle check-in (`TranscriptView.wakes`). A turn's start, your lock and unlock, the working check-in, a boop from the world and Boop's growth never do | | |
+| check-in | Boop looking in by itself: working (during a turn), the rule's small Moment in silence and no pass (`MomentRule.checkIn`); or idle (while you're here), where the idle beat is dealt and the brain picks the face | heartbeat | `check_in`, `working` |
+| output | What the brain's answers drive (MellowHarness's `Output`; Boop's `mood` and `react`) | action | |
 | speeds | Reflex, reactive and deliberative | loops | |
 | personality | Who Boop is, temperament included (characters/CHARACTER.md §7) | nature | |
 | steering | The pack's text Jev reads | | |
@@ -335,11 +341,12 @@ The rules that are easy to break, in full in
   buddy's name and level, its UTC offset, one of six activities,
   counts, its days in a row and its colour. Nothing before onboarding's world screen, nothing with it off.
 - "Needs you" and the screen priority are plain rules in the core.
-- Jev is asked only where it earns its place: a Moment's move and size,
-  and the whole Moment at your lock or unlock, a working check-in and a
-  boop from the world, are plain rules in one place (`MomentRule`), and
-  so are what a Moment says (`Skits`) and which one thing an idle
-  check-in may hold up (`IdleBeat`).
+- The rules always answer, and Jev only takes their seats, in time or
+  not at all (`SeatedBrain`): a Moment's move and size, and the whole
+  Moment at your lock or unlock, a working check-in and a boop from the
+  world, are plain rules in one place (`MomentRule`), and so are when a
+  Moment speaks (`Skits`) and which one thing an idle check-in may hold
+  up (`IdleBeat`).
 - The device renders, reports and decides when a Moment plays, never what
   Boop does.
 - The Mac's face is the board's firmware: a change to what the gel draws
@@ -364,7 +371,7 @@ updates it in the same commit. In a worktree, first check that
 | How the pieces join, which products Boop takes, `Package.swift` | `documentation/architecture.html`, `internal/README.md` |
 | What a pack holds or how the engine loads one | `characters/CHARACTER.md` |
 | A demo script or how one plays | `characters/DEMOS.md`, `internal/sessions/README.md` |
-| The boards, flashing | `firmware/README.md` |
+| The board, flashing | `firmware/README.md` |
 | `simulator/` | `simulator/README.md`, `internal/VERIFICATION.md` |
 | A make target, tool, test level or budget | `internal/VERIFICATION.md`, this file, `README.md`, `CONTRIBUTING.md` |
 | Evals | `internal/EVALS.md` |

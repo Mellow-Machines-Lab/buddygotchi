@@ -1,5 +1,5 @@
 // Boop animation, mood and factual-state vocabulary.
-// Shared by face implementations; no generated pixel asset dependency.
+// Shared by face implementations; no generated asset dependency.
 #pragma once
 #include <cstdint>
 

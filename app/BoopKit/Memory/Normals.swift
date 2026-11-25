@@ -14,8 +14,8 @@ import MellowHarness
 /// | The hour you first show up | Your hello marked the first of its Boop day (`first_today`) | the last 14 days, `daysKept` |
 /// | How long your breaks are | Your coming back from 10 minutes to 4 hours away (`away_ms`) | the last 30, `breaksKept` |
 /// | Your wins a day | Finishes that are a success with tools, on each Boop day | the last 14 days |
-/// | Your best run of wins | `wins_in_a_row` at a finish that's a success | the most ever |
-/// | Skits since the last remark | Reaction records with a `skit`, and whether they carried a `remark` | a count |
+/// | Your run of wins | Those wins in a row: a failed turn ends it, another turn neither counts nor ends it | now, and the most ever |
+/// | Skits since the last remark | Reaction records with a `skit`, and whether they carried a `remark`, once each played (`Played`) | a count |
 ///
 /// The lists keep the event each number came from, so a remark at that
 /// event compares it with your usual before it (`usual(before:minutes:)`).
@@ -54,11 +54,16 @@ public struct Normals: Codable, Equatable, Sendable {
     public var breaks: [Kept] = []
     /// The Boop days, the open one last: it and the `daysKept` before it.
     public var days: [Day] = []
-    /// The best run of wins ever, and the best before the event that set it.
+    /// Your run of wins now, from the win that made it; the best run ever,
+    /// and the best before the win that set it.
+    public var run: Kept?
     public var bestRun: Kept?
     public var bestRunBefore: Int64 = 0
     /// The skits since the last that carried a remark; nil before the first.
     public var skitsSinceRemark: Int?
+    /// The reaction records with a skit or a remark, until the board says
+    /// they played: true for one that carried a remark.
+    public var playing = Played<Bool>()
 
     public init() {}
 
@@ -72,11 +77,11 @@ public struct Normals: Codable, Equatable, Sendable {
     /// `normals` with `e` read into it, by its `line`'s facts.
     public static func adding(_ e: Event, line: Line?, to normals: Normals) -> Normals {
         var n = normals
-        if e.kind == Event.did, e.action == MomentOutput.outputName, e["ok"]?.bool != false {
-            if e[remarkFact] != nil {
-                n.skitsSinceRemark = 0
-            } else if e["skit"] != nil, let since = n.skitsSinceRemark {
-                n.skitsSinceRemark = since + 1
+        if e.kind == Event.did || e.kind == Event.ended {
+            switch n.playing.read(e, { $0[remarkFact] != nil ? true : $0["skit"] != nil ? false : nil }) {
+            case true?: n.skitsSinceRemark = 0
+            case false?: n.skitsSinceRemark = n.skitsSinceRemark.map { $0 + 1 }
+            case nil: break
             }
             return n
         }
@@ -85,11 +90,14 @@ public struct Normals: Codable, Equatable, Sendable {
             if let ms = win(facts) {
                 n.turns = Array((n.turns + [Kept(seq: e.seq, value: ms)]).suffix(turnsKept))
                 if !n.days.isEmpty { n.days[n.days.count - 1].wins += 1 }
-            }
-            let run = facts["wins_in_a_row"]?.int ?? 0
-            if MomentRule.finish(facts) == .success, run > (n.bestRun?.value ?? 0) {
-                n.bestRunBefore = n.bestRun?.value ?? 0
-                n.bestRun = Kept(seq: e.seq, value: run)
+                let run = Kept(seq: e.seq, value: (n.run?.value ?? 0) + 1)
+                n.run = run
+                if run.value > (n.bestRun?.value ?? 0) {
+                    n.bestRunBefore = n.bestRun?.value ?? 0
+                    n.bestRun = run
+                }
+            } else if MomentRule.finish(facts) == .failure {
+                n.run = nil
             }
         }
         if e.type == .presence, e.phase == .end, let away = facts["away_ms"]?.int, (breakFromMs...breakUntilMs).contains(away) {
@@ -111,8 +119,9 @@ public struct Normals: Codable, Equatable, Sendable {
     }
 
     /// Your usual as it stood before the event `seq`, for a remark there:
-    /// what that event added is left out, but today's wins, which count
-    /// it. `minutes` is a time's minutes after 5:00, when Boop's day starts.
+    /// what that event added is left out, but today's wins and the run,
+    /// which count it. `minutes` is a time's minutes after 5:00, when Boop's
+    /// day starts.
     public struct Usual: Equatable, Sendable {
         public var turnsMs: [Int64] = []
         public var breaksMs: [Int64] = []
@@ -121,6 +130,9 @@ public struct Normals: Codable, Equatable, Sendable {
         /// The wins of each day before today, and today's so far.
         public var winsADay: [Int] = []
         public var winsToday = 0
+        /// The run of wins the event made, when it's the latest win, else 0;
+        /// and the best run before it.
+        public var run: Int64 = 0
         public var bestRun: Int64 = 0
         public var skitsSinceRemark: Int?
 
@@ -138,6 +150,7 @@ public struct Normals: Codable, Equatable, Sendable {
         u.firstMinutes = before.compactMap { $0.firstAt.map(minutes) }
         u.winsADay = before.map(\.wins)
         u.winsToday = days.last?.wins ?? 0
+        u.run = run.map { $0.seq == seq ? $0.value : 0 } ?? 0
         u.bestRun = bestRun.map { $0.seq < seq ? $0.value : bestRunBefore } ?? 0
         u.skitsSinceRemark = skitsSinceRemark
         return u

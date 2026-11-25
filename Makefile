@@ -39,7 +39,7 @@ bundle:
 # simulator's page from its recording, at once; NAME=all every one, one
 # after another. BOARD=usb:SOCKET plays it on a board, IN=… with an agent,
 # and CHARACTER=<pack> picks one where two packs have a demo of that name.
-DEMO_RUN := internal/tools/session/session.py run $(or $(NAME),landing) --board $(or $(BOARD),sim)
+DEMO_RUN := internal/tools/session/session.py run $(NAME) --board $(or $(BOARD),sim)
 demo:
 	@$(PACK)
 	@case "$(IN)" in \
@@ -63,9 +63,9 @@ eval:
 	swift build $(SWIFT_CHECK) --product boopdev
 	.build/debug/boopdev eval --level full
 
-# Build and upload over USB (auto-reset, no BOOT press), for whichever
-# board is plugged in; BOARD (cyd24 or amoled206) or BOOP_PORT picks one
-# when it can't tell (firmware/tools/flash.sh, firmware/README.md).
+# Build and upload over USB (auto-reset, no BOOT press), to the board
+# plugged in; BOOP_PORT picks one when there are two (firmware/tools/flash.sh,
+# firmware/README.md).
 flash:
 	$(PACK)
 	firmware/tools/flash.sh

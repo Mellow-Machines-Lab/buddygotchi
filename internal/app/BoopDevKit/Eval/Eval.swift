@@ -710,6 +710,9 @@ public struct Eval {
     /// Each run answered by the rules brain (`RulesBrain`), built for its
     /// own harness and mood: `--brain rules`, no Jev request.
     public var rules = false
+    /// With `rules`, the brain each run's rules brain is put in, as a real
+    /// launch's is (`SeatedBrain`): the tests'.
+    public var seated: (@Sendable (RulesBrain) -> any Brain)?
     /// Whether Boop may swear, Settings' switch: on, as the evals keep it.
     public var swears = true
 
@@ -854,10 +857,11 @@ public struct Eval {
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
         }
         func moodNow() -> String { home.sync { MoodOutput.value(mood, harness.log.view(now: clock.now)) } }
-        let brain: any Brain = !self.rules ? self.brain : RulesBrain(
+        let rulesBrain = !self.rules ? nil : RulesBrain(
             seed: SplitMix64.seed(of: scenario.file), facts: { [weak harness] in harness?.line($0)?.facts },
             mood: { log in (MoodOutput.value(mood, log), MoodOutput.level(mood, log)) },
             working: { log in view.isWorking(at: clock.now, log) })
+        let brain: any Brain = rulesBrain.map { rules in seated.map { $0(rules) } ?? rules } ?? self.brain
         home.sync {
             harness.use(brain)
             // The mood it starts in, as the dashboard would set it just before.

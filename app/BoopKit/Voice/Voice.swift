@@ -30,18 +30,39 @@ public enum Voice {
     /// text is in `avoiding` (the last says', the newest first) when another
     /// fits: the bank has some words recorded twice in one mood, and most in
     /// several. With every one said lately, the one said longest ago. None
-    /// in `never`, whatever else fits. Nil when none does.
+    /// in `never`, whatever else fits. With a `text` the face has a take of,
+    /// that one, whatever its kind. Nil when none fits.
     public static func take(_ part: Take.Part, meaning: String, kind: Take.Kind, face: String, finish: String?,
-                            avoiding: [String] = [], never: Set<String> = [], in pack: CharacterPack = .active, rng: inout SplitMix64) -> Take? {
+                            avoiding: [String] = [], never: Set<String> = [], text: String? = nil, in pack: CharacterPack = .active,
+                            rng: inout SplitMix64) -> Take? {
         let fit = Take.all(in: pack).filter {
             $0.part == part && $0.meaning == meaning && $0.moods.contains(face) && ($0.finish == nil || $0.finish == finish)
                 && !never.contains($0.text)
         }
+        let picked = fit.filter { $0.text == text }
+        if !picked.isEmpty { return picked[rng.int(in: 0...(picked.count - 1))] }
         for k in Self.order(kind) {
             let pool = fresh(fit.filter { $0.kind == k }, avoiding: avoiding)
             if !pool.isEmpty { return pool[rng.int(in: 0...(pool.count - 1))] }
         }
         return nil
+    }
+
+    /// The texts `take` picks among for `part`'s `meaning`, in any face, of
+    /// the nearest kind to `kind` that has one: each once, those not said
+    /// lately (`avoiding`, the newest first) first, then the one said
+    /// longest ago first, at most `limit`. What a brain may choose from
+    /// before the face is known.
+    public static func texts(_ part: Take.Part, meaning: String, kind: Take.Kind, finish: String?, avoiding: [String] = [],
+                             never: Set<String> = [], limit: Int, in pack: CharacterPack = .active) -> [String] {
+        let fit = Take.all(in: pack).filter {
+            $0.part == part && $0.meaning == meaning && ($0.finish == nil || $0.finish == finish) && !never.contains($0.text)
+        }
+        guard let pool = Self.order(kind).lazy.map({ k in fit.filter { $0.kind == k } }).first(where: { !$0.isEmpty }) else { return [] }
+        let texts = pool.map(\.text).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+        let unsaid = texts.filter { !avoiding.contains($0) }
+        let said = texts.filter { avoiding.contains($0) }.sorted { avoiding.firstIndex(of: $0)! > avoiding.firstIndex(of: $1)! }
+        return Array((unsaid + said).prefix(limit))
     }
 
     /// Those of `pool` not said lately (`avoiding`, the newest first), or

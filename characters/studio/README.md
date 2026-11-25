@@ -1,6 +1,6 @@
 # Character Studio
 
-Updated 2026-11-14. One contact sheet for a character pack: every mood
+Updated 2026-11-24. One contact sheet for a character pack: every mood
 against every state, each cell drawn by the character's own preview, and
 one cell large when you click it. The page belongs to the engine and
 names no character: the engine's states only order what the pack fills
@@ -33,8 +33,7 @@ Then open `http://127.0.0.1:8206/characters/studio/`. The server serves
 
 ## What's on the page
 
-The character first (**Boop** | **Pixel**, when there's more than one
-pack here), then a card for each of its previews: each one the pack
+A card for each of the chosen pack's previews: each one the pack
 declares, then a board for each face it hasn't declared. Switching keeps
 the mood and state.
 
@@ -90,7 +89,7 @@ A pack's `scripts` load in order as plain scripts. One of them registers
 the entry's adapter under the entry's `id`:
 
 ```js
-Studio.register('pixel', {
+Studio.register('board-gel', {
   transport: 'clip',            // or 'live'
   variantLabel: 'Variation',    // what the variation picker is called
   create(ctx) { return instance; }

@@ -1,6 +1,6 @@
 """The device's face in the terminal: the native simulator, fed
 the lines the app sends, screenshotted a dozen times a second and drawn
-with half blocks at exactly 1/3 scale, the face's 3-px grid."""
+with half blocks."""
 from __future__ import annotations
 
 import queue
@@ -8,7 +8,6 @@ import sys
 import threading
 import time
 from array import array
-from collections import Counter
 from itertools import groupby
 from typing import Callable
 
@@ -18,35 +17,13 @@ from rich.text import Text
 from boopctl_lib.device import DeviceError, Sim
 from boopctl_lib.image import rgb888
 
-SCALE = 3
-# (x0, y0, x1, y1), end exclusive: the band above the bottom lane, where the
-# strip and the bubble go (render/screens.h kLaneTop), which the animation
-# bank's designs fill edge to edge (a successful finish's backdrop, needs
-# you's panel, the props that show what the agents are doing), 107×64
-# blocks, so 107×32 cells.
-CROP = (0, 0, 320, 192)
 FPS = 12
-# A face that draws natively (the gel) sends its whole panel in RGB565, no
-# palette: it's sampled one pixel in every NATIVE_BLOCK×NATIVE_BLOCK block,
-# a terminal's worth (about 100×66 blocks for the AMOLED's 502×410), above
-# its lane, which starts as far down as the canvas's does.
+# The face sends its whole panel in RGB565, no palette: it's sampled one
+# pixel in every NATIVE_BLOCK×NATIVE_BLOCK block, a terminal's worth (about
+# 100×66 blocks for the AMOLED's 502×410), above its lane, which starts
+# 192/240 of the way down (render/screens.h kLaneTop on its 320×240 canvas).
 NATIVE_BLOCK = 5
 LANE_FROM = 192 / 240
-
-
-def blocks(indexes: bytes, width: int, box: tuple[int, int, int, int]) -> list[list[int]]:
-    """The palette index of each SCALE×SCALE block in `box`: the most common
-    one in it. Blocks at the box's edge may be narrower."""
-    x0, y0, x1, y1 = box
-    rows = []
-    for by in range(y0, y1, SCALE):
-        row = []
-        for bx in range(x0, x1, SCALE):
-            w = min(SCALE, x1 - bx)
-            px = b"".join(indexes[y * width + bx : y * width + bx + w] for y in range(by, min(by + SCALE, y1)))
-            row.append(px[0] if px.count(px[0]) == len(px) else Counter(px).most_common(1)[0][0])
-        rows.append(row)
-    return rows
 
 
 def native_rows(pixels: bytes, size: tuple[int, int]) -> list[list[int]]:
@@ -61,17 +38,16 @@ def native_rows(pixels: bytes, size: tuple[int, int]) -> list[list[int]]:
             for by in range(0, lane, NATIVE_BLOCK)]
 
 
-def halfblocks(rows: list[list[int]], palette: list[int] | None) -> Text:
-    """Two block rows per line of ▀: its colour the top one, its background
-    the bottom one. Runs of the same pair share one span. With no palette,
-    the rows hold RGB565 colours themselves."""
+def halfblocks(rows: list[list[int]]) -> Text:
+    """Two block rows per line of ▀, each an RGB565 colour: its colour the
+    top one, its background the bottom one. Runs of the same pair share one
+    span."""
     styles: dict[tuple[int, int], Style] = {}
-    colour = (lambda v: v) if palette is None else (lambda i: palette[i])
 
     def style(top: int, bottom: int) -> Style:
         if (top, bottom) not in styles:
-            styles[top, bottom] = Style(color="#%02x%02x%02x" % rgb888(colour(top)),
-                                        bgcolor="#%02x%02x%02x" % rgb888(colour(bottom)))
+            styles[top, bottom] = Style(color="#%02x%02x%02x" % rgb888(top),
+                                        bgcolor="#%02x%02x%02x" % rgb888(bottom))
         return styles[top, bottom]
 
     text = Text(no_wrap=True, overflow="crop")
@@ -85,10 +61,8 @@ def halfblocks(rows: list[list[int]], palette: list[int] | None) -> Text:
 
 
 def render(shot: tuple[list[int] | None, bytes, tuple[int, int]]) -> Text:
-    palette, pixels, size = shot
-    if palette is None:  # a face that draws natively: the panel in RGB565
-        return halfblocks(native_rows(pixels, size), None)
-    return halfblocks(blocks(pixels, size[0], CROP), palette)
+    _, pixels, size = shot  # the panel in RGB565, with no palette
+    return halfblocks(native_rows(pixels, size))
 
 
 class SimFace:

@@ -19,8 +19,7 @@ extension Moment.Say {
     }
 }
 
-/// The recorded voice, which Boop's pack and Pixel's each have a copy of
-/// (characters/CHARACTER.md §8): these run with either.
+/// The recorded voice, Boop's pack's own (characters/CHARACTER.md §8).
 final class VoiceTests: XCTestCase {
     override func setUpWithError() throws { try requireVoice() }
 
@@ -48,7 +47,6 @@ final class VoiceTests: XCTestCase {
             switch t.part {
             case .feeling: XCTAssertTrue(feelings.contains(t.meaning), "\(t.id) feels \(t.meaning)")
             case .about: XCTAssertTrue(topics.contains(t.meaning), "\(t.id) is about \(t.meaning)")
-            case .attention: XCTAssertEqual(t.meaning, "attention")
             case .skit:
                 XCTAssertTrue(skits.contains(t.meaning), "\(t.id) is skit \(t.meaning), which the pack hasn't")
                 if let own = recorded[t.id] {
@@ -203,7 +201,7 @@ final class VoiceTests: XCTestCase {
         var rng = SplitMix64(seed: 6)
         var led = 0, tries = 0
         for face in moods {
-            for word in Take.all where (word.kind == .word || word.kind == .swear) && word.part != .attention && word.moods.contains(face) {
+            for word in Take.all where (word.kind == .word || word.kind == .swear) && word.moods.contains(face) {
                 guard let lead = Voice.lead(before: word, face: face, finish: word.finish, rng: &rng) else { continue }
                 XCTAssertEqual(lead.kind, .sound)
                 XCTAssertEqual(lead.part, word.part)
@@ -244,11 +242,5 @@ final class VoiceTests: XCTestCase {
         let two = Moment.Say(takes: [.named("previous.tsk"), .named("phase1.word.test.test__annoyed__contained")])
         XCTAssertEqual(two.json.json, #"{"take":"previous.tsk","then":"phase1.word.test.test__annoyed__contained"}"#)
         XCTAssertEqual(two.text, "Tsk... Test")
-    }
-
-    /// Needs you's takes, which an older voice (Pixel's copy) still has:
-    /// no reaction says them.
-    func testNoReactionSaysNeedsYousTakes() {
-        XCTAssertFalse(Voice.answers(.feeling).union(Voice.answers(.about)).union(Voice.answers(.skit)).contains("attention"))
     }
 }

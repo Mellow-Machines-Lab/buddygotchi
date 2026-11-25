@@ -3,41 +3,16 @@ same way on the board and in the native simulator."""
 from __future__ import annotations
 
 import json
-import os
-import sys
 from pathlib import Path
 from typing import Any
 
-from boopctl_lib.common import REPO, chosen_pack
+from boopctl_lib.common import REPO
 from boopctl_lib.device import Link
 from boopctl_lib.image import save_shot
 
-SCENARIOS = REPO / "internal" / "firmware" / "test" / "scenarios"
-GOLDEN = REPO / "internal" / "firmware" / "test" / "golden"
 # The gel face's, which are Boop's pack's (characters/CHARACTER.md).
-GEL_SCENARIOS = REPO / "characters" / "boop" / "tests" / "scenarios-gel"
-GEL_GOLDEN = REPO / "characters" / "boop" / "tests" / "golden-gel"
-
-def face() -> str:
-    """The face the scenarios are for: BOOP_SIM_FACE's (gel, or else pixel),
-    else the one the simulator draws for the pack in use."""
-    if os.environ.get("BOOP_SIM_FACE"):
-        return "gel" if os.environ["BOOP_SIM_FACE"] == "gel" else "pixel"
-    sys.path.insert(0, str(REPO / "characters"))
-    try:
-        import charactergen
-    finally:
-        sys.path.pop(0)
-    return charactergen.sim_face(json.loads((chosen_pack() / "character.json").read_text()))
-
-
-def golden_dir() -> Path:
-    return GEL_GOLDEN if face() == "gel" else GOLDEN
-
-
-def scenario_dir() -> Path:
-    return GEL_SCENARIOS if face() == "gel" else SCENARIOS
-
+SCENARIOS = REPO / "characters" / "boop" / "tests" / "scenarios-gel"
+GOLDEN = REPO / "characters" / "boop" / "tests" / "golden-gel"
 
 TAP_MS = 100  # a tap's press or touch, unless the line gives "ms"
 CLOCK_STRIDE_MS = 30_000  # the longest jump of the frozen clock at once: 30 s passes a board's watchdog, 60 s does not, and 20 s moves a picture
@@ -47,27 +22,26 @@ def resolve(name: str) -> Path:
     path = Path(name)
     if path.exists():
         return path
-    path = scenario_dir() / f"{name}.jsonl"
+    path = SCENARIOS / f"{name}.jsonl"
     if not path.exists():
-        raise FileNotFoundError(f"no scenario {name!r} in {scenario_dir()}")
+        raise FileNotFoundError(f"no scenario {name!r} in {SCENARIOS}")
     return path
 
 
 def all_scenarios() -> list[Path]:
-    return sorted(scenario_dir().glob("*.jsonl"))
+    return sorted(SCENARIOS.glob("*.jsonl"))
 
 
 def pinned_shots(path: Path) -> set[str]:
-    """The shots of a scenario that `sim` compares with a golden. The gel's set
-    is frozen small while its pictures are redesigned, so only a shot marked
-    "pin": true is; the rest are still taken, for a person to look at, the
-    mirror and the board. Every one of Pixel's shots is pinned."""
-    every = face() != "gel"
+    """The shots of a scenario that `sim` compares with a golden. The set
+    is frozen small while the gel's pictures are redesigned, so only a shot
+    marked "pin": true is; the rest are still taken, for a person to look
+    at, the mirror and the board."""
     shots = set()
     for raw in path.read_text().splitlines():
         if raw.strip() and not raw.lstrip().startswith("//"):
             step = json.loads(raw)
-            if "shot" in step and step.get("pin", every):
+            if "shot" in step and step.get("pin"):
                 shots.add(step["shot"])
     return shots
 

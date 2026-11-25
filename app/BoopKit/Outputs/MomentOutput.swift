@@ -21,9 +21,11 @@ import MellowHarness
 /// facts, never guessed. At an idle check-in the one thing it may hold up
 /// is dealt by code (`IdleBeat`), and the sign's question is only whether.
 /// After a skit it may invite one touch, on the last Moment it queues, as
-/// the invite ledger allows (`invite(for:at:)`, `InviteLedger`). A skit
+/// the invite ledger allows (`invite(for:)`, `InviteLedger`). A skit
 /// may carry a remark too, as text: how now differs from your usual
-/// (`remark(for:about:facts:)`, `Remarks`).
+/// (`remark(for:about:facts:)`, `Remarks`). A Moment queued behind a
+/// finish (the agent's line, or the remark) has its own record, right
+/// after the finish's (`following`).
 /// The Moments with no pass (your lock or unlock, a working check-in, a
 /// boop from the world) are made here too, from the rule's picks (`ruled`,
 /// `play`). It waits in the device's queue until
@@ -35,7 +37,9 @@ public final class MomentOutput: Output {
     /// Whose reactions: its character.
     let pack: CharacterPack
     /// The questions' keys.
-    public static let emotionKey = "react.face", replyKey = "react.reply"
+    public static let emotionKey = "react.face", replyKey = "react.reply", takeKey = "skit.take"
+    /// The most takes a skit's question offers.
+    public static let takesOffered = 6
     /// Its questions, built once: none of them changes. What you said gets
     /// its reply's too (`talkQuestions`).
     let asked: [Question]
@@ -334,9 +338,8 @@ public final class MomentOutput: Output {
         var naps = false
     }
 
-    /// The moment's tags a reply's sign may have, beside the calendar's:
-    /// `nobrain` is the shrug's with no brain to answer (`Core.shrug`).
-    public static let momentTags = ["working", "waiting", Core.noBrain]
+    /// The moment's tags a reply's sign may have, beside the calendar's.
+    public static let momentTags = ["working", "waiting"]
 
     /// Whether `e` is something you said on push-to-talk, which a reply
     /// answers.
@@ -402,43 +405,44 @@ public final class MomentOutput: Output {
     /// The result card an agent handed in for the turn `now` finished, if
     /// any: its offered lines play after the finish (`MomentRule.offeredLine`).
     public var offered: (Event?) -> Card? = { _ in nil }
-    /// How long a line the board can hold low: the gel's low sign, or a
-    /// plain sign's room on a face that holds nothing low.
-    public var lineRoom: () -> Int = { MemoryPipeline.signMax }
 
     /// What a skit's invite is asked by, or nil for none ever (the evals',
     /// and most tests'): whether the board plays invites (its `hello`'s
     /// `invites`), whether you're on a call, the ledger (`InviteLedger`, nil
-    /// for none), whether two times are on one Boop day, and whether care
-    /// has room today for the touch's XP (`Growth.adds`).
+    /// for none), and whether care has room today for the touch's XP
+    /// (`Growth.adds`).
     public struct Inviting {
         public var board: () -> Bool
         public var onCall: () -> Bool
         public var ledger: () -> InviteLedger?
-        public var sameDay: (Int64, Int64) -> Bool
         public var careRoom: () -> Bool
 
         public init(board: @escaping () -> Bool, onCall: @escaping () -> Bool = { false }, ledger: @escaping () -> InviteLedger?,
-                    sameDay: @escaping (Int64, Int64) -> Bool, careRoom: @escaping () -> Bool = { false }) {
+                    careRoom: @escaping () -> Bool = { false }) {
             self.board = board
             self.onCall = onCall
             self.ledger = ledger
-            self.sameDay = sameDay
             self.careRoom = careRoom
         }
     }
     public var inviting: Inviting?
 
-    /// What `skit`'s invite comes to at `at`: none unless the board plays
-    /// invites, nothing blocks the Moment and you're not on a call; else the
+    /// What `skit`'s invite comes to: none unless the board plays invites,
+    /// nothing blocks the Moment and you're not on a call; else the
     /// ledger's (`InviteLedger.asking`), with the pack's word for the touch
     /// (`Signs.invite`) and care's XP while care has room.
-    func invite(for skit: Skit, at: Int64) -> InviteLedger.Asking {
+    func invite(for skit: Skit) -> InviteLedger.Asking {
         guard skit.invite != nil, let inviting, inviting.board(), blocked() == nil, !inviting.onCall(),
               let ledger = inviting.ledger() else { return .nothing }
-        return ledger.asking(skit, today: { inviting.sameDay($0, at) }, label: { Signs.invite(self.signs, touch: $0) },
-                             xp: inviting.careRoom() ? Growth.careXP : nil)
+        return ledger.asking(skit, label: { Signs.invite(self.signs, touch: $0) }, xp: inviting.careRoom() ? Growth.careXP : nil)
     }
+
+    /// The record of the low Moment queued behind the last finish, still to
+    /// be written: its line for HISTORY, its facts and its handle. The
+    /// brain's rules write it right after the finish's own record, so each
+    /// Moment's record ends as the board says that one ended
+    /// (`Runtime.brain`); nil when nothing was queued behind it.
+    public internal(set) var following: (message: String, facts: [String: JSONValue], pending: Pending)?
 
     /// What a skit's remark is picked by, or nil for none ever (the evals',
     /// and most tests'): your usual (`Normals`, nil for none) and a time's
@@ -480,11 +484,17 @@ public final class MomentOutput: Output {
         return a.choice
     }
 
-    /// Its questions, and the sign's where there's one to pick: for what
-    /// you said, a prompt's reading, an answered ask or a dream's telling,
-    /// a caption that fits; at an idle check-in, whether to hold up the
-    /// one thing that's due (`IdleBeat`).
+    /// Its questions, the sign's where there's one to pick, and at a skit
+    /// which take it says (`takeQuestion`).
     public func questions(now: Event?, log: LogView) -> [Question] {
+        faceAndSign(now: now, log: log) + (takeQuestion(now, log).map { [$0] } ?? [])
+    }
+
+    /// The face, and the sign's where there's one to pick: for what you
+    /// said, a prompt's reading, an answered ask or a dream's telling, a
+    /// caption that fits; at an idle check-in, whether to hold up the one
+    /// thing that's due (`IdleBeat`).
+    func faceAndSign(now: Event?, log: LogView) -> [Question] {
         let about = Self.about(now, log)
         if let about, Self.isTalk(about) {
             let asked = askedOfTalk
@@ -531,6 +541,65 @@ public final class MomentOutput: Output {
                                  about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, how the person sounds, and CONTEXT's Talk row when it's there",
                                  options: [Option("none", "No sign: PERSONALITY gives this prompt none, or nothing in it is worth holding up.")]
                                      + captions.map { Option($0, "A sign that says this.") })]
+    }
+
+    /// The slot the rules read `about` as, whose line has `facts`, for its
+    /// skit: none for your words, nor for a Moment the rules make whole.
+    func slot(_ about: Event?, facts: [String: JSONValue], ruled: Bool) -> RulesBrain.Slot? {
+        guard let about, !Self.isTalk(about), !ruled else { return nil }
+        return RulesBrain.read(about, facts: facts).slot
+    }
+
+    /// The skit that plays at `slot`, if any (`Skits.play`). On Quiet
+    /// nothing swears.
+    func skit(at slot: RulesBrain.Slot, facts: [String: JSONValue]) -> Skits.Play? {
+        Skits.play(slot: slot, facts: facts, swears: swears() && talk() != .quiet, in: pack.skits)
+    }
+
+    /// The words it never says at `about`: one that claims a fix, unless
+    /// the turn got past a failed check or the check passes again.
+    func never(_ about: Event?, slot: RulesBrain.Slot?) -> Set<String> {
+        about.map(fixed) == true || slot == .checkFixed ? [] : pack.claimsAFix
+    }
+
+    /// Whether it says nothing at a Moment this big, with this move: on
+    /// Quiet, nothing at a small moment or a finish, or with a wish, which
+    /// shows as its icon and sign. Late at night a notice stays gentle: no
+    /// word with it.
+    func silent(_ size: Size, move: String?, wishing: Bool = false, late: Bool = false) -> Bool {
+        (talk() == .quiet && (size.name == "small" || move != nil || wishing)) || late
+    }
+
+    /// The texts `skit` may say at `about` (`Voice.texts`), of the kind its
+    /// size asks, a swear when it swears, in whatever face is picked, those
+    /// not said lately first. None where it says nothing.
+    func takeTexts(_ skit: Skits.Play, slot: RulesBrain.Slot, about: Event, facts: [String: JSONValue], log: LogView) -> [String] {
+        let size = Self.sizes[MomentRule.size(about, facts: facts, mood: moodID(log))]
+        let move = MomentRule.move(about, facts: facts)
+        guard speaks(), !silent(size, move: move) else { return [] }
+        recall(log)
+        return Voice.texts(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : size.kind, finish: move, avoiding: lastWords,
+                           never: never(about, slot: slot), limit: Self.takesOffered, in: pack)
+    }
+
+    /// At a skit with more than one thing it may say, which it says: only
+    /// Jev answers it. With no answer, Voice picks, as it does with no key.
+    func takeQuestion(_ now: Event?, _ log: LogView) -> Question? {
+        let about = Self.about(now, log)
+        let facts = about.flatMap { line($0)?.facts } ?? [:]
+        guard let about, let slot = self.slot(about, facts: facts, ruled: false), let skit = self.skit(at: slot, facts: facts) else { return nil }
+        let texts = takeTexts(skit, slot: slot, about: about, facts: facts, log: log)
+        guard texts.count > 1 else { return nil }
+        return Question(key: Self.takeKey, text: "\(pack.name) speaks at this moment. Which of these does it say, in its mood?",
+                        about: "the NOW section", judgeBy: "what NOW says happened, then PERSONALITY and MOOD",
+                        options: texts.map { Option($0, "It says this.") })
+    }
+
+    /// What Jev picked for `skit` to say, if it's one of the texts offered now.
+    func pickedTake(_ answers: Answers, _ skit: Skits.Play, slot: RulesBrain.Slot, about: Event, facts: [String: JSONValue],
+                    log: LogView) -> String? {
+        guard let choice = answers[Self.takeKey]?.choice else { return nil }
+        return takeTexts(skit, slot: slot, about: about, facts: facts, log: log).contains(choice) ? choice : nil
     }
 
     /// The captions a sign may show for `now`, if it's a prompt's reading;
@@ -694,10 +763,9 @@ public final class MomentOutput: Output {
         }
         // A skit, at a pass that's neither your words nor the rules' own
         // Moment: it always plays, so with no face picked it takes the
-        // slot's first, as the mood colours it (`RulesBrain.faces`). On
-        // Quiet nothing swears.
-        let slot = talk || ruled != nil ? nil : about.map { RulesBrain.read($0, facts: lineFacts).slot }
-        let skit = slot.flatMap { Skits.play(slot: $0, facts: lineFacts, swears: swears() && self.talk() != .quiet, in: pack.skits) }
+        // slot's first, as the mood colours it (`RulesBrain.faces`).
+        let slot = self.slot(about, facts: lineFacts, ruled: ruled != nil)
+        let skit = slot.flatMap { self.skit(at: $0, facts: lineFacts) }
         if let slot, skit != nil, !pack.faces.contains(where: { $0.name == answers[Self.emotionKey]?.choice }),
            let face = RulesBrain.colour(RulesBrain.faces[slot] ?? [], mood: moodID(log) ?? pack.defaultMood, level: moodLevel(log)).first {
             answers[Self.emotionKey] = Answer(choice: face)
@@ -735,24 +803,23 @@ public final class MomentOutput: Output {
         // At a notice it looks up at you first, so it's no quiet face; a
         // rough hour's lean is its own look.
         let pick = noticing.map { $0.kind == .rough ? nil : Self.noticeScene } ?? moved
-        // What it says: on Quiet, nothing at a small moment or a finish,
-        // or with a wish, which shows as its icon and sign. Late at night a
-        // notice stays gentle: no word with it.
-        let silent = (self.talk() == .quiet && (size.name == "small" || pick != nil || wishing != nil)) || noticing?.kind == .late
+        let silent = self.silent(size, move: pick, wishing: wishing != nil, late: noticing?.kind == .late)
         // What it says, only where a rule says so: to what you said, and at
         // a lock's real wave, the reply's own words, in this face; at a
-        // skit, one of the skit's takes, a swear when it swears.
+        // skit, one of the skit's takes, a swear when it swears: the one
+        // the brain picked, if this face has it.
         var said: [Take] = []
         recall(log)
-        let never: Set<String> = about.map(fixed) == true || slot == .checkFixed ? [] : pack.claimsAFix
+        let never = self.never(about, slot: slot)
         if speaks(), !silent {
             let take: Take?
             if let reply, talk || ruled?.saysWave == true {
                 take = Voice.take(.reply, meaning: reply, kind: kind, face: choice, finish: nil, avoiding: lastWords, never: never,
                                   in: pack, rng: &takes)
-            } else if let skit {
+            } else if let skit, let slot, let about {
+                let text = pickedTake(answers, skit, slot: slot, about: about, facts: lineFacts, log: log)
                 take = Voice.take(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : kind, face: choice, finish: pick,
-                                  avoiding: lastWords, never: never, in: pack, rng: &takes)
+                                  avoiding: lastWords, never: never, text: text, in: pack, rng: &takes)
             } else {
                 take = nil
             }
@@ -857,43 +924,69 @@ public final class MomentOutput: Output {
         // The agent's line, after its finish: Boop's pick of what it offered,
         // held low in the face Boop shows, with the narration saying whose
         // words they were. Never in HISTORY: the brain never reads them.
+        // What's behind the finish is a low Moment of its own, queued after
+        // it to wait as long as it does, with a record of its own
+        // (`following`): its facts, and its words for HISTORY.
         var spoken: Moment?
+        var after: [String: JSONValue] = ["takes": .array([])]
+        var afterSaid = ""
+        func behind(_ words: String) -> Moment {
+            var m = Moment(say: Moment.Say(takes: []), mood: choice, loops: 1, sign: words)
+            m.low = true
+            m.behindFinish = true
+            return m
+        }
         if reaction.outcome != nil, ruled == nil, blocked() == nil, let card = offered(now),
            let line = MomentRule.offeredLine(card.lines, facts: lineFacts, face: choice, mood: moodID(log) ?? pack.defaultMood,
-                                             room: lineRoom()) {
-            var m = Moment(say: Moment.Say(takes: []), mood: choice, loops: 1, sign: line.says)
-            m.low = true
-            m.reason = reaction.who.map { "\($0.agent) offered it" }
-            spoken = m
+                                             room: MemoryPipeline.signMax) {
+            spoken = behind(line.says)
+            spoken?.reason = reaction.who.map { "\($0.agent) offered it" }
+            after["offered_line"] = true
+            afterSaid = "After it, \(pack.name) held up the agent's words"
         }
-        let offeredLine = spoken != nil
         // A remark on the skit, as text: a finish names its thread and holds
         // up nothing else, so it's a low Moment after it, unless the agent
-        // offered a line; any other skit holds it up as its sign, unless it
-        // holds up one already, a hello's own among them.
+        // offered a line; any other skit holds it up as its sign, over the
+        // dream's or with what happened while you were away, but not over
+        // a special day's, an ask or anything held low.
         var remarked: String?
         let finishing = reaction.outcome != nil
-        let room = finishing ? spoken == nil : reaction.sign == nil && hello?.extra == nil && asking == nil && !reaction.low
+        let room = finishing ? spoken == nil
+            : (reaction.sign == nil || about.flatMap(told) != nil) && asking == nil && !reaction.low
         if let skit, let about, room, let (id, words) = remark(for: skit.skit, about: about, facts: lineFacts) {
-            remarked = id
             if finishing {
-                var m = Moment(say: Moment.Say(takes: []), mood: choice, loops: 1, sign: words)
-                m.low = true
-                spoken = m
+                spoken = behind(words)
+                after[Normals.remarkFact] = .string(id)
+                after["sign"] = .string(words)
+                afterSaid = "After it, \(pack.name) held up a sign: \"\(words)\""
             } else {
+                remarked = id
                 reaction.sign = words
+                sign = words
             }
-            sign = words
             lastSign = words
         }
         // A skit's invite, on the last Moment queued, so the pose comes
-        // after the agent's line or the remark.
-        let invited = skit.map { invite(for: $0.skit, at: at) } ?? .nothing
+        // after the agent's line or the remark; the record of the Moment
+        // that carries it says so, and what HISTORY reads.
+        let invited = skit.map { invite(for: $0.skit) } ?? .nothing
         if case .asks(let invite) = invited {
             if spoken != nil { spoken?.invite = invite } else { reaction.invite = invite }
         }
+        var invitedFacts: [String: JSONValue] = [:]
+        switch invited {
+        case .asks(let invite): invitedFacts[InviteLedger.askedFact] = .string(invite.pose.rawValue)
+        case .skipped(let pose): invitedFacts[InviteLedger.skippedFact] = .string(pose.rawValue)
+        case .nothing: break
+        }
+        let inviting = { (m: Moment) in m.invite.map { ", then " + EventLine.inviting($0.pose, $0.touch) } ?? "" }
         queue(reaction, pending)
-        if let spoken { queue(spoken, Pending()) }
+        following = nil
+        if let spoken {
+            let next = Pending()
+            queue(spoken, next)
+            following = (afterSaid + inviting(spoken) + ".", after.merging(invitedFacts) { _, new in new }, next)
+        }
         // Asked to hush: quiet for a while, from here on.
         if reply == Self.hushReply { quiet(at) }
         if replied?.naps == true { nap(at) }
@@ -908,11 +1001,11 @@ public final class MomentOutput: Output {
         let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }
             ?? sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
             + (show == StatusReply.drawer ? " and showing every agent" : "")
-        let spoke: String = (say.text.map { ", and said \"\($0)\"" } ?? "")
-            + ((spoken?.invite ?? reaction.invite).map { ", then " + EventLine.inviting($0.pose, $0.touch) } ?? "") + "."
+        let spoke: String = (say.text.map { ", and said \"\($0)\"" } ?? "") + inviting(reaction) + "."
         var facts: [String: JSONValue] = ["takes": .array(said.map { .string($0.id) })]
-        // A skit that spoke, for HISTORY and what reads the transcript.
-        if let skit, !said.isEmpty { facts["skit"] = .string(skit.skit.id) }
+        // A skit that played, whether it spoke or not (`takes` says): what
+        // your usual counts the skits since a remark by.
+        if let skit { facts["skit"] = .string(skit.skit.id) }
         if let reply { facts["reply"] = .string(reply) }
         if let sign { facts["sign"] = .string(sign) }
         if let why { facts["reason"] = .string(why.reaction(face: choice, name: pack.name)) }
@@ -924,16 +1017,11 @@ public final class MomentOutput: Output {
             facts["notice_key"] = .string(noticing.key)
         }
         if let remembering { facts["felt"] = .string(remembering.line) }
-        if offeredLine { facts["offered_line"] = true }
-        // A remark that showed: what your usual counts the skits since by.
+        // A remark this Moment showed: what your usual counts the skits since by.
         if let remarked { facts[Normals.remarkFact] = .string(remarked) }
-        // An invite asked, or skipped for the misses: what the ledger and
-        // HISTORY read.
-        switch invited {
-        case .asks(let invite): facts[InviteLedger.askedFact] = .string(invite.pose.rawValue)
-        case .skipped(let pose): facts[InviteLedger.skippedFact] = .string(pose.rawValue)
-        case .nothing: break
-        }
+        // An invite this Moment asked, or skipped for the misses: what the
+        // ledger reads.
+        if spoken == nil { facts.merge(invitedFacts) { _, new in new } }
         if let wishing { facts["wish"] = .string(wishing.rawValue) }
         if let asking {
             facts["ask"] = .string(asking.id)

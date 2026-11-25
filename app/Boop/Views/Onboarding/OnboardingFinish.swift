@@ -316,8 +316,8 @@ struct Additions {
     }
 }
 
-/// Act 7: opening at login, the microphone, unless act 5's push-to-talk
-/// had it allowed, and the brain's key, each one card and each skippable.
+/// Act 7: opening at login, and the microphone, unless act 5's push-to-talk
+/// had it allowed, each one card and each skippable.
 struct SmallThingsAct: View {
     @ObservedObject var model: OnboardingModel
     @ObservedObject var app: AppModel
@@ -334,7 +334,6 @@ struct SmallThingsAct: View {
             VStack(spacing: Theme.gapSnug) {
                 login
                 if model.askMic { mic }
-                OnboardingBrainKey(app: app, hasBoard: model.hasBoard, saved: model.keySaved)
             }
         }
     }

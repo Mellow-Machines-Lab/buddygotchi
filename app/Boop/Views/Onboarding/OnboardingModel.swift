@@ -46,9 +46,6 @@ final class OnboardingModel: ObservableObject {
 
     // Act 6: what gets added, shown.
     @Published var showHooks = false
-    /// How act 7's key card last saved, to draw it so (the snapshots do):
-    /// true kept, false refused, nil none yet. The card keeps its own after.
-    var keySaved: Bool?
 
     // Act 7: the microphone and speech, once asked. The card is left out
     // when act 5's push-to-talk already had them allowed.
@@ -289,8 +286,8 @@ final class OnboardingModel: ObservableObject {
     // MARK: Act 6's tour
 
     /// Whether act 6 tours, once an agent says hi: Boop has its body, and
-    /// it draws the work stream and the agents' drawer (the AMOLED).
-    var tours: Bool { hasBoard && app.status?.device?.drawsTheDrawer == true }
+    /// it's said hello, so it draws the work stream and the agents' drawer.
+    var tours: Bool { hasBoard && app.status?.device != nil }
 
     /// The window's Boop after the hello: the board's own state, live, so
     /// your agent's work shows on it too. No sound.

@@ -74,8 +74,7 @@ constexpr int kChannelCount = int(Channel::kCount);
 // to its right for more than 0: 250 a quarter, its face at its rim; 500
 // its back to you; 1000 all the way round, a spin, as at rest. Only what's
 // on the body's front moves round it; its outline stays. A face may draw
-// only some: Pixel's draws neither x, reach, melt, the glass, the hands
-// nor turn.
+// only some: the gel draws them all.
 // charactergen.py reads this table to check a pack's files.
 struct ChannelInfo {
   const char* name;

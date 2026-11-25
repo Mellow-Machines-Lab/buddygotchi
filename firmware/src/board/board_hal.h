@@ -1,9 +1,9 @@
 // The board's side of app::Hal (and LinkKit's Platform): buttons, touch,
-// LED, backlight, sound, the amp, heap figures and Bluetooth's state.
-// What every board shares is in
+// backlight, sound, the amp, heap figures and Bluetooth's state.
+// What boards share is in
 // board/board_hal.cpp, the sound and the card's methods in board/audio.cpp
-// and board/card.cpp; each board's start-up, LED and default touch map
-// are in its own hal.cpp (cyd24/, amoled206/).
+// and board/card.cpp; the board's start-up and default touch map are in
+// its own hal.cpp (amoled206/).
 #pragma once
 #include "app/device.h"
 #include "board/config.h"
@@ -25,14 +25,13 @@ class BoardHal : public app::Hal {
   bool bootDown() override;
   bool touch(int& x, int& y) override;
   // The board's motion sensor, if it has one (the AMOLED's QMI8658;
-  // amoled206/imu.cpp); the CYD has none.
+  // amoled206/imu.cpp).
   bool motion(int& ax, int& ay, int& az) override;
   void touchRaw(int& x, int& y, int& z, bool& irq) override;
   bool touchLifted() override;
   uint32_t touchLifts() override;
   void setTouchCal(const app::TouchCal& c) override;
   app::TouchCal touchCal() override { return cal_; }
-  void setLed(uint32_t rgb) override;
   void setBacklight(uint8_t level) override;
   render::Size nativeSize() override;
   void* allocateSurface(size_t bytes) override;
@@ -64,7 +63,7 @@ class BoardHal : public app::Hal {
   void beginBoard();
 
   app::TouchCal cal_;         // from NVS; invalid until `boopctl calibrate` has run on this rotation
-  app::TouchCal defaultCal_;  // used until then: the raw range, turned by kRotation
+  app::TouchCal defaultCal_;  // used until then: the board's own (its hal.cpp)
   const linkkit::Ble* ble_ = nullptr;
 };
 

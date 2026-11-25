@@ -8,7 +8,7 @@ final class BoardFirmwareTests: XCTestCase {
 
     override func setUpWithError() throws {
         dir = FileManager.default.temporaryDirectory.appendingPathComponent("firmware-\(UUID().uuidString)")
-        for (board, chip, size) in [("amoled206", "esp32s3", 16 << 20), ("cyd24", "esp32", 4 << 20)] {
+        for (board, chip, size) in [("amoled206", "esp32s3", 16 << 20)] {
             let folder = dir.appendingPathComponent(board)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             // As firmware/tools/package.py writes it.
@@ -28,7 +28,7 @@ final class BoardFirmwareTests: XCTestCase {
 
     func testTheAppReadsEachBoardsManifest() {
         let all = BoardFirmware.all(in: dir)
-        XCTAssertEqual(all.map(\.board), ["amoled206", "cyd24"])
+        XCTAssertEqual(all.map(\.board), ["amoled206"])
         XCTAssertEqual(all[0].chip, .esp32s3)
         XCTAssertEqual(all[0].flashSize, 16 << 20)
         XCTAssertEqual(all[0].images.map(\.offset), [0xE000, 0x10000])
@@ -41,10 +41,10 @@ final class BoardFirmwareTests: XCTestCase {
     /// after 1.9), or the same version built with another character pack;
     /// and nothing when it runs the same with the app's pack, or a newer
     /// one, or the app carries none for it. Which board: its hello says,
-    /// or, from older firmware, its face (only the AMOLED draws the gel).
+    /// or, from older firmware, the AMOLED, the one board.
     func testABoardIsOfferedTheAppsFirmwareWhenItsIsOlderOrAnotherPack() {
         let all = BoardFirmware.all(in: dir)
-        let old = DeviceInfo(id: "b00p-01dd", fw: "1.0.0", face: .gel, board: "amoled206")
+        let old = DeviceInfo(id: "b00p-01dd", fw: "1.0.0", board: "amoled206")
         XCTAssertEqual(BoardFirmware.update(for: old, among: all)?.board, "amoled206")
         var same = old
         same.fw = "1.1.0"
@@ -61,21 +61,21 @@ final class BoardFirmwareTests: XCTestCase {
         var nine = old
         nine.fw = "1.0.9"
         XCTAssertNotNil(BoardFirmware.update(for: nine, among: all), "1.0.9 is older than 1.1.0")
-        let unnamedGel = DeviceInfo(id: "b00p-01dd", fw: "1.0.0", face: .gel)
-        XCTAssertEqual(BoardFirmware.update(for: unnamedGel, among: all)?.board, "amoled206")
-        let unnamedPixel = DeviceInfo(id: "b00p-7f3a", fw: "1.0.0", face: .pixel)
-        XCTAssertEqual(BoardFirmware.update(for: unnamedPixel, among: all)?.board, "cyd24")
+        let unnamed = DeviceInfo(id: "b00p-01dd", fw: "1.0.0")
+        XCTAssertEqual(BoardFirmware.update(for: unnamed, among: all)?.board, "amoled206")
+        var other = old
+        other.board = "another"
+        XCTAssertNil(BoardFirmware.update(for: other, among: all), "the app carries none for a board it doesn't know")
         XCTAssertNil(BoardFirmware.update(for: old, among: []), "a bare binary carries none")
     }
 
     /// The image is the one for the chip the bootloader reports, not a
-    /// guess from the port's name.
+    /// guess from the port's name: a chip the app has none for is refused.
     func testTheImageFollowsTheChipTheBootloaderReports() throws {
         let all = BoardFirmware.all(in: dir)
-        let s3 = Flasher.Board(chip: .esp32s3, mac: Self.mac), cyd = Flasher.Board(chip: .esp32, mac: Self.mac)
+        let s3 = Flasher.Board(chip: .esp32s3, mac: Self.mac), esp32 = Flasher.Board(chip: .esp32, mac: Self.mac)
         XCTAssertEqual(try? BoardFirmware.pick(s3, among: all, for: nil).board, "amoled206")
-        XCTAssertEqual(try? BoardFirmware.pick(cyd, among: all, for: nil).board, "cyd24")
-        try XCTAssertThrowsError(try BoardFirmware.pick(cyd, among: [all[0]], for: nil)) {
+        try XCTAssertThrowsError(try BoardFirmware.pick(esp32, among: all, for: nil)) {
             XCTAssertEqual($0 as? BoardFirmware.Refusal, .noFirmware(.esp32))
         }
     }

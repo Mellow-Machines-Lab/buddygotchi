@@ -625,26 +625,22 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(memory.felt(at: noon(14)).map(\.line).sorted(), ["line 0", "line 1", "line 2"])
     }
 
-    /// Pins the board's room: a gel holds a line low, up to 40 characters; any
-    /// other face folds its sign to 18, so it's offered only what fits, and
-    /// a long line doesn't take the place of a short one.
+    /// Pins the board's room: the gel holds a line low, up to 40
+    /// characters, so it's offered only what fits.
     func testALineOfferedFitsTheFace() throws {
-        XCTAssertEqual(MemoryPipeline.signRoom(face: .gel), 40)
-        XCTAssertEqual(MemoryPipeline.signRoom(face: nil), 40, "as the status takes no board")
-        XCTAssertEqual(MemoryPipeline.signRoom(face: .pixel), 18)
+        XCTAssertEqual(MemoryPipeline.signMax, 40)
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         let files = try MemoryStore(directory: dir)
         let texts = (1...4).map { "Note \($0)." }
         try files.keep(WrittenMemory.from(notes: texts.map { "you · 2026-10-05 · \($0)" })!, day: "2026-10-05")
         var days = MemoryStore.Days()
-        days.signs = ["Note 1.": "you stay up so late on fridays", "Note 2.": "stop poking me please now",
+        days.signs = ["Note 1.": "you stay up so late on fridays", "Note 2.": "stop poking me please now, i mean it, really",
                       "Note 3.": "game, game, game, again", "Note 4.": "more pets pls"]
         try files.keep(days)
         let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(timeZone: TimeZone(identifier: "UTC")!), files: files)
         let noon = Int64(LocalTime.dayNumber("2026-10-05")!) * 86_400_000 + 12 * 3_600_000
-        XCTAssertEqual(memory.felt(at: noon, longest: 18).map(\.line), ["more pets pls"])
-        XCTAssertEqual(memory.felt(at: noon, longest: 40).count, 4)
+        XCTAssertEqual(memory.felt(at: noon).map(\.note).sorted(), ["Note 1.", "Note 3.", "Note 4."], "a line over 40 characters is left out")
     }
 
     /// The dream gives the proposing writer its digests, tonight's among

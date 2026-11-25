@@ -152,8 +152,7 @@ public struct Moment: Equatable, Sendable {
     /// A celebration's words, held low in gold with the rim glowing gold
     /// (`level 13!`), beside its `sign` or alone, so one moment shows two
     /// things: today's ring closing on the sign, the level on the gold.
-    /// At most `Signs.maxLength` characters. A face that holds nothing low
-    /// shows it as its sign. Nil sends none.
+    /// At most `Signs.maxLength` characters. Nil sends none.
     public var gold: String?
     /// What the gold's words have before them: `ring` for today's ring,
     /// `gold`, `silver` or `bronze` for a league's medal. Nil sends none,
@@ -165,6 +164,10 @@ public struct Moment: Equatable, Sendable {
     /// A clip of the pack's to play as its face starts, as a reply's does
     /// (`reply-<name>`), with none of a reply's rights. Nil sends none.
     public var clip: String?
+    /// Queued behind a finish, as the agent's line or a remark is: it waits
+    /// in the device's queue as long as the finish waits and plays
+    /// (`BoopDevice.behindFinishTTL`). Not sent.
+    public var behindFinish = false
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,

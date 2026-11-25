@@ -1,9 +1,7 @@
 // The canvas palette: index → RGB565. Every colour on
 // the screen comes from this one table: "Warm Terminal", black glass with
 // grey text and one amber accent, plus the bring-up colours; the finish's
-// sage and clay in its last two entries; and between, from kFaceColorBase,
-// the face's own colours, which a face that draws the canvas writes in as
-// it's made (useFaceColors): the pixel face's designs'.
+// sage and clay in its last two entries; the entries between are black.
 //
 // Anti-aliased edges (the text, and the strip's round icons) use ramps: 8 steps
 // from black up to an ink colour. The table is computed with integer maths
@@ -26,8 +24,7 @@ constexpr Rgb kGlass = {0, 0, 0};          // the backlit black
 constexpr Rgb kEyeRgb = {246, 244, 238};   // warm white: whose turn it was, the voice's words, the numbers
 // The one accent, and it means needs you only: its dot, its name, the
 // drawer's row, and on the gel the card itself, filled, its words in
-// kNeedsYouInkRgb on it. (The pixel face's needs-you screen is this amber
-// with black on it.) Gold celebrates (kGoldRgb); neither is ever the voice.
+// kNeedsYouInkRgb on it. Gold celebrates (kGoldRgb); neither is ever the voice.
 constexpr Rgb kAmberRgb = {255, 176, 0};
 constexpr Rgb kNeedsYouInkRgb = {28, 20, 0};
 constexpr Rgb kGreyRgb = {140, 132, 121};  // secondary text
@@ -74,8 +71,6 @@ constexpr int kInkBase = 16;        // ink i, level k at kInkBase + i * 8 + k - 
 constexpr int kOnAmberBase = 8;
 constexpr int kInkOnAmber = 0x40;
 static_assert(kOnAmberBase >= kFixedCount && kOnAmberBase + kLevels <= kInkBase, "the amber ramp fits before the inks");
-// The first entry of the face's own colours, after the ramps.
-constexpr int kFaceColorBase = kInkBase + kInkCount * kLevels;
 // The finish's marks, flat, in the last two entries.
 constexpr uint8_t kSage = 254, kClay = 255;
 
@@ -123,20 +118,10 @@ constexpr PaletteTable makePalette() {
   return p;
 }
 
-// The palette in use: the engine's colours, and the face's once it has
-// written them.
+// The palette in use.
 inline PaletteTable& palette() {
   static PaletteTable p = makePalette();
   return p;
-}
-
-// A face's own colours, `colors[1]` on (0 is the black field), into the
-// entries from kFaceColorBase: colour i at kFaceColorBase + i - 1, as many
-// as fit before the sage.
-template <class Color>
-void useFaceColors(const Color* colors, int count) {
-  for (int i = 1; i < count && kFaceColorBase + i - 1 < kSage; ++i)
-    palette().c[kFaceColorBase + i - 1] = rgb565(colors[i].r, colors[i].g, colors[i].b);
 }
 
 // The full 256-entry table as sent in a screenshot; unused entries are black.

@@ -430,7 +430,6 @@ class Behaviour {
   // nobody has touched the board since, or it fell asleep alone.
   bool sleepsOn(uint32_t t) const;
   bool plugShows(uint32_t t) const { return noApp(t) && !sleepsOn(t); }
-  uint32_t led(uint32_t t) const;
   uint8_t backlight(uint32_t t) const;
   // The lane's strip at t, at its opacity: easing in over the rig's fade
   // (render::rig::Ramp) from when it came and out from when it went, still

@@ -82,7 +82,7 @@ class StudioRuleTests(unittest.TestCase):
     def pack(self, name, moods, studio=None, files=(), **extra):
         moods = [{**m, "face": m.get("face", "A face.")} for m in moods]
         character = {"id": name, "name": name.title(), "version": "0.1.0", "default_mood": moods[0]["id"], "moods": moods,
-                     "faces": {"cyd24": "face"}, **extra}
+                     "faces": {"amoled206": "face"}, **extra}
         if studio is not None:
             character["studio"] = studio
         write(self.dir / name / "character.json", character)
@@ -140,18 +140,18 @@ class StudioRuleTests(unittest.TestCase):
 
     def test_a_board_for_each_face(self):
         """The studio's own preview of each face a pack's boards have, once each, in the order the boards name them."""
-        pack = self.pack("two", [{"id": "calm"}], faces={"cyd24": "pixel", "amoled206": "gel", "other": "pixel"})
-        self.assertEqual([e["id"] for e in gen.studio_data([pack], pack, self.studio)["packs"]["two"]["studio"]], ["board-pixel", "board-gel"])
+        pack = self.pack("two", [{"id": "calm"}], faces={"lcd": "dot", "amoled206": "gel", "other": "dot"})
+        self.assertEqual([e["id"] for e in gen.studio_data([pack], pack, self.studio)["packs"]["two"]["studio"]], ["board-dot", "board-gel"])
         clash = self.pack("clash", [{"id": "calm"}], [{"id": "board-face"}])
         self.assertEqual(self.problems(clash), ["clash: each of its studio entries needs an id of its own"])
 
     def test_a_pack_adds_to_its_own_board(self):
         """A pack's entry for one of its faces' boards is that board's card, in the entry's place, with what it adds."""
         pack = self.pack("own", [{"id": "calm"}], [{"id": "board-gel", "board": "gel", "scripts": ["studio/a.js"]}],
-                         files=[("studio/a.js", "")], faces={"cyd24": "pixel", "amoled206": "gel"})
+                         files=[("studio/a.js", "")], faces={"lcd": "dot", "amoled206": "gel"})
         self.assertEqual(self.problems(pack), [])
         cards = gen.studio_data([pack], pack, self.studio)["packs"]["own"]["studio"]
-        self.assertEqual([e["id"] for e in cards], ["board-gel", "board-pixel"])
+        self.assertEqual([e["id"] for e in cards], ["board-gel", "board-dot"])
         self.assertEqual(cards[0], {"id": "board-gel", "label": "Gel on the board", "about": "its firmware, in WebAssembly",
                                     "icon": "board.svg", "board": "gel", "scripts": ["../own/studio/a.js"], "styles": [], "wears": {}})
         stray = self.pack("stray", [{"id": "calm"}], [{"id": "gel", "board": "gel"}, {"id": "board-lcd", "board": "lcd"}],
@@ -236,7 +236,7 @@ class StudioRuleTests(unittest.TestCase):
     def test_each_board_has_a_face(self):
         """CHARACTER.md §9: `faces` names a face for some board, each a folder the pack has."""
         self.assertEqual(gen.pack_problems(self.pack("plain", [{"id": "calm", "meaning": "Settled."}]), gen.load(self.dir / "plain")), [])
-        user = self.pack("user", [{"id": "calm", "meaning": "Settled."}], faces={"cyd24": "face", "amoled206": "gel"},
+        user = self.pack("user", [{"id": "calm", "meaning": "Settled."}], faces={"lcd": "face", "amoled206": "gel"},
                          files=[("firmware/src/render/face/face.cpp", "")])
         self.assertEqual(gen.pack_problems(user, gen.load(user)), ["faces gives amoled206 the gel face, and there's no firmware/src/render/gel/"])
         none = self.pack("none", [{"id": "calm", "meaning": "Settled."}], faces={})
@@ -297,30 +297,16 @@ class GapTests(unittest.TestCase):
 class RigRuleTests(unittest.TestCase):
     """CHARACTER.md §15: a pack's rig/ files, checked and written as rig_tables.h."""
 
-    MOODS, STATES = ["calm", "happy"], ["idle", "working", "asleep", "poked"]
+    STATES = ["idle", "working", "asleep", "poked"]
 
     def setUp(self):
         self.dir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.dir)
-        # A pixel face that draws two moods, whose eyes and mouths are the styles.
-        write(self.dir / gen.PIXEL_FACES, 'constexpr const char* kMoodNames[2] = {"happy", "sad"};\n')
 
     def rig(self, files):
         for rel, value in files.items():
             write(self.dir / "rig" / rel, value)
-        return gen.read_rig(self.dir, self.MOODS, self.STATES)
-
-    def test_a_style_is_a_mood_the_pixel_face_draws(self):
-        """Its own pixel face's; a typo fails with its file and key."""
-        self.assertEqual(gen.drawn_styles(self.dir), ["happy", "sad"])
-        _, problems = self.rig({"expressions.json": {"calm": {"eyes": "sad", "mouth": "hapy"}}})
-        self.assertEqual(problems, ["rig/expressions.json: calm.mouth: 'hapy' isn't a mood the pixel face draws (happy, sad)"])
-        (self.dir / gen.PIXEL_FACES).unlink()
-        _, problems = self.rig({})
-        self.assertEqual(problems, ["rig/expressions.json: calm.eyes: 'sad' isn't a mood the pixel face draws "
-                                    "(the pack has no pixel face)",
-                                    "rig/expressions.json: calm.mouth: 'hapy' isn't a mood the pixel face draws "
-                                    "(the pack has no pixel face)"])
+        return gen.read_rig(self.dir, self.STATES)
 
     def test_a_pack_without_a_rig_has_an_empty_one(self):
         rig, problems = self.rig({})
@@ -328,10 +314,9 @@ class RigRuleTests(unittest.TestCase):
         self.assertIn("inline constexpr Rig kRig = {{}, {}, {}};", gen.rig_h(self.dir, rig))
 
     def test_the_tables_are_the_files(self):
-        """Each file's rows as rig.h's types hold them: an expression's styles by name, eyeOpen both eyes, a key's
+        """Each file's rows as rig.h's types hold them: eyeOpen both eyes, a key's
         ease inout unless it says, a clip's cues in order of time, clips in their files' order."""
         rig, problems = self.rig({
-            "expressions.json": {"calm": {"eyes": "sad", "mouth": "happy"}},
             "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10, "out"], [400, 0]]},
                                "cues": [[300, "squish"], [50, "pop"]]},
             "clips/sway.json": {"ms": 200, "loop": True, "additive": False,
@@ -343,8 +328,7 @@ class RigRuleTests(unittest.TestCase):
         })
         self.assertEqual(problems, [])
         text = gen.rig_h(self.dir, rig)
-        for row in ['{"calm", "sad", "happy"},',
-                    "{0, 0, Ease::kInOut},", "{100, 10, Ease::kOut},", "{400, 0, Ease::kInOut},", "{0, 100, Ease::kInOut},",
+        for row in ["{0, 0, Ease::kInOut},", "{100, 10, Ease::kOut},", "{400, 0, Ease::kInOut},", "{0, 100, Ease::kInOut},",
                     "{Channel::kLift, {kKeys + 0, 3}},", "{Channel::kLean, {kKeys + 3, 2}},",
                     "{Channel::kEyeOpenL, {kKeys + 5, 2}},", "{Channel::kEyeOpenR, {kKeys + 7, 2}},",
                     '{50, "pop"},', '{300, "squish"},',
@@ -358,12 +342,11 @@ class RigRuleTests(unittest.TestCase):
                     # An activity's base clip, by its state.
                     "{kClips + 1, SceneState::kAsleep},",
                     "{SceneState::kWorking, nullptr, {kOccasions + 0, 2}, {kTiers + 0, 1}, {kActs + 0, 1}},",
-                    "inline constexpr Rig kRig = {{pack::kExpressions, 1}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
+                    "inline constexpr Rig kRig = {{}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
             self.assertIn(row, text)
 
     def test_a_bad_edit_fails_with_its_file_and_key(self):
         _, problems = self.rig({
-            "expressions.json": {"happy": {"eyes": "Dot", "wiggle": 1}, "calm": {"mouth": "line"}, "giddy": {}},
             "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[300, "pop"], [400, "pop"], [10, "Thud"]],
                                "tracks": {"nose": [[0, 0]], "squash": [[0, 0], [10, 2500]],
                                           "lift": [[0, 0], [100, 300], [100, 0], [200, 0, "bouncy"]]}},
@@ -377,12 +360,6 @@ class RigRuleTests(unittest.TestCase):
                                                     {"clip": "hop", "when": ["nighttime"], "after": -1}, {"when": []}]}},
         })
         self.assertEqual(problems, [
-            "rig/expressions.json: giddy: isn't a mood",
-            "rig/expressions.json: happy.eyes: 'Dot' isn't a mood the pixel face draws (happy, sad)",
-            "rig/expressions.json: happy.wiggle: unknown key",
-            "rig/expressions.json: happy.mouth: missing",
-            "rig/expressions.json: calm.mouth: 'line' isn't a mood the pixel face draws (happy, sad)",
-            "rig/expressions.json: calm.eyes: missing",
             "rig/clips/Bad Name.json: its name, the clip's id, isn't lower case, digits, - and _",
             "rig/clips/Bad Name.json: ms: 0 isn't a whole number from 1 to 60000",
             "rig/clips/hop.json: id: unknown key",
@@ -412,7 +389,7 @@ class RigRuleTests(unittest.TestCase):
 
     def test_a_bad_rig_stops_the_pack(self):
         """--check and --stage refuse a pack whose rig/ has a problem, naming it."""
-        character = {"id": "x", "version": "1", "default_mood": "calm", "moods": [], "faces": {"cyd24": "face"}}
+        character = {"id": "x", "version": "1", "default_mood": "calm", "moods": [], "faces": {"amoled206": "face"}}
         write(self.dir / "firmware/src/render/face/face.cpp", "")
         write(self.dir / "rig" / "looks.json", {"idle": {"clip": "nope"}})
         self.assertIn("rig/looks.json: idle.clip: 'nope' isn't a clip in rig/clips/", gen.pack_problems(self.dir, character))
@@ -429,7 +406,7 @@ class ReferenceRuleTests(unittest.TestCase):
         self.pack = self.repo / "characters" / "pal"
         write(self.pack / "character.json", {"moods": [{"id": "calm"}, {"id": "happy"}]})
         self.ref = self.pack / "references" / "2026-10-23-perk"
-        self.rig = {"expressions": [{"mood": "happy", "eyes": "dot", "mouth": "smile"}], "clips": [{"id": "notice"}]}
+        self.rig = {"clips": [{"id": "notice"}]}
 
     def reference(self, files=("perk.gif",), **ref):
         for name in files:
@@ -458,18 +435,15 @@ class ReferenceRuleTests(unittest.TestCase):
             "reference.json: colour: unknown key"])
         self.assertEqual(self.reference(became=[{"what": "dance", "id": "x"}], show={"mood": "giddy", "state": "nap", "anim": "notice"}, frames=-1), [
             "reference.json: frames: -1 isn't a whole number from 0 up",
-            "reference.json: became[0].what: 'dance' isn't one of clip, expression, art",
+            "reference.json: became[0].what: 'dance' isn't one of clip",
             "reference.json: show.mood: 'giddy' isn't one of the pack's moods",
             "reference.json: show.state: 'nap' isn't one of the board's states"])
         self.assertEqual(self.reference(show={"state": "idle"}), ["reference.json: show.mood: missing"])
 
     def test_what_it_became_is_in_the_rig(self):
-        """CHARACTER.md §15: a clip by its file's name, an expression by its mood, art by a style an expression wears."""
-        became = [{"what": "clip", "id": "notice"}, {"what": "expression", "id": "happy"}, {"what": "art", "id": "dot"},
-                  {"what": "art", "id": "smile"}]
-        self.assertEqual(self.reference(became=became), [])
-        self.assertEqual(self.reference(became=[{"what": "clip", "id": "hop"}, {"what": "expression", "id": "calm"}]),
-                         ["it became clip hop, which rig/ hasn't", "it became expression calm, which rig/ hasn't"])
+        """CHARACTER.md §15: a clip by its file's name."""
+        self.assertEqual(self.reference(became=[{"what": "clip", "id": "notice"}]), [])
+        self.assertEqual(self.reference(became=[{"what": "clip", "id": "hop"}]), ["it became clip hop, which rig/ hasn't"])
 
     def test_its_files(self):
         self.assertEqual(self.reference(files=("perk.gif", "notes.txt")),

@@ -22,9 +22,8 @@ void Board::input(const char* line) {
 }
 
 std::string Board::parts() const {
-  char led[32] = "", s[160];
-  if (hal_.hasLed) std::snprintf(led, sizeof(led), "\"led\":%u,", unsigned(hal_.led));
-  std::snprintf(s, sizeof(s), "{%s\"backlight\":%u,\"amp\":%s,\"card\":\"%s\"}", led, unsigned(hal_.backlight),
+  char s[160];
+  std::snprintf(s, sizeof(s), "{\"backlight\":%u,\"amp\":%s,\"card\":\"%s\"}", unsigned(hal_.backlight),
                 hal_.amp ? "true" : "false", hal_.card);
   return s;
 }

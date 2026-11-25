@@ -69,10 +69,6 @@
     const c=document.createElement('div');c.className='chips';c.append(...chips);g.append(l,c);return g;
   }
   function renderCards(){
-    const ids=Object.keys(packs);
-    $('[data-pack-choice]').hidden=ids.length<2;
-    $('[data-pack-choice]').replaceChildren(...ids.map(id=>{const b=document.createElement('button');b.type='button';b.dataset.value=id;b.textContent=packs[id].name;return b;}));
-    setSegment($('[data-pack-choice]'),sel.pack);
     $('[data-cards]').replaceChildren(...cardsOf(sel.pack).map(id=>{
       const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.className='character';b.dataset.character=id;
       b.setAttribute('aria-selected',String(id===sel.card));
@@ -371,7 +367,6 @@
   // Any press counts as the gesture browsers need before sound; the Start button plays itself.
   root.addEventListener('pointerdown',e=>{if(!e.target.closest('[data-start]'))start();},{capture:true});
   $('[data-cards]').addEventListener('click',e=>{const b=e.target.closest('[data-character]');if(b)switchCard(sel.pack,b.dataset.character);});
-  $('[data-pack-choice]').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchCard(b.dataset.value,'');});
   $('[data-back]').addEventListener('click',()=>setView('matrix'));
   $('[data-moods]').addEventListener('click',e=>{const b=e.target.closest('[data-mood]');if(b)change({mood:b.dataset.mood,face:null},{resetVariant:!resetOnState()});});
   $('[data-states]').addEventListener('click',e=>{const b=e.target.closest('[data-state]');if(b){if(b.dataset.state===sel.state)instance?.replay?.();change({state:b.dataset.state},{resetVariant:resetOnState()});}});

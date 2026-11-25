@@ -2,9 +2,11 @@ import Foundation
 import MellowHarness
 
 /// The brain in the box: Boop's mood, the emotion at each event and which
-/// sign it holds up, by rules, with no key and no network
-/// (documentation/design/brain.md, layer 1). It answers the questions Jev
-/// is asked, so every output's code rules still apply after it. The mood
+/// sign it holds up, by rules, with no network
+/// (documentation/design/brain.md, layer 1). It answers every pass first,
+/// key or none, and Jev may replace an answer in its seats (`SeatedBrain`);
+/// it answers the questions Jev is asked, so every output's code rules
+/// still apply after it. The mood
 /// moves only by the pack's mood map (`MoodMap`); the move and the size
 /// stay `MomentRule`'s. It reads the event and its line's facts as each
 /// call is prepared (`ReadingBrain`), never the prompt's prose.
@@ -272,6 +274,8 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
                 case MomentOutput.emotionKey: pick = face.flatMap { names.contains($0) ? $0 : nil } ?? (names.contains("none") ? "none" : names.first)
                 case MomentOutput.replyKey: pick = read.reply.flatMap { names.contains($0) ? $0 : nil } ?? (names.contains("huh") ? "huh" : names.first)
                 case Signs.questionKey: pick = sign(q)
+                // Left to Voice, as with no key: only Jev answers it.
+                case MomentOutput.takeKey: pick = nil
                 default: pick = q.options.first { $0.name == "none" }?.name ?? names.first
                 }
                 if let pick { out[q.key] = Answer(choice: pick, probabilities: [pick: 1]) }

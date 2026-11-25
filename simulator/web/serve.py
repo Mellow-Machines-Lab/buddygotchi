@@ -53,7 +53,7 @@ from urllib.parse import unquote, urlsplit
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 sys.path.insert(0, str(REPO / "simulator" / "tools"))
-from voice_subset import chosen_voice, pack_voice  # noqa: E402  the pack in use's voice, and any pack's
+from voice_subset import chosen_voice  # noqa: E402  the pack in use's voice
 sys.path.pop(0)
 
 
@@ -319,7 +319,7 @@ def websocket(handler: SimpleHTTPRequestHandler, cable: Cable) -> None:
 
 
 # A cable's name, which is also the end of its WebSocket's path and, on the
-# page, of its board's id; and a pack's name in characters/.
+# page, of its board's id.
 NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,15}")
 
 
@@ -528,10 +528,6 @@ def main() -> int:
                 path = path[len("/simulator"):]
             if path == "/voice.bin":
                 return args.voice
-            # /voice/PACK.bin: a pack's own voice, for a board built for it.
-            pack = re.fullmatch(r"/voice/(.+)\.bin", path)
-            if pack and NAME.fullmatch(pack[1]):
-                return str(pack_voice(pack[1]))
             return super().translate_path(path)
 
         def end_headers(self):
@@ -570,11 +566,11 @@ def main() -> int:
     signal.signal(signal.SIGHUP, stop)
     if args.cable:
         names = ",".join(path.rsplit("/", 1)[1] for path in sockets)
-        print(f"Boop Simulator: http://127.0.0.1:{args.port}/?boards={names}   (add &packs=boop,pixel for a pack each)")
+        print(f"Boop Simulator: http://127.0.0.1:{args.port}/?boards={names}")
         for path, socket_path in sockets.items():
             print(f"{path.rsplit('/', 1)[1]}'s USB, as a bridge's socket: {socket_path}")
     else:
-        print(f"Boop Simulator: http://127.0.0.1:{args.port}/   (?face=gel picks the gel, for a pack with both faces)")
+        print(f"Boop Simulator: http://127.0.0.1:{args.port}/")
         print(f"its USB, as a bridge's socket: {args.socket}")
         print(f"every mood and state, the board's marked: http://127.0.0.1:{args.port}/characters/studio/#view=matrix&board=/board")
     print(f"Character Studio: http://127.0.0.1:{args.port}/characters/studio/" + (f"   (review clips to {capture_dir})" if capture_dir else ""))

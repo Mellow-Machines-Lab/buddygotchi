@@ -13,20 +13,23 @@ final class RemarksTests: XCTestCase {
 
     /// A usual: `turns` turns of 20 minutes, `firsts` days you first came at
     /// 9:00 (240 minutes after 5:00), `breaks` breaks of an hour, each past
-    /// day's wins, today's, your best run, and the skits since a remark.
-    func usual(turns: Int = 10, firsts: Int = 5, breaks: Int = 5, days: [Int] = [2, 2, 2, 2, 2], today: Int = 1, best: Int64 = 0,
-               since: Int? = nil) -> Normals.Usual {
+    /// day's wins, today's, the run this win made, your best run before
+    /// it, and the skits since a remark.
+    func usual(turns: Int = 10, firsts: Int = 5, breaks: Int = 5, days: [Int] = [2, 2, 2, 2, 2], today: Int = 1, run: Int64 = 1,
+               best: Int64 = 0, since: Int? = nil) -> Normals.Usual {
         var u = Normals.Usual()
         u.turnsMs = Array(repeating: 20 * 60_000, count: turns)
         u.firstMinutes = Array(repeating: 240, count: firsts)
         u.breaksMs = Array(repeating: 60 * 60_000, count: breaks)
         u.winsADay = days
         u.winsToday = today
+        u.run = run
         u.bestRun = best
         u.skitsSinceRemark = since
         return u
     }
 
+    /// A win's line, with the view's quick wins in a row, which no remark reads.
     func win(minutes: Int64 = 20, tools: Int64 = 3, inARow: Int64 = 0) -> Facts {
         let ms = minutes * 60_000
         return ["outcome": "done", "length_ms": .int(ms), "length": .string(Band.length(ms: ms)), "tools": .int(tools),
@@ -62,16 +65,19 @@ final class RemarksTests: XCTestCase {
         XCTAssertNil(pick(win(minutes: 9, tools: 0), usual()), "no calls: not a turn your usual counts")
     }
 
-    /// Pins `run`: the 3rd win in a row, or a new best run of 4 or more.
+    /// Pins `run`: the 3rd win in a row, or a new best run of 4 or more,
+    /// your usual's own run of wins (`Normals.run`), never the view's quick
+    /// wins in a row, which count chat turns.
     func testRun() {
         XCTAssertEqual([Remarks.runAt, Remarks.bestRunFrom], [3, 4])
-        XCTAssertEqual(pick(win(inARow: 3), usual(best: 9)), "run")
-        XCTAssertNil(pick(win(inARow: 2), usual()))
-        XCTAssertEqual(pick(win(inARow: 4), usual(best: 3)), "run", "a new best")
-        XCTAssertNil(pick(win(inARow: 4), usual(best: 4)), "the same best isn't new")
-        XCTAssertNil(pick(win(inARow: 5), usual(best: 6)))
-        XCTAssertEqual(pick(win(inARow: 7), usual(best: 6)), "run")
-        XCTAssertEqual(pick(win(inARow: 3), usual(turns: 2, firsts: 0, breaks: 0, days: [])), "run", "it needs nothing kept but a usual")
+        XCTAssertEqual(pick(win(), usual(run: 3, best: 9)), "run")
+        XCTAssertNil(pick(win(), usual(run: 2)))
+        XCTAssertEqual(pick(win(), usual(run: 4, best: 3)), "run", "a new best")
+        XCTAssertNil(pick(win(), usual(run: 4, best: 4)), "the same best isn't new")
+        XCTAssertNil(pick(win(), usual(run: 5, best: 6)))
+        XCTAssertEqual(pick(win(), usual(run: 7, best: 6)), "run")
+        XCTAssertEqual(pick(win(), usual(turns: 2, firsts: 0, breaks: 0, days: [], run: 3)), "run", "it needs nothing kept but a usual")
+        XCTAssertNil(pick(win(inARow: 3), usual(run: 1)), "two chat turns and a win: one win")
     }
 
     /// Pins `count`: today's wins just reached 5 or 10, or just passed your
@@ -86,7 +92,7 @@ final class RemarksTests: XCTestCase {
         XCTAssertNil(pick(win(), usual(days: [2, 2, 2, 2], today: 3)), "4 days kept")
         XCTAssertNil(pick(win(tools: 0), usual(days: [], today: 5)), "a turn that isn't counted reached nothing")
         XCTAssertEqual(Remarks.number("count", facts: win(), usual: usual(today: 5)), 5)
-        XCTAssertEqual(Remarks.number("run", facts: win(inARow: 3), usual: usual()), 3)
+        XCTAssertEqual(Remarks.number("run", facts: win(), usual: usual(run: 3)), 3)
         XCTAssertNil(Remarks.number("fast", facts: win(), usual: usual()))
     }
 
@@ -117,9 +123,9 @@ final class RemarksTests: XCTestCase {
     /// Pins the order: when two fit, the first in the table wins.
     func testTheFirstThatFitsWins() {
         XCTAssertEqual(Remarks.all, ["fast", "slow", "run", "count", "early", "late", "soon", "longBreak"])
-        XCTAssertEqual(pick(win(minutes: 9, inARow: 3), usual(today: 5)), "fast")
-        XCTAssertEqual(pick(win(minutes: 41, inARow: 3), usual(today: 5)), "slow")
-        XCTAssertEqual(pick(win(inARow: 3), usual(today: 5)), "run")
+        XCTAssertEqual(pick(win(minutes: 9), usual(today: 5, run: 3)), "fast")
+        XCTAssertEqual(pick(win(minutes: 41), usual(today: 5, run: 3)), "slow")
+        XCTAssertEqual(pick(win(), usual(today: 5, run: 3)), "run")
         XCTAssertEqual(pick("back", back(minutes: 29, first: true), usual(), minutes: 60), "early")
         XCTAssertEqual(pick("back", back(minutes: 121, first: true), usual(), minutes: 400), "late")
     }
@@ -156,19 +162,18 @@ final class RemarksTests: XCTestCase {
 
     // MARK: The pack
 
-    /// Both packs have words for every remark `Remarks` can return, each
+    /// Boop's pack has words for every remark `Remarks` can return, each
     /// fitting a sign once `{n}` is filled in.
     func testThePacksHaveEveryRemarksWords() throws {
-        for pack in try SkitTests.packs() {
-            let signs = try Steering(directory: pack.directory.appendingPathComponent("steering")).signs
-            for id in Remarks.all {
-                let lines = Signs.remark(signs, id, n: 10)
-                XCTAssertFalse(lines.isEmpty, "\(pack.id): no words for \(id)")
-                for line in lines { XCTAssertLessThanOrEqual(line.count, Signs.maxLength, "\(pack.id): \(line)") }
-            }
-            XCTAssertEqual(Signs.remark(signs, "run", n: 3).first, "3 in a row", pack.id)
-            XCTAssertEqual(Signs.remark(signs, "count", n: nil), [], "\(pack.id): a {n} line with no number is left out")
+        let pack = try SkitTests.pack()
+        let signs = try Steering(directory: pack.directory.appendingPathComponent("steering")).signs
+        for id in Remarks.all {
+            let lines = Signs.remark(signs, id, n: 10)
+            XCTAssertFalse(lines.isEmpty, "\(pack.id): no words for \(id)")
+            for line in lines { XCTAssertLessThanOrEqual(line.count, Signs.maxLength, "\(pack.id): \(line)") }
         }
+        XCTAssertEqual(Signs.remark(signs, "run", n: 3).first, "3 in a row", pack.id)
+        XCTAssertEqual(Signs.remark(signs, "count", n: nil), [], "\(pack.id): a {n} line with no number is left out")
     }
 
     // MARK: The Moment
@@ -203,10 +208,11 @@ final class RemarksTests: XCTestCase {
     }
 
     /// A `win` far faster than your usual shows `fast` as a low Moment after
-    /// the finish, in the face Boop shows; the record says it, and HISTORY's
-    /// line holds up its sign. The invite rides that last Moment.
+    /// the finish, in the face Boop shows, waiting behind it as long as the
+    /// finish may; its own record says it, and HISTORY's line for it holds
+    /// up its sign. The invite rides that last Moment.
     func testAFastWinsRemarkIsALowMomentAfter() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let rig = rig()
         rig.inviting()
         let result = try XCTUnwrap(rig.run(Self.finish(), win(minutes: 2)))
@@ -219,14 +225,34 @@ final class RemarksTests: XCTestCase {
         XCTAssertEqual(rig.sent.first?.outcome, "success")
         XCTAssertNil(rig.sent.first?.invite)
         XCTAssertEqual(rig.sent.last?.invite?.pose, .palm, "the invite on the last Moment queued")
-        XCTAssertEqual(result.facts[Normals.remarkFact], "fast")
-        XCTAssertNil(result.facts["offered_line"])
-        XCTAssertTrue(result.message.contains(#", holding up a sign: "\#(words)""#), result.message)
+        XCTAssertEqual(rig.sent.last?.behindFinish, true)
+        XCTAssertNil(result.facts[Normals.remarkFact], "the finish's record says only its own")
+        XCTAssertEqual(result.facts["skit"], "win")
+        XCTAssertFalse(result.message.contains(words), result.message)
+        let after = try XCTUnwrap(rig.react.following)
+        XCTAssertEqual(after.facts[Normals.remarkFact], "fast")
+        XCTAssertEqual(after.facts["sign"]?.string, words)
+        XCTAssertEqual(after.facts[InviteLedger.askedFact], "palm")
+        XCTAssertNil(after.facts["offered_line"])
+        XCTAssertEqual(after.message, #"After it, \#(rig.react.pack.name) held up a sign: "\#(words)", then held up a palm for a poke."#)
+    }
+
+    /// A skit's record names it whenever it played, said or not (`takes`
+    /// says which): a board with another voice says nothing at a win, and
+    /// the record still names the `win`, so your usual counts it.
+    func testASkitThatSaysNothingIsStillNamed() throws {
+        try requirePack("boop")
+        let quiet = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false },
+                                 line: { _ in Line("", facts: RemarksTests().win(minutes: 2)) })
+        let result = try XCTUnwrap(quiet.run([MomentOutput.emotionKey: Answer(choice: "happy", probabilities: ["happy": 1])],
+                                             now: Self.finish(), log: Transcript.log().view(now: 0)))
+        XCTAssertEqual(result.facts["takes"], .array([]))
+        XCTAssertEqual(result.facts["skit"], "win")
     }
 
     /// The agent's offered line wins: no remark after it.
     func testTheAgentsLineWins() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let rig = rig()
         var card = Card(kind: .result, text: "shipped the nav")
         card.lines = [Card.Line(says: "all green", feeling: "happy")]
@@ -234,13 +260,15 @@ final class RemarksTests: XCTestCase {
         let result = try XCTUnwrap(rig.run(Self.finish(), win(minutes: 2)))
         XCTAssertEqual(rig.sent.map(\.sign), [nil, "all green"])
         XCTAssertNil(result.facts[Normals.remarkFact])
+        XCTAssertNil(rig.react.following?.facts[Normals.remarkFact])
     }
 
-    /// A `back` holds its remark up as the Moment's sign, unless the hello
-    /// has one of its own: a special day's sign, the dream told, or what
-    /// happened while you were away.
+    /// A `back` holds its remark up as the Moment's sign, over the dream
+    /// told and beside what happened while you were away, whose hello is
+    /// otherwise as it was (the dream's still plays whole); a special day's
+    /// sign wins over it.
     func testABacksRemarkIsItsSign() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let early = back(minutes: 600, first: true)
         let plain = rig()
         let result = try XCTUnwrap(plain.run(Self.cameBack(), early))
@@ -256,10 +284,27 @@ final class RemarksTests: XCTestCase {
             facts[extra] = value
             let rig = rig()
             let result = try XCTUnwrap(rig.run(Self.cameBack(), facts))
-            XCTAssertNil(result.facts[Normals.remarkFact], extra)
-            if extra == TranscriptView.daySignFact { XCTAssertEqual(rig.sent.last?.sign, "happy holidays!") }
-            XCTAssertFalse(Signs.remark(RuntimeTests.steering.signs, "early").contains(rig.sent.last?.sign ?? ""), extra)
+            let sign = rig.sent.last?.sign ?? ""
+            if extra == TranscriptView.daySignFact {
+                XCTAssertNil(result.facts[Normals.remarkFact], extra)
+                XCTAssertEqual(sign, "happy holidays!")
+                XCTAssertFalse(Signs.remark(RuntimeTests.steering.signs, "early").contains(sign), extra)
+            } else {
+                XCTAssertEqual(result.facts[Normals.remarkFact], "early", extra)
+                XCTAssertTrue(Signs.remark(RuntimeTests.steering.signs, "early").contains(sign), "\(extra): \(sign)")
+                XCTAssertEqual(result.facts["sign"]?.string, sign)
+            }
+            XCTAssertEqual(rig.sent.last?.greeting, true, "\(extra): the first of the day plays whole, as before")
         }
+        // The dream told after a short break: the remark is the sign, and
+        // the hello still plays whole, as the dream's does.
+        var dreamt = back(minutes: 29)
+        dreamt["dream_tags"] = .array(["you"])
+        let told = rig()
+        let soon = try XCTUnwrap(told.run(Self.cameBack(), dreamt))
+        XCTAssertEqual(soon.facts[Normals.remarkFact], "soon")
+        XCTAssertTrue(Signs.remark(RuntimeTests.steering.signs, "soon").contains(told.sent.last?.sign ?? ""))
+        XCTAssertEqual(told.sent.last?.greeting, true)
     }
 
     /// With your usual empty, a new buddy's, or with nothing to remark by,
@@ -303,11 +348,12 @@ final class RemarksTests: XCTestCase {
 
     /// Through the runtime with a fake board: ten wins of 20 minutes over
     /// five days, and you first there at 9:00 each; on the sixth, a win of
-    /// 2 minutes shows `fast` as a second low Moment and records it; the
-    /// next two skits carry none; and you back at 7:00, early, on a special
-    /// day, keeps the day's sign.
+    /// 2 minutes shows `fast` as a second low Moment, with a record of its
+    /// own, which the board skips late, so it counts for nothing and the
+    /// next win's `fast` plays; the next two skits carry none; and you back
+    /// at 7:00, early, on a special day, keeps the day's sign.
     func testThroughTheRuntime() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let dir = URL(fileURLWithPath: "/tmp/boop-rem-\(UUID().uuidString.prefix(8))")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -326,7 +372,18 @@ final class RemarksTests: XCTestCase {
             clock.now += minutes * 60_000 - 1000
             hook("Stop")
         }
-        func pass() { _ = runtime.harness.force([MomentOutput.emotionKey: "happy"], by: Runtime.forcedBy) }
+        // The board says each `do` played, or the last ones as `how`.
+        var answered: Set<Int> = []
+        func played(last: Int = 0, _ how: String = "done", why: String? = nil) {
+            let ids = transport.dos.map(FakeTransport.id).filter { !answered.contains($0) }
+            for (i, id) in ids.enumerated() {
+                answered.insert(id)
+                runtime.device(i >= ids.count - last ? FakeTransport.ended(id, how, why) : FakeTransport.ended(id, "done"))
+            }
+        }
+        func pass() {
+            _ = runtime.harness.force([MomentOutput.emotionKey: "happy"], by: Runtime.forcedBy)
+        }
         func args(_ line: String) -> [String: Any] {
             let o = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any]
             return o?["args"] as? [String: Any] ?? [:]
@@ -353,11 +410,27 @@ final class RemarksTests: XCTestCase {
             XCTAssertEqual(normals()?.days.compactMap(\.firstAt).count, 5, "five days you came")
             XCTAssertNil(normals()?.skitsSinceRemark)
 
-            // The sixth day: a win far faster than the ten.
+            // The sixth day: a win far faster than the ten, its remark
+            // skipped late by a busy board.
             clock.now = Self.local(5, 6)
-            let sent = transport.dos.count
+            var sent = transport.dos.count
             win(minutes: 2)
             pass()
+            XCTAssertEqual(moments(from: sent).count, 2, "the finish, then the remark")
+            XCTAssertEqual(transport.dos.last.flatMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] }?["ttl"] as? Int,
+                           BoopDevice.behindFinishTTL)
+            let skipped = record()
+            XCTAssertEqual(skipped?[Normals.remarkFact]?.string, "fast", "its own record")
+            played(last: 1, "skipped", why: "late")
+            XCTAssertEqual(skipped.flatMap { runtime.harness.log.view(now: now).ended($0.seq) }?["outcome"]?.string, "failed")
+            XCTAssertNil(normals()?.skitsSinceRemark, "a remark skipped counts for nothing")
+
+            // The next win: the remark again, which plays.
+            clock.now += 60_000
+            sent = transport.dos.count
+            win(minutes: 2)
+            pass()
+            played()
             let fast = moments(from: sent)
             XCTAssertEqual(fast.count, 2, "the finish, then the remark")
             XCTAssertNil(fast.first?["sign"])
@@ -373,12 +446,13 @@ final class RemarksTests: XCTestCase {
                 let before = transport.dos.count
                 win(minutes: 2)
                 pass()
+                played()
                 XCTAssertEqual(moments(from: before).count, 1, "skit \(n): the finish alone")
                 XCTAssertNil(record()?[Normals.remarkFact], "skit \(n)")
-                XCTAssertNotNil(record()?["skit"], "skit \(n) spoke")
+                XCTAssertNotNil(record()?["skit"], "skit \(n) played")
             }
             XCTAssertEqual(normals()?.skitsSinceRemark, 2)
-            XCTAssertEqual(normals()?.days.last?.wins, 3)
+            XCTAssertEqual(normals()?.days.last?.wins, 4)
 
             // Away, and back at 7:00, early, on December 24: the day's sign wins.
             clock.now = Self.local(5, 6, 30)
@@ -400,6 +474,7 @@ final class RemarksTests: XCTestCase {
             }
             let before = transport.dos.count
             pass()
+            played()
             let backs = moments(from: before)
             XCTAssertEqual(backs.count, 1)
             XCTAssertEqual(backs.last?["sign"] as? String, day, "the day's sign wins")

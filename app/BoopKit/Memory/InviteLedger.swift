@@ -17,14 +17,14 @@ extension Moment.Invite {
 /// What Boop knows of its invites: a view over the transcript, never a
 /// store of its own. It's a pure fold of the transcript's events
 /// (`adding`): the reaction records that asked one (their `invite` fact,
-/// the pose) or let one go by (`invite_skipped`), and the board's `invite`
-/// events, by the pose they name. The memory keeps it as it keeps the
-/// daily counts (`InviteReader`), and catches it up from the transcript at
-/// launch.
+/// the pose), counted once the board played them (`Played`), or let one go
+/// by (`invite_skipped`), and the board's `invite` events, by the pose they
+/// name. The memory keeps it as it keeps the daily counts
+/// (`InviteReader`), and catches it up from the transcript at launch.
 ///
 /// | Question | Rule | Constant |
 /// | --- | --- | --- |
-/// | May Boop invite now? | Fewer than 10 invites asked on this Boop day | `mostADay` |
+/// | May Boop invite now? | Fewer than 10 invites asked on this Boop day, each counted once the board played it | `mostADay` |
 /// | ... | After 3 misses in a row of a pose, every second invite of that pose is skipped, until one is answered | `thinAfter` |
 /// | Is the label shown? | Until that pose was answered 5 times; and again after 3 misses in a row of it, until answered | `labelUntil`, `labelBackAfter` |
 /// | Is this the very first invite ever? | None asked before | |
@@ -41,9 +41,11 @@ public struct InviteLedger: Codable, Equatable, Sendable {
     /// let one go by for the misses, each with the pose.
     public static let askedFact = "invite", skippedFact = "invite_skipped"
 
-    /// Every invite asked, and when the latest `mostADay` were.
-    public var asked = 0
-    public var askedAt: [Int64] = []
+    /// Every invite asked, and those asked on the Boop day open
+    /// (`InviteReader.open(day:carry:)` starts it again).
+    public var asked = 0, askedToday = 0
+    /// The records that asked one, until the board says they played.
+    public var playing = Played<String>()
     /// Each pose's, by its name.
     public var poses: [String: Pose] = [:]
 
@@ -60,14 +62,14 @@ public struct InviteLedger: Codable, Equatable, Sendable {
     /// `ledger` with `e` read into it.
     public static func adding(_ e: Event, to ledger: InviteLedger) -> InviteLedger {
         var l = ledger
-        if e.kind == Event.did, e.action == MomentOutput.outputName, e["ok"]?.bool != false {
-            if let pose = e[askedFact]?.string {
-                l.asked += 1
-                l.askedAt = Array((l.askedAt + [e.at]).suffix(mostADay))
-                l.poses[pose, default: Pose()].skipped = false
-            } else if let pose = e[skippedFact]?.string {
-                l.poses[pose, default: Pose()].skipped = true
-            }
+        if let pose = l.playing.read(e, { $0[askedFact]?.string }) {
+            l.asked += 1
+            l.askedToday += 1
+            l.poses[pose, default: Pose()].skipped = false
+            return l
+        }
+        if e.kind == Event.did, e.action == MomentOutput.outputName, e["ok"]?.bool != false, let pose = e[skippedFact]?.string {
+            l.poses[pose, default: Pose()].skipped = true
             return l
         }
         guard e.type == .invite, let pose = e["pose"]?.string, let end = Moment.Invite.End(rawValue: e.specificType) else { return l }
@@ -84,9 +86,6 @@ public struct InviteLedger: Codable, Equatable, Sendable {
     }
 
     func pose(_ pose: Skit.Invite.Pose) -> Pose { poses[pose.rawValue] ?? Pose() }
-
-    /// How many were asked on a Boop day, `today` saying whether a time is on it.
-    public func askedOn(_ today: (Int64) -> Bool) -> Int { askedAt.filter(today).count }
 
     /// Whether the misses skip this invite of `pose`: from the 3rd in a
     /// row, every second one.
@@ -113,11 +112,10 @@ public struct InviteLedger: Codable, Equatable, Sendable {
         case asks(Moment.Invite)
     }
 
-    /// What `skit`'s invite comes to, `today` saying whether a time is on
-    /// this Boop day: its word by the place to touch is the pack's for the
-    /// touch (`label`), and `xp` what the touch will earn.
-    public func asking(_ skit: Skit, today: (Int64) -> Bool, label: (Skit.Invite.Touch) -> String?, xp: Int?) -> Asking {
-        guard let invite = skit.invite, askedOn(today) < Self.mostADay else { return .nothing }
+    /// What `skit`'s invite comes to: its word by the place to touch is
+    /// the pack's for the touch (`label`), and `xp` what the touch will earn.
+    public func asking(_ skit: Skit, label: (Skit.Invite.Touch) -> String?, xp: Int?) -> Asking {
+        guard let invite = skit.invite, askedToday < Self.mostADay else { return .nothing }
         if thins(invite.pose) { return .skipped(invite.pose) }
         return .asks(Moment.Invite(skit: skit.id, invite, label: showsLabel(invite.pose) ? label(invite.touch) : nil,
                                    ms: first ? Self.firstWaitMs : Self.waitMs, xp: xp))
@@ -126,13 +124,17 @@ public struct InviteLedger: Codable, Equatable, Sendable {
 
 /// The invite ledger as a reader of the transcript (`TranscriptReader`):
 /// kept in the memory's store, so a launch catches up on what it missed.
-/// A Boop day changes nothing of it: the day's count is by the time.
+/// Each Boop day starts the day's count again.
 public final class InviteReader: TranscriptReader {
     public let name = "invites"
 
     public init() {}
 
-    public func open(day: String, carry: InviteLedger?) -> InviteLedger { carry ?? InviteLedger() }
+    public func open(day: String, carry: InviteLedger?) -> InviteLedger {
+        var l = carry ?? InviteLedger()
+        l.askedToday = 0
+        return l
+    }
 
     public func read(_ e: Event, line: Line?, into ledger: inout InviteLedger) -> Bool {
         let next = InviteLedger.adding(e, to: ledger)

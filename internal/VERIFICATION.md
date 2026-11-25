@@ -45,9 +45,8 @@ where it says:
   checked in).
 - `npm ci`, `npm run typecheck` and `npm test` in `internal/world/`, the
   world's server, on PGlite, on Linux.
-- Both boards' firmware: the CYD's with Pixel
-  (`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`) and the AMOLED's
-  with Boop's gel face (`CHARACTER=boop firmware/tools/pio.sh run -e amoled206`).
+- The board's firmware: the AMOLED's with Boop's gel face
+  (`CHARACTER=boop firmware/tools/pio.sh run -e amoled206`).
 
 `Package.swift` needs Swift 6.2 or later (its `swift-tools-version`).
 Boop is developed with Swift 6.4, and the runner's Swift (Xcode 26.6)
@@ -78,16 +77,15 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal app` | What `make dev` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
 | `make -C internal simulator` | The board in a browser at `http://127.0.0.1:8206/`, alone, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`. No Bluetooth, so agents may run it |
 | `make -C internal packs` | The character packs the engine is tested with (`characters/packs.json`), each fetched from its repository if it's missing: a clone in `characters/.repos/`, and `characters/<id>` a link to its pack (`internal/tools/packs.py`; `--update` pulls them, `ID=PATH` links a pack of yours in its place) |
-| `make -C internal new-character ID=… NAME=…` | A new character from Pixel's pack (`internal/tools/new_character.py`; `TO=DIR`, by default `../ID`): its id and name set, linked as `characters/ID` and checked with `boopdev check`. [characters/new-character-playbook.md](../characters/new-character-playbook.md) says what to make its own |
-| `make -C internal check` | The tests that need no board, camera or Jev key, one after another: `packs`, `test`, `fw-test`, `tools-test`, `sim` and `mirror`, then the chosen pack staged again, as some stage another. It's narrower than CI: it builds no board's firmware, which CI does and `boards` does. Run both to cover CI |
-| `make -C internal boards` | Both boards' firmware, as CI builds them: the CYD's with Pixel, the AMOLED's with Boop |
+| `make -C internal check` | The tests that need no board, camera or Jev key, one after another: `packs`, `test`, `fw-test`, `tools-test`, `sim` and `mirror`, then the chosen pack staged again, as some stage Boop's. It's narrower than CI: it builds no board's firmware, which CI does and `boards` does. Run both to cover CI |
+| `make -C internal boards` | The board's firmware, as CI builds it: the AMOLED's with Boop |
 | `make -C internal test` | `make -C internal build`, then Boop's Swift tests through the XCTest shim, with Boop's pack (`CHARACTER=boop .build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`; the runner's generator fails on a `func test…()` outside a test case, and on finding fewer than its floor of tests, so a test file gone missing fails the build; a failing test stops the runner at once), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder, so the target retries that failure alone, up to eight tries in all |
 | `make -C internal fw` | The firmware for every board the chosen pack has a face for (`charactergen.py --boards`) |
-| `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the chosen pack's `tests/firmware/`, then the engine's suites in `internal/firmware/test/` with Pixel's pack, then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build` |
-| `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, with Pixel's pack, then the gel face's, with Boop's, whose pinned shots only (§4) |
+| `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): in one `pio test -e native`, the engine's suites in `internal/firmware/test/`, on the stub face (`internal/firmware/stub_face.h`), and the chosen pack's `tests/firmware/`, which staging links beside them; then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build` |
+| `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the gel face's, with Boop's pack, its pinned shots only (§4) |
 | `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario on it and on the native simulator, the same pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and compared with the one checked in (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
 | `make -C internal demos` | Records each demo whose script has changed since its recording, or has none, into `characters/PACK/demo/recordings/` (`simulator/tools/demos.py record`); `NAMES=…` records those again, `ALL=1` every one. It needs the app, PlatformIO's native env (built once for each pack) and no board |
-| `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
+| `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack (`simulator/web/build.sh`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
 | `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`), each pack's `tests/tools/` and that the gel slime's tables are fresh (`slimegen.mjs --check`) |
@@ -144,9 +142,8 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   with `swift build`. In tests, give it a temporary `HOME` and `--home`
   together, as for `boopdev hooks`.
 - `python3 characters/charactergen.py`: `--check` and `--stage` a pack,
-  `--which` names the pack in use, `--boards` the boards it has a face
-  for and `--sim-face` the face the simulator draws for it
-  ([CHARACTER.md](../characters/CHARACTER.md) §2).
+  `--which` names the pack in use and `--boards` the boards it has a face
+  for ([CHARACTER.md](../characters/CHARACTER.md) §2).
 - `internal/tools/packs.py`: the character packs in `characters/`,
   fetched from their repositories (what `make -C internal packs` runs;
   `--help`). `characters/packs.json` names each as `Owner/Repo`, or
@@ -167,11 +164,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   repository's `make` runs: `characters/boop/tools/voicegen/voicegen.py`
   (the voice file and the Mac's take table; SlimeBuddy's `make voice`;
   beside it `placeholders.py`, which speaks the planned lines not recorded
-  yet and needs `brew install espeak-ng`, and `reply_slots.py`, which turns
-  the replies' lines in `plan/voice-range.md` into the bank's slots),
-  `characters/pixel/tools/facegen/facegen.py` (Pixel's faces, about
-  7 minutes; PixelBuddy's `make faces`, which runs sfxgen after it),
-  `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects) and
+  yet and needs `brew install espeak-ng`) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's tables
   and the pack's moods;
   [its README](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/tools/slimegen/README.md)), and
@@ -196,9 +189,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 - `internal/skills/doctor/doctor.sh`: checks from inside an agent that
   its hooks reach Boop; `--headless` against a throwaway app.
 
-**A pack's own design checks** live with the pack: Pixel's animation
-bank's in [its design guide](https://github.com/Mellow-Machines-Lab/PixelBuddy/blob/main/character/design/README.md),
-Boop's gel slime's in its
+**A pack's own design checks** live with the pack: Boop's gel slime's in its
 [VALIDATION.md](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/design/slime-blob/VALIDATION.md) and
 [slimegen's README](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/tools/slimegen/README.md), and
 Boop's recorded voice bank's in
@@ -277,57 +268,57 @@ looks. That's L3's job.
 
 ## 4. Scenarios
 
-A scenario is a JSON-lines file in `internal/firmware/test/scenarios/`,
-played the same way in the simulator and on the board. This is the start
-of `behaviour.jsonl`:
+A scenario is a JSON-lines file in Boop's pack,
+`characters/boop/tests/scenarios-gel/`, played the same way in the
+simulator and on the board. This is the start of `flop.jsonl`:
 
 ```
-// Device behaviour: press feedback, gestures, and the
-// needs-you tap. Shots are the rows' goldens.
-{"clock":0}
-{"t":"state","base":"idle","busy":0}
-{"clock":500}
-{"input":{"press":"tap"}}
-{"clock":516}
-{"expect":{"moment":null,"boot":true}}
-{"shot":"press-feedback"}
-{"clock":600}
-{"expect":{"moment":{"anim":"poked","left_ms":2800},"last_input":{"k":"tap","at":600}}}
-{"clock":850}
-{"shot":"tap-poked"}
+// The flop of relief (the pack's rig clip `flop`): a check passes after
+// failing. No Moment names it yet, so dbg.clip plays it: it holds its
+// breath, lets go flat against the glass with both palms on it, slides
+// down, and peels off.
+{"t": "dbg.reset"}
+{"clock": 0}
+{"t": "state", "base": "idle", "mood": "happy", "vol": 0, "when": ["day"]}
+{"clock": 1000}
+{"t": "dbg.clip", "name": "flop"}
+{"clock": 1400}
+{"shot": "holds-its-breath"}
+{"clock": 2500}
+{"shot": "flat-on-the-glass", "pin": true}
 ```
 
 | Line | Meaning |
 | --- | --- |
 | `{"clock": ms}` | Freezes the clock at this time since the scenario started |
-| A protocol message | Sent as if it came from the Mac: a `state`, or a `do` (the scenarios send `"play":"now"`, so each replaces the last at once, as a tool's does; `queue.jsonl` plays them as the Mac does, `next` and `if_free`) |
+| A protocol message | Sent as if it came from the Mac: a `state`, or a `do` (the scenarios send `"play":"now"`, so each replaces the last at once, as a tool's does; `behind-a-finish.jsonl` queues them as the Mac does, `next` with its ttls) |
 | A `dbg.` message | Sent as a debug request, such as `{"t":"dbg.pattern"}` |
 | `{"input": {"press":"tap"}}` | Presses BOOT for 100 ms, or `"ms"`; 400 ms or more is push-to-talk (the scenarios write `"press":"hold"`) |
 | `{"input": {"touch":[x,y]}}` | Touches the screen at (x, y) for 100 ms, or `"ms"` |
-| `{"shot": "name"}` | Saves a screenshot as `name.png`. With `"pin": true`, a gel scenario's is compared with its golden (below) |
+| `{"shot": "name"}` | Saves a screenshot as `name.png`. With `"pin": true`, it's compared with its golden (below) |
 | `{"expect": {…}}` | Reads `dbg.state` once and fails on a mismatch. Only the keys given are compared, recursively |
 | `// …` | A comment; blank lines are skipped too |
 
 An `input` line doesn't move the clock: the press stays down until the
-clock passes its length, so the tap above lands at 600. Both runners send
+clock passes its length. Both runners send
 `dbg.reset` first, so the board starts each scenario exactly as a fresh
 simulator does.
 
 Every screen and state the board draws
 gets at least one scenario. Their pictures are the golden images in
-`internal/firmware/test/golden/<scenario>/` for pixel and
-`characters/boop/tests/golden-gel/<scenario>/` for gel. Every one of
-Pixel's shots has a golden. The gel's set is frozen small on purpose
-while its pictures are redesigned: each gel scenario pins one or two
-shots, the ones that say the most about it (`"pin": true`), 69 in all,
+`characters/boop/tests/golden-gel/<scenario>/`. The set is frozen small on purpose
+while the gel's pictures are redesigned: each scenario pins one or two
+shots, the ones that say the most about it (`"pin": true`), 71 in all,
 and only those have a golden (`test_pins` holds it to that). Its other
 shots are still taken, for a person to look at, the mirror and the board
 (L1, L2), and every `expect` still runs. When the redesign settles, a new
 small set is pinned. The gel's
 invite has four, one for each way it ends: `invite-answered`,
 `invite-missed`, `invite-late` and `invite-cut`, which `expect` the
-stage `dbg.state`'s `invite` says, and `missed-high-five` catches the
-palm's miss partway. The engine's own rules for it, with a
+stage `dbg.state`'s `invite` says, `missed-high-five` catches the
+palm's miss partway, and `behind-a-finish`, where a busy board plays a
+finish and then the low Moment queued behind it, with the Mac's ttls, so
+the invite it carries still plays. The engine's own rules for it, with a
 face that draws invites, are `test_device`'s invite tests. `knock` shows
 each step of needs you's climbing knock, and `flop` the flop of relief,
 which `dbg.clip` plays. `back` and `spin` show the rig's turn: the upset
@@ -367,14 +358,16 @@ Each suite says what it pins.
   and nothing of Boop's: `test_queue`, `test_kit` and `test_helpers`, each
   test naming its [linkkit/SPEC.md](../linkkit/SPEC.md) section.
 - **Firmware (`make -C internal fw-test`):** in
-  `internal/firmware/test/`, `test_gesture` (BOOT's, the touch's and the
+  `internal/firmware/test/`, the engine's suites, on a small stub face
+  (`internal/firmware/stub_face.h`, `testface::StubFace`, wrapped by
+  `wrapped_face.h`), so they test the engine and not a pack's art, whatever
+  the pack: `test_gesture` (BOOT's, the touch's and the
   motion sensor's), `test_device` (messages, the queue's rules, the debug
   channel, inputs and latency), `test_behaviour` (the behaviour state
   machine, to the millisecond), `test_canvas` and `test_face` (the canvas
   and renderer), `test_push` (what reaches the AMOLED's panel), `test_voice`,
-  `test_effects` (the sound effects) and `test_rig`. In Pixel's pack,
-  `test_scene` (the animation bank's player against facegen's frames) and
-  `test_rig_face`. In Boop's, `test_gel`, which holds the gel slime's engine
+  `test_effects` (the sound effects) and `test_rig`. In Boop's pack,
+  `test_gel`, which holds the gel slime's engine
   to every rule of its design ([its VALIDATION.md](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/design/slime-blob/VALIDATION.md)).
 - **The Mac app's look**, for Mac UI changes: run
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
@@ -402,14 +395,14 @@ Each suite says what it pins.
 ### L1: simulator
 
 1. `make -C internal sim` (or `internal/tools/boopctl sim <scenario>`)
-   writes PNGs to `/tmp/boop-sim/<checkout>/<face>/<scenario>/` (§2, Side by
+   writes PNGs to `/tmp/boop-sim/<checkout>/gel/<scenario>/` (§2, Side by
    side) and compares the pinned ones with the goldens (§4). Unchanged
-   pictures pass, and so does a gel shot that isn't pinned; a golden
+   pictures pass, and so does a shot that isn't pinned; a golden
    whose shot isn't pinned fails, as stale.
 2. Open every new or changed picture and check it against the spec: the
    right screen and state, eyes centred and readable, text inside its
-   area, palette colours, nothing clipped or overlapping. On the gel,
-   most shots have no golden to fail, so open the shots of every
+   area, palette colours, nothing clipped or overlapping. Most shots have
+   no golden to fail, so open the shots of every
    scenario the change touches too.
 3. Only then does `internal/tools/boopctl sim <scenario> --accept` update
    the pinned goldens and remove stale ones, with a one-line reason in the commit message (§7).
@@ -432,8 +425,9 @@ accepted; the mirror's shots, every one, are the simulator's.
    screenshot is identical to the simulator's. It stops at once if the
    board says it's face down, which refuses Moments and hides the bar.
 3. `internal/tools/boopctl perf --motion`: a frame drawn in every second
-   while moving, no sampled frame taking over 40 ms to draw and push (on a
-   board whose `hello` says `gel`, the longer of the two), at
+   while moving, no sampled frame taking over 40 ms to draw and push (the
+   longer of the two, as the board pushes one frame while it draws the
+   next), at
    least 60 KB minimum free heap (not checked on the simulator, whose
    `sha` is `sim` and which has no heap), and no reset (uptime keeps rising).
    `fps` follows the design rather than the board: a frame is drawn only
@@ -601,8 +595,8 @@ from when it knew of it to the end of sending the first frame drawn
 after it (`app::Latency`, read with `dbg.latency`): a press going down
 (BOOT or a touch), a poke's release, a `state` that changes the picture,
 and a `do` as it starts to play, so not its wait in the queue. A frame
-counts as sent when the AMOLED's push task has finished it, when the CYD's
-push returns, and in the simulator when it's taken. Each kind keeps its
+counts as sent when the AMOLED's push task has finished it, and in the
+simulator when it's taken. Each kind keeps its
 latest 32 samples for the p95 and the worst. `boopctl latency` adds the
 wait before the device stamps it back: it finds the board's clock with
 pings and times a press, a `state` and a `do` from when it sent them. A

@@ -8,7 +8,7 @@ the code and [architecture.html](../architecture.html) say how.
 
 On the `brain` branch, not merged:
 
-- Built: layer 1, the rules brain (`RulesBrain`, `MoodMap`). With no Jev key
+- Built: layer 1, the rules brain (`RulesBrain`, `MoodMap`). Key or none,
   it answers every pass, and the mood moves only as the mood files say. All
   30 must scenarios pass with it (`boopdev eval --brain rules`).
 - Built: the dream by your own agent tool (`AgentToolModel`), behind
@@ -22,8 +22,8 @@ On the `brain` branch, not merged:
 - Built: layer 4, skits (`Skits`, the pack's `skits`). It replaces the
   babble plan. With them the invite (`InviteLedger`) and the remark
   (`Remarks`, against your usual, `Normals`).
-- Not built: the dream writing tomorrow's lines, and Jev composed on top
-  of the rules.
+- Built: Jev on top of the rules, in five seats (`SeatedBrain`).
+- Not built: the dream writing tomorrow's lines.
 
 ## The aim
 
@@ -53,7 +53,7 @@ not run out.
 | 2. The calling agent | Offers Boop's line for the turn's end, says how you seemed, notes one thing worth remembering | While an agent's turn runs | None | The card tools the agent already calls |
 | 3. The dream | Writes Boop's memory, and fresh lines for the next day | While Boop sleeps | None | The buyer's own agent tool, run by Boop |
 | 4. Skits | Says a word at the few moments that call for one, each from takes of its own, and may invite one touch after | A long win, a failure, a fix, you back | None | Recorded takes on the board |
-| On top: Jev | A finer pick of emotion, for people who add a key | When a key is there | 0.3 s | A key |
+| On top: Jev | A finer pick in five seats, for people who add a key | When a key is there and it answers in time | 0.3 s, never waited past the pass | A key |
 
 Each layer works without the ones below it in the table, and Boop is whole
 with only the first. A later layer adds life; it never adds a duty.
@@ -220,16 +220,34 @@ plain rule picks the one remark (`Remarks.pick`). No model is involved.
   and none while your usual is empty.
 - It's text, the pack's words (`signs.md`'s `[remark …]`): on a `win` a
   low Moment after the finish, unless the agent offered a line, which
-  wins; on a `back` the sign, unless the hello holds up one of its own. No
+  wins; on a `back` the sign, over the dream's, unless it's a special day's. No
   take says these words yet.
 
 ## Jev, on top
 
-Jev stays for people who add a key. Then it picks the emotion where the
-rules would, with a finer feel for the moment. Nothing else changes: the
-rules still set the size and the move, the agent still offers the line, the
-dream still writes. No screen asks for a key, and nothing is missing
-without one.
+Jev stays for people who add a key. The rules answer every pass first, at
+once and with no network; Jev is asked the same questions, and may replace
+the rules' answer in five seats:
+
+| Seat | The rules' answer | What Jev adds |
+| --- | --- | --- |
+| The mood | The mood map | It reads the whole day |
+| The face | The slot's faces, as the mood colours them | The face that fits this turn |
+| A reply to your words | Word matching | What you meant |
+| The sign, on every pass that asks one: a reply's, a prompt's caption, the idle beat held up, an answered ask's, the dream's | A line that fits, by rule | The line that fits this moment |
+| Which take a skit says | None: Voice's pick, the one not said lately | The take that fits this turn |
+
+Three rules hold for every seat. Jev picks from the options the rules pick
+from. Its answer counts only if it comes within the pass's deadline, is
+one of them and is as sure as the output needs (a reply under its floor is
+a guess, and the rules' reply stands); slow, failing, absent, unsure or
+wrong, it changes nothing a person sees. And no seat vetoes a skit.
+Everything else stays the rules': the size, the move, when Boop speaks. The
+transcript keeps every pass's answers, whoever gave them, and the pass's
+brain says whose it played: `rules`, or `rules+` Jev's id and the seats it
+took. A key's owner sees a notice when Jev turns the key down,
+runs out of credit or fails three passes in a row; Boop carries on without
+it. No screen asks for a key, and nothing is missing without one.
 
 ## Who answers what
 
@@ -237,12 +255,13 @@ For each thing Boop does, the first that can answer does.
 
 | Boop does | First | Then | Last |
 | --- | --- | --- | --- |
-| Feels something at an event | Jev, with a key | Rules | |
+| Feels something at an event | Jev in its seat, with a key, in time | Rules | |
 | Says a line at a turn's end | The agent's offered line, picked by rules | A line the dream wrote | The pack's line |
 | Says a line when idle, at a hello, at a touch | A line the dream wrote | The pack's line | |
-| Moves its mood | Rules, with the agent's read of you as one more fact | | |
+| Says a take at a skit | Jev in its seat, with a key, in time | Voice's pick, by rule | |
+| Moves its mood | Jev in its seat, with a key, in time | Rules, with the agent's read of you as one more fact | |
 | Remembers | The dream, by the agent tool | The dream inside a long turn | What code counts |
-| Replies to your words | The agent tool, in a few seconds | Word matching by rule | "huh?" |
+| Replies to your words | Jev in its seat, with a key, in time | Word matching by rule | "huh?" |
 
 ## What leaves the Mac
 

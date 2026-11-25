@@ -1159,8 +1159,6 @@ void Device::tick(uint32_t t) {
   followSound(t);
   drain();
 
-  uint32_t led = b_.led(t);
-  if (led != led_) led_ = led, hal_.setLed(led);
   uint8_t bl = b_.backlight(t);
   if (bl != backlight_) backlight_ = bl, hal_.setBacklight(bl);
 

@@ -75,36 +75,4 @@ void Canvas::fillTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint8_
   }
 }
 
-uint32_t Canvas::hash(int x, int y, int w, int h) const {
-  uint32_t v = 2166136261u;
-  for (int row = y; row < y + h; ++row) {
-    // Aligned: the canvas is malloc'd, and kWidth and x are multiples of 4.
-    const uint8_t* p = static_cast<const uint8_t*>(__builtin_assume_aligned(px_ + row * kWidth + x, 4));
-    for (int i = 0; i < w; i += 4) {
-      uint32_t word;
-      std::memcpy(&word, p + i, 4);
-      // Each step is a bijection, so one changed word always changes the
-      // hash; the shift carries a change in the top bits back down, where
-      // the multiply alone would let two of them cancel.
-      v = (v ^ word) * 0x9E3779B1u;
-      v ^= v >> 16;
-    }
-  }
-  return v;
-}
-
-Span Changes::band(const Canvas& canvas, int b) {
-  Span s{kWidth, 0};
-  for (int t = 0; t < kWidth / kTile; ++t) {
-    uint32_t h = canvas.hash(t * kTile, b * kBand, kTile, kBand);
-    if (!seen_[b] || h != hashes_[b][t]) {
-      if (s.x0 > t * kTile) s.x0 = t * kTile;
-      s.x1 = (t + 1) * kTile;
-    }
-    hashes_[b][t] = h;
-  }
-  seen_[b] = true;
-  return s.empty() ? Span{} : s;
-}
-
 }  // namespace render

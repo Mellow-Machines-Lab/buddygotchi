@@ -23,7 +23,7 @@ captions, on its own face; `--out DIR` puts them and the popover's in
 makes its README's pictures this way (its `make media`):
 
 ```sh
-CHARACTER=pixel internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py --out /tmp/pixel-media boop moods popover
+CHARACTER=boop internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py --out /tmp/boop-media boop moods popover
 ```
 
 It builds the native simulator and the two packages itself. The terminals are drawn

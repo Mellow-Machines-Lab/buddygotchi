@@ -13,14 +13,6 @@ extension Runtime {
         let step = pipeline.said(words, by: by, at: now)
         run(step)
         run(core.heard(replyTo: step.waking.first?.seq, at: now))
-        // No brain, no answer: a shrug and a sign that says why. A
-        // demo's brain steps answer for it.
-        if !pipeline.brain, !playingDemo {
-            var rng = SplitMix64(seed: UInt64(truncatingIfNeeded: now))
-            let sign = Signs.reply(rig.steering.replies, Core.noBrainReply, calendar: core.calendar(at: now) + [Core.noBrain],
-                                   rng: &rng)
-            run(core.shrug(sign: sign, at: now))
-        }
         options.log("\(who): said \(words.count) characters")
         onHeard?(words)
     }

@@ -28,10 +28,11 @@ def checkout_tmp(name: str) -> Path:
     return Path("/tmp") / name / f"{REPO.name[:32]}-{hashlib.sha1(str(REPO).encode()).hexdigest()[:6]}"
 
 
-# The moods the pixel face draws, as `state` carries them, in the device's
-# order: the Pixel pack's, as facegen writes them into its mac/faces.json
-# (characters/CHARACTER.md §9).
-MOODS = json.loads((REPO / "characters" / "pixel" / "mac" / "faces.json").read_text())["moods"]
+# The moods the board draws, as `state` carries them, in the device's
+# order: Boop's pack's `moods`, then its `board_faces`, as staging writes
+# them into its moods.h (characters/CHARACTER.md §9).
+_CHARACTER = json.loads((REPO / "characters" / "boop" / "character.json").read_text())
+MOODS = [m["id"] for m in _CHARACTER["moods"] + _CHARACTER.get("board_faces", [])]
 
 
 

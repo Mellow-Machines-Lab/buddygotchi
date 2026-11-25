@@ -50,7 +50,7 @@ namespace board {
 constexpr uint32_t kSpiWriteHz = 40000000;
 constexpr int kPanelWidth = 410, kPanelHeight = 502, kPanelOffsetX = 22;
 // Which way up: true puts the canvas's top on the panel's left edge, so
-// held sideways the USB-C port is on the left, as on the CYD.
+// held sideways the USB-C port is on the left.
 constexpr bool kTopOnPanelLeft = true;
 // Only names the touch calibration's screen (app::SavedTouchCal).
 constexpr uint8_t kRotation = 0;

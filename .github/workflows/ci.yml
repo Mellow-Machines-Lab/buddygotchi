@@ -4,10 +4,10 @@
 # the firmware's and LinkKit's device tests on the Mac, and the Mac's
 # mirror of the board against the simulator (with no Emscripten here, the
 # mirror checked in, not built again),
-# all as Boop, the default pack, and the boards' firmware: the CYD's with
-# Pixel and the AMOLED's with Boop's gel face, so each pack builds. Each
-# pack is in a repository of its own (characters/packs.json), and every
-# job that needs one fetches them first, at the branch packs.json names. The world's
+# all as Boop, and the board's firmware: the AMOLED's with Boop's gel
+# face. Boop's pack is in a repository of its own (characters/packs.json),
+# and every job that needs it fetches it first, at the branch packs.json
+# names. The world's
 # server (internal/world/) runs its own tests, on PGlite.
 #
 # Package.swift needs Swift 6.2 or later. Boop is developed with Swift 6.4,
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
         with:
           submodules: true  # agent-hooks/ and mellowharness/
-      - name: Fetch the character packs
+      - name: Fetch the character pack
         run: python3 internal/tools/packs.py
       - run: swift --version
       - name: Build, then Boop's tests and each package's
@@ -76,15 +76,15 @@ jobs:
         with:
           submodules: true  # the behaviour map's numbers are read from agent-hooks/ and mellowharness/
       - run: /usr/bin/python3 --version
-      - name: Fetch the character packs
+      - name: Fetch the character pack
         run: /usr/bin/python3 internal/tools/packs.py
-      - name: Every pack checks out (its moods, what it uses, its studio entry)
+      - name: The pack checks out (its moods, what it uses, its studio entry)
         run: /usr/bin/python3 characters/charactergen.py --check
       - name: charactergen's tests
         run: /usr/bin/python3 -m unittest discover -s internal/characters
       - name: The demo session's tests
         run: /usr/bin/python3 -m unittest discover -s internal/tools/session/tests
-      - name: Each pack's tool tests
+      - name: The pack's tool tests
         run: |
           for tests in characters/*/tests/tools; do
             [ -d "$tests" ] || continue
@@ -101,13 +101,13 @@ jobs:
           python-version: "3.12"
       - name: Install PlatformIO
         run: pip install platformio==6.2.0
-      - name: Fetch the character packs
+      - name: Fetch the character pack
         run: python3 internal/tools/packs.py
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: firmware/.platformio-core
           key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini', 'linkkit/device/platformio.ini') }}
-      - name: Boop's pack's firmware tests, the engine's with Pixel's, then LinkKit's device tests
+      - name: The engine's firmware tests and Boop's pack's, then LinkKit's device tests
         run: make -C internal fw-test
       - name: The Mac's mirror of the board, its page and every gel scenario's shots against the simulator
         run: |
@@ -115,7 +115,7 @@ jobs:
           CHARACTER=boop internal/tools/boopctl mirror
 
   boards:
-    name: Board builds
+    name: Board build
     runs-on: macos-15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
@@ -124,13 +124,11 @@ jobs:
           python-version: "3.12"
       - name: Install PlatformIO
         run: pip install platformio==6.2.0
-      - name: Fetch the character packs
+      - name: Fetch the character pack
         run: python3 internal/tools/packs.py
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: firmware/.platformio-core
           key: pio-boards-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini', 'linkkit/device/platformio.ini') }}
-      - name: The CYD's firmware, with Pixel
-        run: CHARACTER=pixel firmware/tools/pio.sh run -e cyd24
       - name: The AMOLED's firmware, with Boop's gel face
         run: CHARACTER=boop firmware/tools/pio.sh run -e amoled206

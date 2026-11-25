@@ -17,8 +17,7 @@ What a pack holds, and what it must have:
 | `steering/personality.md` | yes | Who it is (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a Mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
-| `rig/` | no | Its expressions, clips and looks on the rig (§15) |
-| `mac/faces.json` | with the pixel face | The pixel face's moods and the popover's still faces (§9) |
+| `rig/` | no | Its clips and looks on the rig (§15) |
 | `mac/mirror/` | no | The board's firmware in a web page, the face the popover and onboarding show (§9) |
 | `mac/passing.tsv` | no | The popover's words for what the face does to pass the time and between Doings, by the name `Face::passing` says: `pastime` or `doing`, the name, the words after "Boop's" |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither | Its recorded voice (§8) |
@@ -29,7 +28,7 @@ What a pack holds, and what it must have:
 | `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence (§11) |
 | `design/`, `tools/`, `tests/`, `evals/` | no | What its art and sounds are made from, and its own tests |
 
-To make one, copy Pixel's (§14). To check one, from the engine's repository:
+To make one, see §14. To check one, from the engine's repository:
 
 ```sh
 make -C internal build && .build/debug/boopdev check # every pack in characters/
@@ -44,13 +43,14 @@ make -C internal build && .build/debug/boopdev check # every pack in characters/
   also prints the pack's gaps, what it lacks that doesn't stop it: moods a
   preview has no art for, lasting moods with no steering file, moods with
   no voice takes, no signs or dream signs.
-- `CHARACTER=<name> make -C internal fw-test` builds the firmware with it,
-  to check its faces.
+- `CHARACTER=<name> make -C internal fw-test` builds its faces on the Mac
+  and runs the engine's firmware tests and the pack's own.
 
 A pack that passes all three plugs in.
 
-The engine's own Swift tests (`make -C internal test`) run with Boop's pack,
-as its firmware tests run with Pixel's face. Run with another
+The engine's own Swift tests (`make -C internal test`) run with Boop's pack.
+Its firmware tests run on a small stub face, whatever the pack
+(`internal/firmware/stub_face.h`). Run with another
 (`CHARACTER=<name> .build/debug/BoopTests`), a test of one pack's own
 content skips (`requirePack("boop")`), and a test that plays recorded takes
 skips for a pack with no voice (`NEEDS_VOICE_PACK()` in the firmware's);
@@ -85,15 +85,10 @@ meaning.
 - What each mood means, how the moods connect and how fast they move.
 - Its prompts, and whether it has a voice.
 
-Boop has two packs, each in a public repository of its own, its pack the
-repository's `character/` folder and the engine beside it as the `engine/`
-submodule:
-- **`boop`**, the default, in
-  [SlimeBuddy](https://github.com/Mellow-Machines-Lab/SlimeBuddy): the gel
-  slime, on the AMOLED.
-- **`pixel`**, in
-  [PixelBuddy](https://github.com/Mellow-Machines-Lab/PixelBuddy): Pixel
-  Boop on the CYD, the example to copy.
+Boop has one pack, **`boop`**, in a public repository of its own,
+[SlimeBuddy](https://github.com/Mellow-Machines-Lab/SlimeBuddy): the gel
+slime, on the AMOLED. Its pack is the repository's `character/` folder, and
+the engine is beside it as the `engine/` submodule.
 
 `make -C internal packs` fetches each pack that's missing
 (`internal/tools/packs.py`, from the repositories `characters/packs.json`
@@ -138,7 +133,7 @@ runs both; `make -C internal tools-test` runs the Python tests in a pack's
 
 `charactergen.py --firmware-to=DIR PACK` lays out one pack's `firmware/`
 alone in `DIR/firmware/`, and changes nothing staged
-(`simulator/web/build.sh pixel`,
+(`simulator/web/build.sh boop`,
 [simulator/README.md](../simulator/README.md)).
 
 Everything that runs after a build (the tests, `boopdev`, the device tools,
@@ -164,9 +159,9 @@ The table above says what each is. Laid out:
   LICENSE
   steering/   guide.md  personality.md  mood/<mood>.md
               dreams.md  signs.md  replies.md  asks.md
-  mac/        faces.json  mirror/  takes.tsv
+  mac/        mirror/  passing.tsv  takes.tsv
   firmware/   include/…  src/render/<face>/…  src/render/make_face.cpp
-  rig/        expressions.json  looks.json  clips/<id>.json
+  rig/        looks.json  clips/<id>.json
   voice/      voice.bin
   demo/       <name>.jsonl  recordings/<name>.json
   studio/  references/  design/  tools/  evals/
@@ -215,10 +210,10 @@ Boop's, cut to two of its 7 lasting moods and two of its 18 faces:
 | `skits` | no | The few moments that always speak, each from takes of its own, by the slots they play at (§8). Without it, its Moments say nothing but your replies' and its waves' words |
 | `moods` | yes | Every face the Mac may ask for, once (§5). Its order is the firmware's `Mood` order |
 | `board_faces` | no | Faces only the board draws so far, after `moods` in the firmware's `Mood` order, each with `id`, `face`, `settles` and `family` as in `moods` (§5). The Mac doesn't read it, so no rule or brain picks one; a `do`, a `state` or a scenario may name one, and the board draws it |
-| `lasting` | no | The moods the buddy settles into, with their fades (§5). Without it (Pixel's, from before), the faces with a `meaning` are its lasting moods, and none fades by itself |
+| `lasting` | yes | The moods the buddy settles into, with their fades (§5). A pack without it doesn't load |
 | `acts` | no | What the pack draws for each work act, as Jev reads it: by kind (`push`, `tests`, `build`), then by `start`, `pass` and `fail`, a sentence with `{name}` for the creature's name. The engine says what the agent did and adds this. Without it, Jev reads the agent's clause alone |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
-| `faces` | yes | The face each board draws, by the board's name: `cyd24`, `amoled206` (§9). A board it names none for won't build with it |
+| `faces` | yes | The face each board draws, by the board's name: `amoled206` (§9). A board it names none for won't build with it |
 
 Unknown keys are ignored, so a newer pack still loads in an older engine.
 
@@ -229,8 +224,7 @@ has 18 faces the Mac picks from, six more only its board draws (its meme
 faces, `board_faces`: deadpan, side_eye, squint, smug, silent_scream,
 faint), and 7 lasting moods, and `character.json` is the one place that
 says which: read it there. For a rule or the brain to pick a board face,
-move it into `moods`; the Mac's tests pin Boop's 18. Pixel keeps the 42 faces and 16 moods it
-had.
+move it into `moods`; the Mac's tests pin Boop's 18.
 
 **A face** (`moods`) is what the board draws under one name: the emotion a
 Moment can show, and the name the wire's `mood` carries. **A lasting mood**
@@ -305,7 +299,7 @@ included.
   check-ins on a turn) and `idle_heartbeat` (seconds between idle check-ins
   while you're around and no agent works, twice that with no agent open;
   without it, none).
-  Pixel's: `working_heartbeat: 120-240`.
+  Boop's: `working_heartbeat: 240-360`.
 - Its Examples quote NOW's lines as the view writes them, where your prompt
   and the agent's last message are only their readings:
   `You asked claude on "api" for a fix, in a sentence, frustrated.`, and a
@@ -388,7 +382,7 @@ signs.
 
 Its `[invite tap]` and `[invite stroke]` lines are the word the board shows
 by the place to touch when a skit invites that touch (`Signs.invite`, the
-first of each; Boop's and Pixel's say `tap` and `pet`). A pack with none
+first of each; Boop's say `tap` and `pet`). A pack with none
 shows the glow alone.
 
 Its `[remark fast]`, `[remark slow]`, `[remark run]`, `[remark count]`,
@@ -397,8 +391,8 @@ lines are what it holds up for a remark: how now differs from your usual,
 which code picks, no brain (`Remarks`, `Signs.remark`). `{n}` is the run
 for `run` and today's wins for `count`. A remark shows as text only: on a
 `win` a low Moment after the finish, on a `back` the Moment's sign. A pack
-with no line for a remark shows none; Boop's and Pixel's have the same
-lines, one each ("that was fast", "{n} in a row", "you're early").
+with no line for a remark shows none; Boop's has
+one line each ("that was fast", "{n} in a row", "you're early").
 
 Its `[world]` lines, and `[world boop]`, `[world wave]`, `[world heart]` and
 `[world cheer]`, the kind's first, are what it may hold up when another buddy
@@ -449,8 +443,7 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
   night, `[bye working]` while an agent works.
 - Each line is `- [reply tags] words`. Its first tag is the reply; any more
   are the calendar's or the moment's: `working` (an agent works), `waiting`
-  (something waits on you), `nobrain` (the `huh` Boop shrugs with when it has no
-  brain to answer, `Core.shrug`).
+  (something waits on you).
 - `{words}` is a phrase of what you said, at most 12 characters
   (`Signs.maxPhrase`): the whole of it or a part between marks, lowercased,
   the buddy's name taken out, so "Hello!" can come back as `hello 2 u!`.
@@ -475,15 +468,21 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 
 A pack with a voice has recorded takes, each tagged with the moods it plays
 in, a part and a meaning, and a kind (sound, word, phrase or swear). The
-brain never picks what the buddy says: a rule does, at three kinds of
+brain never picks whether the buddy speaks: a rule does, at three kinds of
 moment, and everything else plays in silence:
 
 - A skit: one of the few moments that always speak, each from takes of its
   own (`skits`, below). The brain can't veto one: when it picks no face,
   the Moment plays in the rules brain's first face for the moment, as the
-  mood colours it.
+  mood colours it. With more than one thing it may say, Jev may pick which
+  (`skit.take`): its options are the texts of the skit's takes of the kind
+  the size asks, at most 6, those not said lately first. The rules leave
+  it unanswered, so with no key Voice picks. A text the chosen face has no
+  take of says Voice's own pick.
 - Your words: the reply's own words (§7).
-- A real wave at your lock or unlock: its hello's or bye's own words.
+- A real wave at your lock or unlock: the `hello` or `bye` reply's own
+  takes (part `reply`), as to your words; before skits it said the `hello`
+  topic's.
 
 The Moment's size, which the app's rules pick (`MomentRule.size`), picks
 the kind: a sound small, a word medium, a phrase big. With none of that
@@ -501,7 +500,6 @@ A take's part says what it is:
 | `skit` | The skit's id | At the skit |
 | `reply` | The reply's name, or `dunno`, a huh to a question | To your words, and at a lock's real wave |
 | `feeling`, `about` | How it feels (`upset`, `glad`, `tickled`, `shaken`), or a topic (`hello`, `work`, `tests`, `done`, `retry`, `quiet`) | Never now: kept in the table from before skits |
-| `attention` | `attention` | Never: only Pixel's older copy lists them |
 
 `skits` in `character.json` names each skit and the slots it plays at,
 the rules' readings of an event (`RulesBrain.Slot`); code says when each
@@ -510,8 +508,7 @@ after it plays, Boop turns to you in a `pose` (`palm`, `lean` or `back`)
 and waits for one `touch` (`tap` or `stroke`), which pays off
 (`highfive`, `purr` or `sigh`), each a name the board plays (`Skit.Invite`).
 An id missing, a slot that isn't one, a slot in two skits, or an invite
-whose pose, touch or payoff isn't one, and the pack doesn't load. Boop's
-and Pixel's:
+whose pose, touch or payoff isn't one, and the pack doesn't load. Boop's:
 
 ```json
 "skits": [
@@ -560,10 +557,7 @@ in `signs.md` (`Remarks`): text, never a take, at most one skit in three.
 Both are built files and checked in, and a pack has both or neither. Boop's
 pack holds the recordings and voicegen, the tool that makes the two files;
 espeak-ng placeholders stand in for lines not recorded yet
-(`plans/regenerate.json` in its `design/assets/boop-voice-v1/`). Pixel's has
-an older copy of the two built files, which still holds needs you's takes:
-voicegen rebuilds its table, its voice file unchanged, with `--pack` and
-`--keep-attention`, and lends Pixel's takes by its own `tools/borrowed.json`.
+(`plans/regenerate.json` in its `design/assets/boop-voice-v1/`).
 
 A pack without a voice leaves both out, and its Moments play faces and
 sound effects only.
@@ -599,7 +593,7 @@ show when no Moment plays.
 | `analyzing` | Looking: an agent reads or searches files, or the web | the Mac |
 | `terminal` | Running: an agent runs a command, the tests or a build, or its helpers work | the Mac |
 | `waiting` | A tool takes its time; nothing is asked of you | the Mac |
-| `planning` | No longer sent: the Mac's activities are the four above (`Act`). The board still knows it and Pixel's face draws it; the gel shows it as typing | no one |
+| `planning` | No longer sent: the Mac's activities are the four above (`Act`). The board still knows it; the gel shows it as typing | no one |
 | `searching` | No longer sent, as `planning`; the gel shows it as looking | no one |
 | `testing` | No longer sent, as `planning`; the gel shows it as running | no one |
 | `delegating` | No longer sent, as `planning`; the gel shows it as running | no one |
@@ -611,7 +605,7 @@ then go.
 
 | State | When it plays | Sent by |
 | --- | --- | --- |
-| `starting` | An agent starts; `ctx` may say how: `new_task`, `session`, `continuation` or `compacted`. The board's firmware knows it and Pixel's face draws it | a tool (`boopctl`); the Mac sends none |
+| `starting` | An agent starts; `ctx` may say how: `new_task`, `session`, `continuation` or `compacted`. The board's firmware knows it | a tool (`boopctl`); the Mac sends none |
 | `task_complete` | A turn ends: the finish. `outcome` is `success` or `failure`, and `turn` the tier it reached: 0 short of `tier1`, then 1 to 3 (`Moment.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
@@ -657,7 +651,7 @@ then `[kind, words, result]`, the kind `push`, `tests` or `build`, the words
 its low sign's, and the result `p` or `f` once the command has ended, as the
 words change to say so. The Mac holds a result for the board's `kActLeadMs`,
 less what's run of it, and `kActResultMs`. A face that doesn't draw it ignores
-it, as Pixel does. The gel shows the low sign alone, and its body hops at a
+it. The gel shows the low sign alone, and its body hops at a
 pass and flinches at a fail (`render/gel/act.h`, `GelFace::answerAct`).
 
 ### What else a face does
@@ -686,7 +680,8 @@ Besides drawing each mood and state, a face:
     with its sign.
   - The tiers (`Tags.tiers`): `tier1` from a minute, `tier2` from 5,
     `tier3` from 15. The board's table also lists `tier4` and `tier5`,
-    which Pixel's designs are numbered by and the Mac never sends. They count how
+    which the Mac never sends: they keep their place, so no pack's
+    numbering of the others moves. The tiers count how
     long the agents' working stretch has run, from its first turn, a rest of
     under a minute carrying it on; or, once nothing works, how long since
     the latest session came to rest. The Mac sends the last reached and the
@@ -712,11 +707,9 @@ Besides drawing each mood and state, a face:
   A design that needs tags shows only while they're on. A look starts on one
   while it fits and turns to one two times in three, and a Moment always
   takes one. A pack's rig may name clips by tags too (§15).
-- **May dress for the tags.** One rule says what's worn, so the board and
-  the Mac's popover (`Narration.Dressing`) agree. Pixel's face reads
-  `render::outfitFor` (first that fits: Halloween's witch hat, a party hat,
-  a nightcap at night, a bobble hat in winter) and `render::airFor` (snow,
-  confetti, hearts). The gel wears nothing, at night or on a special day,
+- **May dress for the tags.** The board and the Mac's popover
+  (`Narration.Dressing`) agree on what's worn. The gel wears nothing, at
+  night or on a special day,
   and has nothing in the air: its lids say the night. The gel draws its
   dressing at the anchors its pose gives (`rig::Anchors`, §15), so it moves
   with the body, and through the rig's layer stack (§15).
@@ -725,20 +718,19 @@ Besides drawing each mood and state, a face:
 - **Moves with the engine.** It blinks, opens its mouth while the voice
   speaks (`mouthOpen`), presses down under a finger (`dy`), and may follow
   one (`finger`, and `letGo` with how fast it was moving).
-- **Leaves room for the lane.** On the CYD's 320 × 240 screen, the bottom 48
-  px are the engine's: the strip and the bubble, their text cut by
-  `render::cutAt`. The face calls `drawLane` to draw them.
+- **Leaves room for the lane.** On the face's 320 × 240 canvas, the bottom
+  48 px are the lane: the strip and the bubble, their text cut by
+  `render::cutAt`. The device hands both to the face (`Face::draw`), and
+  the face draws them.
   - The bubble shows the voice's words, or an ask's answers.
   - The face also gets the `caption`: the Moment's narration, at most 18
     characters (the `do`'s `reason`: "you picked Boop up"). It is not
-    speech. Pixel shows it in the bubble when nothing is said; the gel small
-    and grey on the lane's last line.
+    speech. The gel shows it small and grey on the lane's last line.
   - A face that says `captionsTouches` gets a caption for its board's own
     touches too, as they play ("you poked Boop", `app/touch_reason.h`). Its
-    name is the pack's, or `state`'s `buddy` for one you gave it. Pixel's doesn't.
+    name is the pack's, or `state`'s `buddy` for one you gave it. The gel's does.
   - The strip fades over the rig's 200 ms and the face gets its opacity
-    (`Strip::opacity`): `drawLane` dithers it on the canvas, and a face that
-    draws its own lane draws it at that opacity.
+    (`Strip::opacity`), and the face draws its lane at that opacity.
 - **Has a drawer, if it can** (`Face::hasDrawer`, `render/drawer.h`). The
   device keeps the finger, the spring, the scroll and the clock, and hands
   the face the drawer before each frame (`Face::drawer`). The face lays it
@@ -800,29 +792,25 @@ the include path. It holds:
 - `include/moods.h`: `enum class Mood`, in `character.json`'s order, with
   `kMoodCount`, `kStartupMood` and `kMoodNames`. Staging makes it from
   `character.json`; it isn't in the pack. A face looks a mood up by its
-  name, never its number (the pixel face with `render::pixelIndex`).
+  name, never its number.
 - One or more faces behind `render::Face`, each in its own folder,
   `src/render/<face>/`, and `render::makeFace()` in
   `src/render/make_face.cpp`, which makes one. `faces` in `character.json`
-  names the face each board draws: Boop's `{"amoled206": "gel"}`, Pixel's
-  `{"cyd24": "pixel"}`. A board's build compiles that face's folder and no
-  other, and defines `BOOP_FACE_<FACE>` (`BOOP_FACE_GEL`) for `makeFace()`.
-  The simulator builds every face, and `makeFace()` picks by
-  `BOOP_SIM_FACE`.
+  names the face each board draws: Boop's `{"amoled206": "gel"}`. A board's
+  build compiles that face's folder and no other, and defines
+  `BOOP_FACE_<FACE>` (`BOOP_FACE_GEL`) for `makeFace()`. The simulator
+  builds the AMOLED's face. The board's face must draw natively, into the
+  panel's own surfaces (`Face::drawsNative`), or the firmware stops at
+  start.
 - `include/rig_tables.h`: the pack's rig (§15), which staging also makes.
-- The canvas palette (`render/palette.h`) is the engine's colours. A face
-  that draws the canvas writes its own in as it's made
-  (`render::useFaceColors`).
+- The canvas palette (`render/palette.h`) is the engine's colours only.
 
 A board a pack names no face for doesn't build with it.
 
-**On the Mac.** A pack with the pixel face has `mac/faces.json`: its moods
-and the popover's still faces (the pixel face's README, in Pixel's pack).
-
-`mac/mirror/`, if present, is the board's own firmware in a web page. The
-popover shows it as the face in place of the still one, whether or not a
-board is connected (unless the one connected draws the pixel face), and
-onboarding shows it in its tiles and its demo.
+**On the Mac.** `mac/mirror/`, if present, is the board's own firmware in a
+web page. The popover shows it as the face, whether or not a board is
+connected, and onboarding shows it in its tiles and its demo. Without it,
+the popover draws only the eyes (`BoopFace`).
 
 - `board.js`: the firmware for a board with no hardware
   (`firmware/src/board/mirror/`) with the face the pack gives the AMOLED, as
@@ -870,18 +858,18 @@ The [Character Studio](studio/README.md), `characters/studio/`, is one
 contact sheet for any pack: every mood against every one of the engine's
 states, each cell drawn by a preview, and one cell large when clicked. A
 pack opts in to a preview of its own with `studio` in `character.json`,
-a list with an entry for each preview it brings. Pixel's:
+a list with an entry for each preview it brings. Boop's, cut to one of its
+families:
 
 ```json
 "studio": [
   {
-    "id": "pixel",
-    "label": "Pixel Boop",
-    "about": "CYD board",
+    "id": "board-gel",
+    "board": "gel",
     "icon": "studio/icon.svg",
-    "scripts": ["design/boop-sound-bank-v4/dist/boop-runtime.js", "studio/adapter.js"],
-    "styles": ["studio/adapter.css"],
-    "wears": "tools/borrowed.json"
+    "scripts": ["design/slime-blob/sound/sfx.js", "studio/adapter.js"],
+    "captures": "studio/review-sets.json",
+    "families": {"settled": {"label": "Settled · low stimulation", "colour": "#7fb7a4"}}
   }
 ]
 ```
@@ -924,39 +912,31 @@ the app leaves the recordings out. How to write, record and play one:
 
 ## 14. Making your own
 
-1. `make -C internal new-character ID=<id> NAME=<Name>` copies Pixel's pack
-   to `../<id>/character/`, gives it its id and name, links it as
-   `characters/<id>` and checks it. Leave out `design/`, `tools/` and the `studio` entry
-   until you need them.
+No tool makes a new character now. To make one by hand:
+
+1. Copy Boop's pack to a folder of its own, give it its own id and name
+   (§4), and link it as `characters/<id>`.
 2. Change the faces and the lasting moods, their meanings and fades (§5);
    its board's face must draw every face it names.
 3. Rewrite `steering/guide.md` and `steering/personality.md` in its voice,
    and a `steering/mood/` file for each mood that needs one.
-4. Change the faces, or keep Pixel's, which the copy already has. Keep its
-   voice too, or delete `voice/` and `mac/takes.tsv` for a buddy that
+4. Keep the voice, or delete `voice/` and `mac/takes.tsv` for a buddy that
    doesn't speak.
 5. Run `make -C internal build` and `.build/debug/boopdev check`.
-6. Try it: `CHARACTER=<yours> make demo NAME=hello` plays Pixel's short
-   demo, which the copy carries, in the simulator's page.
-7. Flash it: `make flash CHARACTER=<yours>`.
-8. Optionally, write it demos ([DEMOS.md](DEMOS.md)). To look at every
+6. Flash it: `make flash CHARACTER=<yours>`.
+7. Optionally, write it demos ([DEMOS.md](DEMOS.md)). To look at every
    mood and state on its board, open the Character Studio (§12); a studio
    entry of its own is only for a preview that isn't the board.
-
-How the last new character ran, step by step, is
-[new-character-playbook.md](new-character-playbook.md).
 
 ## 15. The rig (optional)
 
 The rig is the one set of numbers every pack and face shares: at any instant
 a character is a value on each of its channels. A pack's `rig/` says what
-they do: what each mood wears, its moves and its looks. The engine's half is
+they do: its moves and its looks. The engine's half is
 `firmware/src/render/rig/`: the channels, the tables' types, the ramp its
 fades ease on and the anchors a face reports (`rig.h`), the mixer that plays
 them (`mixer.h`) and the layer stack (`layers.h`). A clip in a pack's
-`clips/` plays on every face the pack has. Pixel's rig is the small one to
-copy: expressions for its 13 drawn moods, the looks `idle`, `working` and
-`asleep`, a `blink` and a stretch from `tier4`, a tier the Mac never sends.
+`clips/` plays on every face the pack has.
 
 **Channels.** The body's `squash`, `lean`, `lift`, `x` (sideways, far enough
 to leave the screen), `reach` (one side stretched out, the other pinched in)
@@ -974,25 +954,7 @@ whole number, in thousandths but for `lift`, `x` and the
 hands' `X` and `Y` (px), with a range and a value at rest, where a face
 draws its art as drawn: `kChannelInfo` in `rig.h` says what each means,
 and `charactergen.py` checks the files by it. In the files, `eyeOpen` sets
-both eyes. A face may draw only some: the gel draws them all, and Pixel's
-neither `x`, `reach`, `melt`, the glass, the hands nor `turn`.
-
-A face also has two **styles**, the eyes' and the mouth's: which of its
-drawings it draws, for the shapes no channel reaches (hearts, X eyes). A new
-style cross-fades in. The pixel face's styles are its drawn moods' names: a
-style is that mood's eyes, or its mouth.
-
-**`expressions.json`**: for each mood the pack has one for, the styles it
-wears, `eyes` and `mouth` both. Pixel's, cut to two of its moods:
-
-```json
-{
-  "happy": {"eyes": "happy", "mouth": "happy"},
-  "excited": {"eyes": "excited", "mouth": "excited"}
-}
-```
-
-A mood without one has none of its own, and the face decides what it wears.
+both eyes. A face may draw only some: the gel draws them all.
 
 **`clips/<id>.json`**: a clip each, its id the file's name: keyframed curves
 on some channels, timed in ms, with cues. Boop's notice, cut to two of its
@@ -1016,7 +978,7 @@ tracks:
 | `loop` | no | Whether it loops, `false` without it. A looping clip's tracks start at 0 and end at `ms` on the value they started on |
 | `additive` | no | `true` without it: its values are offsets on what's there, so it plays in any mood, each up to the channel's whole span either way. `false`: values to blend toward, each in the channel's range |
 | `tracks` | no | For each channel, its keys in order of time, `[ms, value]` or `[ms, value, ease]`, the ease into the key from the one before: `linear`, `in`, `out` or `inout`, which a key without one has. Before its first key a track holds that key's value, and after its last the last's |
-| `cues` | no | `[ms, name]`, each before `ms`: a sound the face plays by name as it crosses it. The gel's are its contacts' kinds (`body_contact` and the rest, slimegen's `recipes.mjs`); Pixel's face sounds no clip's cues |
+| `cues` | no | `[ms, name]`, each before `ms`: a sound the face plays by name as it crosses it. The gel's are its contacts' kinds (`body_contact` and the rest, slimegen's `recipes.mjs`) |
 | `about` | no | What it is, for people |
 
 A pack has at most 255 clips, a track 255 keys, a clip 255 cues and a look
@@ -1024,8 +986,6 @@ A pack has at most 255 clips, a track 255 keys, a clip 255 cues and a look
 
 Some clips' ids mean something to a face:
 
-- `blink`: Pixel's face plays it at each blink, but in a design that blinks
-  on its own.
 - The gel's moves, which it plays by what shows and how long, not on its
   mixer: `invite-<pose>`, then `invite-<pose>-wait` looping, for an
   invite's pose, `invite-<payoff>` for the touch, `invite-<pose>-miss` and
@@ -1057,20 +1017,14 @@ Some clips' ids mean something to a face:
 - `clip`: the clip it loops under the Moments, one that loops, or null.
 - `occasions`: pastimes the look plays now and then, each a `clip` that
   doesn't loop, and a tag list `when` (§9) or a wait `after` in seconds, at
-  least one of them. Pixel's face gives them a chance at the end of each
-  pass of the look's loop, while none plays and its design is the rig
-  face's: while some fit, one of them plays 67% of the time
-  (`rig::kOccasionPct`). It fades out when the look gives way. The gel plays
-  none: its are rows of its pastimes.
+  least one of them. The gel plays none: its are rows of its pastimes.
 - `tiers`: for a tier (`tier1` to `tier3`), a clip that loops in place of
-  `clip` while that's the last tier reached. The gel plays them; Pixel's
-  face doesn't.
+  `clip` while that's the last tier reached. The gel plays them.
 - `acts`: for an activity, by its state (§9), a clip that loops in place of
   `clip` and of any tier's while the agents' activity is that one: the pose
   the whole body takes for it. The gel plays them, each coming over 400 ms
   (`gel::kPoseMs`, the mixer's `setLook`), so a change of activity is a
-  move and not a jump; Pixel's face doesn't, having a design for each
-  state.
+  move and not a jump.
 
 Boop's:
 
@@ -1085,15 +1039,14 @@ Boop's:
 ```
 
 Every file is optional, and one that's missing is empty.
-`charactergen.py --check` fails on an unknown key, channel, mood, state,
-clip or tag, a style that isn't a mood the pixel face the pack has draws
-(its `faces.h`'s), a value out of its range, keys out of order, a loop that
+`charactergen.py --check` fails on an unknown key, channel, state,
+clip or tag, a value out of its range, keys out of order, a loop that
 doesn't close, an occasion that loops or would always fit, a tier's or
 an activity's clip that doesn't loop, a key of `tiers` that isn't a tier or
 of `acts` that isn't a state, and a cue that isn't
 a name before `ms`, each with its file and key (`rig/clips/hop.json:
 tracks.lift[2]: …`). Staging writes the files as `rig_tables.h` in the
-staged `firmware/include/`: `render::rig::kRig`, with a lookup by mood, clip
+staged `firmware/include/`: `render::rig::kRig`, with a lookup by clip
 and look. The app doesn't bundle `rig/`.
 
 **How it plays.** The mixer holds a damped spring on each channel, at rest.
@@ -1101,30 +1054,16 @@ The look's clip loops over the springs, and Moments' clips over that, a few
 at once, each easing in and out over 150 ms (a quarter of a shorter clip);
 a look's clip may ask for longer as it changes.
 With the mixer full, the oldest gives way, but the look's own. A poke or a
-stroke kicks a spring. A new style cross-fades over the rig's fade
-(`kFadeMs`, 200 ms). The face reports where the body is each frame
+stroke kicks a spring. The face reports where the body is each frame
 (`rig::Anchors`: the crown, a ring for a brim, the front lower down for the
 hands, the eyes), so what's worn or held rides it.
-
-**Pixel's face on the rig.** The pixel face draws its face from the rig
-(`render/pixel/rig_face.h`) wherever a design's face is its mood's resting
-face, in every mood whose expression's styles it has, and the design draws
-the rest. The animation bank tags the resting face's parts ([Pixel's design
-guide](https://github.com/Mellow-Machines-Lab/PixelBuddy/blob/main/character/design/README.md),
-The resting face's tags), and facegen writes the moves into `faces.h`. Drawn
-at rest, a tagged design must be the design as drawn, pixel for pixel, at
-every step, or facegen fails, and `test_rig_face` checks it again. Untagged
-designs are baked. On the rig face, `lift`, `squash` and `lean` move the
-whole face; `eyeOpen` closes each eye, its shut art below a third open;
-`eyeSize` scales the eyes, `gazeX` and `gazeY` shift them; `mouthOpen` opens
-the mouth. A look's `clip` plays over a look's design's moves; a Moment's
-design plays its own moves alone.
 
 **The layer stack.** A face may draw what comes and goes around the body
 through the rig's stack (`render/rig/layers.h`), back to front: the scene
 behind the body, what's worn over the eyes or on the body, the hat, the air
 and what's beside it. Each shows a content, the face's own number for what
-it draws there, at an opacity that eases over `kFadeMs`; a new content waits
+it draws there, at an opacity that eases over the rig's fade (`kFadeMs`,
+200 ms); a new content waits
 for the old to fade out.
 
 **The gel on the rig.** The gel keeps its own engine for what no channel
@@ -1180,7 +1119,7 @@ references/2026-10-24-notice-perk/
 | `kind` | `inspiration`, what it's like, in the character's own style; or `direct`, its beats and poses made as the rig allows |
 | `note` | The person's line about it |
 | `status` | `new`, then `read` (cut into frames), `translated` (read and turned into data), `in review`, `approved` |
-| `became` | What it became on the rig (§15): each a `clip`, by its file's name, an `expression`, by its mood, or `art`, a style an expression wears, by its `id` |
+| `became` | What it became on the rig (§15): each a `clip`, by its file's name in `id` |
 | `show` | Optional: what it shows on the board, a `mood` and a `state`, and then `anim`, a state asked for at the reference's 0 ms |
 | `frames`, `ms` | Written by the tool: the frames cut from all its files, and the longest file's length |
 
@@ -1221,14 +1160,7 @@ None of it stops a pack staging. The app doesn't bundle the folder.
 
 ## Not yet
 
-- Pixel draws and voices 13 of the moods; the others borrow theirs
-  (`characters/pixel/tools/borrowed.json`) until they have art and takes of
-  their own.
-- Pixel is frozen with the 42 faces and 16 moods it had: no `lasting`, so
-  nothing of its fades by itself, and its mood files still say minutes.
-- Pixel's rig face draws only the designs whose face is its mood's resting
-  face (§15); a design whose face changes shape is still baked, since the
-  rig's parts are one drawing of each eye. The gel's expressions, recipes,
-  bits and springs are still its own.
+- The gel's expressions, recipes, bits and springs are still its own,
+  not the rig's (§15).
 - A face is C++ code. A picture-based face, with frames per state and mood
   drawn by an engine renderer, would let a character be drawn with no code.

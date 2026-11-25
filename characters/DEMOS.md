@@ -12,7 +12,7 @@ Claude in the desktop app. The script is the same in each.
 ## Write one
 
 1. Make `characters/<pack>/demo/<name>.jsonl`. Copy a short one to
-   start, such as `characters/pixel/demo/hello.jsonl`.
+   start, such as `characters/boop/demo/dismiss.jsonl`.
 2. Write one step, a line of the file, for each thing that happens
    (below).
 3. Check it: `.build/debug/boopdev check` (after `make -C internal build`). It
@@ -24,17 +24,22 @@ Claude in the desktop app. The script is the same in each.
    `make -C internal tools-test` and CI fail until you do.
 5. Watch it: `make demo NAME=<name>`.
 
-This is all of `hello.jsonl`:
+This is all of Boop's `dismiss.jsonl`:
 
 ```json
-// Half a minute: a read, an approved test run, done. A quick check that a demo plays end to end.
-{"demo": 1, "title": "Run the tests"}
-{"agent": "prompt", "text": "Run the tests"}
+// Twenty-five seconds: not now. The agent asks to run a command while
+// you're busy with something else, and its request waits on the needs-you screen.
+// You hold a finger on it for a second: it goes, though the agent still
+// waits, a parcel in the line under the face. You allow it on the Mac a
+// little later, and when the agent asks again, the screen comes back.
+{"demo": 1, "title": "Not now"}
+{"agent": "prompt", "text": "Set up the local database"}
 {"brain": {"react.face": "curious"}}
-{"agent": "read", "file": "README.md", "say": "Let me look at the project first."}
-{"agent": "run", "cmd": "npm test", "about": "Run the tests", "ask": 2, "say": "I'll run the tests."}
-{"agent": "reply", "text": "The one test passes."}
-{"brain": {"react.face": "proud"}, "mood": "proud"}
+{"agent": "run", "cmd": "brew install postgresql", "about": "Install Postgres", "ask": 8, "waits": true, "after": 1}
+{"you": "hold", "after": 3, "note": "You hold a finger on the needs-you screen: not now"}
+{"agent": "run", "cmd": "createdb app_dev", "about": "Create the database", "ask": 4, "after": 6}
+{"agent": "reply", "text": "Postgres is installed and app_dev is created.", "after": 1}
+{"brain": {"react.face": "pleased"}}
 ```
 
 ## Steps
@@ -55,7 +60,7 @@ Boop's brain.
 | `{"agent": "edit"}` | The agent edits a file: its size in lines, as agent-hook counts it from `old` and `new`, is the work stream's word (`edit +2 -140`) | `file`, `old`, `new` |
 | `{"agent": "run"}` | The agent runs a command, tagged as agent-hook tags it (a check's topic, or `inspect` for one that only looks) | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds), `waits` (true: the step ends as it asks, and the steps after it play while it waits, such as a `hold`) |
 | `{"agent": "todo"}` | The agent writes its to-do list (Claude's `TodoWrite`, Codex's `update_plan`): the line under the face counts it | `todos`, done of all (`"2/4"`) |
-| `{"agent": "review"}` | The agent sends a helper (on Pixel, a mini under the face) until a `reply` `"by": "reviewer"` brings the first one still out back. Claude's only: Codex's hooks report no helpers | `task`, `prompt` |
+| `{"agent": "review"}` | The agent sends a helper until a `reply` `"by": "reviewer"` brings the first one still out back. Claude's only: Codex's hooks report no helpers | `task`, `prompt` |
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
 | `{"agent": "reply"}` | The agent's turn ends with this message, which Boop reads as it reads any agent's last message: only its reading reaches the brain | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You poke Boop | |
@@ -88,15 +93,14 @@ context on cue.
 A back records the away, moves the clock on by the time away, then
 records the back, as the Mac would after that long: being away shows
 nothing on the board (no check-in greets the empty chair), and the
-Mac's own keys and mouse would end an away left open. `good-morning.jsonl` comes
-back after a night away, and Pixel wakes up.
+Mac's own keys and mouse would end an away left open.
 
 **Timing.** Steps happen in order. `after` is how many seconds a step
 waits after the one before it ends. An agent step also `takes` some
 seconds. Without them, each takes about as long as it would.
 
 **Captions.** Any step can have a `note`: words for the viewer that
-replace the words Boop makes from the step ("You poke Pixel three times
+replace the words Boop makes from the step ("You poke Boop three times
 while it's busy").
 
 A key that a step doesn't take, or a value of the wrong type, stops the
@@ -130,12 +134,12 @@ an answer is wrong.
 
 ```sh
 make demo                                              # asks which demo, then where it plays
-make demo NAME=hello                                   # the simulator's page, from its recording, at once
+make demo NAME=dismiss                                 # the simulator's page, from its recording, at once
 make demo NAME=all                                     # every recorded demo in the page, one after another
-make demo NAME=hello BOARD=usb:$TMPDIR/linkkit-bridge.sock   # a real board, no agent
-make demo NAME=hello IN=simulated-claude-terminal      # Claude Code in this terminal, replies replayed
-make demo NAME=hello IN=simulated-codex-terminal       # the same with Codex (no reviewer steps: Codex has no helpers here)
-make demo NAME=hello IN=claude                         # your real Claude, in the Claude desktop app
+make demo NAME=dismiss BOARD=usb:$TMPDIR/linkkit-bridge.sock # a real board, no agent
+make demo NAME=<name> IN=simulated-claude-terminal     # Claude Code in this terminal, replies replayed
+make demo NAME=<name> IN=simulated-codex-terminal      # the same with Codex (no reviewer steps: Codex has no helpers here)
+make demo NAME=<name> IN=claude                        # your real Claude, in the Claude desktop app
 ```
 
 `make demo` with nothing else lists every demo, numbered, with its
@@ -160,12 +164,12 @@ Where a demo plays, and what plays the agent:
 - **With an agent,** the agent goes at its own pace. Boop waits for the
   agent's own hook for each agent step, then plays your steps and the
   brain's after it. Only a demo with a project plays with an agent
-  (below, A project for a real agent). How this works:
+  (below, A project for a real agent), and none of Boop's demos has one
+  yet, so the `IN` lines above name `<name>`. How this works:
   [internal/sessions/README.md](../internal/sessions/README.md).
 - `make demo` plays the demo as its pack, on the face its pack gives the
-  AMOLED board (Boop's gel, Pixel's pixel face). If two packs have a demo
-  with the same name, choose one with `CHARACTER=<pack>`; the menu shows
-  both.
+  AMOLED board (Boop's gel). If two packs have a demo with the same name,
+  choose one with `CHARACTER=<pack>`; the menu shows both.
 
 ## The same every time
 

@@ -96,11 +96,6 @@ struct OverviewPane: View {
             all.append(PaneNotice(icon: trouble, tone: Theme.clayInk, title: title, detail: device.detail,
                                   action: action, more: device.more))
         }
-        if model.noKey, !model.noKeyDismissed {
-            all.append(PaneNotice(icon: "key.fill", tone: Theme.inkSoft, title: "\(model.name) has no brain yet",
-                                  detail: "It shows what your agents do and when one needs you. Add a Jev API key in Settings, and \(model.name) reacts to it, and answers when you talk.",
-                                  action: openSettings, dismiss: { model.noKeyDismissed = true }))
-        }
         if let trouble = model.status?.brainTrouble { all.append(brainNotice(trouble)) }
         if let why = model.status?.micTrouble {
             all.append(PaneNotice(icon: "mic.slash.fill", tone: Theme.clayInk, title: "\(model.name) can't hear you", detail: why,
@@ -177,8 +172,7 @@ struct OverviewPane: View {
             SlimeFace(feed: model.slime, snapshot: model.status?.snapshot ?? Self.waking, live: model.shown, size: faceSize,
                       needsYou: FaceMood(model.status) == .needsYou)
         } else {
-            BoopFace(mood: model.startError == nil ? FaceMood(model.status) : .stopped, design: model.status?.snapshot.mood ?? MoodOutput.initial,
-                     size: faceSize)
+            BoopFace(mood: model.startError == nil ? FaceMood(model.status) : .stopped, size: faceSize)
         }
     }
 
@@ -318,7 +312,6 @@ struct OverviewPane: View {
         }
         .buttonStyle(RowButtonStyle(filled: on))
         .help(on ? "Stop listening and send what \(model.name) heard"
-                 : model.noKey ? "Talk to \(model.name) with the Mac's microphone. Only Jev answers, so this needs a Jev API key"
                  : "Talk to \(model.name) with the Mac's microphone: try “how many agents are running?” It stops by itself after 30 seconds")
         .accessibilityLabel(on ? "Stop listening and send" : "Talk to \(model.name)")
         .animation(.boopSettle, value: on)
@@ -340,34 +333,21 @@ struct OverviewPane: View {
 
     // MARK: Why it looks like this
 
-    /// What Boop is celebrating today, and the night: each reason, and what
-    /// the board wears or shows for it.
+    /// What Boop is celebrating today: each reason.
     private func dressingCard(_ reasons: [Narration.Dressing]) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(reasons) { reason in
                     HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
-                        Image(systemName: symbol(reason.kind)).font(.body).foregroundStyle(Theme.inkSoft)
+                        Image(systemName: "party.popper").font(.body).foregroundStyle(Theme.inkSoft)
                             .frame(width: Theme.iconColumn)
-                        VStack(alignment: .leading, spacing: Theme.hair) {
-                            Text(reason.why).font(.bodyStrong)
-                            if let what = reason.what {
-                                Text(what.prefix(1).uppercased() + what.dropFirst()).caption()
-                            }
-                        }
-                        .fixedSize(horizontal: false, vertical: true)
+                        Text(reason.why).font(.bodyStrong)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private func symbol(_ kind: Narration.Dressing.Kind) -> String {
-        switch kind {
-        case .specialDay: "party.popper"
-        case .night: "moon.stars"
-        }
     }
 
     // MARK: Needs you
@@ -477,15 +457,15 @@ struct OverviewPane: View {
 
     // MARK: Notices
 
-    /// The brain failing, by what the person can do about it; the brain's
-    /// own words behind Details.
+    /// Jev not helping, by what the key's owner can do about it; Jev's
+    /// own words behind Details. Boop carries on without it.
     private func brainNotice(_ trouble: BrainTrouble) -> PaneNotice {
-        let meanwhile = "\(model.name) shows what your agents do, but doesn't react."
+        let meanwhile = "\(model.name) carries on without it."
         let (title, detail, action): (String, String, NoticeAction?) = switch trouble.kind {
         case .credit: ("Jev is out of credit", "Top up your Jev account at TypeSafe. Until then, \(meanwhile)",
                        ("Jev's docs", { NSWorkspace.shared.open(AppModel.jevDocs) }))
         case .key: ("Jev didn't accept your key", "Check the Jev API key in Settings. Until then, \(meanwhile)", openSettings)
-        case .failing: ("Jev isn't answering", "Until it answers again, \(meanwhile)", nil)
+        case .failing: ("Jev isn't answering", "Until it does, \(meanwhile)", nil)
         }
         return PaneNotice(icon: "exclamationmark.triangle.fill", tone: Theme.clayInk, title: title, detail: detail,
                           action: action, more: trouble.why)

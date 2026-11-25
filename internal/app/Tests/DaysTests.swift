@@ -79,8 +79,8 @@ final class DaysTests: XCTestCase {
         let header = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("firmware/src/render/tags.h"), encoding: .utf8)
         let list = try XCTUnwrap(header.range(of: #"kTagNames\[kTagCount\] = \{[^}]*\}"#, options: .regularExpression))
         let names = header[list].split(separator: "\"").enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
-        // The board's table keeps `tier4`, `tier5` and `hushed`, which Pixel's
-        // designs are numbered by; the Mac never sends them.
+        // The board's table keeps `tier4`, `tier5` and `hushed`, so the
+        // others keep their bits; the Mac never sends them.
         XCTAssertEqual(names.filter { !["tier4", "tier5", "hushed"].contains($0) }, Tags.board)
         XCTAssertEqual(Tags.all, Tags.board, "the board reads every tag")
         XCTAssertLessThanOrEqual(Tags.board.count, 32, "a set of tags is 32 bits on the board")
@@ -213,26 +213,18 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(signs(rig.poke()), [], "once")
     }
 
-    /// The popover's reasons choose as the board does
-    /// (firmware/src/render/tags.cpp). The gel wears nothing, night or day
-    /// (its energy says the night), and has nothing in the sky or the air (its
-    /// screen's rule); a board that isn't the gel still has one hat, the
-    /// first that fits, and its confetti, snow and hearts.
+    /// The popover's reasons are the special days. The gel wears nothing,
+    /// night or day (its energy says the night), and has nothing in the sky
+    /// or the air (its screen's rule), so the night is none.
     func testTheReasonsAreTheBoards() {
-        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, gel: Bool = true) -> [String] {
-            let at = ms(y, mo, d, h)
-            let when = Days.tags(at: at, hatched: "2026-09-01", time: utc)
-            let specialDays = Days.special(at: at, hatched: "2026-09-01", name: "Pip", time: utc)
-            return Narration.Dressing.now(when: when, specialDays: specialDays, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
+        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12) -> [String] {
+            let specialDays = Days.special(at: ms(y, mo, d, h), hatched: "2026-09-01", name: "Pip", time: utc)
+            return Narration.Dressing.now(specialDays: specialDays).map(\.why)
         }
-        XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: -"])
-        XCTAssertEqual(reasons(2026, 10, 21, 23), ["Pip is 50 days old today: -"])
-        XCTAssertEqual(reasons(2026, 10, 21, 23, gel: false), ["Pip is 50 days old today: a party hat and confetti"])
-        XCTAssertEqual(reasons(2026, 10, 21, gel: false), ["Pip is 50 days old today: a party hat and confetti"])
-        XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays: -"])
-        XCTAssertEqual(reasons(2026, 12, 25, 23, gel: false), ["It's the winter holidays: snow", "It's night: a nightcap"])
-        XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: -"])
-        XCTAssertEqual(reasons(2026, 12, 24, gel: false), ["It's the winter holidays: a bobble hat and snow"])
+        XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today"])
+        XCTAssertEqual(reasons(2026, 10, 21, 23), ["Pip is 50 days old today"])
+        XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays"])
+        XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays"])
         XCTAssertEqual(reasons(2026, 10, 23), [], "a Friday wears nothing")
         XCTAssertEqual(reasons(2026, 10, 22), [], "an ordinary afternoon")
         XCTAssertEqual(reasons(2026, 10, 22, 8), [], "an ordinary morning")
@@ -325,7 +317,7 @@ final class DaysTests: XCTestCase {
         core.growth = { Growth(xp: 2_900) }
         XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when, young)
         XCTAssertEqual(Tags.board.suffix(13), ["tier3", "typing", "reading", "macleft", "macright"] + Tags.along + ["macup", "speaking"],
-                       "no stage's tag after the tiers: the firmware's list ends the same way, after the two tiers and `hushed` it keeps for Pixel's numbering (render/tags.h)")
+                       "no stage's tag after the tiers: the firmware's list ends the same way, after the two tiers and `hushed` it keeps so the others keep their bits (render/tags.h)")
     }
 
     /// A demo's hold keeps its finger down longer than the board's hold

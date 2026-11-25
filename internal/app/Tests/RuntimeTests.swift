@@ -31,7 +31,7 @@ final class RuntimeTests: XCTestCase {
     /// The name the runtime's buddy is given at setup, which it goes by.
     static let name = "Pip"
 
-    /// A runtime whose brain is `brain` once the key reads, or none.
+    /// A runtime whose brain is `brain` alone once the key reads, or none.
     func options(_ transport: FakeTransport?, brain: ScriptedBrain = .pipelineCheck,
                  readJevKey: @escaping @Sendable (() -> String?) -> String? = { _ in "k" }) throws -> Runtime.Options {
         try Runtime.setUp(stateDir: dir, name: Self.name)
@@ -39,6 +39,7 @@ final class RuntimeTests: XCTestCase {
         options.devLines = true
         options.readJevKey = readJevKey
         options.brain = { key in key.map { _ in brain } }
+        options.alone = true
         let opened = self.opened
         options.open = { opened.add($0.arguments.joined(separator: " ")); return true }
         return options
@@ -149,14 +150,11 @@ final class RuntimeTests: XCTestCase {
         try runtime.start()
         defer { runtime.stop() }
         eventually("home answers while the key is read") { runtime.home.sync { statuses.last?.brain == "none" } }
-        XCTAssertTrue(runtime.home.sync { statuses.allSatisfy { !$0.keyRead } }, "not read yet, so not missing")
         prompt.signal()
         eventually("the brain once it's read") { runtime.home.sync { statuses.last?.brain == "jev-test" } }
-        XCTAssertTrue(runtime.home.sync { statuses.last?.keyRead == true })
         XCTAssertTrue(runtime.home.sync { runtime.pipeline.brain })
         runtime.reloadBrain(jevKey: nil)
         eventually("none when Settings clears it") { runtime.home.sync { statuses.last?.brain == "none" } }
-        XCTAssertTrue(runtime.home.sync { statuses.last?.keyRead == true }, "read, and there's none")
         XCTAssertFalse(runtime.home.sync { runtime.pipeline.brain }, "so no event wakes it")
         runtime.reloadBrain(jevKey: "k2")
         eventually("the brain when Settings saves one") { runtime.home.sync { statuses.last?.brain == "jev-test" } }
@@ -1829,39 +1827,23 @@ final class RuntimeTests: XCTestCase {
 
     /// linkkit/SPEC.md §5: a
     /// reaction held longest, in the design with the longest loop of any of
-    /// the moods and any look, or with the longest line after the latest
-    /// voice window and its bubble, ends on the device before the link
+    /// the moods and any look, or with the longest line inside that loop
+    /// and its bubble, ends on the device before the link
     /// gives up on its `ended` (60 s after it could start playing at the
     /// latest), and the link gives up before the harness's ceiling would
-    /// end it. The loops and voice windows are the ones the Pixel pack's
-    /// faces.h (`kScenes`' `loopMs`) and sfx.h (`kScore`'s `voiceMs`) give
-    /// the device, so a new design with a long loop fails here rather than
-    /// in HISTORY: wounded's 14.3 s of nodding off, held four times, is
-    /// 57.2 s.
+    /// end it. The loops are the gel's recipes (`gelLongestLoopMs`), and a
+    /// take starts inside a loop, at its reveal, so a new recipe with a long
+    /// loop fails here rather than in HISTORY.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
         let held = Int64(MomentOutput.sizes.map(\.loops).max() ?? 0)
-        let assets = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../../../characters/pixel/firmware/include").standardizedFileURL
-        func longest(_ file: String, _ start: String, _ pattern: String) throws -> Int64 {
-            let text = try String(contentsOf: assets.appendingPathComponent(file), encoding: .utf8)
-            let from = try XCTUnwrap(text.range(of: start)).upperBound
-            let table = String(text[from..<(try XCTUnwrap(text.range(of: "};", range: from..<text.endIndex))).lowerBound])
-            let re = try NSRegularExpression(pattern: pattern)
-            return re.matches(in: table, range: NSRange(table.startIndex..., in: table))
-                .compactMap { Int64(table[Range($0.range(at: 1), in: table)!]) }.max() ?? 0
-        }
-        let longestLoop = try longest("faces.h", "static const Scene kScenes[", #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+, \d+\}"#)
-        let latestVoice = try longest("sfx.h", "static const Score kScore[] = {", #"\{k\w+, \d+, \w+, \d+, \d+, (\d+)\},"#)
-        XCTAssertEqual(longestLoop, 14_300)
+        let longestLoop = try FirmwareTables.gelLongestLoopMs()
         // A reaction says one take, or a sound and a word within maxSayMs.
         let longestLine = Int64(max(Take.all.map(\.ms).max() ?? 0, Voice.maxSayMs))
         // The bubble stays up after the take (firmware `Behaviour::kBubbleReadMs`).
-        let behaviour = try String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../../../firmware/src/app/behaviour.h").standardizedFileURL, encoding: .utf8)
-        let bubbleRead = try XCTUnwrap(behaviour.firstMatch(of: /kBubbleReadMs = (\d+);/).flatMap { Int64($0.1) })
+        let bubbleRead = try FirmwareTables.bubbleReadMs()
         XCTAssertEqual(bubbleRead, 1200)
-        let longestPlay = max(held * longestLoop, latestVoice + longestLine + bubbleRead)
-        XCTAssertGreaterThan(longestPlay, 30_000)
+        let longestPlay = max(held * longestLoop, longestLoop + longestLine + bubbleRead)
+        XCTAssertGreaterThan(longestPlay, 15_000)
         XCTAssertLessThan(longestPlay, DeviceLink.answerGraceMs)
         XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, MomentOutput.openForMs)
     }
@@ -2137,36 +2119,69 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(core.snapshot(at: 1000).attn?.id, 1, "back to 1, never 0")
     }
 
-    /// The popover says Jev isn't answering at once for a
-    /// status only the person can fix (401, 402, 403), and for anything
-    /// else after 3 dropped passes in a row. A pass that runs clears it, a
-    /// pass that never asked Jev (one held back) doesn't count, nor does
-    /// one that asked the brain before a new key, and a new key starts over.
+    /// The popover says Jev isn't helping at once for a status only the
+    /// key's owner can fix (401, 402, 403), and for anything else after 3
+    /// failed passes in a row. Jev answering in time clears it, a report
+    /// from the brain before a new key says nothing, and a new key starts
+    /// over.
     func testBrainTroubleShowsAtOnceForTheAccountAndAfterThreeInARowElse() throws {
         XCTAssertEqual(BrainTrouble.showAfter, 3)
         let runtime = try Runtime(options(nil))
-        let e = Event(seq: 1, at: 1, source: .device, type: .poke, specificType: "input")
-        func pass(_ status: Int?, asked: Bool = true, current: Bool = true) -> BrainTrouble? {
-            let error = status.map { BrainError("jev: HTTP \($0)", status: $0) }
-            let p = Harness.Pass(event: e, line: "You poked Boop.", seq: 2, answers: [:], dropped: error?.description, held: nil,
-                                 latencyMs: 1, brain: "jev:jev-latest", by: nil, prompt: asked ? "state" : nil, questions: [],
-                                 seen: 1, outputs: [], error: error, current: current)
-            return runtime.home.sync {
-                runtime.passed(p)
+        func jev(_ status: Int?, earlier: Bool = false) -> BrainTrouble? {
+            runtime.home.sync {
+                runtime.jevAnswered(status.map { BrainError("jev: HTTP \($0)", status: $0) },
+                                    use: runtime.brainUses - (earlier ? 1 : 0))
                 return runtime.trouble
             }
         }
-        XCTAssertEqual(pass(402), BrainTrouble(kind: .credit, why: "jev: HTTP 402", inARow: 1))
-        XCTAssertNil(pass(nil))
-        XCTAssertEqual(pass(401)?.kind, .key)
-        XCTAssertNil(pass(nil))
-        XCTAssertNil(pass(503))
-        XCTAssertNil(pass(503))
-        XCTAssertEqual(pass(503), BrainTrouble(kind: .failing, why: "jev: HTTP 503", inARow: 3))
-        XCTAssertEqual(pass(nil, asked: false)?.inARow, 3, "a pass held back never asked Jev")
-        XCTAssertEqual(pass(401, current: false)?.kind, .failing, "one that asked the brain before a new key says nothing")
+        XCTAssertEqual(jev(402), BrainTrouble(kind: .credit, why: "jev: HTTP 402", inARow: 1))
+        XCTAssertNil(jev(nil))
+        XCTAssertEqual(jev(401)?.kind, .key)
+        XCTAssertEqual(jev(403)?.kind, .key)
+        XCTAssertNil(jev(nil))
+        XCTAssertNil(jev(503))
+        XCTAssertNil(jev(503))
+        XCTAssertEqual(jev(503), BrainTrouble(kind: .failing, why: "jev: HTTP 503", inARow: 3))
+        XCTAssertEqual(jev(401, earlier: true)?.kind, .failing, "a report from the brain before a new key says nothing")
         runtime.home.sync { runtime.useBrain() }
         XCTAssertNil(runtime.home.sync { runtime.trouble }, "a new key starts over")
+    }
+
+    /// As every real launch runs: the rules answer every pass, and Jev
+    /// only takes their seats. A Jev out of credit is the popover's notice,
+    /// and the poke still gets its face, the rules'.
+    func testWithTheRulesJevFailingIsANoticeNeverASilentBoop() throws {
+        try seatedPoke(key: "k", trouble: .credit)
+    }
+
+    /// With no key the poke gets its face too, and nothing is said of Jev.
+    func testWithNoKeyTheRulesAnswerAndNothingIsSaidOfJev() throws {
+        try seatedPoke(key: nil, trouble: nil)
+    }
+
+    /// A poke on a runtime as every real launch runs it, Jev's key `key`
+    /// and Jev out of credit: a face plays, and the popover's notice is
+    /// `trouble`.
+    func seatedPoke(key: String?, trouble: BrainTrouble.Kind?) throws {
+        let transport = FakeTransport()
+        var options = try options(transport, readJevKey: { _ in key })
+        options.alone = false
+        options.brain = { key in key.map { _ in ScriptedBrain(id: "jev-test") { _, _ in throw BrainError("jev: HTTP 402", status: 402) } } }
+        let runtime = try Runtime(options)
+        var statuses: [Runtime.Status] = []  // on `home`
+        runtime.onChange = { statuses.append($0) }
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        eventually("the brain") { runtime.home.sync { runtime.jevKey != nil && statuses.last?.brain == (key == nil ? "rules" : "jev-test") } }
+        dev(#"{"dev":"tap"}"#)
+        eventually("the poke's face, the rules'") { transport.dos("react").contains { $0.contains(#""mood":"#) } }
+        if let trouble {
+            eventually("Jev's trouble") { runtime.home.sync { statuses.last?.brainTrouble?.kind == trouble } }
+        } else {
+            runtime.home.sync {}
+            XCTAssertNil(runtime.home.sync { statuses.last?.brainTrouble }, "nothing to say")
+        }
     }
 
     /// HISTORY closes with `mood`'s time in a mood

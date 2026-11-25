@@ -542,13 +542,15 @@ final class WorkStreamTests: XCTestCase {
     }
 
     /// characters/CHARACTER.md §4: what Boop does at an act is the pack's to
-    /// say. Boop's says it, and a pack that says nothing, as Pixel, is told
-    /// only what the agent did.
+    /// say. Boop's says it, and a pack that says nothing is told only what
+    /// the agent did.
     func testAnActsSceneIsThePacks() throws {
         XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "build", thread: "\"api\"", name: "Mo", pack: .active),
                        "claude is building on \"api\". Mo is watching the build run.")
-        let pixel = try CharacterPack.named(id: "pixel")
-        XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "push", thread: "\"api\"", pack: pixel), "claude is pushing on \"api\".")
-        XCTAssertEqual(EventLine.actEnded(agent: "claude", kind: "tests", thread: "\"api\"", passed: false, pack: pixel), "claude's tests failed on \"api\".")
+        let silent = try CharacterPack(json: ["id": "t", "name": "T", "version": "1", "default_mood": "calm",
+                                              "moods": [["id": "calm", "face": "Calm."]], "lasting": [["id": "calm", "meaning": "Settled."]]],
+                                       from: "t.json")
+        XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "push", thread: "\"api\"", pack: silent), "claude is pushing on \"api\".")
+        XCTAssertEqual(EventLine.actEnded(agent: "claude", kind: "tests", thread: "\"api\"", passed: false, pack: silent), "claude's tests failed on \"api\".")
     }
 }

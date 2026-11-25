@@ -168,10 +168,7 @@ extension CharacterPack {
         let names = Set(moods.map(\.id))
         guard !moods.isEmpty else { throw CharacterPackError("\(source): moods names no face") }
         guard names.count == moods.count else { throw CharacterPackError("\(source): moods names a face twice") }
-        // A pack from before `lasting` (Pixel's): its faces with a meaning
-        // are its lasting moods, which never fade by themselves.
-        let rows = json["lasting"] as? [[String: Any]]
-            ?? (json["moods"] as? [[String: Any]] ?? []).filter { $0["meaning"] != nil }
+        guard let rows = json["lasting"] as? [[String: Any]] else { throw CharacterPackError("\(source): lasting is missing") }
         lasting = try rows.map { try CharacterPack.lasting($0, in: source) }
         let lastingNames = Set(lasting.map(\.id))
         guard lastingNames.count == lasting.count else { throw CharacterPackError("\(source): lasting names a mood twice") }
@@ -296,17 +293,6 @@ extension CharacterPack {
         var copy = self
         copy.name = name
         return copy
-    }
-
-    /// The pack with `id` beside the process's, in the repo's `characters/`
-    /// (read staged when it's the one staged), for the tests.
-    public static func named(id: String) throws -> CharacterPack {
-        if active.id == id { return active }
-        let folder = staged(repo.appendingPathComponent("characters").appendingPathComponent(id))
-        guard FileManager.default.fileExists(atPath: folder.appendingPathComponent("character.json").path) else {
-            throw CharacterPackError("no character pack \(id) in characters/")
-        }
-        return try CharacterPack(directory: folder)
     }
 
     /// The pack a process uses when nothing chose one, by charactergen's

@@ -38,7 +38,6 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:18px}
 .brand h1{font-size:28px}
 .brand p{color:var(--muted);margin-top:4px;max-width:62ch}
-.segmented.packs button{min-height:40px;padding:6px 18px;font-size:15px;font-weight:600}
 .back{margin-bottom:14px}
 .characters{margin-bottom:20px}
 .missing{background:var(--soft);border-radius:10px;padding:12px 14px;margin-bottom:18px}

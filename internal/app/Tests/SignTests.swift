@@ -95,31 +95,30 @@ final class SignTests: XCTestCase {
         XCTAssertNil(queued.last?.sign, "only an offered caption")
     }
 
-    /// Every caption in each pack's signs.md fits a sign once filled in
+    /// Every caption in Boop's signs.md fits a sign once filled in
     /// with a short phrase, in the board's fonts (printable ASCII), and
     /// its tags are ones a reading or the calendar can have: the calendar
     /// signs hear is `Core.calendar`, never the board's or the tiers' tags,
     /// your answers kept from the pack's asks, an invite's touch and a
     /// remark's id.
     func testThePacksSignsFit() throws {
-        for pack in ["boop", "pixel"] {
-            let asks = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/asks.md")
-            let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
-                .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
-            let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle", "world", "notice"] + Notices.Kind.allCases.map(\.rawValue) + World.GestureKind.allCases.map(\.rawValue)
-                + ["invite"] + Skit.Invite.Touch.allCases.map(\.rawValue) + ["remark"] + Remarks.all + Days.calendarTags + answers)
-            let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
-            let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
-            XCTAssertGreaterThan(signs.count, 10, pack)
-            for line in signs {
-                let filled = line.text.replacingOccurrences(of: "{words}", with: "ok").replacingOccurrences(of: "{WORDS}", with: "OK")
-                    .replacingOccurrences(of: "{turns}", with: "12").replacingOccurrences(of: "{thread}", with: "api")
-                    .replacingOccurrences(of: "{agent}", with: "claude").replacingOccurrences(of: "{n}", with: "10")
-                XCTAssertLessThanOrEqual(filled.count, Signs.maxLength, "\(pack): \(line.text)")
-                XCTAssertTrue(filled.unicodeScalars.allSatisfy { (32...126).contains($0.value) }, "\(pack): \(line.text)")
-                XCTAssertTrue(Set(line.tags).isSubset(of: known), "\(pack): \(line.tags)")
-            }
+        let pack = "boop"
+        let asks = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/asks.md")
+        let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
+            .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
+        let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
+            + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle", "world", "notice"] + Notices.Kind.allCases.map(\.rawValue) + World.GestureKind.allCases.map(\.rawValue)
+            + ["invite"] + Skit.Invite.Touch.allCases.map(\.rawValue) + ["remark"] + Remarks.all + Days.calendarTags + answers)
+        let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
+        let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
+        XCTAssertGreaterThan(signs.count, 10, pack)
+        for line in signs {
+            let filled = line.text.replacingOccurrences(of: "{words}", with: "ok").replacingOccurrences(of: "{WORDS}", with: "OK")
+                .replacingOccurrences(of: "{turns}", with: "12").replacingOccurrences(of: "{thread}", with: "api")
+                .replacingOccurrences(of: "{agent}", with: "claude").replacingOccurrences(of: "{n}", with: "10")
+            XCTAssertLessThanOrEqual(filled.count, Signs.maxLength, "\(pack): \(line.text)")
+            XCTAssertTrue(filled.unicodeScalars.allSatisfy { (32...126).contains($0.value) }, "\(pack): \(line.text)")
+            XCTAssertTrue(Set(line.tags).isSubset(of: known), "\(pack): \(line.tags)")
         }
     }
 

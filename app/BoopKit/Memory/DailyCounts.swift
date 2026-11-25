@@ -15,8 +15,8 @@ public struct DayCounts: Codable, Equatable, Sendable {
     public var threadsOpened = 0
     /// Requests shown, those you answered, and how long those took.
     public var needsYou = 0, answered = 0, answerMs: Int64 = 0
-    /// Invites asked, answered in time, answered late and missed (one cut
-    /// short is none of them).
+    /// Invites asked (once the Moment that asked played), answered in time,
+    /// answered late and missed (one cut short is none of them).
     public var invitesAsked = 0, invitesAnswered = 0, invitesLate = 0, invitesMissed = 0
     /// Moments that said something, and your time at the Mac, for spoken per hour.
     public var spoken = 0, hereMinutes = 0
@@ -116,6 +116,9 @@ public final class CountsReader: TranscriptReader {
         var lastAt: Int64?
         /// The day's XP so far, for its limits; nil in a state kept before it.
         var growth: Growth?
+        /// The records that asked an invite, until the board says they
+        /// played (`Played`); nil in a state kept before it.
+        var inviting: Played<Bool>?
 
         /// Your time at the Mac ends at the last event read.
         mutating func leftTheMac() {
@@ -180,10 +183,15 @@ public final class CountsReader: TranscriptReader {
             if !s.wishOpen { s.row.touchesNoWish += 1 }
         }
         if Yours.did(e), s.hereSince == nil, s.away == nil { s.hereSince = e.at }
+        // An invite asked, once its Moment played.
+        if e.action == MomentOutput.outputName {
+            var inviting = s.inviting ?? Played()
+            if inviting.read(e, { $0[InviteLedger.askedFact] != nil ? true : nil }) != nil { s.row.invitesAsked += 1 }
+            s.inviting = inviting
+        }
         if e.kind == Event.did {
             if e.action == Core.openThread, e["ok"]?.bool != false { s.row.threadsOpened += 1 }
             if e.action == MomentOutput.outputName, e["ok"]?.bool != false, case .array(let takes)? = e["takes"], !takes.isEmpty { s.row.spoken += 1 }
-            if e.action == MomentOutput.outputName, e["ok"]?.bool != false, e[InviteLedger.askedFact] != nil { s.row.invitesAsked += 1 }
             // "Shh": the hush reply, which makes it quiet for a while.
             if e.action == MomentOutput.outputName, e["ok"]?.bool != false, e["reply"]?.string == MomentOutput.hushReply { s.row.hushes += 1 }
         }

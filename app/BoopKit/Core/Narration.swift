@@ -374,66 +374,21 @@ extension Narration {
 }
 
 extension Narration {
-    /// Why the board looks as it does now, for the popover: each reason, first
-    /// every special day Boop is celebrating today, then the night, with
-    /// what the board wears or shows for it. It chooses as the board does,
-    /// from the same tags. The gel wears nothing, night or day: its energy
-    /// says the night (`energy`). A board that isn't the gel wears one hat, the first that
-    /// fits, of a witch hat at Halloween, a party hat, a nightcap at night
-    /// and a bobble hat in the winter holidays, and has confetti at a party
-    /// or New Year, snow in the winter holidays and hearts on Valentine's
-    /// in the air.
+    /// Why the board looks as it does now, for the popover: every special
+    /// day Boop is celebrating today. The gel wears nothing for one and has
+    /// nothing in the air, and its energy says the night (`energy`).
     public struct Dressing: Equatable, Sendable, Identifiable {
-        public enum Kind: Sendable { case specialDay, night }
-
-        public var kind: Kind
-        /// `Pip is 50 days old today`, `It's night`.
+        /// `Pip is 50 days old today`.
         public var why: String
-        /// What the board wears or shows for it, in a few words: `a party hat
-        /// and confetti`. Nil for an occasion it only plays along with.
-        public var what: String?
         public var id: String { why }
 
-        public init(kind: Kind, why: String, what: String?) {
-            self.kind = kind
+        public init(why: String) {
             self.why = why
-            self.what = what
         }
 
-        /// The reasons on for `when` (the `state`'s tags) and today's
-        /// `specialDays`, and `gel` for a board that draws the gel, which
-        /// wears nothing and has nothing in the air.
-        public static func now(when: [String], specialDays: [Days.SpecialDay], gel: Bool) -> [Narration.Dressing] {
-            let on = Set(when)
-            let party = ["party", "newyear", "lunar", "programmers"].contains(where: on.contains)
-            let hat = gel ? nil
-                : on.contains("halloween") ? "halloween" : party ? "party" : on.contains("night") ? "night" : on.contains("winter") ? "winter" : nil
-
-            var out: [Narration.Dressing] = specialDays.map { o in
-                var things: [String] = []
-                switch o.tag {
-                case "halloween"?: if hat == "halloween" { things.append("a witch hat") }
-                case "winter"?:
-                    if hat == "winter" { things.append("a bobble hat") }
-                    if !gel { things.append("snow") }
-                case "valentines"?: if !gel { things.append("hearts") }
-                case nil, "newyear"?, "lunar"?, "programmers"?:
-                    if hat == "party" { things.append("a party hat") }
-                    if !gel, o.tag == nil || o.tag == "newyear" { things.append("confetti") }
-                default: break
-                }
-                return Narration.Dressing(kind: .specialDay, why: o.why, what: list(things))
-            }
-            if hat == "night" {
-                out.append(Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap"))
-            }
-            return out
-        }
-
-        /// `a`, `a and b`, `a, b and c`; nil for none.
-        static func list(_ things: [String]) -> String? {
-            guard let last = things.last else { return nil }
-            return things.count == 1 ? last : things.dropLast().joined(separator: ", ") + " and " + last
+        /// The reasons on for today's `specialDays`.
+        public static func now(specialDays: [Days.SpecialDay]) -> [Narration.Dressing] {
+            specialDays.map { Narration.Dressing(why: $0.why) }
         }
     }
 }

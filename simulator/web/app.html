@@ -10,16 +10,14 @@
 </style>
 <!-- The page the internal build's board window shows (app/Boop/BoardWindow.swift): one board with its controls, its
      USB the app itself rather than a cable. It tells the app each line the board says, each power-on and power-off,
-     and its size; the app sends the board its lines with usb(line). ?face=gel picks the face, as on the local page. -->
+     and its size; the app sends the board its lines with usb(line). -->
 <script type="module">
   import './boop-simulator.js';
   const app = window.webkit?.messageHandlers?.board;
   const say = message => app?.postMessage(message);
   addEventListener('error', e => say({ log: `${e.message} (${e.filename}:${e.lineno})` }));
   addEventListener('unhandledrejection', e => say({ log: String(e.reason) }));
-  const ask = new URLSearchParams(location.search);
   const element = document.createElement('boop-simulator');
-  element.setAttribute('face', ask.get('face') || 'gel');
   element.setAttribute('voice', 'voice.bin');
   element.setAttribute('controls', '');
   element.setAttribute('motion', '');
@@ -34,7 +32,7 @@
     board.unmute();
     element.focus();
   });
-  // The window fits the board, whatever its face and buttons.
+  // The window fits the board, whatever its buttons.
   new ResizeObserver(() => {
     const r = element.getBoundingClientRect();
     say({ size: [Math.ceil(r.width + 36), Math.ceil(r.height + 36)] });
