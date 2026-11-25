@@ -285,6 +285,14 @@ class Face {
     (void)name, (void)t;
     return false;
   }
+  // Turns a rule of the face's motion layer on or off by name, or every
+  // one with "all": dbg.motion's, for scenarios and the Character Studio,
+  // to judge each rule alone. A reset puts them back. False for a rule the
+  // face hasn't, or a face with no motion layer.
+  virtual bool motionRule(const char* rule, bool on) {
+    (void)rule, (void)on;
+    return false;
+  }
   // The work stream to draw (render/stream.h), the device's, set before
   // each frame: a face that has no stream ignores it.
   virtual void watch(const Stream* stream) { (void)stream; }

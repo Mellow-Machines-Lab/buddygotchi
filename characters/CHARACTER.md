@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-24. The contract a character pack meets, so that any
+Updated 2026-11-25. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -1025,6 +1025,9 @@ Some clips' ids mean something to a face:
   `invite-<pose>-late`; `knock` as something needs you and `knock-climb`
   when nobody comes. Their cues are where something hits the glass, which
   rings there. A pose or payoff with no clip is drawn in code.
+- `idle-<mood>`, one for each lasting mood (§7): the gel's idle move for
+  that mood, which it plays now and then in idle, each face its lasting
+  mood's (slimegen's `kIdleMoves`); slimegen fails without one.
 - `reply-wave`: the gel plays it for a small wave at your lock or unlock
   of the Mac, a slighter motion than `reply-bye` or `reply-hello`.
 - `reply-<name>`: the gel plays it for that reply, one for each of
@@ -1126,7 +1129,12 @@ none while something needs you. Each is the body's own move, with nothing
 brought out beside it. `dbg.pastime`
 plays one by its name, for scenarios and tools, and `dbg.clip` any clip of
 the pack's by its id, over what shows (the gel's flop, which no Moment
-names yet).
+names yet). Under every clip the gel runs its motion layer (motion V2:
+stretch with speed, overshoot and settle, the crown's drag, the face's lag
+and the hands following; the slime's `CONTINUITY.md`, The motion layer),
+so a clip keys only its main pose, and its own "prepare", a small opposite
+move before a big one; `{"t":"dbg.motion","rule":"face","on":false}` turns
+a rule off (or `"all"`) until the next reset, to judge each on the board.
 
 ## 16. References (optional)
 

@@ -247,6 +247,14 @@ place; the body no longer dips.
 (`{"t":"dbg.clip","name":"flop"}`), for scenarios and the Studio: the
 gel's flop of relief, which no Moment names yet.
 
+The gel runs a motion layer under every clip (motion V2: the slime's
+`CONTINUITY.md`, The motion layer): stretch with speed, overshoot and
+settle, the crown's drag, the face's lag and the hands following.
+`dbg.motion` turns one of its rules off or on by name, or every one with
+`"all"` (`{"t":"dbg.motion","rule":"face","on":false}`), until the next
+reset, so each can be judged on the board; it answers `ok: false` for a
+rule the face hasn't.
+
 ## Known quirks
 
 - **Blank screen but backlight on:** usually wrong panel settings or pins.

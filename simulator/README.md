@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-11-24. A board with no board: the firmware's own code in a
+Updated 2026-11-25. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -73,7 +73,8 @@ they show the same board: the hosted board itself (`hosted()`: its USB,
 its loop and its frames), with the simulator's card, sound and inputs
 on top. A scenario or the Studio can play a move no Moment names yet with
 `{"t":"dbg.clip","name":"flop"}`, one of the pack's rig clips by its id
-(firmware/README.md, Hands, the glass and the knock).
+(firmware/README.md, Hands, the glass and the knock), and turn a rule of
+the gel's motion layer off with `{"t":"dbg.motion","rule":"face","on":false}`.
 
 | Build | By | Runs | For |
 | --- | --- | --- | --- |

@@ -1,6 +1,6 @@
 # The screen guide
 
-Updated 2026-11-24. What takes which space on the gel's 502 by 410 screen,
+Updated 2026-11-25. What takes which space on the gel's 502 by 410 screen,
 how large it is, what shape it has, and what wins when two things want the
 same place. The why is in [theory.md](theory.md); each case moves in
 [animations.html](animations.html).
@@ -235,6 +235,15 @@ One mono face. Nothing under 14 px.
 | Drop from the top | You must act, or you talk to Boop | Band | 0.3 s |
 | Sway, lean, bob | You, at the Mac | Boop's body, a held picture | Your speed, or a 1.6 s beat |
 | Hop, flinch | Boop's feeling about an outcome | Boop's body | 0.5–1.2 s, once |
+
+Under all of Boop's own moves the gel runs one motion layer (motion V2,
+the slime's `CONTINUITY.md`, The motion layer): the body stretches tall
+as it moves fast and goes flat as it lands, overshoots a stop and
+settles, its crown drags behind a slide, the hands arrive and leave late,
+and the face trails the body by a few px and catches up. Until V2 the face
+never moved on the body by itself; now it does, on purpose, only while
+the body moves, and it's still again at rest. Each rule has a switch
+(`dbg.motion`) to judge it on the board.
 
 ## Going with you
 
