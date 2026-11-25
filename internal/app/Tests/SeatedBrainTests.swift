@@ -252,6 +252,59 @@ extension SeatedBrainTests {
     }
 }
 
+extension SeatedBrainTests {
+    /// Jev is timed from the pass's start, which the harness times from
+    /// just after it reads the event: a call answered a while after that
+    /// still ends by the pass's deadline, less the margin, and no later.
+    func testJevIsTimedFromThePassesStart() async throws {
+        let never = Sleepy(answering: Self.last, for: .seconds(5))
+        let call = SeatedBrain(rules: rules(), jev: never).reading(now: Self.end, log: Log().view(now: 0))
+        let read = ContinuousClock.now
+        try await Task.sleep(for: .milliseconds(300))
+        _ = try await call.answer(state: "", questions: questions, deadline: .milliseconds(1500))
+        let took = ContinuousClock.now - read
+        XCTAssertLessThan(took, .milliseconds(1500), "within the deadline from the pass's start")
+        XCTAssertGreaterThanOrEqual(took, .milliseconds(1400), "Jev had the time the pass gave it")
+    }
+
+    /// Through the harness's own loop, its 1500 ms deadline and the
+    /// default margin: a Jev that never answers changes nothing, and the
+    /// pass plays the rules' answers, never dropped as late.
+    func testWithTheDefaultMarginAJevThatNeverAnswersDropsNoPass() async throws {
+        let queue = DispatchQueue(label: "seated.test")
+        let seated = SeatedBrain(rules: rules(), jev: Sleepy(answering: Self.last, for: .seconds(5)))
+        XCTAssertEqual(seated.margin, SeatedBrain.margin)
+        let output = Played(questions: questions)
+        let harness = Harness(name: "Pip", brain: seated, log: Log(), queue: queue)
+        queue.sync {
+            XCTAssertEqual(harness.options.deadlineMs, 1500)
+            harness.input("turn", wake: 1) { _, _ in "A turn ended." }
+            harness.output(output)
+            _ = harness.emit(source: "claude", kind: "turn")
+        }
+        func pass() -> Event? { queue.sync { harness.log.events.last { $0.kind == Event.pass } } }
+        let started = ContinuousClock.now
+        while pass() == nil, ContinuousClock.now - started < .seconds(5) { try await Task.sleep(for: .milliseconds(20)) }
+        let got = try XCTUnwrap(pass())
+        XCTAssertEqual(got["dropped"], .null, "not dropped as late")
+        XCTAssertEqual(got["brain"]?.string, "rules", "the rules' answers")
+        XCTAssertEqual(queue.sync { output.got.count }, 1, "the Moment's output ran")
+    }
+}
+
+/// An output that asks `questions` and keeps the answers it's handed.
+final class Played: Output, @unchecked Sendable {
+    let name = "played"
+    let asked: [Question]
+    var got: [Answers] = []
+    init(questions: [Question]) { asked = questions }
+    func questions(now: Event?, log: LogView) -> [Question] { asked }
+    func run(_ answers: Answers, now: Event?, log: LogView) -> OutputResult? {
+        got.append(answers)
+        return OutputResult(ok: true, message: "played")
+    }
+}
+
 /// A brain that answers as another, after a while: a sleep that a
 /// cancelled task cuts short.
 struct Sleepy: Brain {

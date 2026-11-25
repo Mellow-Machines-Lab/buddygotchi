@@ -19,20 +19,17 @@ public enum Voice {
     }
 
     /// What a reaction says: `part`'s `meaning`,
-    /// that plays in the `face`'s mood, fit for the turn's `finish` (a
-    /// success take only on a success, a swear only on a failure), of the
-    /// nearest kind to `kind` that has one, at random, and not one whose
+    /// that plays in the `face`'s mood, of the nearest kind to `kind` that has one, at random, and not one whose
     /// text is in `avoiding` (the last says', the newest first) when another
     /// fits: the bank has some words recorded twice in one mood, and most in
     /// several. With every one said lately, the one said longest ago. None
     /// in `never`, whatever else fits. With a `text` the face has a take of,
     /// that one, whatever its kind. Nil when none fits.
-    public static func take(_ part: Take.Part, meaning: String, kind: Take.Kind, face: String, finish: String?,
+    public static func take(_ part: Take.Part, meaning: String, kind: Take.Kind, face: String,
                             avoiding: [String] = [], never: Set<String> = [], text: String? = nil, in pack: CharacterPack = .active,
                             rng: inout SplitMix64) -> Take? {
         let fit = Take.all(in: pack).filter {
-            $0.part == part && $0.meaning == meaning && $0.moods.contains(face) && ($0.finish == nil || $0.finish == finish)
-                && !never.contains($0.text)
+            $0.part == part && $0.meaning == meaning && $0.moods.contains(face) && !never.contains($0.text)
         }
         let picked = fit.filter { $0.text == text }
         if !picked.isEmpty { return picked[rng.int(in: 0...(picked.count - 1))] }
@@ -48,10 +45,10 @@ public enum Voice {
     /// lately (`avoiding`, the newest first) first, then the one said
     /// longest ago first, at most `limit`. What a brain may choose from
     /// before the face is known.
-    public static func texts(_ part: Take.Part, meaning: String, kind: Take.Kind, finish: String?, avoiding: [String] = [],
+    public static func texts(_ part: Take.Part, meaning: String, kind: Take.Kind, avoiding: [String] = [],
                              never: Set<String> = [], limit: Int, in pack: CharacterPack = .active) -> [String] {
         let fit = Take.all(in: pack).filter {
-            $0.part == part && $0.meaning == meaning && ($0.finish == nil || $0.finish == finish) && !never.contains($0.text)
+            $0.part == part && $0.meaning == meaning && !never.contains($0.text)
         }
         guard let pool = Self.order(kind).lazy.map({ k in fit.filter { $0.kind == k } }).first(where: { !$0.isEmpty }) else { return [] }
         let texts = pool.map(\.text).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
@@ -78,16 +75,16 @@ public enum Voice {
 
     /// A sound to say before `word`, now and then: a word or a swear gets
     /// one of the same meaning, performed in the same mood, that plays in
-    /// the `face`'s mood and fits the `finish`, so "Phew... Fixed" is one
+    /// the `face`'s mood, so "Phew... Fixed" is one
     /// thing said twice over, never two things. Not one whose text is in
     /// `avoiding` while another fits, nor one that makes the `say` longer
     /// than `maxSayMs`. Nil for any other take, or none that fits.
-    public static func lead(before word: Take, face: String, finish: String?, avoiding: [String] = [],
+    public static func lead(before word: Take, face: String, avoiding: [String] = [],
                             in pack: CharacterPack = .active, rng: inout SplitMix64) -> Take? {
         guard word.kind == .word || word.kind == .swear else { return nil }
         let pool = Take.all(in: pack).filter {
             $0.kind == .sound && $0.part == word.part && $0.meaning == word.meaning && $0.moods.first == word.moods.first
-                && $0.moods.contains(face) && ($0.finish == nil || $0.finish == finish) && $0.ms + joinGapMs + word.ms <= maxSayMs
+                && $0.moods.contains(face) && $0.ms + joinGapMs + word.ms <= maxSayMs
         }
         guard !pool.isEmpty, rng.chance(leadChance) else { return nil }
         let fresh = fresh(pool, avoiding: avoiding)

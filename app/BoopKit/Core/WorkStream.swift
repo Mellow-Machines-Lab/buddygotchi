@@ -123,14 +123,14 @@ struct WorkStream {
     static let sendEveryMs: Int64 = 250
 
     /// A work act: a command worth naming, for as long as it runs, by a
-    /// plain rule: a low sign says what's running, then how it ended, and
-    /// Boop hops at a pass and flinches at a fail. The board draws it from
+    /// plain rule: the strip says what's running, then how it ended, in the
+    /// board's own words, and Boop hops at a pass and flinches at a fail. The board draws it from
     /// `state`; the result ends it. What Boop says at a push's result is
     /// Jev's (`Event.Kind.act`).
     struct Act: Equatable {
         /// `push`, `tests` or `build`.
         var kind: String
-        /// What its sign says now.
+        /// What the strip says while it runs.
         var words: String
         /// Its session, and the call it plays out.
         var session: String
@@ -144,9 +144,6 @@ struct WorkStream {
     /// ends, and how long its result shows: `kActLeadMs` and `kActResultMs`
     /// on the board.
     static let leadMs: Int64 = 900, resultMs: Int64 = 2600
-    /// What each act's sign says at a pass; a failure's says `fail`. Lower
-    /// case, as everything Boop holds is.
-    static let passWords = ["push": "shipped!", "tests": "pass", "build": "built"]
 
     var act: Act?
 
@@ -359,7 +356,6 @@ struct WorkStream {
         }
         let passed = e.failed == false
         running.passed = passed
-        running.words = passed ? Self.passWords[running.kind] ?? "pass" : "fail"
         running.until = max(now, running.startedAt + Self.leadMs) + Self.resultMs
         act = running
         return running

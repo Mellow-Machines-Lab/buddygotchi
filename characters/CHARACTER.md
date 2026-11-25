@@ -508,8 +508,9 @@ an `invite`:
 after it plays, Boop turns to you in a `pose` (`palm`, `lean` or `back`)
 and waits for one `touch` (`tap` or `stroke`), which pays off
 (`highfive`, `purr` or `sigh`), each a name the board plays (`Skit.Invite`).
-A skit with both plays the clip first, then the invite. An id missing, a
-slot that isn't one, a slot in two skits, a clip that isn't a name of 11
+A skit with both plays the clip first, then the invite. An id missing, or
+one that isn't a name of 15 letters, digits or dashes at most (what the
+board keeps of one to name the invite it ends, `Skit.idBytes`), a slot that isn't one, a slot in two skits, a clip that isn't a name of 11
 letters, digits or dashes at most (what the board keeps of one,
 `Skit.clipBytes`), or an invite whose pose, touch or payoff isn't one, and
 the pack doesn't load. Boop's:
@@ -551,7 +552,8 @@ in `signs.md` (`Remarks`): text, never a take, at most one skit in three.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the
   voice file's version on its first line after the comments, the same one
   the board reports, then a take a line, tab separated: id, text, part,
-  meaning, kind, moods (space separated), finish (empty for any) and ms. It
+  meaning, kind, moods (space separated), a column kept empty (it once said
+  the finish a take needed; none does, and readers still find eight) and ms. It
   lists only what a reply or a skit says: a take that's the words of
   several is in it once for each, by the same id (voicegen's `REPLY_OF`,
   `SKIT_OF`), and the voice file has it once. The table may list fewer
@@ -653,11 +655,14 @@ you, it's skipped `hidden`. A failed call is one of its styles.
 **A work act** (`wact` in `state`, `render::Stream::ActIn`) is a command
 worth naming while it runs, part of Doing and never a Moment: `[kind, words]`,
 then `[kind, words, result]`, the kind `push`, `tests` or `build`, the words
-its low sign's, and the result `p` or `f` once the command has ended, as the
-words change to say so. The Mac holds a result for the board's `kActLeadMs`,
-less what's run of it, and `kActResultMs`. A face that doesn't draw it ignores
-it. The gel shows the low sign alone, and its body hops at a
-pass and flinches at a fail (`render/gel/act.h`, `GelFace::answerAct`).
+what the strip says while it runs, and the result `p` or `f` once the command
+has ended. The Mac holds a result for the board's `kActLeadMs`, less what's
+run of it, and `kActResultMs`. A face that doesn't draw it ignores it. On the
+gel, the monitor's icon (a flask for tests) and the strip's term say what's
+running, then a tick or a cross and the strip says `tests passed` or `tests
+failed`, the kind's name in the board's words; never a card or a low sign.
+Its body hops at a pass and flinches at a fail (the gel's `termFor`,
+`GelFace::answerAct`).
 
 ### What else a face does
 
@@ -803,8 +808,7 @@ the include path. It holds:
   `src/render/<face>/`, and `render::makeFace()` in
   `src/render/make_face.cpp`, which makes one. `faces` in `character.json`
   names the face each board draws: Boop's `{"amoled206": "gel"}`. A board's
-  build compiles that face's folder and no other, and defines
-  `BOOP_FACE_<FACE>` (`BOOP_FACE_GEL`) for `makeFace()`. The simulator
+  build compiles that face's folder and no other. The simulator
   builds the AMOLED's face. The board's face must draw natively, into the
   panel's own surfaces (`Face::drawsNative`), or the firmware stops at
   start.
@@ -889,9 +893,6 @@ families:
   folder, which the app doesn't bundle.
 - `id`: the name the adapter registers under and the preview's card goes by,
   its own among the pack's entries.
-- `wears`: optional, a JSON file whose `borrows` table names, for each mood
-  the preview has no art of its own for, the mood whose art it shows. The
-  board draws every mood, so the page doesn't read it now.
 - `families`: optional, a label and colour for each `family` the moods
   name, which the mood picker groups them by.
 - `label`, `about` and `icon` (an image): optional, for the character's
@@ -907,8 +908,8 @@ With no entry, every pack gets the board's own preview of each face its
 boards have (`faces`, §9), its id `board-<face>`.
 
 `charactergen.py` writes the page's data (`characters/studio/packs.js`) from
-the packs, and `--check` fails when a declared file is missing, a preview
-wears a mood the pack doesn't have, or a board's entry isn't `board-<face>`
+the packs, and `--check` fails when a declared file is missing, or a board's
+entry isn't `board-<face>`
 for one of its faces.
 
 ## 13. Demos (optional)
@@ -1013,8 +1014,8 @@ wave the same at a third of the size, over a second:
 
 The face plays it by its own id like any clip (`Clip::value`, `played`).
 
-A pack has at most 255 clips, a track 255 keys, a clip 255 cues and a look
-255 occasions (`MOST` in `charactergen.py`).
+A pack has at most 255 clips, a track 255 keys and a clip 255 cues (`MOST`
+in `charactergen.py`).
 
 Some clips' ids mean something to a face:
 
@@ -1049,13 +1050,9 @@ Some clips' ids mean something to a face:
   while it's with you so (its `GelFace::showWithYou`); and once, `stretch` as a call ends, `look-around` as the
   music stops.
 
-**`looks.json`**: for each look (§9), keys `clip`, `occasions`, `tiers` and
-`acts`:
+**`looks.json`**: for each look (§9), keys `clip`, `tiers` and `acts`:
 
 - `clip`: the clip it loops under the Moments, one that loops, or null.
-- `occasions`: pastimes the look plays now and then, each a `clip` that
-  doesn't loop, and a tag list `when` (§9) or a wait `after` in seconds, at
-  least one of them. The gel plays none: its are rows of its pastimes.
 - `tiers`: for a tier (`tier1` to `tier3`), a clip that loops in place of
   `clip` while that's the last tier reached. The gel plays them.
 - `acts`: for an activity, by its state (§9), a clip that loops in place of
@@ -1079,7 +1076,7 @@ Boop's:
 Every file is optional, and one that's missing is empty.
 `charactergen.py --check` fails on an unknown key, channel, state,
 clip or tag, a value out of its range, keys out of order, a loop that
-doesn't close, an occasion that loops or would always fit, a tier's or
+doesn't close, a tier's or
 an activity's clip that doesn't loop, a key of `tiers` that isn't a tier or
 of `acts` that isn't a state, and a cue that isn't
 a name before `ms`, each with its file and key (`rig/clips/hop.json:

@@ -126,8 +126,8 @@ extension CharacterPack {
     /// a pack: a key missing, a face or a mood named twice, a lasting mood
     /// with no face to rest in, a default mood or a fade's end that isn't a
     /// lasting one, a face that settles into none, or a skit with no id, a
-    /// slot that isn't one, a slot another skit has too, a clip that isn't
-    /// a name the board keeps, or an invite whose pose, touch or payoff
+    /// slot that isn't one, a slot another skit has too,
+    /// an id or a clip that isn't a name the board keeps, or an invite whose pose, touch or payoff
     /// isn't one. Everything the
     /// pack has is in the one folder.
     public init(directory: URL) throws {
@@ -223,14 +223,16 @@ extension CharacterPack {
         var taken: Set<RulesBrain.Slot> = []
         return try rows.map { row in
             guard let id = row["id"] as? String, !id.isEmpty else { throw CharacterPackError("\(source): a skit without an id") }
+            guard Skit.fits(id, Skit.idBytes) else {
+                throw CharacterPackError("\(source): skit \(id)'s id isn't a name the board keeps, \(Skit.idBytes) letters, digits or dashes at most")
+            }
             let slots = try (row["slots"] as? [String] ?? []).map { name in
                 guard let slot = RulesBrain.Slot(rawValue: name) else { throw CharacterPackError("\(source): skit \(id) plays at \(name), which isn't a slot") }
                 guard taken.insert(slot).inserted else { throw CharacterPackError("\(source): skit \(id) plays at \(name), which another skit has") }
                 return slot
             }
             let clip = try row["clip"].map { value in
-                guard let name = value as? String, !name.isEmpty, name.utf8.count <= Skit.clipBytes,
-                      name.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }) else {
+                guard let name = value as? String, Skit.fits(name, Skit.clipBytes) else {
                     throw CharacterPackError("\(source): skit \(id)'s clip \(value) isn't a clip's name, \(Skit.clipBytes) letters, digits or dashes at most")
                 }
                 return name
@@ -289,14 +291,14 @@ extension CharacterPack {
     /// `active`.
     public static func use(_ character: CharacterPack) { store.set(character) }
 
-    /// The same pack under another name: two buddies running one pack
-    /// need two names.
     /// The scene of a work act at `moment` (`start`, `pass` or `fail`), if
     /// the pack draws one.
     public func actScene(_ kind: String, _ moment: String, name: String) -> String? {
         acts[kind]?[moment]?.replacingOccurrences(of: "{name}", with: name)
     }
 
+    /// The same pack under another name: two buddies running one pack
+    /// need two names.
     public func named(_ name: String) -> CharacterPack {
         var copy = self
         copy.name = name

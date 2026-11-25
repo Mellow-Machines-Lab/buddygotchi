@@ -25,7 +25,8 @@ test('the board is asked for each state as the Mac asks for it, for a review cli
   assert.throws(()=>wire({mood:'calm',state:'dancing'}),/no state dancing/);
   const only=cell=>wire(cell).steps.map(([ms,m])=>[ms,{...m,id:undefined}]);
   assert.deepEqual(only({mood:'calm',state:'idle'}),[[0,{t:'state',base:'idle',mood:'calm',vol:0,id:undefined}]]);
-  assert.deepEqual(wire({mood:'calm',state:'testing'}).steps[0][1],{t:'state',base:'working',busy:1,act:'testing',calls:[[0,1,'running the tests']],mood:'calm',vol:0},'what the agent does, while working, and the strip says it');
+  assert.deepEqual(wire({mood:'calm',state:'terminal'}).steps[0][1],{t:'state',base:'working',busy:1,act:'terminal',calls:[[0,1,'building']],mood:'calm',vol:0},'what the agent does, while working, and the strip says it');
+  assert.deepEqual(wire({mood:'calm',state:'testing'}).steps[0][1],{t:'state',base:'working',busy:1,act:'terminal',calls:[[0,1,'running the tests']],mood:'calm',vol:0},'a state no Mac sends, as the act it shows as');
   assert.deepEqual(acts.map(act=>wire({mood:'calm',state:act}).steps[0][1].act),acts,'each act the firmware draws');
   assert.equal(wire({mood:'calm',state:'needs_you'}).steps[0][1].attn.agent,'claude');
   const finish=wire({mood:'proud',state:'task_complete',outcome:'failure'}).steps;
@@ -89,10 +90,10 @@ test('a skit\'s Moment is the do the Mac sends for it', () => {
     assert.deepEqual(L.momentOf(skit,{mood:want.mood,loops:want.loops,words:boop.words}),{name:want.name,args:want.args},want.skit);
   }
   const win=boop.skits.find(s=>s.id==='win'),[take]=L.takesFor(boop.takes,win,'happy');
-  assert.ok(take&&take.moods.includes('happy')&&take.skit==='win'&&take.finish!=='failure','a take of the skit, in its face');
+  assert.ok(take&&take.moods.includes('happy')&&take.skit==='win','a take of the skit, in its face');
   assert.deepEqual(L.momentOf(win,{mood:'happy',take:take.id}).args.say,{take:take.id});
   const upset=boop.skits.find(s=>s.id==='upset');
-  assert.ok(L.takesFor(boop.takes,upset,'sad').every(t=>t.skit==='upset'&&t.moods.includes('sad')&&t.finish!=='success'),'only the skit\'s, in the face, for its finish');
+  assert.ok(L.takesFor(boop.takes,upset,'sad').every(t=>t.skit==='upset'&&t.moods.includes('sad')),'only the skit\'s, in the face');
   assert.deepEqual(L.takesFor([{id:'a',skit:'upset',moods:['sad'],kind:'sound'},{id:'b',skit:'upset',moods:['sad'],kind:'word'}],upset,'sad','word').map(t=>t.id),['b','a'],'the size\'s kind first');
   const [look,does]=L.momentSteps(L.momentOf(win,{mood:'happy',words:boop.words}));
   assert.deepEqual([look[1].t,look[1].base,does[0],does[1].t,does[1].name,does[1].play],['state','working',300,'do','task_complete','now']);

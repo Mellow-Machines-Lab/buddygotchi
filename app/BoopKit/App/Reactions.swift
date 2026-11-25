@@ -30,7 +30,32 @@ public final class Reactions {
     /// until the link would have given up on it.
     public private(set) var opens: [Int: (thread: ThreadRef, until: Int64)] = [:]
 
+    /// The invite in flight: the `do` that asks it, from when it's sent
+    /// until its `ended`, and until when it may hold the device's queue.
+    public private(set) var invite: (id: Int, until: Int64)?
+
     public init() {}
+
+    /// The `do` sent as `id` at `now`, waiting up to `ttl` in the queue,
+    /// asks an invite whose pose waits `ms`: it holds the queue up to its
+    /// own wait and `BoopDevice.inviteHoldsMs` after.
+    public func sent(_ id: Int, inviting ms: Int, ttl: Int, now: Int64) {
+        invite = (id, now + Int64(ttl + BoopDevice.inviteHoldsMs(ms)))
+    }
+
+    /// The `do` sent as `id` ended: an invite it asked holds the queue no more.
+    public func ended(_ id: Int) {
+        if invite?.id == id { invite = nil }
+    }
+
+    /// How long a `do` sent at `now` may wait in the queue, `ttl` its own:
+    /// while an invite is in flight, until the invite would be over, as the
+    /// pose holds the queue until its payoff or shrug ends. With its own,
+    /// the ring's gold after a win that invites a tap would be skipped late.
+    public func ttl(_ ttl: Int, now: Int64) -> Int {
+        guard let invite, invite.until > now else { return ttl }
+        return max(ttl, Int(invite.until - now))
+    }
 
     /// The finish sent as `id` at `now`, waiting up to `ttl` in the queue:
     /// a tap on it opens `thread`.
@@ -38,9 +63,11 @@ public final class Reactions {
         opens[id] = (thread, now + Int64(ttl) + DeviceLink.answerGraceMs)
     }
 
-    /// Once a second: forgets the finishes the link has given up on.
+    /// Once a second: forgets the finishes the link has given up on, and
+    /// an invite past its time.
     public func tick(now: Int64) {
         opens = opens.filter { $0.value.until > now }
+        if let invite, invite.until <= now { self.invite = nil }
     }
 
     /// The thread a tap on the finish `id` opens: the device said the tap

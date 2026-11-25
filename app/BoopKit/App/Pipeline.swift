@@ -223,9 +223,11 @@ public final class Pipeline {
     /// began. Logged with the pose the pack's skit has, and it wakes no
     /// pass. Touched in time or late, it's that touch, once: you there, a
     /// pet wish met (`Touch.answering`); the board sent no `tap` or
-    /// `gesture` for it, and already played the payoff.
+    /// `gesture` for it, and already played the payoff. An end the invite
+    /// can't have, a second (`InviteLedger.ends`), is nil and logs nothing.
     @discardableResult
-    public func invite(_ end: Moment.Invite.End, skit: String, touch: String?, ms: Int?, at now: Int64) -> Step {
+    public func invite(_ end: Moment.Invite.End, skit: String, touch: String?, ms: Int?, at now: Int64) -> Step? {
+        guard InviteLedger.ends(end, after: harness.log.view(now: now).events) else { return nil }
         var data: [String: JSONValue] = ["skit": .string(skit)]
         if let touch { data["touch"] = .string(touch) }
         if let ms { data["ms"] = .int(Int64(ms)) }

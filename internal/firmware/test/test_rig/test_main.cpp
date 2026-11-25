@@ -133,6 +133,12 @@ static void test_a_clip_plays_another_at_a_size_and_a_pace() {
   TEST_ASSERT_EQUAL_UINT32(100, kSwayBig.keyed(200));
   TEST_ASSERT_EQUAL_UINT32(200, kSwayBig.played(100));
   TEST_ASSERT_EQUAL_UINT32(4, kSwaySmall.played(7));  // 3.5: the first ms at or after
+  // A cue at the end of a quicker move comes before its end, so it sounds.
+  static constexpr Cue kLast[] = {{199, "last"}};
+  static constexpr Clip kSwayEnding = {"sway-ending", 100, false, true, {kSwayTracks, 1}, {kLast, 1}, 500, 200};
+  TEST_ASSERT_EQUAL_UINT32(99, kSwayEnding.played(199));
+  const char* last[1];
+  TEST_ASSERT_EQUAL_INT(1, crossed(kSwayEnding, 0, 100, last, 1));
   const char* out[4];
   TEST_ASSERT_EQUAL_INT(0, crossed(kSwayTicking, 0, 500, out, 4));  // its cue at 100 of 200 comes at 500 of 1000
   TEST_ASSERT_EQUAL_INT(1, crossed(kSwayTicking, 500, 501, out, 4));
@@ -213,23 +219,6 @@ static void test_a_stopped_clip_fades_out() {
   TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
 }
 
-// A look's occasions fit while every tag each needs is on and the look has
-// shown its wait (render::fits); the i-th of those that fit is its clip.
-static void test_a_looks_occasions_fit_by_their_tags_and_wait() {
-  static constexpr Occasion kOccasions[] = {
-      {&kLean, 1u << 3, 0}, {&kBlink, 0, 60}, {&kWider, (1u << 3) | (1u << 5), 0}};
-  static constexpr Look kLook = {SceneState::kWorking, nullptr, {kOccasions, 3}};
-  TEST_ASSERT_EQUAL_INT(0, kLook.fitting(0, 0));
-  TEST_ASSERT_EQUAL_INT(1, kLook.fitting(1u << 3, 59999));
-  TEST_ASSERT_EQUAL_PTR(&kLean, kLook.fitting(1u << 3, 59999, 0));
-  TEST_ASSERT_EQUAL_INT(1, kLook.fitting(0, 60000));
-  TEST_ASSERT_EQUAL_PTR(&kBlink, kLook.fitting(0, 60000, 0));
-  TEST_ASSERT_EQUAL_INT(3, kLook.fitting((1u << 3) | (1u << 5) | 1u, 60000));
-  TEST_ASSERT_EQUAL_PTR(&kWider, kLook.fitting((1u << 3) | (1u << 5), 60000, 2));
-  TEST_ASSERT_NULL(kLook.fitting((1u << 3) | (1u << 5), 60000, 3));
-  static_assert(kOccasionPct == 67, "an occasion plays at two in three of its chances");
-}
-
 // A clip shorter than four fades eases in and out over a quarter of itself,
 // so a 180 ms blink still shuts whole for its held keys.
 static void test_a_short_clip_fades_over_a_quarter_of_itself() {
@@ -303,7 +292,7 @@ static void test_a_look_fades_as_long_as_asked_and_names_its_activities() {
   const std::vector<int> v = record(m, Channel::kLean, 20);
   TEST_ASSERT_EQUAL_INT(-300, v.back());
   static constexpr ActClip kActs[] = {{&kLeanBackLoop, SceneState::kWaiting}};
-  static constexpr Look kLook = {SceneState::kWorking, &kLeanLoop, {}, {}, {kActs, 1}};
+  static constexpr Look kLook = {SceneState::kWorking, &kLeanLoop, {}, {kActs, 1}};
   TEST_ASSERT_EQUAL_PTR(&kLeanBackLoop, kLook.acted(SceneState::kWaiting));
   TEST_ASSERT_NULL(kLook.acted(SceneState::kTerminal));
 }
@@ -558,10 +547,6 @@ static void test_a_layer_fades_and_a_new_content_waits_its_turn() {
 // Every row as charactergen.py checked it: keys in order within their clip,
 // loops that close and looks' clips that loop.
 static void test_the_staged_rig_is_whole() {
-  for (const Expression& e : kRig.expressions) {
-    TEST_ASSERT_TRUE(e.eyes[0] && e.mouth[0]);
-    TEST_ASSERT_EQUAL_PTR(&e, kRig.expression(e.mood));
-  }
   for (const Clip& clip : kRig.clips) {
     TEST_ASSERT_EQUAL_PTR(&clip, kRig.clip(clip.id));
     for (const Track& t : clip.tracks) {
@@ -573,39 +558,7 @@ static void test_the_staged_rig_is_whole() {
   for (const Look& look : kRig.looks) {
     TEST_ASSERT_TRUE(!look.clip || look.clip->loop);
     TEST_ASSERT_EQUAL_PTR(&look, kRig.look(look.state));
-    for (const Occasion& o : look.occasions) TEST_ASSERT_TRUE(!o.clip->loop && (o.when || o.afterS));
   }
-}
-
-// Boop's rig/ files, as the table holds them.
-static void test_the_staged_rig_is_the_packs_files() {
-  if (!kRig.expressions.count) TEST_IGNORE_MESSAGE("the staged pack has no rig/");
-  const Expression* calm = kRig.expression("calm");
-  TEST_ASSERT_NOT_NULL(calm);
-  TEST_ASSERT_EQUAL_STRING("calm", calm->eyes);
-  TEST_ASSERT_EQUAL_STRING("calm", calm->mouth);
-  TEST_ASSERT_NULL(kRig.expression("comfy"));  // not drawn yet
-  const Look* idle = kRig.look(SceneState::kIdle);
-  TEST_ASSERT_NOT_NULL(idle);
-  TEST_ASSERT_EQUAL_STRING("breathe", idle->clip->id);
-  TEST_ASSERT_EQUAL_STRING("work", kRig.look(SceneState::kWorking)->clip->id);
-  TEST_ASSERT_NULL(kRig.look(SceneState::kTesting));
-  const Clip* blink = kRig.clip("blink");
-  TEST_ASSERT_NOT_NULL(blink);
-  TEST_ASSERT_FALSE(blink->loop);
-  TEST_ASSERT_TRUE(blink->additive);
-  TEST_ASSERT_EQUAL_INT(180, blink->ms);
-  TEST_ASSERT_EQUAL(int(Channel::kEyeOpenL), int(blink->tracks[0].channel));  // eyeOpen sets both eyes
-  TEST_ASSERT_EQUAL(int(Channel::kEyeOpenR), int(blink->tracks[1].channel));
-  TEST_ASSERT_FALSE(kRig.clip("doze")->additive);
-  // Working's stretch from the working stretch's tier4, which both faces
-  // play.
-  const Look* working = kRig.look(SceneState::kWorking);
-  TEST_ASSERT_EQUAL_INT(1, working->occasions.count);
-  TEST_ASSERT_EQUAL_STRING("stretch", working->occasions[0].clip->id);
-  TEST_ASSERT_EQUAL_UINT32(tagBit("tier4"), working->occasions[0].when);
-  TEST_ASSERT_EQUAL_INT(0, idle->occasions.count);
-  TEST_ASSERT_NULL(kRig.clip("cheer"));
 }
 
 int main() {
@@ -617,7 +570,6 @@ int main() {
   RUN_TEST(test_a_clip_plays_another_at_a_size_and_a_pace);
   RUN_TEST(test_a_reactions_weight_eases_in_and_out);
   RUN_TEST(test_a_stopped_clip_fades_out);
-  RUN_TEST(test_a_looks_occasions_fit_by_their_tags_and_wait);
   RUN_TEST(test_a_short_clip_fades_over_a_quarter_of_itself);
   RUN_TEST(test_additive_and_absolute_clips_blend_by_weight);
   RUN_TEST(test_a_new_look_fades_over_the_old_and_the_same_plays_on);
@@ -632,6 +584,5 @@ int main() {
   RUN_TEST(test_a_ramp_eases_over_200_ms_and_turns_back_smoothly);
   RUN_TEST(test_a_layer_fades_and_a_new_content_waits_its_turn);
   RUN_TEST(test_the_staged_rig_is_whole);
-  RUN_TEST(test_the_staged_rig_is_the_packs_files);
   return UNITY_END();
 }

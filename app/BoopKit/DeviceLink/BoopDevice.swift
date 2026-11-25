@@ -43,6 +43,13 @@ public enum BoopDevice {
     /// (`InviteTests.testBehindAFinishWaitsForIt`); with a reaction's ttl,
     /// the Moment after it would be skipped late before it began.
     public static let behindFinishTTL = finishTTL + 10_000
+    /// How long an invite may hold the device's queue once its Moment
+    /// starts: the Moment, given as long as a finish plays (10 s, as in
+    /// `behindFinishTTL`), its pose's wait `ms`, and the payoff, the longer
+    /// of its two endings (the board's `InviteShow::kPayoffMs`). A Moment
+    /// queued meanwhile waits that long (`Reactions.ttl`).
+    public static func inviteHoldsMs(_ ms: Int) -> Int { 10_000 + ms + payoffMs }
+    public static let payoffMs = 2400
     /// How long `reaction` may wait in the device's queue.
     public static func ttl(_ reaction: Moment) -> Int {
         reaction.behindFinish ? behindFinishTTL : finishes.contains(reaction.name) ? finishTTL : reactionTTL

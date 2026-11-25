@@ -33,8 +33,6 @@ public struct Take: Equatable, Sendable {
     /// performed in, then any the pack lends it to, so every mood has
     /// takes (characters/CHARACTER.md §8).
     public let moods: [String]
-    /// The finish it needs (`success` or `failure`), or nil for any.
-    public let finish: String?
     /// How long it plays on the board, in milliseconds.
     public let ms: Int
 }
@@ -66,8 +64,9 @@ extension Take {
     private static let tables = PackCache<(version: String, takes: [Take])>()
 
     /// A take from its line in the table: id, text, part, meaning, kind,
-    /// moods (space separated), finish (empty for any) and milliseconds,
-    /// tab separated.
+    /// moods (space separated), a column kept empty (a finish, once; no
+    /// take needs one, and an older reader still finds eight) and
+    /// milliseconds, tab separated.
     /// voicegen writes the table, and VoiceTests reads it back against the
     /// pack, so a bad line can't ship.
     init(row: Substring) { self = Take(parsing: row)! }
@@ -76,6 +75,6 @@ extension Take {
     public init?(parsing row: Substring) {
         let f = row.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
         guard f.count == 8, let part = Part(rawValue: f[2]), let kind = Kind(rawValue: f[4]), let ms = Int(f[7]) else { return nil }
-        self.init(id: f[0], text: f[1], part: part, meaning: f[3], kind: kind, moods: f[5].split(separator: " ").map(String.init), finish: f[6].isEmpty ? nil : f[6], ms: ms)
+        self.init(id: f[0], text: f[1], part: part, meaning: f[3], kind: kind, moods: f[5].split(separator: " ").map(String.init), ms: ms)
     }
 }

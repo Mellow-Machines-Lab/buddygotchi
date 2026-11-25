@@ -438,12 +438,12 @@ public final class Runtime: @unchecked Sendable {
         mind.earned = { earnedNow($0) }
         mind.felt = { remembersNow()?.felt(at: $0) ?? [] }
         // A skit's invite: only to a board that plays them, by the
-        // memory's ledger, and with care's XP while it has room.
+        // memory's ledger, and with the XP care would add now.
         let time = options.time
         mind.inviting = MomentOutput.Inviting(board: { link.hello.map { DeviceInfo($0).invites } ?? false },
                                               onCall: { core.along.onCall },
                                               ledger: { remembersNow().map { $0.invites.state ?? InviteLedger() } },
-                                              careRoom: { core.growth().map { $0.adds(.care) > 0 } ?? false })
+                                              care: { core.growth()?.adds(.care) ?? 0 })
         // A skit's remark: against your usual, the memory's.
         mind.remarking = MomentOutput.Remarking(normals: { remembersNow()?.normals.state },
                                                 minutes: { time.minutesIntoBoopDay(core.wall($0)) })
@@ -497,7 +497,9 @@ public final class Runtime: @unchecked Sendable {
                                    queue: home, note: log)
             remembers.follow(transcriptAt: transcript.lastSeq)
             let folder = options.stateDir.appendingPathComponent(Transcript.folderName)
-            remembers.catchUp(Transcript.events(in: folder, after: remembers.seq, from: remembers.from))
+            let missed = Transcript.events(in: folder, after: remembers.seq, from: remembers.from)
+            let lines = home.sync { [harness] in Dictionary(missed.compactMap { e in harness.line(e.seq).map { (e.seq, $0) } }) { a, _ in a } }
+            remembers.catchUp(missed, lines: { lines[$0] })
             remembers.launched()
             remembers.relog(unlessIn: logNow)
             home.sync { remembers.attach(to: pipeline) }

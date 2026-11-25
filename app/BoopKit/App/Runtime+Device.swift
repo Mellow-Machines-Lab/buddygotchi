@@ -121,8 +121,12 @@ extension Runtime {
             // An invite's end, which the board decides; its touch is the
             // invite's, never a tap or a gesture as well.
             guard let end = ev.did.flatMap(Moment.Invite.End.init(rawValue:)), let skit = ev.data["skit"]?.string else { break }
+            guard let step = pipeline.invite(end, skit: skit, touch: ev.data["touch"]?.string, ms: ev.data["ms"]?.int, at: now) else {
+                options.log("device: invite \(skit) \(end.rawValue), and it had ended: dropped")
+                break
+            }
             options.log("device: invite \(skit) \(end.rawValue)")
-            run(pipeline.invite(end, skit: skit, touch: ev.data["touch"]?.string, ms: ev.data["ms"]?.int, at: now))
+            run(step)
         case "talk_on", "talk_off":
             options.log("device: \(ev.kind)")
             // The device already shows `listening`.
@@ -157,13 +161,13 @@ extension Runtime {
     /// device, or what plays is resting (`if_free`): a brain reaction's
     /// `say` playing would be cut, and a late rule reaction is worse than none, so the device
     /// skips it then. One holding up a sign waits its turn instead
-    /// (`BoopDevice.play`). The core has already left it out while something
+    /// (`BoopDevice.play`), past an invite in flight too (`Reactions.ttl`). The core has already left it out while something
     /// needs you or `listening` shows. Push-to-talk's `listening` plays at
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
     func playRule(_ reaction: Moment, _ ended: @escaping (DeviceLink.Outcome) -> Void = { _ in }) {
-        let reaction = calmed(reaction)
-        rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction), ttl: BoopDevice.reactionTTL, by: .rule,
-                    now: options.clock(), ended)
+        let reaction = calmed(reaction), now = options.clock()
+        rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction),
+                    ttl: rig.reactions.ttl(BoopDevice.reactionTTL, now: now), by: .rule, now: now, ended)
     }
 
     /// A word of the work stream that comes forward: it waits in the
@@ -174,17 +178,21 @@ extension Runtime {
     }
 
     /// A reaction from the brain, sent at once to wait in the device's
-    /// queue (`next`, for up to its `BoopDevice.ttl`), and its handle, ended once it's
+    /// queue (`next`, for up to its `BoopDevice.ttl`, or past an invite in
+    /// flight: `Reactions.ttl`), and its handle, ended once it's
     /// known how it went (read Boop's way by `Reactions`): at once when it
     /// can't be sent. On `home`.
     func queue(_ reaction: Moment, _ pending: Pending) {
         let reaction = calmed(reaction)
-        let now = options.clock(), reactions = rig.reactions
-        let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.ttl(reaction), by: .brain,
-                             now: now) { outcome in
+        let now = options.clock(), reactions = rig.reactions, ttl = reactions.ttl(BoopDevice.ttl(reaction), now: now)
+        var sent: Int?
+        let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: ttl, by: .brain, now: now) { outcome in
+            if let sent { reactions.ended(sent) }
             if let end = reactions.read(outcome, pending) { pending.finish(end) }
         }
-        if let id, let thread = reaction.who?.opens { reactions.sent(id, opens: thread, ttl: BoopDevice.ttl(reaction), now: now) }
+        sent = id
+        if let id, let thread = reaction.who?.opens { reactions.sent(id, opens: thread, ttl: ttl, now: now) }
+        if let id, let invite = reaction.invite { reactions.sent(id, inviting: invite.ms, ttl: ttl, now: now) }
     }
 
     /// Drops the device links and looks for the devices again now.

@@ -82,7 +82,7 @@ first, then a sign, a card, the low sign, the ear, the keys.
 
 The glass is the screen, a pane Boop lives behind. Up at the glass the
 whole body is bigger, 1.15 at most. What touches it, a hand, a cheek, the
-forehead or the whole front, goes flat and shows a pale patch, like a paw
+forehead or the whole front, goes flat and shows a pale patch, like a hand
 on a window. A hit on it adds a ring and a small shake.
 
 | Move | When | What you see |
@@ -275,7 +275,7 @@ work pose and on a held picture.
 
 | You | Signal, never content | Full size, idle | Light size, at work |
 | --- | --- | --- | --- |
-| Type | `typing`, `typingfast` | Keyboard out, Boop types with you, and a key's tick bursts beside the paw that taps | The pose sways at your speed, and the same ticks burst beside it |
+| Type | `typing`, `typingfast` | Keyboard out, Boop types with you, and a key's tick bursts beside the hand that taps | The pose sways at your speed, and the same ticks burst beside it |
 | Speak | Another app records and no camera runs | One hand cups an ear, Boop leans in, rings pulse by the ear | The same, in the pose |
 | Scroll | `scrolling` | Reads along, a page beside it on the Mac's side, its lines scrolling up as you scroll | The page beside the pose |
 | Move the pointer | `ptr` | Eyes follow | Eyes follow |
@@ -287,7 +287,7 @@ One rhythm at a time. If you type and speak together, speaking wins. Each
 has a mark on or beside the body that reads from a chair (the ticks, the
 rings, the headphones, the page, the screen, the muted mic), since a sway
 alone is too small to see. A sign held up hides the ticks. The page and
-the screen stand beside Boop, so they wait while its paws type along or a
+the screen stand beside Boop, so they wait while its hands type along or a
 card is held; a call shows the muted mic and nothing else.
 
 ## The strip's words

@@ -43,14 +43,12 @@ else
 fi
 # Its sources: every face's, or the board's face's and none of the others'.
 PACKSRC=$(find "$FW/src" -name '*.cpp')
-DEFINE=
 if [ -n "$BOARD" ]; then
   FACE=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("faces", {}).get(sys.argv[2], ""))' \
     "$PACKDIR/character.json" "$BOARD")
   [ -n "$FACE" ] && [ -d "$FW/src/render/$FACE" ] || { echo "wasm: the $(basename "$PACKDIR") pack gives the $BOARD no face" >&2; exit 1; }
   PACKSRC="$(echo "$PACKSRC" | grep -v "^$FW/src/render/[^/]*/")
 $(find "$FW/src/render/$FACE" -name '*.cpp')"
-  DEFINE=-DBOOP_FACE_$(echo "$FACE" | tr '[:lower:]' '[:upper:]')
 fi
 # The hosted board and the portable code it runs, as the native env builds them.
 HOSTED=$(python3 - firmware/platformio.ini <<'EOF'
@@ -69,7 +67,7 @@ JSON=firmware/.pio/libdeps/native/ArduinoJson/src
 # shellcheck disable=SC2086
 SOURCES=$( (find $HOSTED linkkit/device/src -name '*.cpp'; echo "$PACKSRC") | LC_ALL=C sort)
 # shellcheck disable=SC2086
-em++ -std=c++17 -O2 $DEFINE \
+em++ -std=c++17 -O2 \
     -Ifirmware/src -Ifirmware/assets -I"$FW/include" -I"$FW/src" -Ilinkkit/device/src -I"$JSON" \
     $SOURCES "$@" \
     -sMODULARIZE -sENVIRONMENT=web,node -sALLOW_MEMORY_GROWTH \

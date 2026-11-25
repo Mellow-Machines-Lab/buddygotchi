@@ -76,11 +76,13 @@ final class SkitTests: XCTestCase {
     }
 
     /// Pins a clip's name to what the board keeps of one: its `kReplyBytes`
-    /// less the end.
+    /// less the end; and a skit's id to its `kSkitBytes` less the end.
     func testAClipsNameFitsTheBoard() throws {
         let behaviour = try String(contentsOf: FirmwareTables.root.appendingPathComponent("firmware/src/app/behaviour.h"), encoding: .utf8)
         let bytes = try XCTUnwrap(behaviour.firstMatch(of: /kReplyBytes = (\d+);/).flatMap { Int($0.1) })
         XCTAssertEqual(Skit.clipBytes, bytes - 1)
+        let skit = try XCTUnwrap(behaviour.firstMatch(of: /kSkitBytes = (\d+);/).flatMap { Int($0.1) })
+        XCTAssertEqual(Skit.idBytes, skit - 1, "a skit's id, which names the invite it ends")
     }
 
     /// A skit's clip is its Moment's, sent in its `do`'s args, as its face
@@ -130,6 +132,10 @@ final class SkitTests: XCTestCase {
         XCTAssertEqual(flops.skits, [Skit(id: "fix", slots: [.checkFixed], clip: "flop")])
         for (skits, why): ([[String: Any]], String) in [([["slots": ["doneLong"]]], "t.json: a skit without an id"),
                              ([["id": "", "slots": ["doneLong"]]], "t.json: a skit without an id"),
+                             ([["id": "a-win-at-long-last", "slots": ["doneLong"]]],
+                              "t.json: skit a-win-at-long-last's id isn't a name the board keeps, 15 letters, digits or dashes at most"),
+                             ([["id": "w\"in", "slots": ["doneLong"]]],
+                              "t.json: skit w\"in's id isn't a name the board keeps, 15 letters, digits or dashes at most"),
                              ([["id": "win", "slots": ["doneAtLast"]]], "t.json: skit win plays at doneAtLast, which isn't a slot"),
                              ([["id": "win", "slots": ["doneLong"]], ["id": "yay", "slots": ["doneLong"]]],
                               "t.json: skit yay plays at doneLong, which another skit has"),

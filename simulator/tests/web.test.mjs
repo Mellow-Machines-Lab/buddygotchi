@@ -345,7 +345,7 @@ test('the board says what it shows, and the studio is beside it', async t => {
   const raw = await new Promise(ok => { let got = ''; const c = net.connect(port, '127.0.0.1', () => c.write('GET /characters/../Package.swift HTTP/1.0\r\n\r\n'));
     c.on('data', d => { got += d; }); c.on('close', () => ok(got)); });
   assert.match(raw, /^HTTP\/1\.0 404/, 'nothing outside characters/');
-  const said = '{"t":"dbg.state","screen":"face","base":"working","act":"testing","mood":"grumpy","look_variant":2,"moment":null,"expr":null}';
+  const said = '{"t":"dbg.state","screen":"face","base":"working","act":"terminal","mood":"grumpy","look_variant":2,"moment":null,"expr":null}';
   const page = new WebSocket(`ws://127.0.0.1:${port}/usb`);
   await new Promise((ok, no) => { page.onopen = ok; page.onerror = no; });
   const asked = [];

@@ -55,6 +55,10 @@ final class NormalsTests: XCTestCase {
         var n = fold([Self.won(1, minutes: 3), Self.won(2, minutes: 9, outcome: "failed"), Self.won(3, minutes: 9, outcome: "stopped"),
                       Self.won(4, minutes: 9, tools: 0), (Self.won(5, minutes: 9).0, nil)])
         XCTAssertEqual(n.turns, [Normals.Kept(seq: 1, value: 180_000)])
+        var unsaid = Self.won(8, minutes: 9)
+        unsaid.1.facts["length_ms"] = nil
+        XCTAssertNil(Normals.win(unsaid.1.facts), "no length: no turn of 0 ms")
+        XCTAssertEqual(fold([unsaid], into: n).turns, n.turns)
         var chat = Self.won(6, minutes: 9)
         chat.1.facts["message"] = .object(["kind": "question"])
         var message = Event(at: 0, source: .claude, type: .lastMessage, specificType: "Stop")
@@ -239,5 +243,15 @@ final class NormalsTests: XCTestCase {
         XCTAssertEqual(kept.breaks.count, 3)
         XCTAssertEqual(kept.skitsSinceRemark, 1)
         XCTAssertEqual(Memory(store: store, time: Self.utc).normals.state, kept, "kept across a launch")
+
+        // A launch that missed the last day's events catches up on them,
+        // with the lines the harness read them back with: the same usual.
+        let early = try KeyValueStore(directory: nil), cut = run.count - 5
+        let before = Memory(store: early, time: Self.utc)
+        for (e, line) in run.prefix(cut) { before.heard(e, line: line) }
+        let launched = Memory(store: early, time: Self.utc)
+        let lines = Dictionary(uniqueKeysWithValues: run.compactMap { e, line in line.map { (e.seq, $0) } })
+        launched.catchUp(run.suffix(from: cut).map(\.0), lines: { lines[$0] })
+        XCTAssertEqual(launched.normals.state, kept, "caught up")
     }
 }

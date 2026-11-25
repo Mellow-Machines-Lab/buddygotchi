@@ -105,6 +105,23 @@ final class InviteTests: XCTestCase {
         return nil
     }
 
+    /// One end for one invite: the first after the record that asked it,
+    /// or a `late` after its `missed`; a second, or one with no invite
+    /// asked, is none, and the runtime drops it.
+    func testOneEndForOneInvite() {
+        let asked = asked(.palm)
+        for end in Moment.Invite.End.allCases {
+            XCTAssertTrue(InviteLedger.ends(end, after: [asked]), end.rawValue)
+            XCTAssertFalse(InviteLedger.ends(end, after: []), "none asked: \(end.rawValue)")
+            XCTAssertEqual(InviteLedger.ends(end, after: [asked, ended(.missed)]), end == .late, "after a miss: \(end.rawValue)")
+            for had in [Moment.Invite.End.answered, .late, .cut] {
+                XCTAssertFalse(InviteLedger.ends(end, after: [asked, ended(had)]), "\(had.rawValue) then \(end.rawValue)")
+            }
+            XCTAssertFalse(InviteLedger.ends(end, after: [asked, ended(.missed), ended(.late)]), "missed, late, then \(end.rawValue)")
+            XCTAssertTrue(InviteLedger.ends(end, after: [asked, ended(.answered), asked]), "the next invite: \(end.rawValue)")
+        }
+    }
+
     /// Pins the ledger's first row: fewer than 10 invites asked on this
     /// Boop day. The next Boop day starts its count again, and keeps the
     /// rest; a skit with no invite asks none.
@@ -125,10 +142,10 @@ final class InviteTests: XCTestCase {
         XCTAssertEqual(asking(InviteLedger(), Skit(id: "fix", slots: [.checkFixed])), .nothing, "no invite, nothing to ask")
     }
 
-    /// An invite counts once the Moment that asked it played: the ledger
-    /// and the daily counts hold its record until its `ended`, and one the
-    /// board skipped late, or that was cut or never answered, counts for
-    /// nothing, so the next is still the very first.
+    /// An invite counts against the day's 10 as it's asked, and stays
+    /// counted once the Moment that asked it played; the daily counts wait
+    /// for its `ended`. One the board skipped late, or that was cut, is
+    /// taken back, so the next is still the very first.
     func testOnlyAnInviteThatPlayedCounts() {
         let reader = CountsReader { _ in }
         var counts = reader.open(day: "2026-11-04", carry: nil)
@@ -140,11 +157,11 @@ final class InviteTests: XCTestCase {
             }
         }
         read([open(asked(.palm), 1)])
-        XCTAssertEqual([l.asked, counts.counted.invitesAsked], [0, 0], "still in the queue")
-        XCTAssertTrue(l.first)
+        XCTAssertEqual([l.asked, l.askedToday, counts.counted.invitesAsked], [1, 1, 0], "still in the queue: asked")
+        XCTAssertFalse(l.first)
         read([Event.ended(1, action: MomentOutput.outputName, by: "brain", failed: "waited too long")])
         XCTAssertEqual([l.asked, l.askedToday, counts.counted.invitesAsked], [0, 0, 0], "skipped late")
-        XCTAssertEqual(asks(asking(l))?.ms, InviteLedger.firstWaitMs, "still the very first")
+        XCTAssertEqual(asks(asking(l))?.ms, InviteLedger.firstWaitMs, "taken back: still the very first")
         read([open(asked(.palm), 2), Event.ended(2, action: MomentOutput.outputName, by: "brain", failed: "cut short: something needed you")])
         XCTAssertEqual(l.asked, 0, "cut")
         read([open(asked(.palm), 3), Event.ended(3, action: MomentOutput.outputName, by: "brain")])
@@ -152,6 +169,16 @@ final class InviteTests: XCTestCase {
         XCTAssertTrue(l.playing.open.isEmpty)
         read([Event.ended(3, action: MomentOutput.outputName, by: "brain")])
         XCTAssertEqual(l.asked, 1, "one end, once")
+
+        // With 9 asked today, a 10th still in the queue leaves none for a
+        // skit close behind it; once it's skipped, there's room again.
+        var nine = InviteLedger()
+        for _ in 0..<9 { nine = InviteLedger.adding(asked(.palm), to: nine) }
+        XCTAssertEqual(nine.askedToday, 9)
+        nine = InviteLedger.adding(open(asked(.palm), 20), to: nine)
+        XCTAssertEqual(asking(nine), .nothing, "the 10th in the queue")
+        nine = InviteLedger.adding(Event.ended(20, action: MomentOutput.outputName, by: "brain", failed: "waited too long"), to: nine)
+        XCTAssertNotNil(asks(asking(nine)), "skipped: taken back")
     }
 
     /// Pins the thinning: after 3 misses in a row of a pose, every second
@@ -279,7 +306,10 @@ final class InviteTests: XCTestCase {
         XCTAssertEqual(rig.sent.last?.invite, Moment.Invite(skit: "win", Self.win.invite!, label: "tap", ms: 12_000, xp: 3))
         XCTAssertEqual(result.facts[InviteLedger.askedFact], "palm")
         XCTAssertTrue(result.message.hasSuffix(", then held up a palm for a poke."), result.message)
-        rig.careRoom = false
+        rig.care = Growth(xp: 0, today: Growth.dayMost - 2, care: 0).adds(.care)
+        rig.run(Self.finish, Self.won)
+        XCTAssertEqual(rig.sent.last?.invite?.xp, 2, "two short of the day's most: what will be paid")
+        rig.care = 0
         rig.run(Self.finish, Self.won)
         XCTAssertNil(rig.sent.last?.invite?.xp, "care is full today: no XP shown")
         // A failed turn and you back: their own.
@@ -533,7 +563,8 @@ final class InviteTests: XCTestCase {
 
             let care = runtime.growth.growth.care
             runtime.device(#"{"t":"ev","kind":"invite","did":"answered","data":{"skit":"win","touch":"tap","ms":1300}}"#)
-            XCTAssertEqual(events().map(\.specificType), ["answered"])
+            runtime.device(#"{"t":"ev","kind":"invite","did":"answered","data":{"skit":"win","touch":"tap","ms":1400}}"#)
+            XCTAssertEqual(events().map(\.specificType), ["answered"], "a second end of the one invite is dropped")
             XCTAssertEqual(events().last?["pose"]?.string, "palm")
             XCTAssertEqual(events().last?["ms"]?.int, 1300)
             XCTAssertEqual(runtime.growth.growth.care, care + 3, "care's 3, once")
@@ -553,14 +584,22 @@ final class InviteTests: XCTestCase {
             XCTAssertEqual(runtime.growth.growth.care, care + 6, "a late answer earns, once")
             XCTAssertEqual(ledger()?.poses["palm"], InviteLedger.Pose(answered: 2, missedInARow: 0))
 
-            // Cross at level 2: a stroke answering the upset's invite soothes it a level.
+            // A failed turn invites a stroke; cross a level up, the stroke
+            // answering it soothes it a level.
+            runtime.hook(HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
+            clock.now += 120_000
+            runtime.hook(HookLine(agent: "claude", hook: "StopFailure", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
+            _ = runtime.harness.force([MomentOutput.emotionKey: "sad"], by: Runtime.forcedBy)
+            XCTAssertEqual(transport.dos.compactMap(invite).last?["skit"] as? String, "upset")
+            played()
             runtime.forceMood("cross", by: Runtime.forcedBy)
             runtime.device(#"{"t":"ev","kind":"gesture","did":"shake"}"#)
             func level() -> Int { MoodOutput.level(runtime.rig.mood, runtime.harness.log.view(now: now)) }
-            XCTAssertEqual(level(), 2)
+            let crossed = level()
+            XCTAssertGreaterThan(crossed, 1)
             clock.now += 1000
             runtime.device(#"{"t":"ev","kind":"invite","did":"answered","data":{"skit":"upset","touch":"stroke","ms":2000}}"#)
-            XCTAssertEqual(level(), 1, "the stroke soothes it")
+            XCTAssertEqual(level(), crossed - 1, "the stroke soothes it")
             XCTAssertEqual(events().last?["pose"]?.string, "back")
             XCTAssertEqual(runtime.growth.growth.care, care + 9)
         }
@@ -633,13 +672,61 @@ extension InviteTests {
     }
 }
 
+extension InviteTests {
+    /// A Moment queued while an invite is in flight waits until the invite
+    /// is over, as the pose holds the board's queue to its payoff or shrug:
+    /// the ring's gold after a win that invites isn't skipped late. Once
+    /// the inviting `do` ends, a rule's Moment waits its own ttl again.
+    func testAMomentQueuedBehindAnInviteWaitsForIt() throws {
+        try requirePack("boop")
+        let face = try String(contentsOf: FirmwareTables.root.appendingPathComponent("firmware/src/render/face.h"), encoding: .utf8)
+        let payoff = try XCTUnwrap(face.firstMatch(of: /kPayoffMs = (\d+), kShrugMs = (\d+)/))
+        XCTAssertEqual(BoopDevice.payoffMs, Int(payoff.1), "the board's payoff")
+        let shrug = try XCTUnwrap(Int(payoff.2))
+        XCTAssertGreaterThan(BoopDevice.payoffMs, shrug, "longer than the shrug")
+        XCTAssertLessThanOrEqual(BoopDevice.behindFinishTTL + BoopDevice.inviteHoldsMs(InviteLedger.firstWaitMs), Wire.maxTTL)
+
+        let dir = URL(fileURLWithPath: "/tmp/boop-bhi-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let clock = VirtualClock(1_793_000_000_000)
+        let transport = FakeTransport()
+        let runtime = try runtime(dir, transport, clock)
+        var now: Int64 { clock.now }
+        func object(_ line: String) -> [String: Any]? { try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any] }
+        func ttl(_ line: String?) -> Int? { line.flatMap(object)?["ttl"] as? Int }
+        runtime.home.sync {
+            runtime.connection(true)
+            runtime.device(Self.hello)
+            runtime.hook(HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
+            clock.now += 120_000
+            runtime.hook(HookLine(agent: "claude", hook: "Stop", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
+            _ = runtime.harness.force([MomentOutput.emotionKey: "happy"], by: Runtime.forcedBy)
+            let inviting = try? XCTUnwrap(transport.dos.last)
+            XCTAssertNotNil((inviting.flatMap(object)?["args"] as? [String: Any])?["invite"], "the win invites")
+            XCTAssertEqual(ttl(inviting), BoopDevice.finishTTL)
+
+            clock.now += 1000
+            var gold = Moment(mood: "happy", loops: 1)
+            gold.gold = Core.ringSign(daysInARow: 1)
+            runtime.playRule(gold)
+            XCTAssertEqual(ttl(transport.dos.last), BoopDevice.finishTTL + BoopDevice.inviteHoldsMs(InviteLedger.firstWaitMs) - 1000,
+                           "the gold waits out the invite")
+
+            if let id = inviting.map(FakeTransport.id) { runtime.device(FakeTransport.ended(id, "done")) }
+            runtime.playRule(gold)
+            XCTAssertEqual(ttl(transport.dos.last), BoopDevice.reactionTTL, "the invite is over")
+        }
+    }
+}
+
 /// Plays the react output on its own, the board's say about invites,
 /// your call, needs you, the ledger and the agent's card as given.
 @MainActor final class InviteRig {
     var sent: [Moment] = []
     var board = true, onCall = false, blocked: String?
     var ledger: InviteLedger? = InviteLedger()
-    var careRoom = true
+    var care = Growth.careXP
     var facts: InviteTests.Facts = [:]
     var card: Card?
     var pack: CharacterPack = .active
@@ -653,7 +740,7 @@ extension InviteTests {
     func inviting() {
         react.inviting = MomentOutput.Inviting(board: { [unowned self] in board }, onCall: { [unowned self] in onCall },
                                                ledger: { [unowned self] in ledger },
-                                               careRoom: { [unowned self] in careRoom })
+                                               care: { [unowned self] in care })
     }
 
     /// The react output's answer to `e`, whose line has `facts`, in `face`.

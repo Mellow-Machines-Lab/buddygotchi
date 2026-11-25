@@ -13,6 +13,9 @@
     terminal: 'building', testing: 'running the tests', waiting: 'downloading', planning: 'planning',
     delegating: 'sending a helper'};
   const working = act => ({...WORKING, act, calls: [[0, 1, SAMPLE_WORDS[act] || 'Core.swift']]});
+  // The states no Mac sends any more, which the board reads as plain
+  // working: each is asked as the act it shows as, with its own words.
+  const STANDS_IN = {planning: 'tool_use', searching: 'analyzing', testing: 'terminal', delegating: 'terminal'};
   const title = id => id.replace(/[-_]/g, ' ').replace(/^\w/, c => c.toUpperCase());
 
   // How the board is asked for each of the engine's states (states.json),
@@ -34,6 +37,7 @@
   const NO_APP_MS = 30000;  // with no state this long, the board takes the Mac for gone (linkkit's kHostGoneMs)
   function wiring({acts, tap}) {
     const looks = {...LOOKS, no_app: WORKING, needs_you: {...WORKING, attn: {id: 1, agent: 'claude', project: 'Studio', more: 0}},
+      ...Object.fromEntries(Object.entries(STANDS_IN).map(([state, act]) => [state, {...working(act), calls: [[0, 1, SAMPLE_WORDS[state]]]}])),
       ...Object.fromEntries(acts.map(act => [act, working(act)]))};
     const TOUCH = {t: 'dbg.touch', x: tap[0], y: tap[1], ms: 60};
     const INPUTS = {poked: [[0, TOUCH]], tap_spam: [[0, TOUCH], [200, TOUCH], [400, TOUCH]], gesture: [[0, STROKE]]};
@@ -121,10 +125,9 @@
     return {name, args: {...args, mood, loops}};
   }
   // A skit's takes in a face (charactergen's `takes`): those its moods have,
-  // for its finish or any, the size's kind first.
+  // the size's kind first.
   function takesFor(takes, skit, mood, kind = 'word') {
-    const outcome = FINISH[skit.slots?.[0]];
-    const fit = takes.filter(t => t.skit === skit.id && t.moods.includes(mood) && (!t.finish || t.finish === outcome));
+    const fit = takes.filter(t => t.skit === skit.id && t.moods.includes(mood));
     return [...fit.filter(t => t.kind === kind), ...fit.filter(t => t.kind !== kind)];
   }
   // A Moment over its look: a finish or a face over working, the wake-up at

@@ -41,7 +41,7 @@ final class SkitTakeTests: XCTestCase {
     /// kind its size asks, none that claims a fix.
     func winTexts(avoiding: [String] = []) -> [String] {
         let size = MomentOutput.sizes[MomentRule.size(event(.turn, .end), facts: Self.won, mood: nil)]
-        return Voice.texts(.skit, meaning: "win", kind: size.kind, finish: "success", avoiding: avoiding,
+        return Voice.texts(.skit, meaning: "win", kind: size.kind, avoiding: avoiding,
                            never: CharacterPack.active.claimsAFix, limit: MomentOutput.takesOffered)
     }
 
@@ -105,7 +105,7 @@ final class SkitTakeTests: XCTestCase {
     /// The face the win plays in, and a text of the options it has a take
     /// of and one it has none of, if the pack has such a face.
     func faceWithAndWithout(_ options: [String]) -> (face: String, has: String, lacks: String)? {
-        let takes = Take.all.filter { $0.part == .skit && $0.meaning == "win" && ($0.finish == nil || $0.finish == "success") }
+        let takes = Take.all.filter { $0.part == .skit && $0.meaning == "win" }
         for face in CharacterPack.active.faces.map(\.name) {
             let mine = Set(takes.filter { $0.moods.contains(face) }.map(\.text))
             if let has = options.first(where: mine.contains), let lacks = options.first(where: { !mine.contains($0) }) {

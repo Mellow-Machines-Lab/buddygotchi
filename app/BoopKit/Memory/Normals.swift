@@ -68,10 +68,11 @@ public struct Normals: Codable, Equatable, Sendable {
     public init() {}
 
     /// The length of the turn a finish's line `facts` tell, when it's a
-    /// success with tools, or nil.
+    /// success with tools and says how long it ran, or nil: a turn with no
+    /// length isn't one of 0 ms, which would be far faster than yours.
     public static func win(_ facts: [String: JSONValue]) -> Int64? {
         guard MomentRule.finish(facts) == .success, (facts["tools"]?.int ?? 0) > 0 else { return nil }
-        return facts["length_ms"]?.int ?? 0
+        return facts["length_ms"]?.int
     }
 
     /// `normals` with `e` read into it, by its `line`'s facts.

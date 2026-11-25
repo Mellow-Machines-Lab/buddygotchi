@@ -776,7 +776,7 @@ class Behaviour {
     Stage stage = kOff;
     InviteIn in;
     uint32_t key = 0, poseAt = 0, at = 0;
-    bool told = false;  // its cut already went (dropInvite)
+    bool told = false;  // its end already went: no other goes (dropInvite)
   };
   Invite invite_;
   // Its ends not yet taken: a miss may be followed by a late at once.

@@ -27,7 +27,7 @@ class RepoTests(unittest.TestCase):
 
     def test_the_acts_are_the_boards(self):
         """What the board draws while working for a state's act, as the firmware's actFromName keeps them."""
-        self.assertEqual(gen.firmware_acts(), ["planning", "terminal", "tool_use", "searching", "analyzing", "testing", "delegating", "waiting"])
+        self.assertEqual(gen.firmware_acts(), ["terminal", "tool_use", "analyzing", "waiting"])
         self.assertLess(set(gen.firmware_acts()), set(gen.firmware_states()))
 
     def test_every_pack_here_is_clean(self):
@@ -108,32 +108,22 @@ class StudioRuleTests(unittest.TestCase):
         pack = self.pack("art", [{"id": "calm"}], [{"id": "art", "scripts": ["studio/adapter.js"]}])
         self.assertEqual(self.problems(pack), ["art: studio file studio/adapter.js doesn't exist"])
 
-    def test_a_preview_wears_only_the_packs_moods(self):
-        """A preview's `wears` table must exist and lend only the pack's moods to the pack's moods."""
-        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], [{"id": "art", "wears": "wears.json"}])
-        self.assertEqual(self.problems(pack), ["art: studio file wears.json doesn't exist"])
-        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], [{"id": "art", "wears": "wears.json"}],
-                         files=[("wears.json", {"borrows": {"sad": "calm"}})])
-        self.assertEqual(self.problems(pack), [])
-        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], [{"id": "art", "wears": "wears.json"}],
-                         files=[("wears.json", {"borrows": {"sad": "giddy"}})])
-        self.assertEqual(self.problems(pack), ["art: art's preview has sad wear giddy, which isn't a mood of its"])
+    def test_each_entry_has_an_id_of_its_own(self):
         pack = self.pack("top", [{"id": "calm"}], [{"id": "own"}, {"id": "own"}])
         self.assertEqual(self.problems(pack), ["top: each of its studio entries needs an id of its own"])
 
     def test_data_has_paths_from_the_page(self):
         art = self.pack("art", [{"id": "calm", "meaning": "Settled."}, {"id": "sad"}],
-                        [{"id": "art", "scripts": ["studio/a.js"], "wears": "w.json"}],
-                        files=[("studio/a.js", ""), ("w.json", {"why": "", "borrows": {"sad": "calm"}})])
+                        [{"id": "art", "scripts": ["studio/a.js"]}], files=[("studio/a.js", "")])
         plain = self.pack("plain", [{"id": "calm", "family": "settled"}])
         data = gen.studio_data([art, plain], plain, self.studio)
         self.assertEqual(data["chosen"], "plain")
         self.assertEqual((data["frame_ms"], data["states"]["acts"]), (40, gen.firmware_acts()),
                          "the board's frames 40 ms apart, as a reference's are cut, and the acts it draws while working")
         self.assertEqual(data["packs"]["art"]["studio"][0],
-                         {"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "wears": {"sad": "calm"}})
+                         {"id": "art", "scripts": ["../art/studio/a.js"], "styles": []})
         board = {"id": "board-face", "label": "Face on the board", "about": "its firmware, in WebAssembly", "icon": "board.svg",
-                 "board": "face", "scripts": [], "styles": [], "wears": {}}
+                 "board": "face", "scripts": [], "styles": []}
         self.assertEqual(data["move_groups"], list(gen.MOVE_GROUPS))
         self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
                                                   "faces": [{"id": "calm", "family": "settled", "face": "A face."}], "moves": [],
@@ -148,15 +138,15 @@ class StudioRuleTests(unittest.TestCase):
                          skits=[{"id": "win", "slots": ["doneLong"], "invite": {"pose": "palm", "touch": "tap", "payoff": "highfive"}}],
                          files=[("steering/signs.md", "<!-- [invite tap] not this -->\n- [idle] hi\n- [invite tap] tap\n- [invite tap] again\n"
                                                       "- [invite stroke] pet\n"),
-                                ("mac/takes.tsv", "# a comment\nv1\nw.1\tDone\tskit\twin\tword\tcalm proud\tsuccess\t900\n"
+                                ("mac/takes.tsv", "# a comment\nv1\nw.1\tDone\tskit\twin\tword\tcalm proud\t\t900\n"
                                                   "r.1\tYes\treply\tyes\tword\tcalm\t\t500\n"),
                                 ("firmware/src/render/gel/lively.h", 'constexpr RuleInfo kRules[kRuleCount] = {\n    {"stretch", true}, {"face", false}};\n')])
         data = gen.studio_data([pack], pack, self.studio)["packs"]["full"]
         self.assertEqual(data["faces"], [{"id": "calm", "family": None, "face": "A face."},
                                          {"id": "deadpan", "family": "settled", "face": "Flat.", "board": True}])
         self.assertEqual(data["skits"][0]["invite"]["payoff"], "highfive")
-        self.assertEqual(data["takes"], [{"id": "w.1", "text": "Done", "skit": "win", "kind": "word", "moods": ["calm", "proud"],
-                                          "finish": "success"}], "a skit's takes, no reply's")
+        self.assertEqual(data["takes"], [{"id": "w.1", "text": "Done", "skit": "win", "kind": "word", "moods": ["calm", "proud"]}],
+                         "a skit's takes, no reply's")
         self.assertEqual(data["words"], {"tap": "tap", "stroke": "pet"}, "the first of each, none in a comment")
         self.assertEqual(data["motion"], ["stretch", "face"])
 
@@ -175,7 +165,7 @@ class StudioRuleTests(unittest.TestCase):
         cards = gen.studio_data([pack], pack, self.studio)["packs"]["own"]["studio"]
         self.assertEqual([e["id"] for e in cards], ["board-gel", "board-dot"])
         self.assertEqual(cards[0], {"id": "board-gel", "label": "Gel on the board", "about": "its firmware, in WebAssembly",
-                                    "icon": "board.svg", "board": "gel", "scripts": ["../own/studio/a.js"], "styles": [], "wears": {}})
+                                    "icon": "board.svg", "board": "gel", "scripts": ["../own/studio/a.js"], "styles": []})
         stray = self.pack("stray", [{"id": "calm"}], [{"id": "gel", "board": "gel"}, {"id": "board-lcd", "board": "lcd"}],
                           faces={"amoled206": "gel"})
         self.assertEqual(self.problems(stray), [
@@ -300,9 +290,8 @@ class GapTests(unittest.TestCase):
 
     def test_a_bare_pack_has_every_gap(self):
         pack = self.pack("bare", [{"id": "calm"}, {"id": "sad"}, {"id": "glum", "settles": "sad"}],
-                         [{"id": "art", "wears": "w.json"}], files=[("w.json", {"borrows": {"sad": "calm"}})])
+                         [{"id": "art"}])
         self.assertEqual(gen.gaps(pack, gen.load(pack)), [
-            "Bare has art for 2 of 3 moods; the rest wear another's",
             "2 of 2 lasting moods have no steering file, so they act as calm: calm, sad",
             "no signs (steering/signs.md), so it never holds one up",
             "no dream signs (steering/dreams.md), so it tells its dreams with none"])
@@ -333,7 +322,7 @@ class RigRuleTests(unittest.TestCase):
     def test_a_pack_without_a_rig_has_an_empty_one(self):
         rig, problems = self.rig({})
         self.assertEqual(problems, [])
-        self.assertIn("inline constexpr Rig kRig = {{}, {}, {}};", gen.rig_h(self.dir, rig))
+        self.assertIn("inline constexpr Rig kRig = {{}, {}};", gen.rig_h(self.dir, rig))
 
     def test_the_tables_are_the_files(self):
         """Each file's rows as rig.h's types hold them: eyeOpen both eyes, a key's
@@ -344,9 +333,7 @@ class RigRuleTests(unittest.TestCase):
             "clips/sway.json": {"ms": 200, "loop": True, "additive": False,
                                 "tracks": {"lean": [[0, 100], [200, 100]], "eyeOpen": [[0, 0], [200, 0]]}},
             "looks.json": {"idle": {"clip": "sway"},
-                           "working": {"clip": None, "occasions": [{"clip": "hop", "when": ["night", "tier4"]},
-                                                                   {"clip": "hop", "after": 90}],
-                                       "tiers": {"tier2": "sway"}, "acts": {"asleep": "sway"}}},
+                           "working": {"clip": None, "tiers": {"tier2": "sway"}, "acts": {"asleep": "sway"}}},
         })
         self.assertEqual(problems, [])
         text = gen.rig_h(self.dir, rig)
@@ -356,15 +343,13 @@ class RigRuleTests(unittest.TestCase):
                     '{50, "pop"},', '{300, "squish"},',
                     '{"hop", 400, false, true, {kTracks + 0, 1}, {kCues + 0, 2}},',
                     '{"sway", 200, true, false, {kTracks + 1, 3}},',
-                    # An occasion's tags as tags.h's bits (night 3, tier4 17), its wait in seconds.
-                    f"{{kClips + 0, {(1 << 3) | (1 << 17)}u, 0}},", "{kClips + 0, 0u, 90},",
                     # A tier's base clip, its tag as tags.h's bit (tier2 15).
                     f"{{kClips + 1, {1 << 15}u}},",
-                    "{SceneState::kIdle, kClips + 1, {}},",
+                    "{SceneState::kIdle, kClips + 1},",
                     # An activity's base clip, by its state.
                     "{kClips + 1, SceneState::kAsleep},",
-                    "{SceneState::kWorking, nullptr, {kOccasions + 0, 2}, {kTiers + 0, 1}, {kActs + 0, 1}},",
-                    "inline constexpr Rig kRig = {{}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
+                    "{SceneState::kWorking, nullptr, {kTiers + 0, 1}, {kActs + 0, 1}},",
+                    "inline constexpr Rig kRig = {{pack::kClips, 2}, {pack::kLooks, 2}};"]:
             self.assertIn(row, text)
 
     def test_the_moves_are_the_clips_in_their_groups(self):
@@ -428,8 +413,7 @@ class RigRuleTests(unittest.TestCase):
                            "working": {"clip": "nope", "tiers": {"tier1": "hop", "night": "sway", "tier3": "nope"},
                                        "acts": {"asleep": "hop", "dancing": "sway", "idle": "nope"}},
                            "dancing": {},
-                           "asleep": {"occasions": [{"clip": "sway", "when": ["night"]}, {"clip": "hop"},
-                                                    {"clip": "hop", "when": ["nighttime"], "after": -1}, {"when": []}]}},
+                           "asleep": {"occasions": [{"clip": "sway", "when": ["night"]}]}},
         })
         self.assertEqual(problems, [
             "rig/clips/Bad Name.json: its name, the clip's id, isn't lower case, digits, - and _",
@@ -453,11 +437,7 @@ class RigRuleTests(unittest.TestCase):
             "rig/looks.json: working.acts.dancing: isn't a state the board has",
             "rig/looks.json: working.acts.idle: 'nope' isn't a clip in rig/clips/",
             "rig/looks.json: working.acts.asleep: hop doesn't loop",
-            "rig/looks.json: asleep.occasions[0].clip: sway loops, and an occasion plays once",
-            "rig/looks.json: asleep.occasions[1]: needs a tag or a wait, or it would always fit",
-            f"rig/looks.json: asleep.occasions[2].when: isn't a list of tags, each once ({', '.join(gen.tag_names())})",
-            "rig/looks.json: asleep.occasions[2].after: -1 isn't a whole number from 0 to 65535",
-            "rig/looks.json: asleep.occasions[3].clip: missing",
+            "rig/looks.json: asleep.occasions: unknown key",
         ])
 
     def test_a_bad_rig_stops_the_pack(self):

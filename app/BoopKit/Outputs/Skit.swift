@@ -19,6 +19,15 @@ public struct Skit: Equatable, Sendable {
     /// The most bytes a clip's name has: what the board keeps of one
     /// (firmware `kReplyBytes`, less its end).
     public static let clipBytes = 11
+    /// The most bytes a skit's id has: what the board keeps of one to name
+    /// the invite it ends (firmware `kSkitBytes`, less its end).
+    public static let idBytes = 15
+
+    /// Whether `name` is one the board keeps whole in `bytes`: letters,
+    /// digits or dashes, so it's never escaped either.
+    static func fits(_ name: String, _ bytes: Int) -> Bool {
+        !name.isEmpty && name.utf8.count <= bytes && name.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }
+    }
 
     public init(id: String, slots: [RulesBrain.Slot], clip: String? = nil, invite: Invite? = nil) {
         self.id = id

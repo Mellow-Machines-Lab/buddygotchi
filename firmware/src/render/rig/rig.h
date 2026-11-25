@@ -1,11 +1,12 @@
 // The rig: the numbers a character is at any instant, the same set for
-// every pack and every face, and a pack's data on them: its expressions,
-// clips and looks, which characters/charactergen.py writes from the pack's
+// every pack and every face, and a pack's data on them: its clips and
+// looks, which characters/charactergen.py writes from the pack's
 // rig/ into the staged rig_tables.h (characters/CHARACTER.md §15). A face
 // turns the channels into pixels its own way, and reports where the body
 // is (Anchors). Portable C++: the board, the native simulator and the
 // WebAssembly one build it alike.
 #pragma once
+#include <algorithm>
 #include <cstdint>
 
 #include "render/maths.h"
@@ -136,14 +137,6 @@ struct List {
   constexpr const T& operator[](int i) const { return items[i]; }
 };
 
-// What a mood wears: its eyes' and its mouth's styles, by name, which the
-// face draws its own art for (the shapes no channel reaches).
-struct Expression {
-  const char* mood;
-  const char* eyes;
-  const char* mouth;
-};
-
 // How a key is reached from the one before.
 enum class Ease : uint8_t { kLinear, kIn, kOut, kInOut };
 // How far along `t` of `ms` is, 0 … 1024, in the ease's shape; kInOut is
@@ -180,9 +173,12 @@ struct Clip {
   // at its end.
   constexpr uint32_t local(uint32_t t) const { return loop ? t % ms : t < ms ? t : ms; }
   // The time in its tracks and cues at its own time `local`, and the other
-  // way: when it reaches a time of theirs, `at` (the first ms at or after).
+  // way: when it reaches a time of theirs, `at` (the first ms at or after,
+  // and before its end, so a cue near the end of a quicker move sounds).
   constexpr uint32_t keyed(uint32_t local) const { return own ? uint32_t(uint64_t(local) * own / ms) : local; }
-  constexpr uint32_t played(uint32_t at) const { return own ? uint32_t((uint64_t(at) * ms + own - 1) / own) : at; }
+  constexpr uint32_t played(uint32_t at) const {
+    return own ? std::min<uint32_t>(uint32_t((uint64_t(at) * ms + own - 1) / own), ms - 1u) : at;
+  }
   // A track's value at its own time `local`, at its size.
   int value(const Track& track, uint32_t local) const;
 };
@@ -194,18 +190,6 @@ int sample(const Track& track, uint32_t local);
 // How many.
 int crossed(const Clip& clip, uint32_t from, uint32_t to, const char** out, int max);
 
-// A look's occasion: a clip it plays now and then while every tag it needs
-// is on and the look has shown its wait (render::fits).
-struct Occasion {
-  const Clip* clip;
-  uint32_t when;  // render/tags.h's bits
-  uint16_t afterS;
-};
-// How often a look plays an occasion while some fit, on Pixel's face: at
-// each chance it gives it (a pass of the look's loop, while no occasion of
-// its plays), one of those that fit this many percent of the time, any one
-// alike. The gel deals them its own way, with its pastimes.
-constexpr int kOccasionPct = 67;
 // A base clip a look loops in place of its own while its tier (one of
 // render/tags.h's tier bits) is the last reached.
 struct TierClip {
@@ -218,14 +202,12 @@ struct ActClip {
   const Clip* clip;
   SceneState act;
 };
-// A look: the base clip it loops, nullptr for none, its occasions, its
-// tiers' base clips and its activities'. Pixel's face loops its clip; the
-// gel loops an activity's, else a tier's (its engine moves the body
-// otherwise).
+// A look: the base clip it loops, nullptr for none, its tiers' base clips
+// and its activities'. The gel loops an activity's, else a tier's (its
+// engine moves the body otherwise).
 struct Look {
   SceneState state;
   const Clip* clip;
-  List<Occasion> occasions;
   List<TierClip> tiers{};
   List<ActClip> acts{};
   // The base clip of the last tier reached of those the look names, by
@@ -233,18 +215,13 @@ struct Look {
   const Clip* tiered(uint32_t when) const;
   // The base clip of the activity `act`, or nullptr for one it doesn't name.
   const Clip* acted(SceneState act) const;
-  // How many of its occasions fit now; and the clip of the i-th of those.
-  int fitting(uint32_t when, uint32_t lookMs) const;
-  const Clip* fitting(uint32_t when, uint32_t lookMs, int i) const;
 };
 
 // A pack's rig, as rig_tables.h has it (kRig). Each lookup is nullptr for
 // one the pack doesn't have.
 struct Rig {
-  List<Expression> expressions;
   List<Clip> clips;
   List<Look> looks;
-  const Expression* expression(const char* mood) const;
   const Clip* clip(const char* id) const;
   const Look* look(SceneState state) const;
 };

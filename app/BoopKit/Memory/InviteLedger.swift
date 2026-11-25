@@ -17,14 +17,14 @@ extension Moment.Invite {
 /// What Boop knows of its invites: a view over the transcript, never a
 /// store of its own. It's a pure fold of the transcript's events
 /// (`adding`): the reaction records that asked one (their `invite` fact,
-/// the pose), counted once the board played them (`Played`), or let one go
-/// by (`invite_skipped`), and the board's `invite` events, by the pose they
-/// name. The memory keeps it as it keeps the daily counts
+/// the pose), counted as they're asked and taken back if the board didn't
+/// play them, or let one go by (`invite_skipped`), and the board's `invite`
+/// events, by the pose they name. The memory keeps it as it keeps the daily counts
 /// (`InviteReader`), and catches it up from the transcript at launch.
 ///
 /// | Question | Rule | Constant |
 /// | --- | --- | --- |
-/// | May Boop invite now? | Fewer than 10 invites asked on this Boop day, each counted once the board played it | `mostADay` |
+/// | May Boop invite now? | Fewer than 10 invites asked on this Boop day, each counted as it's asked and taken back if the board didn't play it, so two skits close together can't both be the 10th | `mostADay` |
 /// | ... | After 3 misses in a row of a pose, every second invite of that pose is skipped, until one is answered | `thinAfter` |
 /// | Is the label shown? | Until that pose was answered 5 times; and again after 3 misses in a row of it, until answered | `labelUntil`, `labelBackAfter` |
 /// | Is this the very first invite ever? | None asked before | |
@@ -44,7 +44,8 @@ public struct InviteLedger: Codable, Equatable, Sendable {
     /// Every invite asked, and those asked on the Boop day open
     /// (`InviteReader.open(day:carry:)` starts it again).
     public var asked = 0, askedToday = 0
-    /// The records that asked one, until the board says they played.
+    /// The records that asked one, by `seq`, with the pose, until the board
+    /// says how they ended.
     public var playing = Played<String>()
     /// Each pose's, by its name.
     public var poses: [String: Pose] = [:]
@@ -62,10 +63,19 @@ public struct InviteLedger: Codable, Equatable, Sendable {
     /// `ledger` with `e` read into it.
     public static func adding(_ e: Event, to ledger: InviteLedger) -> InviteLedger {
         var l = ledger
-        if let pose = l.playing.read(e, { $0[askedFact]?.string }) {
+        if e.kind == Event.did, e.action == MomentOutput.outputName, e["ok"]?.bool != false, let pose = e[askedFact]?.string {
             l.asked += 1
             l.askedToday += 1
-            l.poses[pose, default: Pose()].skipped = false
+            if e["open"]?.bool == true { l.playing.open[e.seq] = pose } else { l.poses[pose, default: Pose()].skipped = false }
+            return l
+        }
+        if e.kind == Event.ended, let seq = e.about, let pose = l.playing.open.removeValue(forKey: seq) {
+            if e["outcome"]?.string == "done" {
+                l.poses[pose, default: Pose()].skipped = false
+            } else {
+                l.asked = max(0, l.asked - 1)
+                l.askedToday = max(0, l.askedToday - 1)
+            }
             return l
         }
         if e.kind == Event.did, e.action == MomentOutput.outputName, e["ok"]?.bool != false, let pose = e[skippedFact]?.string {
@@ -83,6 +93,18 @@ public struct InviteLedger: Codable, Equatable, Sendable {
             break
         }
         return l
+    }
+
+    /// Whether the board's `end` may end the invite asked last, by the
+    /// transcript's `events`: one end for one invite, and a `late` only
+    /// after its `missed`. A board that ends one twice is heard once, so a
+    /// touch is never paid twice; an end with no invite asked is none.
+    public static func ends<Events: BidirectionalCollection<Event>>(_ end: Moment.Invite.End, after events: Events) -> Bool {
+        for e in events.reversed() {
+            if e.type == .invite, let had = Moment.Invite.End(rawValue: e.specificType) { return had == .missed && end == .late }
+            if e.kind == Event.did, e.action == MomentOutput.outputName, e["ok"]?.bool != false, e[askedFact] != nil { return true }
+        }
+        return false
     }
 
     func pose(_ pose: Skit.Invite.Pose) -> Pose { poses[pose.rawValue] ?? Pose() }

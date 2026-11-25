@@ -287,7 +287,7 @@ final class WorkStreamTests: XCTestCase {
         let lanes = (0..<WorkStream.maxLanes).map {
             StateSnapshot.Call(slot: $0, count: 999, word: String(repeating: "w", count: WorkStream.maxDoingBytes))
         }
-        let s = StateSnapshot(doing: "working", activity: "delegating", mood: "determined", attn: nil, working: 12, idle: 9,
+        let s = StateSnapshot(doing: "working", activity: "analyzing", mood: "determined", attn: nil, working: 12, idle: 9,
                               helpers: 20, vol: 10, when: ["evening", "friday", "halloween", "tier3", "pal", "legend", "reading"],
                               todo: .init(done: 99, total: 99), calls: lanes)
         XCTAssertLessThan(s.jsonLine.utf8.count, 440, s.jsonLine)
@@ -400,7 +400,7 @@ final class WorkStreamTests: XCTestCase {
         rig.now += 500
         XCTAssertEqual(calls(rig.send(call(rig, "1", program: "git push", failed: false))), [])
         act = try XCTUnwrap(rig.core.snapshot(at: rig.now).fields["wact"])
-        XCTAssertEqual(act, .array([.string("push"), .string("shipped!"), .string("p")]))
+        XCTAssertEqual(act, .array([.string("push"), .string("git push"), .string("p")]), "the board says the result in its own words")
         rig.tick(after: 400 + 2600 - 1)
         XCTAssertNotNil(rig.core.snapshot(at: rig.now).fields["wact"], "its lead's rest, then its result")
         rig.tick(after: 1)
@@ -420,9 +420,9 @@ final class WorkStreamTests: XCTestCase {
             return rig.views[before...].filter(\.wakesBrain).map(\.line)
         }
         XCTAssertEqual(woke("1", program: "git push"), [], "the start")
-        XCTAssertEqual(woke("1", program: "git push", failed: false), [#"claude's push went through on "landing", and the turn goes on. Boop hops: its sign says shipped."#])
+        XCTAssertEqual(woke("1", program: "git push", failed: false), [#"claude's push went through on "landing", and the turn goes on. Boop hops: the strip says push passed."#])
         XCTAssertEqual(woke("2", program: "git push"), [])
-        XCTAssertEqual(woke("2", program: "git push", failed: true), [#"claude's push failed on "landing". Boop flinches: its sign says fail."#])
+        XCTAssertEqual(woke("2", program: "git push", failed: true), [#"claude's push failed on "landing". Boop flinches: the strip says push failed."#])
         XCTAssertEqual(woke("3", topic: "tests", program: "make test"), [])
         XCTAssertEqual(woke("3", topic: "tests", program: "make test", failed: false), [], "a check passing is no news")
     }

@@ -32,17 +32,16 @@ render::SceneState baseFromName(const char* name) {
   return s == render::SceneState::kWorking || s == render::SceneState::kAsleep ? s : render::SceneState::kIdle;
 }
 
+// The Mac's four activities (`Act`); any other name, the four states no Mac
+// sends any more (planning, searching, testing, delegating) among them, is
+// plain working.
 render::SceneState actFromName(const char* name) {
   using render::SceneState;
   SceneState s = render::stateFromName(name);
   switch (s) {
-    case SceneState::kPlanning:
     case SceneState::kTerminal:
     case SceneState::kToolUse:
-    case SceneState::kSearching:
     case SceneState::kAnalyzing:
-    case SceneState::kTesting:
-    case SceneState::kDelegating:
     case SceneState::kWaiting: return s;
     default: return SceneState::kWorking;
   }
@@ -251,6 +250,11 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     const bool back = noApp(t);
     bool look = back || m.attn != model_.attn || m.look() != model_.look();
     if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
+    // A call coming on, or Boop falling asleep, ends an invite: on a call it
+    // keeps still, and asleep it asks for nothing. Its reaction plays out.
+    const bool call = render::hasTag(m.when, "oncall") && !render::hasTag(model_.when, "oncall");
+    if (call || (m.base == render::SceneState::kAsleep && model_.base != render::SceneState::kAsleep))
+      cutInvite(CutBy::kNone, t);
     // A card rises as it comes; a picture rises once, as it first shows or
     // changes kind, and updates in place after.
     if (!m.card.same(model_.card) || m.pic.kind != model_.pic.kind || m.show.on != model_.show.on ||
@@ -986,6 +990,7 @@ bool Behaviour::inviteHolds(uint32_t key) const {
 bool Behaviour::invites(uint32_t key) const { return inviteHolds(key); }
 
 void Behaviour::endInvite(const char* did, uint32_t at, bool injected) {
+  if (invite_.told) return;  // one end for one invite
   if (inviteEndCount_ == 2) inviteEnds_[0] = inviteEnds_[1], inviteEndCount_ = 1;
   InviteEnd& e = inviteEnds_[inviteEndCount_++];
   e = InviteEnd{};
@@ -1060,7 +1065,7 @@ void Behaviour::cutInvite(CutBy by, uint32_t t) {
   switch (v.stage) {
     case Invite::kAhead:
     case Invite::kPose:
-      if (!v.told) endInvite("cut", t);
+      endInvite("cut", t);
       if (by != CutBy::kNone) cut(v.key, by);
       v = Invite{};
       break;
@@ -1078,12 +1083,16 @@ void Behaviour::cutInvite(CutBy by, uint32_t t) {
   }
 }
 
-// Its end goes now, before the kit's `ended` for its reaction; it holds its
-// reaction until the newer one plays, so that `ended` is the kit's cut.
+// Its end goes now, before the kit's `ended` for its reaction, and it's
+// over: whatever the newer reaction plays, it ends no more. It's let go of
+// after the change, so that change doesn't hand its reaction back as done:
+// that `ended` is the kit's cut, as the newer one plays.
 void Behaviour::dropInvite(uint32_t t) {
   Invite& v = invite_;
-  if ((v.stage == Invite::kAhead || v.stage == Invite::kPose) && !v.told)
+  if ((v.stage == Invite::kAhead || v.stage == Invite::kPose) && !v.told) {
     change(t, [&] { endInvite("cut", t), v.told = true; });
+    v = Invite{};
+  }
 }
 
 // A touch of its kind, while it waits: answered, and the payoff at once.

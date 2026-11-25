@@ -410,20 +410,21 @@ public final class MomentOutput: Output {
     /// What a skit's invite is asked by, or nil for none ever (the evals',
     /// and most tests'): whether the board plays invites (its `hello`'s
     /// `invites`), whether you're on a call, the ledger (`InviteLedger`, nil
-    /// for none), and whether care has room today for the touch's XP
-    /// (`Growth.adds`).
+    /// for none), and what care would add today for the touch (`Growth.adds`):
+    /// what the payoff shows. It's paid as the touch comes, by what fits
+    /// then, so a finish filling the day during the wait may leave less.
     public struct Inviting {
         public var board: () -> Bool
         public var onCall: () -> Bool
         public var ledger: () -> InviteLedger?
-        public var careRoom: () -> Bool
+        public var care: () -> Int
 
         public init(board: @escaping () -> Bool, onCall: @escaping () -> Bool = { false }, ledger: @escaping () -> InviteLedger?,
-                    careRoom: @escaping () -> Bool = { false }) {
+                    care: @escaping () -> Int = { 0 }) {
             self.board = board
             self.onCall = onCall
             self.ledger = ledger
-            self.careRoom = careRoom
+            self.care = care
         }
     }
     public var inviting: Inviting?
@@ -431,11 +432,12 @@ public final class MomentOutput: Output {
     /// What `skit`'s invite comes to: none unless the board plays invites,
     /// nothing blocks the Moment and you're not on a call; else the
     /// ledger's (`InviteLedger.asking`), with the pack's word for the touch
-    /// (`Signs.invite`) and care's XP while care has room.
+    /// (`Signs.invite`) and the XP care would add now, none with no room.
     func invite(for skit: Skit) -> InviteLedger.Asking {
         guard skit.invite != nil, let inviting, inviting.board(), blocked() == nil, !inviting.onCall(),
               let ledger = inviting.ledger() else { return .nothing }
-        return ledger.asking(skit, label: { Signs.invite(self.signs, touch: $0) }, xp: inviting.careRoom() ? Growth.careXP : nil)
+        let care = inviting.care()
+        return ledger.asking(skit, label: { Signs.invite(self.signs, touch: $0) }, xp: care > 0 ? care : nil)
     }
 
     /// The record of the low Moment queued behind the last finish, still to
@@ -579,7 +581,7 @@ public final class MomentOutput: Output {
         let move = MomentRule.move(about, facts: facts)
         guard speaks(), !silent(size, move: move) else { return [] }
         recall(log)
-        return Voice.texts(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : size.kind, finish: move, avoiding: lastWords,
+        return Voice.texts(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : size.kind, avoiding: lastWords,
                            never: never(about, slot: slot), limit: Self.takesOffered, in: pack)
     }
 
@@ -815,11 +817,11 @@ public final class MomentOutput: Output {
         if speaks(), !silent {
             let take: Take?
             if let reply, talk || ruled?.saysWave == true {
-                take = Voice.take(.reply, meaning: reply, kind: kind, face: choice, finish: nil, avoiding: lastWords, never: never,
+                take = Voice.take(.reply, meaning: reply, kind: kind, face: choice, avoiding: lastWords, never: never,
                                   in: pack, rng: &takes)
             } else if let skit, let slot, let about {
                 let text = pickedTake(answers, skit, slot: slot, about: about, facts: lineFacts, log: log)
-                take = Voice.take(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : kind, face: choice, finish: pick,
+                take = Voice.take(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : kind, face: choice,
                                   avoiding: lastWords, never: never, text: text, in: pack, rng: &takes)
             } else {
                 take = nil
@@ -829,7 +831,7 @@ public final class MomentOutput: Output {
         // A word may get a sound of the same before it, but not at a small
         // moment, nor on Quiet.
         if let word = said.first, size.name != "small", self.talk() != .quiet,
-           let lead = Voice.lead(before: word, face: choice, finish: pick, avoiding: lastWords, in: pack, rng: &takes) {
+           let lead = Voice.lead(before: word, face: choice, avoiding: lastWords, in: pack, rng: &takes) {
             said.insert(lead, at: 0)
         }
         if !said.isEmpty { recentWords = Array((recentWords + [said.map(\.text)]).suffix(Self.recentSays)) }

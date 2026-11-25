@@ -62,7 +62,7 @@ STAGE = ROOT / ".character-build"
 STUDIO = CHARACTERS / "studio"
 FIRMWARE_STATES = ROOT / "firmware" / "src" / "render" / "types.cpp"
 FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
-# The rig's channels, and the tags an occasion may need, as the firmware has them.
+# The rig's channels, and the tags (a tier's among them), as the firmware has them.
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
 TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
 
@@ -345,12 +345,10 @@ def read_rig(pack: Path, states: list[str] | None = None) -> tuple[dict, list[st
 
     rel, ids, tags = "looks.json", [c["id"] for c in rig["clips"]], tag_names()
     a_clip = Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids)
-    some_tags = Rule(f"isn't a list of tags, each once ({', '.join(tags)})",
-                     lambda v: isinstance(v, list) and len(set(v)) == len(v) and all(t in tags for t in v))
     tiers = [t for t in tags if re.fullmatch(r"tier\d", t)]
     for state, look in read(rel, {s: dict for s in states}, unknown="isn't a state the board has").items():
-        look = check(rel, look, {"clip": a_clip, "occasions": list, "tiers": dict, "acts": dict}, at=state)
-        clip, occasions, tiered, acted = look.get("clip"), [], [], []
+        look = check(rel, look, {"clip": a_clip, "tiers": dict, "acts": dict}, at=state)
+        clip, tiered, acted = look.get("clip"), [], []
         if clip is not None and not rig["clips"][ids.index(clip)]["loop"]:
             fail(rel, f"{state}.clip", f"{clip} doesn't loop")
         # A base clip for each tier the look names, in place of its own while
@@ -373,25 +371,7 @@ def read_rig(pack: Path, states: list[str] | None = None) -> tuple[dict, list[st
                 fail(rel, f"{state}.acts.{act}", f"{base} doesn't loop")
             else:
                 acted.append({"clip": ids.index(base), "act": act})
-        for i, given in enumerate(look.get("occasions", [])):
-            where = f"{state}.occasions[{i}]"
-            if i == MOST:
-                fail(rel, where, f"is one more than {MOST}")
-                break
-            occasion = check(rel, given, {"clip": a_clip, "when": some_tags, "after": (0, 65535)}, at=where,
-                             required=("clip",))
-            if occasion.get("clip") is None:
-                continue
-            if rig["clips"][ids.index(occasion["clip"])]["loop"]:
-                fail(rel, f"{where}.clip", f"{occasion['clip']} loops, and an occasion plays once")
-            elif not (given.get("when") or given.get("after")):
-                fail(rel, where, "needs a tag or a wait, or it would always fit")
-            elif occasion.keys() == given.keys():
-                occasions.append({"clip": ids.index(occasion["clip"]),
-                                  "when": sum(1 << tags.index(t) for t in occasion.get("when", [])),
-                                  "after": occasion.get("after", 0)})
-        rig["looks"].append({"state": state, "clip": None if clip is None else ids.index(clip), "occasions": occasions,
-                             "tiers": tiered, "acts": acted})
+        rig["looks"].append({"state": state, "clip": None if clip is None else ids.index(clip), "tiers": tiered, "acts": acted})
     return rig, problems
 
 
@@ -429,23 +409,19 @@ def rig_h(pack: Path, rig: dict) -> str:
         elif c["cues"]:
             row += f", {run('kCues', cue, len(c['cues']))}"
         clips.append(row + "}")
-    occasions, tiers, acts, looks = [], [], [], []
+    tiers, acts, looks = [], [], []
     for l in rig["looks"]:
-        first, tier, act = len(occasions), len(tiers), len(acts)
+        tier, act = len(tiers), len(acts)
         acts += [f"{{kClips + {a['clip']}, SceneState::{camel(a['act'])}}}" for a in l.get("acts", [])]
         some_tiers, some_acts = l.get("tiers"), l.get("acts")
-        occasions += [f"{{kClips + {o['clip']}, {o['when']}u, {o['after']}}}" for o in l["occasions"]]
         tiers += [f"{{kClips + {t['clip']}, {t['when']}u}}" for t in l.get("tiers", [])]
-        looks.append(f"{{SceneState::{camel(l['state'])}, {'nullptr' if l['clip'] is None else 'kClips + ' + str(l['clip'])}, "
-                     f"{run('kOccasions', first, len(l['occasions']))}"
+        looks.append(f"{{SceneState::{camel(l['state'])}, {'nullptr' if l['clip'] is None else 'kClips + ' + str(l['clip'])}"
                      + (f", {run('kTiers', tier, len(l['tiers'])) if some_tiers else '{}'}" if some_tiers or some_acts else "")
                      + (f", {run('kActs', act, len(l['acts']))}" if some_acts else "") + "}")
     table("Key", "kKeys", keys)
     table("Track", "kTracks", tracks)
     table("Cue", "kCues", cues)
-    # The rig's expressions are none: only the pixel face drew them.
-    lists = ["{}", table("Clip", "kClips", clips)]
-    table("Occasion", "kOccasions", occasions)
+    lists = [table("Clip", "kClips", clips)]
     table("TierClip", "kTiers", tiers)
     table("ActClip", "kActs", acts)
     lists.append(table("Look", "kLooks", looks))
@@ -624,19 +600,9 @@ def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
     return [re.sub(r"(?<!^)(?=[A-Z])", "_", e).lower() for e in re.findall(r"case SceneState::k(\w+):", match.group(1))]
 
 
-def wears(pack: Path, entry: dict) -> dict[str, str]:
-    """The moods a studio preview has no art of its own for, each with the
-    mood whose art it shows instead: its `wears` file's `borrows` table,
-    or none."""
-    if not entry.get("wears"):
-        return {}
-    return json.loads((pack / entry["wears"]).read_text())["borrows"]
-
-
 def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIRMWARE_STATES, reads: Reads | None = None) -> list[str]:
     """What's wrong with the studio's data: the states it lists against the
-    board's, each pack's declared files, a preview that has a mood
-    wear one that isn't the pack's, and its references."""
+    board's, each pack's declared files, and its references."""
     problems, reads = [], reads or Reads()
     table = states(studio)
     ids, board = state_ids(table), firmware_states(source)
@@ -660,14 +626,8 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
         for entry in entries:
             if entry.get("board") and (entry["board"] not in faces or entry.get("id") != f"board-{entry['board']}"):
                 problems.append(f"{pack.name}: studio entry {entry.get('id')} is for a board, so its id is board-<face> for one of its faces ({', '.join(sorted(faces))})")
-            absent = [n for n in files(entry) + [entry.get("wears")] if n and not (pack / n).is_file()]
+            absent = [n for n in files(entry) if not (pack / n).is_file()]
             problems += [f"{pack.name}: studio file {name} doesn't exist" for name in absent]
-            if absent:
-                continue
-            moods = {m["id"] for m in character["moods"]}
-            for mood, worn in wears(pack, entry).items():
-                if mood not in moods or worn not in moods:
-                    problems.append(f"{pack.name}: {entry['id']}'s preview has {mood} wear {worn}, which isn't a mood of its")
     return problems
 
 
@@ -703,7 +663,7 @@ def boards(character: dict) -> list[dict]:
 
 def board(face: str) -> dict:
     return {"id": f"board-{face}", "label": f"{face.title()} on the board", "about": "its firmware, in WebAssembly",
-            "icon": "board.svg", "board": face, "scripts": [], "styles": [], "wears": {}}
+            "icon": "board.svg", "board": face, "scripts": [], "styles": []}
 
 
 def moves(rig: dict) -> list[dict]:
@@ -737,7 +697,7 @@ def skit_takes(pack: Path) -> list[dict]:
     """The skits' takes in the pack's mac/takes.tsv (§8), in its order."""
     table = pack / "mac" / "takes.tsv"
     rows = [l.split("\t") for l in table.read_text().splitlines() if l and not l.startswith("#")][1:] if table.is_file() else []
-    return [{"id": r[0], "text": r[1], "skit": r[3], "kind": r[4], "moods": r[5].split(), "finish": r[6] or None}
+    return [{"id": r[0], "text": r[1], "skit": r[3], "kind": r[4], "moods": r[5].split()}
             for r in rows if len(r) == 8 and r[2] == "skit"]
 
 
@@ -770,12 +730,10 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
         character = load(pack)
         entries = [(pack, e) for e in previews(character)]
         for i, (home, entry) in enumerate(entries):
-            borrows = wears(home, entry)
             for key in ("scripts", "styles"):
                 entry[key] = [page(home / name) for name in entry.get(key, [])]
             if entry.get("icon"):
                 entry["icon"] = page(home / entry["icon"])
-            entry["wears"] = dict(sorted(borrows.items()))
             entry.pop("captures", None)
             if entry.get("board"):  # its board's card, with what the pack adds
                 entries[i] = (home, {**board(entry["board"]), **entry})
@@ -872,16 +830,10 @@ def listed(path: Path) -> int:
 
 
 def gaps(pack: Path, character: dict) -> list[str]:
-    """What a pack lacks that doesn't stop it: moods a studio preview has no
-    art of its own for, moods with no steering file, moods its voice has no
+    """What a pack lacks that doesn't stop it: moods with no steering file, moods its voice has no
     take for (its own mac/takes.tsv, a reply's words left out), and no signs
     or dream signs."""
     ids, out = [m["id"] for m in character["moods"]], []
-    for entry in previews(character):
-        worn = wears(pack, entry) if not entry.get("wears") or (pack / entry["wears"]).is_file() else {}
-        if worn:
-            out.append(f"{entry.get('label') or character['name']} has art for {len(ids) - len(worn)} of {len(ids)} moods; "
-                       f"the rest wear another's")
     # A pack's `lasting`, else (a pack from before it) its faces that settle into no other (§5).
     lasting = [m["id"] for m in character.get("lasting") or [m for m in character["moods"] if "settles" not in m]]
     unsteered = [m for m in lasting if not (pack / "steering" / "mood" / f"{m}.md").is_file()]

@@ -297,7 +297,7 @@ static void test_gel_frames_always_reach_the_panel() {
   ModelPanel panel(kW, kH, true);
   Tally tally;
   const char* bases[] = {"idle", "working", "asleep"};
-  const char* acts[] = {"planning", "terminal", "tool_use", "searching", "testing", "delegating", "waiting"};
+  const char* acts[] = {"tool_use", "terminal", "tool_use", "analyzing", "terminal", "terminal", "waiting"};
   const char* moods[] = {"happy", "excited", "grumpy", "sad", "calm", "frightened", "amused", "tired", "crying"};
   const char* takes[] = {"previous.go", "previous.dai", "new.d14"};
   std::mt19937 rng(5);
@@ -375,7 +375,7 @@ static void test_steady_scenes_reach_the_panel() {
        "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\",\"vol\":0,\"attn\":{\"agent\":\"claude\",\"project\":"
        "\"boop\",\"name\":\"Fix a test\",\"id\":1}}"},
       {"working, frightened",
-       "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"frightened\",\"vol\":0}"},
+       "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"frightened\",\"vol\":0}"},
       {"asleep", "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"vol\":0}"},
   };
   for (const auto& scene : scenes) {

@@ -1,6 +1,6 @@
 # Boop's design
 
-Updated 2026-11-24. How Boop should feel and look on the board, across idle
+Updated 2026-11-25. How Boop should feel and look on the board, across idle
 and work. This is the design the next build works toward. Most of it is not
 built yet; "What is built" below says what is.
 
@@ -29,7 +29,7 @@ As of main `66d7fc1a`:
   tired) on the lids, the eyes and the idle tempo, with the popover's line;
   and speaking along (a camera alone is a call; another app recording with
   none is you speaking); and going with you as a layer: typing along sways
-  the body in every work pose and with a card held, its paws and eyes the
+  the body in every work pose and with a card held, its hands and eyes the
   pose's; a chat turn's end: a look up at you and "your turn" low; and
   several agents: the watched one, pips, the name chip, the swipe, the pill;
   and held pictures (plan, changes, helpers) in place of the text card.

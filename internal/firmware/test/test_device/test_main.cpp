@@ -1593,12 +1593,12 @@ static void test_a_state_carries_what_the_agents_do() {
   r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"base\":\"working\",\"act\":null,\"mood\":\"calm\",\"look_variant\":2,"));
-  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"act\":\"searching\",\"mood\":\"calm\"}");
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\"}");
   r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
-  // The stub face has one searching design.
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"base\":\"working\",\"act\":\"searching\",\"mood\":\"calm\",\"look_variant\":1,"));
+  // The stub face has one analyzing design.
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"look_variant\":1,"));
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"act\":\"juggling\"}");
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
@@ -2912,6 +2912,72 @@ static void test_an_invite_is_cut_by_what_takes_the_screen() {
   }
 }
 
+// A call coming on, or Boop falling asleep, ends the invite during its
+// wait: its end `cut`, then its reaction's `ended`, done, as it played out;
+// no miss, no late window after.
+static void test_an_invite_ends_on_a_call_or_asleep() {
+  const char* causes[] = {"{\"t\":\"state\",\"base\":\"idle\",\"vol\":0,\"when\":[\"oncall\"]}",
+                          "{\"t\":\"state\",\"base\":\"asleep\",\"vol\":0}"};
+  for (const char* cause : causes) {
+    InviteRig r;
+    r.runTo(1000);
+    r.doLine(1, "next", kPalm);
+    r.run(kSaid + 500);
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("pose", r.stage().c_str(), cause);
+    r.usb.text.clear();
+    r.line(cause);
+    r.run(100);
+    const std::string said = r.usb.text;
+    TEST_ASSERT_TRUE_MESSAGE(before(said, inviteLine("cut", "tap"), endedLine(1, "done")), (cause + said).c_str());
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("null", r.stage().c_str(), cause);
+    r.usb.text.clear();
+    r.run(5000);
+    TEST_ASSERT_FALSE_MESSAGE(has(r.usb.text, "\"kind\":\"invite\""), cause);
+  }
+}
+
+// One end for one invite: a `now` reaction that only notes why still cuts
+// it, once, and the pose is over, with no miss after and no late touch.
+static void test_an_invite_ends_once() {
+  InviteRig r;
+  r.runTo(1000);
+  r.doLine(1, "next", kPalm);
+  r.run(kSaid + 500);
+  TEST_ASSERT_EQUAL_STRING("pose", r.stage().c_str());
+  r.usb.text.clear();
+  r.doLine(2, "now", "{\"reason\":\"just because\"}");
+  r.run(100);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(1, count(r.usb.text, "\"kind\":\"invite\""), r.usb.text.c_str());
+  TEST_ASSERT_TRUE_MESSAGE(before(r.usb.text, inviteLine("cut", "tap"), endedLine(1, "cut", "now")), r.usb.text.c_str());
+  TEST_ASSERT_EQUAL_STRING("null", r.stage().c_str());
+  r.usb.text.clear();
+  r.run(5000);
+  r.tap();
+  TEST_ASSERT_FALSE_MESSAGE(has(r.usb.text, "\"kind\":\"invite\""), r.usb.text.c_str());
+}
+
+// An invite's end names its skit whole, however its id escapes: 15 bytes
+// that each escape to two (a control character other than NUL goes as it is),
+// with the longest touch and wait.
+static void test_an_invites_end_names_its_skit_whole() {
+  std::string id, escaped;
+  for (int i = 0; i < 15; ++i) id += '"', escaped += "\\\"";
+  InviteRig r;
+  r.runTo(1000);
+  r.doLine(1, "next",
+           "{\"say\":{\"take\":\"previous.go\"},\"invite\":{\"skit\":\"" + escaped +
+               "\",\"pose\":\"palm\",\"touch\":\"stroke\",\"payoff\":\"highfive\",\"ms\":30000}}");
+  r.run(kSaid + 500);
+  r.usb.text.clear();
+  r.doLine(2, "now", "{\"mood\":\"proud\"}");
+  const size_t at = r.usb.text.find("{\"t\":\"ev\",\"kind\":\"invite\"");
+  TEST_ASSERT_TRUE_MESSAGE(at != std::string::npos, r.usb.text.c_str());
+  JsonDocument d;
+  TEST_ASSERT_FALSE(deserializeJson(d, r.usb.text.substr(at, r.usb.text.find('\n', at) - at)));
+  TEST_ASSERT_EQUAL_STRING(id.c_str(), d["data"]["skit"].as<const char*>());
+  TEST_ASSERT_EQUAL_STRING("stroke", d["data"]["touch"].as<const char*>());
+}
+
 // A touch of the other kind is what it is today, and the wait goes on: a
 // stroke on a palm is a stroke; a tap on a lean is a poke; then a stroke
 // answers the lean, as `stroke`.
@@ -3444,6 +3510,9 @@ int main() {
   RUN_TEST(test_an_invite_answered_pays_off_then_ends);
   RUN_TEST(test_an_invite_missed_may_come_late);
   RUN_TEST(test_an_invite_is_cut_by_what_takes_the_screen);
+  RUN_TEST(test_an_invite_ends_on_a_call_or_asleep);
+  RUN_TEST(test_an_invite_ends_once);
+  RUN_TEST(test_an_invites_end_names_its_skit_whole);
   RUN_TEST(test_a_touch_of_the_other_kind_passes_through);
   RUN_TEST(test_an_invite_it_cannot_play_is_ignored);
   RUN_TEST(test_an_invites_wait_is_held_in_range);

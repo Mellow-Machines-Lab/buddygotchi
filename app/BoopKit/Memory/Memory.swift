@@ -526,14 +526,16 @@ public final class Memory: @unchecked Sendable {
 
     /// The events the files hold after either checkpoint, read as they
     /// came: a launch after a crash or a quit catches up through the same
-    /// readers, with no lines.
-    public func catchUp(_ events: [Event]) {
+    /// readers, each event with its line, the harness's as it read the log
+    /// back (`lines`), or none for one older than that.
+    public func catchUp(_ events: [Event], lines: (Int) -> Line? = { _ in nil }) {
         for e in events {
-                if e.seq > runner.seq { runner.feed(e, line: nil, live: false) }
-            if e.seq > dreams.seq { dreams.feed(e, line: nil, live: false) }
-            if e.seq > counts.seq { counts.feed(e, line: nil, live: false) }
-            if e.seq > invites.seq { invites.feed(e, line: nil, live: false) }
-            if e.seq > normals.seq { normals.feed(e, line: nil, live: false) }
+            let line = lines(e.seq)
+            if e.seq > runner.seq { runner.feed(e, line: line, live: false) }
+            if e.seq > dreams.seq { dreams.feed(e, line: line, live: false) }
+            if e.seq > counts.seq { counts.feed(e, line: line, live: false) }
+            if e.seq > invites.seq { invites.feed(e, line: line, live: false) }
+            if e.seq > normals.seq { normals.feed(e, line: line, live: false) }
         }
     }
 

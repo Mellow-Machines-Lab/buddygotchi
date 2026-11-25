@@ -358,7 +358,7 @@ final class DeviceLinkTests: XCTestCase {
         needs.xp = 100  // the growth bar's percent, at its widest
         XCTAssertTrue(needs.jsonLine.contains(#""xp":100"#))
         XCTAssertLessThanOrEqual(needs.jsonLine.utf8.count, Wire.maxLine)
-        var todo = StateSnapshot(doing: "working", activity: "delegating", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
+        var todo = StateSnapshot(doing: "working", activity: "analyzing", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
                                  vol: 10, when: every, todo: .init(done: Int(Int32.max), total: Int(Int32.max)))
         todo.xp = 100
         XCTAssertLessThanOrEqual(todo.jsonLine.utf8.count, Wire.maxLine)
@@ -368,11 +368,11 @@ final class DeviceLinkTests: XCTestCase {
     /// `act` goes after `base`; the widest line that can
     /// carry it, with the longest names escaped, still fits in 512 bytes.
     func testTheActivityFitsTheLine() {
-        let working = StateSnapshot(doing: "working", activity: "delegating", mood: "happy", attn: nil, working: 2, vol: 6)
-        XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"delegating","mood":"happy","busy":2,"vol":6}"#, "no idle, helpers or tags: none sent")
-        XCTAssertEqual(working.visual, "delegating")
-        XCTAssertEqual(working.look, "delegating")
-        let s = StateSnapshot(doing: "working", activity: "delegating", mood: "determined",
+        let working = StateSnapshot(doing: "working", activity: "analyzing", mood: "happy", attn: nil, working: 2, vol: 6)
+        XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"analyzing","mood":"happy","busy":2,"vol":6}"#, "no idle, helpers or tags: none sent")
+        XCTAssertEqual(working.visual, "analyzing")
+        XCTAssertEqual(working.look, "analyzing")
+        let s = StateSnapshot(doing: "working", activity: "analyzing", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                               working: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)

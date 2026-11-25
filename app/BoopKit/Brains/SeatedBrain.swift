@@ -21,7 +21,12 @@ public final class SeatedBrain: ReadingBrain, @unchecked Sendable {
     public static let seats: Set<String> = [MoodOutput.outputName, MomentOutput.emotionKey, MomentOutput.replyKey,
                                             Signs.questionKey, MomentOutput.takeKey]
     /// How long before the pass's deadline Jev's answer must be in, so the
-    /// rules' answers reach the outputs within it.
+    /// rules' answers reach the outputs within it. The deadline runs from
+    /// the pass's start, which the harness times from just after it reads
+    /// the event (`reading`), so Jev is timed from there too: from the
+    /// call's own start, after a hop and the rules' answer, a Jev that
+    /// stalls would end the pass late, and the harness would drop it, the
+    /// rules' answers with it.
     public static let margin: Duration = .milliseconds(100)
 
     public var id: String { jev?.id ?? rules.id }
@@ -73,12 +78,16 @@ public final class SeatedBrain: ReadingBrain, @unchecked Sendable {
         let margin: Duration
         let report: @Sendable (BrainError?) -> Void
         let took = Took()
+        /// When the pass started, as near as the brain can tell: when the
+        /// harness read the event for it, just before it started its timer.
+        let begun = ContinuousClock.now
 
         func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
             var out = try await rules.answer(state: state, questions: questions, deadline: deadline)
             guard let jev else { return out }
-            let limit = max(.zero, deadline - margin)
-            switch await SeatedBrain.within(limit, { try await jev.answer(state: state, questions: questions, deadline: limit) }) {
+            let limit = max(.zero, deadline - margin), until = begun + limit
+            let left = max(.zero, until - .now)
+            switch await SeatedBrain.within(limit, until: until, { try await jev.answer(state: state, questions: questions, deadline: left) }) {
             case .failure(let error):
                 report(error)
             case .success(let answers):
@@ -107,9 +116,12 @@ public final class SeatedBrain: ReadingBrain, @unchecked Sendable {
         }
     }
 
-    /// `body`'s answers, or why there are none: it failed, or took longer
-    /// than `limit`, and then it's cancelled and not waited for.
-    static func within(_ limit: Duration, _ body: @escaping @Sendable () async throws -> Answers) async -> Result<Answers, BrainError> {
+    /// `body`'s answers, or why there are none: it failed, or wasn't done
+    /// by `until`, `limit` after the pass began, and then it's cancelled and
+    /// not waited for. The timer may wake 5 ms late at most, as a sleep's
+    /// own tolerance can be far more.
+    static func within(_ limit: Duration, until: ContinuousClock.Instant,
+                       _ body: @escaping @Sendable () async throws -> Answers) async -> Result<Answers, BrainError> {
         await withCheckedContinuation { done in
             let once = Once(done)
             let asked = Task {
@@ -122,7 +134,7 @@ public final class SeatedBrain: ReadingBrain, @unchecked Sendable {
                 }
             }
             once.timing(Task {
-                try? await Task.sleep(for: limit)
+                try? await Task.sleep(until: until, tolerance: .milliseconds(5), clock: .continuous)
                 if once.finish(.failure(BrainError("late: no answer within \(Int(limit / .milliseconds(1))) ms"))) { asked.cancel() }
             })
         }

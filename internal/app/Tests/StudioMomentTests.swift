@@ -34,7 +34,7 @@ final class StudioMomentTests: XCTestCase {
         // Not the very first invite, which waits longer, and care has room.
         var ledger = InviteLedger()
         ledger.asked = 1
-        react.inviting = MomentOutput.Inviting(board: { true }, onCall: { false }, ledger: { ledger }, careRoom: { true })
+        react.inviting = MomentOutput.Inviting(board: { true }, onCall: { false }, ledger: { ledger }, care: { Growth.careXP })
         let failed = Event(at: 1000, source: .claude, type: .turn, phase: .end, specificType: "StopFailure")
         let check = Event(at: 1000, source: .claude, type: .tool, phase: .end, specificType: "PostToolUse")
         let events: [String: (Event, InviteTests.Facts, (source: Growth.Source, xp: Int)?)] = [

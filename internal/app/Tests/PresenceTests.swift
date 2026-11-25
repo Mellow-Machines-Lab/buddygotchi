@@ -265,13 +265,12 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(CharacterPack.active.skits.first { $0.slots.contains(.back) }?.id, "back")
         let hello = Take.all.filter { $0.part == .skit && $0.meaning == "back" }
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
-        XCTAssertTrue(hello.allSatisfy { $0.finish == nil })
         for mood in CharacterPack.active.moods.map(\.id) {
             XCTAssertGreaterThanOrEqual(hello.filter { $0.moods.contains(mood) }.count, 4, mood)
         }
         var rng = SplitMix64(seed: 1)
         for _ in 0..<20 {
-            let take = Voice.take(.skit, meaning: "back", kind: .sound, face: "happy", finish: nil, rng: &rng)
+            let take = Voice.take(.skit, meaning: "back", kind: .sound, face: "happy", rng: &rng)
             XCTAssertTrue(greetings.contains(take?.text ?? ""), "\(take?.text ?? "nothing")")
         }
     }
