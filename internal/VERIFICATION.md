@@ -84,7 +84,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal test` | `make -C internal build`, then Boop's Swift tests through the XCTest shim, with Boop's pack (`CHARACTER=boop .build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`; the runner's generator fails on a `func test…()` outside a test case, and on finding fewer than its floor of tests, so a test file gone missing fails the build; a failing test stops the runner at once), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder, so the target retries that failure alone, up to eight tries in all |
 | `make -C internal fw` | The firmware for every board the chosen pack has a face for (`charactergen.py --boards`) |
 | `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the chosen pack's `tests/firmware/`, then the engine's suites in `internal/firmware/test/` with Pixel's pack, then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build` |
-| `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, with Pixel's pack, then the gel face's, with Boop's |
+| `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, with Pixel's pack, then the gel face's, with Boop's, whose pinned shots only (§4) |
 | `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario on it and on the native simulator, the same pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and compared with the one checked in (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
 | `make -C internal demos` | Records each demo whose script has changed since its recording, or has none, into `characters/PACK/demo/recordings/` (`simulator/tools/demos.py record`); `NAMES=…` records those again, `ALL=1` every one. It needs the app, PlatformIO's native env (built once for each pack) and no board |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
@@ -304,7 +304,7 @@ of `behaviour.jsonl`:
 | A `dbg.` message | Sent as a debug request, such as `{"t":"dbg.pattern"}` |
 | `{"input": {"press":"tap"}}` | Presses BOOT for 100 ms, or `"ms"`; 400 ms or more is push-to-talk (the scenarios write `"press":"hold"`) |
 | `{"input": {"touch":[x,y]}}` | Touches the screen at (x, y) for 100 ms, or `"ms"` |
-| `{"shot": "name"}` | Saves a screenshot as `name.png` |
+| `{"shot": "name"}` | Saves a screenshot as `name.png`. With `"pin": true`, a gel scenario's is compared with its golden (below) |
 | `{"expect": {…}}` | Reads `dbg.state` once and fails on a mismatch. Only the keys given are compared, recursively |
 | `// …` | A comment; blank lines are skipped too |
 
@@ -316,7 +316,14 @@ simulator does.
 Every screen and state the board draws
 gets at least one scenario. Their pictures are the golden images in
 `internal/firmware/test/golden/<scenario>/` for pixel and
-`characters/boop/tests/golden-gel/<scenario>/` for gel. The gel's
+`characters/boop/tests/golden-gel/<scenario>/` for gel. Every one of
+Pixel's shots has a golden. The gel's set is frozen small on purpose
+while its pictures are redesigned: each gel scenario pins one or two
+shots, the ones that say the most about it (`"pin": true`), 60 in all,
+and only those have a golden (`test_pins` holds it to that). Its other
+shots are still taken, for a person to look at, the mirror and the board
+(L1, L2), and every `expect` still runs. When the redesign settles, a new
+small set is pinned. The gel's
 invite has four, one for each way it ends: `invite-answered`,
 `invite-missed`, `invite-late` and `invite-cut`, which `expect` the
 stage `dbg.state`'s `invite` says, and `missed-high-five` catches the
@@ -393,13 +400,16 @@ Each suite says what it pins.
 
 1. `make -C internal sim` (or `internal/tools/boopctl sim <scenario>`)
    writes PNGs to `/tmp/boop-sim/<checkout>/<face>/<scenario>/` (§2, Side by
-   side) and compares them with the
-   goldens. Unchanged pictures pass.
+   side) and compares the pinned ones with the goldens (§4). Unchanged
+   pictures pass, and so does a gel shot that isn't pinned; a golden
+   whose shot isn't pinned fails, as stale.
 2. Open every new or changed picture and check it against the spec: the
    right screen and state, eyes centred and readable, text inside its
-   area, palette colours, nothing clipped or overlapping.
+   area, palette colours, nothing clipped or overlapping. On the gel,
+   most shots have no golden to fail, so open the shots of every
+   scenario the change touches too.
 3. Only then does `internal/tools/boopctl sim <scenario> --accept` update
-   the goldens, with a one-line reason in the commit message (§7).
+   the pinned goldens and remove stale ones, with a one-line reason in the commit message (§7).
 
 4. When what the gel board draws changes, `firmware/tools/mirror.sh`
    builds the Mac's mirror of the board again, and
@@ -407,7 +417,7 @@ Each suite says what it pins.
    the simulator does.
 
 **Pass:** every golden matches, or the changed ones were looked at and
-accepted; the mirror's shots are the simulator's.
+accepted; the mirror's shots, every one, are the simulator's.
 
 ### L2: device over USB
 

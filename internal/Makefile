@@ -132,7 +132,7 @@ fw-test:
 
 # Every device scenario in the simulator, against the goldens (L1): the
 # pixel face's, with Pixel's pack, then the gel face's, with Boop's
-# (characters/boop/tests/golden-gel/). The PNGs land in
+# (characters/boop/tests/golden-gel/, its pinned shots only). The PNGs land in
 # /tmp/boop-sim/<checkout>/<face>/<scenario>/; internal/tools/boopctl sim NAME
 # runs one, on the face of the pack in use.
 sim:

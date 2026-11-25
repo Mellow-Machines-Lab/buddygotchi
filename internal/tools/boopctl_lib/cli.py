@@ -168,13 +168,19 @@ def sim_all(paths: list[Path]) -> tuple[int, dict[str, Path]]:
 def cmd_sim(args: argparse.Namespace) -> int:
     if args.face:
         os.environ["BOOP_SIM_FACE"] = args.face
-    failures, dirs = sim_all(pick(args.scenario))
-    changed = 0
+    paths = pick(args.scenario)
+    failures, dirs = sim_all(paths)
+    pins = {path.stem: scenario.pinned_shots(path) for path in paths}
+    changed = pinned = 0
     for name, out in dirs.items():
         for png in sorted(out.glob("*.png")):
             if png.name.endswith(".diff.png"):
                 continue
             golden = scenario.golden_dir() / name / png.name
+            if png.stem not in pins[name]:
+                print(f"taken {png} (not pinned)")
+                continue
+            pinned += 1
             if args.accept:
                 golden.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(png, golden)
@@ -187,7 +193,18 @@ def cmd_sim(args: argparse.Namespace) -> int:
                 print(f"DIFF  {png}: {n} pixels differ from {golden.relative_to(REPO)}")
             else:
                 print(f"same  {png}")
-    print(f"{len(dirs)} scenarios, {failures} expect failures, {changed} new or changed pictures")
+        # A golden whose shot isn't pinned would be kept but never compared.
+        for golden in sorted((scenario.golden_dir() / name).glob("*.png")):
+            if golden.stem in pins[name]:
+                continue
+            if args.accept:
+                golden.unlink()
+                print(f"removed {golden.relative_to(REPO)} (its shot isn't pinned)")
+            else:
+                changed += 1
+                print(f"STALE {golden.relative_to(REPO)}: its shot isn't pinned")
+    print(f"{len(dirs)} scenarios, {failures} expect failures, {pinned} pinned pictures, "
+          f"{changed} new, changed or stale")
     return 1 if failures or changed else 0
 
 
@@ -1253,7 +1270,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("sim", help="play scenarios in the simulator and compare with the goldens (L1)")
     p.add_argument("scenario", nargs="*", help="names or paths (default: all)")
     p.add_argument("--face", choices=["pixel", "gel"], help="native face (default: BOOP_SIM_FACE, else pixel)")
-    p.add_argument("--accept", action="store_true", help="copy the pictures into the goldens (after looking!)")
+    p.add_argument("--accept", action="store_true", help="copy the pinned pictures into the goldens, and remove any golden whose "
+                                                          "shot isn't pinned (after looking!)")
     p.set_defaults(func=cmd_sim)
     p = sub.add_parser("mirror", help="play the gel scenarios on the Mac's mirror of the board and the simulator, and "
                                       "check every shot is the same, pixel for pixel")
