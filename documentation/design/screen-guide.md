@@ -11,7 +11,7 @@ correct it here.
 
 ## Words
 
-This guide uses the repo's words (CLAUDE.md, Words).
+This guide uses the repo's words (documentation/words.md).
 
 ## The map
 

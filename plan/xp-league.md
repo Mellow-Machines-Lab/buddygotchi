@@ -2,7 +2,7 @@
 
 Updated 2026-11-22. Agreed with the owner on 2026-11-22, from the mockups at
 <https://claude.ai/artifact/PSuUVzy5m38YMTXeDpeHsz> ("Boop XP and World").
-Nothing here is built. It replaces [v1-buddy.md](v1-buddy.md) §5 (XP) and the
+Nothing here is built. It replaces `v1-buddy.md` (removed, in git history) §5 (XP) and the
 World tab of [world.md](world.md) §3.4, and it reopens three of that plan's
 rules on purpose (§2). It follows
 [documentation/design/](../documentation/design/README.md): XP speaks on the
@@ -17,7 +17,7 @@ The owner's words: XP and the world "feel a little flat". The code says why.
 | Problem | Where |
 | --- | --- |
 | Eight things earn XP and the board never says which one did | `Growth.xp(for:)`; the bar shows only a number |
-| Each call earns 1 XP, so the ring is full at about 10:43 on a typical day, and 83% of XP is thrown away | `Growth.toolXP`; [product-review.md](product-review.md) §3.3 |
+| Each call earns 1 XP, so the ring is full at about 10:43 on a typical day, and 83% of XP is thrown away | `Growth.toolXP`; `product-review.md` (removed, in git history) §3.3 |
 | Care can never move the ring, because work fills it first | The same |
 | A full ring is a level, so the level counts days | `Growth.perLevel == perDay` |
 | The World tab is dots with nothing to do and nothing at stake | `WorldPane.swift`, `WorldBand.swift` |

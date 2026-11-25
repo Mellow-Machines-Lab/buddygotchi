@@ -165,7 +165,7 @@ changed.
   Mac's side isn't hot, and the rest of the survey's Mac items are left.
 - `boopctl e2e` takes a moment cut by the mic or face down as fine.
 
-The cut list's working-screen stage ([cut-list.md](cut-list.md) §3 and §4) has
+The cut list's working-screen stage (`cut-list.md` (removed, in git history) §3 and §4) has
 since gone further than this report: the headphones, the hats and shades, the
 start's card, the work acts' scenes and most pastimes are gone, and the rule
 below is the stricter one in `layers.h` and `pastimes.h`.
@@ -395,7 +395,7 @@ command arguments in the transcript and debug log (never in a prompt).
 
 ## Report, 2026-11-14: the UI review, built
 
-**Read this first.** [ui-review.md](ui-review.md) is built on `v1-polish`, from
+**Read this first.** `ui-review.md` (removed, in git history) is built on `v1-polish`, from
 `c12c9cc8` to the merge of `ui-board`. SlimeBuddy's `main-v2` has three new local
 commits (`a2bb048`, `a87455b`, `9411c55`) and PixelBuddy's one (`427a7a3`, its demo
 recordings). Nothing is pushed, and the packs' `engine/` pins didn't move. The §7 questions went by the review's recommendations; the corner gap
@@ -455,9 +455,9 @@ Bluetooth: try it once. Hover, motion and focus were judged from stills only.
 
 ## Plan, 2026-11-09: after the product review
 
-**Read this first.** The owner's answers to [product-review.md](product-review.md)
+**Read this first.** The owner's answers to `product-review.md` (removed, in git history)
 §13, and the work in order. Bug numbers (#) and section numbers (§) are the review's.
-The brain in the box and the voice come last ([TODOs.md](TODOs.md)): Jev stays the
+The brain in the box and the voice come last (`TODOs.md` (removed, in git history)): Jev stays the
 brain until the behaviour is right, and every phase below shapes that behaviour.
 The review's evidence (reports, logs, the bugs' log lines) is in
 `plan/evidence/2026-11-09-product-review/` (at commit `510a78ac`); its
@@ -647,3 +647,31 @@ session, Bluetooth and the boards can show.
       113 × 92 (2026-10-24, the simulator's `BOOP_SIM_NATIVE`), the
       slime, desk and needs-you plate scale, but the lane's text, dots
       and sign come out several times too big and run off the panel.
+
+# The last pieces (from TODOs.md, merged 2026-11-25)
+
+## Decided on 2026-11-09
+
+- **The buyer does not need a key.** How Boop thinks with no key stays
+  unsolved until the best behaviour is found. Until then Jev is how we find
+  it.
+- **XP amounts may change.**
+- **Any earlier call may be reopened**, the calls of 2026-11-01 included
+  (fades, the move, several buddies, the CYD, onboarding's acts).
+- **Boop is a coworker and a pet, about equally.** The rest of the owner's
+  answers, and the phases before these two pieces, are in [TODO.md](TODO.md).
+
+## At the end
+
+- [ ] **A brain in the box.** Boop's whole personality with no key: a rules
+      brain built from the recorded Jev runs, with Jev as a switch at most
+      (`product-review.md` (removed, in git history) §9.1). It waits for the
+      behaviour to be right first, since the table is built from it. Each
+      cut to the model before then makes it smaller: 7 moods against 16,
+      18 emotions against 42, no `move` or `size` question (§8.3).
+- [ ] **The voice.** One register across the voice, the signs and the code's
+      strings; the 437 espeak placeholder takes; the label words ("Verify",
+      "Probe"); the `say` kinds nothing picks; and whether takes are
+      recorded or made (`product-review.md` (removed, in git history) §4.3, §8.2,
+      idea X6). It waits for the same
+      reason: the words to record follow from what Boop does.

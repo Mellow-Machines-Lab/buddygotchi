@@ -1,7 +1,7 @@
 # The world: architecture and build plan
 
 Updated 2026-11-08. Built: the server as `internal/world/` (§2), the Mac's client, the World tab and the board's part on `main-v2` (plan/TODO.md's report of 2026-11-08). Agreed with the owner on 2026-11-08, from
-[v1-buddy.md](v1-buddy.md) §6 (what the world is) and §5 (XP, kept simple).
+`v1-buddy.md` (removed, in git history) §6 (what the world is) and §5 (XP, kept simple).
 Work happens on branch `main-v2`, in feature branches off it; `main` stays as it
 is for now.
 

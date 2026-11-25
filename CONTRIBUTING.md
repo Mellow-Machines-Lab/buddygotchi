@@ -1,8 +1,8 @@
 # Contributing to Boop
 
 Thanks for helping. This file is the short version; the full rules are in
-[CLAUDE.md](CLAUDE.md). It's written for coding agents (`AGENTS.md` is the
-same file), but every rule in it applies to people too.
+[CLAUDE.md](CLAUDE.md). It's written for coding agents (`AGENTS.md` is a link to
+it), but every rule in it applies to people too.
 
 ## Build and test
 
