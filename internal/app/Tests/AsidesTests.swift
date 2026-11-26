@@ -5,8 +5,8 @@ import XCTest
 @testable import BoopKit
 
 /// Boop's line (`Lines`): one short sentence about what just happened,
-/// held low, and said aloud with Settings' Voice (`AppSettings.Voice`,
-/// `Speaker`).
+/// held low, and said whole when the board has its recorded sentence
+/// (`SentencesTests`).
 final class AsidesTests: XCTestCase {
     typealias Facts = [String: JSONValue]
     var rows: [TaggedLine] { RuntimeTests.steering.signs }
@@ -193,60 +193,39 @@ final class AsidesTests: XCTestCase {
 
     // MARK: In the Moment
 
-    /// A rig whose Voice is `voice`, on a call or not.
-    @MainActor func rig(_ voice: AppSettings.Voice, onCall: Bool = false, talk: Talk = .normal) -> InviteRig {
+    @MainActor func rig(talk: Talk = .normal) -> InviteRig {
         let rig = InviteRig()
         rig.talk = talk
-        rig.react.voice = { voice }
-        rig.react.hushed = { onCall }
         return rig
     }
 
-    /// With the board's sounds, a long win's aside is a low Moment behind
-    /// the finish, its record's `aside`; the finish keeps its take, and the
-    /// aside's words never go to HISTORY.
-    @MainActor func testSoundsShowTheAsideAndKeepTheTake() throws {
+    /// A long win's aside is a low Moment behind the finish, its record's
+    /// `aside`; the finish keeps its take, and the aside's words never go
+    /// to HISTORY.
+    @MainActor func testAWinsAsideFollowsTheFinish() throws {
         try requirePack("boop")
-        let rig = rig(.sounds)
+        let rig = rig()
         let result = try XCTUnwrap(rig.run(Self.finish, win()))
         XCTAssertEqual(rig.sent.count, 2)
         let aside = try XCTUnwrap(rig.sent.last?.sign)
         XCTAssertTrue(aside.lowercased().contains("buddygotchi"), aside)
         XCTAssertEqual(rig.sent.last?.low, true)
-        XCTAssertNil(rig.sent.last?.aloud)
         XCTAssertFalse(rig.sent.first?.say?.takes.isEmpty ?? true, "the board plays its take")
         let after = try XCTUnwrap(rig.react.following)
         XCTAssertEqual(after.facts["aside"]?.string, aside)
-        XCTAssertNil(after.facts["voice"])
         XCTAssertFalse(after.message.contains(aside), after.message)
         XCTAssertFalse(result.message.contains(aside))
     }
 
-    /// Speaking, on this Mac or in the cloud: the same aside, said aloud by
-    /// the Mac, and no take on the board.
-    @MainActor func testSpeakingSaysTheAsideAndPlaysNoTake() throws {
+    /// The agent's offered line is the aside.
+    @MainActor func testTheAgentsLineIsTheAside() throws {
         try requirePack("boop")
-        for voice in [AppSettings.Voice.speaks, .cloud] {
-            let rig = rig(voice)
-            let result = try XCTUnwrap(rig.run(Self.finish, win()))
-            let aside = try XCTUnwrap(rig.sent.last?.sign)
-            XCTAssertEqual(rig.sent.last?.aloud, aside, "\(voice)")
-            XCTAssertNil(rig.sent.first?.aloud)
-            XCTAssertEqual(rig.sent.first?.say?.takes, [], "\(voice)")
-            XCTAssertEqual(result.facts["takes"], .array([]))
-            XCTAssertEqual(rig.react.following?.facts["voice"]?.string, voice.rawValue)
-        }
-    }
-
-    /// The agent's offered line is the aside: said aloud too.
-    @MainActor func testTheAgentsLineIsSaidAloud() throws {
-        try requirePack("boop")
-        let rig = rig(.speaks)
+        let rig = rig()
         var card = Card(kind: .result, text: "shipped the nav")
         card.lines = [Card.Line(says: "nav, shipped. nice", feeling: "happy")]
         rig.card = card
         rig.run(Self.finish, win())
-        XCTAssertEqual(rig.sent.last?.aloud, "nav, shipped. nice")
+        XCTAssertEqual(rig.sent.last?.sign, "nav, shipped. nice")
         XCTAssertEqual(rig.react.following?.facts["aside"]?.string, "nav, shipped. nice")
         XCTAssertEqual(rig.react.following?.facts["offered_line"], true)
     }
@@ -255,65 +234,24 @@ final class AsidesTests: XCTestCase {
     /// HISTORY says only that it held one up.
     @MainActor func testACheckHoldsItsAsideLow() throws {
         try requirePack("boop")
-        let rig = rig(.speaks)
+        let rig = rig()
         let result = try XCTUnwrap(rig.run(Self.check, check("failed", before: 0), face: "annoyed"))
         XCTAssertEqual(rig.sent.count, 1)
         let aside = try XCTUnwrap(rig.sent.first?.sign)
         XCTAssertTrue(aside.lowercased().contains("the tests"), aside)
         XCTAssertEqual(rig.sent.first?.low, true)
-        XCTAssertEqual(rig.sent.first?.aloud, aside)
         XCTAssertEqual(result.facts["aside"]?.string, aside)
-        XCTAssertEqual(result.facts["voice"], "speaks")
         XCTAssertFalse(result.message.contains(aside), result.message)
-        // The fix: its aside, said.
         let fixed = try XCTUnwrap(rig.run(Self.check, check("ok", before: 2), face: "proud"))
         XCTAssertNotNil(fixed.facts["aside"])
-        XCTAssertEqual(rig.sent.last?.aloud, rig.sent.last?.sign)
     }
 
-    /// On a call the Mac says nothing: the aside shows, and the board's
-    /// take plays as ever (which `speaks` keeps quiet itself).
-    @MainActor func testOnACallNothingIsSaid() throws {
+    /// On Quiet, no aside.
+    @MainActor func testQuietShowsNoAside() throws {
         try requirePack("boop")
-        let rig = rig(.speaks, onCall: true)
-        let result = try XCTUnwrap(rig.run(Self.finish, failed()))
-        XCTAssertNotNil(rig.sent.last?.sign)
-        XCTAssertTrue(rig.sent.allSatisfy { $0.aloud == nil })
-        XCTAssertNil(rig.react.following?.facts["voice"])
-        XCTAssertNotEqual(result.facts["takes"], .array([]))
-    }
-
-    /// On Quiet, no aside and nothing said.
-    @MainActor func testQuietSaysNoAside() throws {
-        try requirePack("boop")
-        let rig = rig(.speaks, talk: .quiet)
+        let rig = rig(talk: .quiet)
         rig.run(Self.check, check("failed", before: 0), face: "annoyed")
         XCTAssertNil(rig.sent.first?.sign)
-        XCTAssertNil(rig.sent.first?.aloud)
-    }
-
-    /// A remark is the sentence a win shows: said aloud too, and no take.
-    @MainActor func testARemarkIsSaidAloud() throws {
-        try requirePack("boop")
-        let rig = RemarksTests().rig()
-        rig.react.voice = { .speaks }
-        rig.run(RemarksTests.finish(), RemarksTests().win(minutes: 2))
-        let words = try XCTUnwrap(rig.sent.last?.sign)
-        XCTAssertTrue(Signs.remark(RuntimeTests.steering.signs, "fast").contains(words), words)
-        XCTAssertEqual(rig.sent.last?.aloud, words)
-        XCTAssertEqual(rig.sent.first?.say?.takes, [])
-        XCTAssertEqual(rig.react.following?.facts["voice"], "speaks")
-    }
-
-    /// Speaking, the brain isn't asked which take: it'd be dropped.
-    @MainActor func testSpeakingAsksNoTake() throws {
-        try requirePack("boop")
-        for (voice, asked) in [(AppSettings.Voice.sounds, true), (.speaks, false), (.cloud, false)] {
-            let rig = rig(voice)
-            rig.facts = win(minutes: 20)
-            let questions = rig.react.questions(now: Self.finish, log: Transcript.log().view(now: Self.finish.at))
-            XCTAssertEqual(questions.contains { $0.key == MomentOutput.takeKey }, asked, "\(voice)")
-        }
     }
 
     /// A finished turn's aside says what the agent said it was doing: its
@@ -328,141 +266,10 @@ final class AsidesTests: XCTestCase {
                              data: ["agent": "claude", "text": "Writing the report"]), now: 300)
         var finish = Event(at: 1000, source: .claude, type: .turn, phase: .end, specificType: "Stop", session: "s1")
         finish = log.append(finish, now: 1000)
-        let rig = rig(.sounds)
+        let rig = rig()
         rig.facts = win()
         rig.react.run([MomentOutput.emotionKey: Answer(choice: "happy", probabilities: ["happy": 1])], now: finish, log: log.view(now: 1000))
         let aside = try XCTUnwrap(rig.sent.last?.sign)
         XCTAssertTrue(aside.lowercased().contains("writing the report"), aside)
-    }
-
-    // MARK: The setting
-
-    /// Old settings files load as `sounds`; a choice round-trips; one this
-    /// version doesn't know is `sounds`.
-    func testTheVoiceSettingsCoding() throws {
-        let old = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"talk":"normal","volume":6}"#.utf8))
-        XCTAssertEqual(old.voice, .sounds)
-        XCTAssertNil(old.cloudVoice)
-        let written = String(decoding: try JSONEncoder().encode(old), as: UTF8.self)
-        XCTAssertFalse(written.contains("voice"), "the default isn't written")
-        var s = AppSettings()
-        s.voice = .cloud
-        s.cloudVoice = CloudSpeaker.Config(url: "http://localhost:9/v1", model: "m", voice: "v")
-        let back = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(s))
-        XCTAssertEqual(back.voice, .cloud)
-        XCTAssertEqual(back.cloudVoice, s.cloudVoice)
-        let unknown = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"voice":"opera","cloudVoice":{"voice":"nova"}}"#.utf8))
-        XCTAssertEqual(unknown.voice, .sounds)
-        XCTAssertEqual(unknown.cloudVoice, CloudSpeaker.Config(voice: "nova"), "a missing key keeps its default")
-        XCTAssertNil(AppSettings.Voice.sounds.speaker(cloud: nil, key: { nil }))
-        XCTAssertTrue(AppSettings.Voice.speaks.speaker(cloud: nil, key: { nil }) is SystemSpeaker)
-        XCTAssertTrue(AppSettings.Voice.cloud.speaker(cloud: nil, key: { nil }) is CloudSpeaker)
-        for voice in AppSettings.Voice.allCases { XCTAssertFalse(voice.about("Boop").isEmpty) }
-    }
-
-    /// The key: `BOOP_VOICE_KEY` first.
-    func testTheKeyComesFromTheEnvironmentFirst() {
-        XCTAssertEqual(CloudSpeaker.key(stateDir: URL(fileURLWithPath: "/tmp/x"), environment: ["BOOP_VOICE_KEY": " sk-test \n"]), "sk-test")
-    }
-
-    // MARK: The cloud voice, against a stub
-
-    final class Stub: URLProtocol, @unchecked Sendable {
-        nonisolated(unsafe) static var seen: [URLRequest] = []
-        nonisolated(unsafe) static var bodies: [[String: Any]] = []
-        nonisolated(unsafe) static var answer: (status: Int, data: Data, delay: TimeInterval) = (200, Data("ID3audio".utf8), 0)
-        static let lock = NSLock()
-
-        override class func canInit(with request: URLRequest) -> Bool { true }
-        override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-        override func startLoading() {
-            var data = request.httpBody
-            if data == nil, let stream = request.httpBodyStream {
-                stream.open()
-                var bytes = Data(), buffer = [UInt8](repeating: 0, count: 4096)
-                while stream.hasBytesAvailable { let n = stream.read(&buffer, maxLength: 4096); if n <= 0 { break }; bytes.append(buffer, count: n) }
-                stream.close()
-                data = bytes
-            }
-            let body = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
-            let answer = Self.lock.withLock {
-                Self.seen.append(request)
-                Self.bodies.append(body)
-                return Self.answer
-            }
-            let request = self.request, client = self.client
-            DispatchQueue.global().asyncAfter(deadline: .now() + answer.delay) { [self] in
-                let response = HTTPURLResponse(url: request.url!, statusCode: answer.status, httpVersion: nil, headerFields: [:])!
-                client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-                client?.urlProtocol(self, didLoad: answer.data)
-                client?.urlProtocolDidFinishLoading(self)
-            }
-        }
-        override func stopLoading() {}
-    }
-
-    /// What a speaker heard, instead of a sound.
-    final class Heard: Speaker, @unchecked Sendable {
-        var lines: [String] = []
-        let lock = NSLock()
-        func speak(_ line: String, mood: String) async { lock.withLock { lines.append("\(line) (\(mood))") } }
-    }
-
-    final class Played: @unchecked Sendable {
-        var audio: [Data] = []
-        let lock = NSLock()
-    }
-
-    func cloud(_ heard: Heard, _ played: Played, key: String? = "sk-test", deadline: TimeInterval = 1.5) -> CloudSpeaker {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [Stub.self]
-        return CloudSpeaker(config: CloudSpeaker.Config(url: "https://voice.example/v1/"), key: { key }, session: URLSession(configuration: config),
-                            fallback: heard, deadline: deadline, play: { data in played.lock.withLock { played.audio.append(data) } })
-    }
-
-    override func setUpWithError() throws {
-        Stub.seen = []
-        Stub.bodies = []
-        Stub.answer = (200, Data("ID3audio".utf8), 0)
-    }
-
-    /// The request: a POST of the line, the model, the voice and how to say
-    /// it, with the key as a bearer token; its audio played, nothing else.
-    func testTheCloudRequestAndItsAudio() async throws {
-        let heard = Heard(), played = Played()
-        await cloud(heard, played).speak("Yay, buddygotchi, done!", mood: "proud")
-        let request = try XCTUnwrap(Stub.seen.first)
-        XCTAssertEqual(request.httpMethod, "POST")
-        XCTAssertEqual(request.url?.absoluteString, "https://voice.example/v1/audio/speech")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer sk-test")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
-        let body = try XCTUnwrap(Stub.bodies.first)
-        XCTAssertEqual(Set(body.keys), ["model", "voice", "input", "response_format", "instructions"], "nothing else is sent")
-        XCTAssertEqual(body["input"] as? String, "Yay, buddygotchi, done!")
-        XCTAssertEqual(body["model"] as? String, "gpt-4o-mini-tts")
-        XCTAssertEqual(body["voice"] as? String, "coral")
-        XCTAssertTrue((body["instructions"] as? String)?.contains("proud") ?? false)
-        XCTAssertEqual(played.audio, [Data("ID3audio".utf8)])
-        XCTAssertEqual(heard.lines, [])
-    }
-
-    /// An error, no key, or no answer in time: this Mac's voice says it.
-    func testTheCloudFallsBackToThisMac() async throws {
-        let heard = Heard(), played = Played()
-        Stub.answer = (500, Data("{}".utf8), 0)
-        await cloud(heard, played).speak("Aw. Buddygotchi broke.", mood: "sad")
-        XCTAssertEqual(heard.lines, ["Aw. Buddygotchi broke. (sad)"])
-        // No key: nothing sent.
-        Stub.seen = []
-        await cloud(heard, played, key: nil).speak("Oops. The tests failed.", mood: "annoyed")
-        XCTAssertTrue(Stub.seen.isEmpty)
-        XCTAssertEqual(heard.lines.count, 2)
-        // Too slow: it doesn't wait past the deadline.
-        Stub.answer = (200, Data("ID3audio".utf8), 2)
-        let start = Date()
-        await cloud(heard, played, deadline: 0.3).speak("Phew. The tests, fixed.", mood: "proud")
-        XCTAssertLessThan(Date().timeIntervalSince(start), 1.5)
-        XCTAssertEqual(heard.lines.last, "Phew. The tests, fixed. (proud)")
-        XCTAssertTrue(played.audio.isEmpty)
     }
 }

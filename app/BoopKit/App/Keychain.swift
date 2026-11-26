@@ -1,7 +1,6 @@
 import Foundation
 
-/// Jev's API key, and the cloud voice's, kept in the login Keychain and
-/// nowhere else.
+/// Jev's API key, kept in the login Keychain and nowhere else.
 ///
 /// Boop reads and writes the entry through Apple's `/usr/bin/security`, not
 /// the Security framework. The Keychain ties an entry to the program that
@@ -27,12 +26,6 @@ public enum Keychain {
         guard found.status == 0 else { return nil }
         let key = found.output.trimmingCharacters(in: .newlines)
         return key.isEmpty ? nil : key
-    }
-
-    /// The cloud voice's key (`CloudSpeaker`), in its own entry beside
-    /// Jev's: the same account with `-voice` after it.
-    public static func voiceKey(account: String, security: SecurityTool = .system) -> String? {
-        jevKey(account: account + "-voice", security: security)
     }
 
     /// A key as pasted, without the spaces and newlines a copy picks up

@@ -63,10 +63,6 @@ extension Runtime {
         /// What a skit's remark is picked by (`MomentOutput.Remarking`), or
         /// nil for none ever.
         public var remarking: MomentOutput.Remarking?
-        /// How a line is heard (`AppSettings.voice`), and whether the Mac
-        /// keeps quiet now (`MomentOutput.voice`, `hushed`).
-        public var voice: () -> AppSettings.Voice = { .sounds }
-        public var hushed: () -> Bool = { false }
         /// What it notices from, or nil for a buddy that doesn't: the days
         /// kept, when each notice last played, and whether a thread had a
         /// turn since the last dream (`Memory`).
@@ -345,8 +341,6 @@ extension Runtime {
         }
         react.inviting = m.inviting
         react.remarking = m.remarking
-        react.voice = m.voice
-        react.hushed = m.hushed
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
         // The Moments the rules make whole, with no pass: your bye at a
         // lock and your hello at an unlock, a working check-in, another

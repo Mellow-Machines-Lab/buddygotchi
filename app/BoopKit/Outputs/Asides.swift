@@ -7,9 +7,9 @@ import MellowHarness
 /// when it gave one that fits (`MomentRule.offeredLine`), else one of the
 /// pack's (`signs.md`'s `[aside …]` rows), picked here by plain rules,
 /// never by the brain, and it never goes to the brain. It shows as text,
-/// low; with Settings' Voice set to speak, the Mac says it aloud too
-/// (`AppSettings.Voice`). The table here and nowhere else (`AsidesTests`
-/// pins it).
+/// low, and the board says it whole when its voice has the recorded
+/// sentence its row names (`TaggedLine.take`). The table here and nowhere
+/// else (`AsidesTests` pins it).
 public enum Asides {
     /// The longest an aside is: what the low sign holds, in two rows of
     /// `rowLength` at most.

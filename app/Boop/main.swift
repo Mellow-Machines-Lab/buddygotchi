@@ -19,11 +19,9 @@ let usage = """
                onboarding (make dev FRESH=1).
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH]
                 [--talk quiet|normal] [--brain jev|rules|scripted|none] [--name NAME]
-                [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]] [--speech-to DIR]
+                [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --talk overrides the saved one for this run only.
-               With Settings' Voice speaking, what it says goes to audio files in --speech-to DIR (default
-               DIR/speech), never out loud.
                The world of buddies only with BOOP_WORLD_URL set: npm run dev in internal/world serves a
                fake one on http://localhost:8787.
                --brain jev (the default) has the rules brain answer every pass, with no network, and Jev
@@ -192,7 +190,7 @@ final class LogFile: @unchecked Sendable {
 let raw = Array(CommandLine.arguments.dropFirst())
 let (launchHeadless, launchSnapshots, launchCounts) = (raw.contains("--headless"), raw.contains("--snapshots"), raw.contains("--counts"))
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
-    launchHeadless ? (["--state-dir", "--link", "--socket", "--talk", "--brain", "--name", "--demo", "--record", "--speech-to"],
+    launchHeadless ? (["--state-dir", "--link", "--socket", "--talk", "--brain", "--name", "--demo", "--record"],
                       ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])
     : launchCounts ? (["--state-dir", "--days"], ["--counts"])

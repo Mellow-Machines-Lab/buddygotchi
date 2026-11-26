@@ -660,13 +660,6 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Takes effect from the next Moment.
-    func setVoice(_ voice: AppSettings.Voice) {
-        guard status?.voice != voice else { return }
-        status?.voice = voice
-        runtime?.setVoice(voice)
-    }
-
     /// Takes effect from the next event.
     func setTalk(_ talk: Talk) {
         guard talk != self.talk else { return }

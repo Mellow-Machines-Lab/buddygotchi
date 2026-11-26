@@ -82,9 +82,6 @@ enum Headless {
         // agents' runs only log where.
         if args.has("--no-open") { options.open = { _ in log.write("open: skipped (--no-open)"); return true } }
         if let talk { options.talk = talk }
-        // Settings' Voice never makes a sound headless: what it says goes to
-        // files, in `--speech-to DIR` or the state folder's `speech/`.
-        options.speechFolder = args["--speech-to"].map { URL(fileURLWithPath: $0) } ?? stateDir.appendingPathComponent("speech")
         // A demo plays as it was written, its swear included, whatever
         // Settings' swearing says.
         if script != nil { options.swearing = true }

@@ -120,8 +120,6 @@ extension Runtime {
         public var anchorGone = false
         /// Whether Boop may swear (`AppSettings.swearing`).
         public var swearing = false
-        /// How a line is heard (`AppSettings.voice`).
-        public var voice = AppSettings.Voice.sounds
         /// Whether your own agent helps Boop think (`AppSettings.agentsThink`).
         public var agentsThink = true
         /// When Boop may next be renamed, or nil for now
@@ -207,7 +205,6 @@ extension Runtime {
         status.placing = placing != nil
         status.anchorGone = anchorGone
         status.swearing = options.swearing ?? settings.swearing
-        status.voice = settings.voice
         status.agentsThink = settings.agentsThink
         status.nextRename = BuddyName.nextRename(after: settings.renamed, at: wall).map { Date(timeIntervalSince1970: Double($0) / 1000) }
         status.misfit = link.misfit.flatMap { $0.id.isEmpty ? nil : $0.id }

@@ -46,43 +46,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Apple Intelligence's place, on the plan you have. On unless you
     /// turn it off.
     public var agentsThink = true
-    /// How Boop's asides are heard (`Voice`): its board's own sounds unless
-    /// you choose a voice.
-    public var voice = Voice.sounds
-    /// Where the cloud voice is asked, with which model and voice: nil
-    /// for OpenAI's (`CloudSpeaker.Config`). Only set by hand.
-    public var cloudVoice: CloudSpeaker.Config?
-
-    /// How Boop's aside (`Asides`), or a remark, is heard, chosen in
-    /// Settings. Whatever the choice, it shows as text, low on the board.
-    public enum Voice: String, CaseIterable, Codable, Sendable {
-        /// The board plays its recorded takes, as it always has.
-        case sounds
-        /// This Mac says it aloud, with a voice of its own
-        /// (`SystemSpeaker`); the board plays no take for it.
-        case speaks
-        /// The same, with a cloud voice on your own key (`CloudSpeaker`):
-        /// its words leave the Mac.
-        case cloud
-
-        /// Its name in Settings.
-        public var title: String {
-            switch self {
-            case .sounds: "Sounds"
-            case .speaks: "Speaks"
-            case .cloud: "Cloud voice"
-            }
-        }
-
-        /// What it does, in one line, for Settings.
-        public func about(_ name: String) -> String {
-            switch self {
-            case .sounds: "\(name) makes its own little sounds on the board, and shows what it'd say as words."
-            case .speaks: "\(name) says what happened out loud, in a voice made on this Mac. Free, and nothing leaves the Mac."
-            case .cloud: "\(name) says it out loud in a cloud voice, on your own key: a few cents a day. Its words, which can name a thread, are sent to make it."
-            }
-        }
-    }
 
     public init() {}
 
@@ -94,8 +57,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         // had one (2026-11-01), `workStream` from before the work stream
         // was always on, `classifier`, `writer` and `brain` from
         // before the modes, and `focus`, `away`, `awaySince`, `finished` and
-        // `projects` from before 2026-09-26, and `macSide` from before the
-        // anchor (2026-11-16).
+        // `projects` from before 2026-09-26, `macSide` from before the
+        // anchor (2026-11-16), and `voice` and `cloudVoice` from the spoken
+        // modes (2026-11-26), gone: the board says recorded sentences.
         let c = try decoder.container(keyedBy: CodingKeys.self)
         talk = (try? c.decodeIfPresent(Talk.self, forKey: .talk)) ?? .default
         swearing = (try? c.decodeIfPresent(Bool.self, forKey: .swearing)) ?? false
@@ -110,13 +74,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
         color = max(0, min(BuddyColor.all.count - 1, (try? c.decodeIfPresent(Int.self, forKey: .color)) ?? 0))
         agentsThink = (try? c.decodeIfPresent(Bool.self, forKey: .agentsThink)) ?? true
-        voice = (try? c.decodeIfPresent(Voice.self, forKey: .voice)) ?? .sounds
-        cloudVoice = try? c.decodeIfPresent(CloudSpeaker.Config.self, forKey: .cloudVoice)
     }
 
     // `noticesYou` keeps the key it had as "Types along".
     enum CodingKeys: String, CodingKey {
-        case talk, swearing, renamed, volume, board, onboarding, noticesYou = "typesAlong", anchor, simulator, world, worldShown, color, agentsThink, voice, cloudVoice
+        case talk, swearing, renamed, volume, board, onboarding, noticesYou = "typesAlong", anchor, simulator, world, worldShown, color, agentsThink
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -134,8 +96,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         if worldShown { try c.encode(worldShown, forKey: .worldShown) }
         if color != 0 { try c.encode(color, forKey: .color) }
         if !agentsThink { try c.encode(agentsThink, forKey: .agentsThink) }
-        if voice != .sounds { try c.encode(voice, forKey: .voice) }
-        try c.encodeIfPresent(cloudVoice, forKey: .cloudVoice)
     }
 
     public static let file = "settings.json"

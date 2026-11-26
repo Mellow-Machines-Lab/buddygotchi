@@ -464,14 +464,6 @@ public final class MomentOutput: Output {
     }
     public var remarking: Remarking?
 
-    /// How an aside is heard (Settings' Voice, `AppSettings.Voice`): with
-    /// `speaks` or `cloud` the Mac says the sentence the Moment shows (an
-    /// aside, or a remark) aloud, and the Moment's board plays no take; and
-    /// whether the Mac keeps quiet now, on a call or while you talk.
-    public var voice: () -> AppSettings.Voice = { .sounds }
-    public var hushed: () -> Bool = { false }
-    /// Whether the Mac says a Moment's sentence now, in its board's place.
-    var speaksAloud: Bool { voice() != .sounds && !hushed() }
     /// The last of the pack's aside rows said, which the next doesn't say
     /// again while another fits.
     var lastAsideRow: String?
@@ -510,11 +502,10 @@ public final class MomentOutput: Output {
         Take.all(in: pack).filter { $0.part == .sentence && $0.meaning == id }.map(\.text)
     }
 
-    /// Whether the board can say the sentence `id` whole in `face`: with
-    /// Settings' Voice on the board's sounds, a board that speaks, and a
-    /// take of it in that face. Nil `face`: in any.
+    /// Whether the board can say the sentence `id` whole in `face`: a
+    /// board that speaks, with a take of it in that face. Nil `face`: in any.
     func voices(_ id: String, face: String?) -> Bool {
-        voice() == .sounds && speaks()
+        speaks()
             && Take.all(in: pack).contains { $0.part == .sentence && $0.meaning == id && (face.map($0.moods.contains) ?? true) }
     }
 
@@ -695,9 +686,6 @@ public final class MomentOutput: Output {
     /// At a skit with more than one thing it may say, which it says: only
     /// Jev answers it. With no answer, Voice picks, as it does with no key.
     func takeQuestion(_ now: Event?, _ log: LogView) -> Question? {
-        // Speaking on the Mac, the take is dropped for the Moment's
-        // sentence: nothing to ask.
-        guard !speaksAloud else { return nil }
         let about = Self.about(now, log)
         let facts = about.flatMap { line($0)?.facts } ?? [:]
         guard let about, let slot = self.slot(about, facts: facts, ruled: false), let skit = self.skit(at: slot, facts: facts) else { return nil }
@@ -1128,19 +1116,6 @@ public final class MomentOutput: Output {
             said = [take]
             reaction.say = Moment.Say(takes: said)
         }
-        // With Settings' Voice speaking, the Mac says the sentence the
-        // Moment shows, an aside (the agent's or the pack's) or a remark,
-        // and its board plays no take; not on a call or while you talk,
-        // and then the take plays as ever.
-        var aloud: AppSettings.Voice?
-        let behindWords = spoken.flatMap { $0.sign }, ownWords = asided ?? (remarked != nil ? reaction.sign : nil)
-        if speaksAloud, !silent, let words = behindWords ?? ownWords {
-            aloud = voice()
-            if behindWords != nil { spoken?.aloud = words } else { reaction.aloud = words }
-            after["voice"] = .string(voice().rawValue)
-            said = []
-            reaction.say = Moment.Say(takes: [])
-        }
         if !said.isEmpty { recentWords = Array((recentWords + [said.map(\.text)]).suffix(Self.recentSays)) }
         // A skit's invite, on the last Moment queued, so the pose comes
         // after the agent's line or the remark; the record of the Moment
@@ -1196,10 +1171,8 @@ public final class MomentOutput: Output {
         if let remembering { facts["felt"] = .string(remembering.line) }
         // A remark this Moment showed: what your usual counts the skits since by.
         if let remarked { facts[Normals.remarkFact] = .string(remarked) }
-        // An aside it held up, and what it said aloud with Settings'
-        // Voice: what the counts read.
+        // An aside it held up: what the counts read.
         if let asided { facts["aside"] = .string(asided) }
-        if ownWords != nil, behindWords == nil, let aloud { facts["voice"] = .string(aloud.rawValue) }
         // An invite this Moment asked, or skipped for the misses: what the
         // ledger reads.
         if spoken == nil { facts.merge(invitedFacts) { _, new in new } }

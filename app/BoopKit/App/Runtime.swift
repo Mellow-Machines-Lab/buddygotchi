@@ -108,10 +108,6 @@ public final class Runtime: @unchecked Sendable {
         /// Whether push-to-talk works now, the recognizer and the mic both
         /// authorized, for the chat wish: the app and headless ask macOS.
         public var pushToTalkWorks: @Sendable () -> Bool = { true }
-        /// Where the Mac's lines go as audio files instead of out loud
-        /// (`AppSettings.Voice.speaker`): headless's, so an agent's run never makes a
-        /// sound. Nil plays them, as the app does.
-        public var speechFolder: URL?
 
         public init(stateDir: URL, socketPath: String, link: Transport?, steering: Steering) {
             self.stateDir = stateDir
@@ -166,9 +162,6 @@ public final class Runtime: @unchecked Sendable {
     public private(set) var settings: AppSettings
     /// How much it says now (`Talk`), touched only on `home`.
     public private(set) var talk: Talk
-    /// What says a line aloud, by Settings' Voice (`AppSettings.Voice.speaker`): nil
-    /// for the board's sounds. Touched only on `home`.
-    var speaker: (any Speaker)?
     /// The buddy's core.
     var core: Core { pipeline.core }
     let view: TranscriptView
@@ -430,7 +423,6 @@ public final class Runtime: @unchecked Sendable {
         // `self` once it's whole.
         var talkNow: () -> Talk = { .default }
         var swearsNow: () -> Bool = { false }
-        var voiceNow: () -> AppSettings.Voice = { .sounds }
         var memoryNow: () -> String? = { nil }
         var remembersNow: () -> Memory? = { nil }
         let wallNow = options.wallClock
@@ -445,8 +437,6 @@ public final class Runtime: @unchecked Sendable {
                         memory: { memoryNow() })
         mind.remember({ remembersNow() }, core: core, wall: wallNow)
         mind.swears = { swearsNow() }
-        mind.voice = { voiceNow() }
-        mind.hushed = { core.along.onCall || core.along.speaking }
         mind.earned = { earnedNow($0) }
         // A skit's invite: only to a board that plays them, by the
         // memory's ledger, and with the XP care would add now.
@@ -523,8 +513,6 @@ public final class Runtime: @unchecked Sendable {
         core.pushToTalkWorks = options.pushToTalkWorks
         talkNow = { [weak self] in self?.talk ?? .default }
         swearsNow = { [weak self] in self.map { $0.options.swearing ?? $0.settings.swearing } ?? false }
-        voiceNow = { [weak self] in self?.settings.voice ?? .sounds }
-        speaker = makeSpeaker()
         memoryNow = { [weak self] in self?.memorySection() }
         remembersNow = { [weak self] in self?.remembers }
         queued = { [weak self] reaction, pending in self?.queue(reaction, pending) }
@@ -1240,23 +1228,6 @@ public final class Runtime: @unchecked Sendable {
         AgentBrief(name: name, personality: personality, memory: notes,
                    mood: "\(name) is \(mood) now.", on: settings.agentsThink, faces: pack.faces.map(\.name))
             .write(to: options.stateDir)
-    }
-
-    /// How a line is heard, kept in `settings.json`: from the next Moment.
-    public func setVoice(_ voice: AppSettings.Voice) {
-        home.async { [self] in
-            saveSettings { $0.voice = voice }
-            speaker = makeSpeaker()
-            options.log("voice \(voice.rawValue)")
-            changed()
-        }
-    }
-
-    /// The speaker Settings' Voice asks for, its key read only as it speaks.
-    func makeSpeaker() -> (any Speaker)? {
-        if let folder = options.speechFolder { try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
-        let stateDir = options.stateDir
-        return settings.voice.speaker(cloud: settings.cloudVoice, key: { CloudSpeaker.key(stateDir: stateDir) }, folder: options.speechFolder)
     }
 
     public func setTalk(_ talk: Talk) {

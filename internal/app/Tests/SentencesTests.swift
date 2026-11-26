@@ -37,7 +37,7 @@ import XCTest
         return try CharacterPack(directory: dir)
     }
 
-    func rig(_ pack: CharacterPack, voice: AppSettings.Voice = .sounds, talk: Talk = .normal, remarks: Bool = false) -> InviteRig {
+    func rig(_ pack: CharacterPack, talk: Talk = .normal, remarks: Bool = false) -> InviteRig {
         let rig = InviteRig()
         rig.pack = pack
         rig.talk = talk
@@ -45,7 +45,6 @@ import XCTest
             let normals = RemarksTests.kept
             rig.react.remarking = MomentOutput.Remarking(normals: { normals }, minutes: { Int($0 / 60_000) % 1440 })
         }
-        rig.react.voice = { voice }
         return rig
     }
 
@@ -137,8 +136,7 @@ import XCTest
         XCTAssertEqual(voiced.sent.map(\.sign), plain.sent.map(\.sign))
     }
 
-    /// Quiet, a call (the board keeps quiet) and swearing gate as ever;
-    /// and speaking on the Mac, nothing changes: no sentence, the same text.
+    /// Quiet, a call (the board keeps quiet) and swearing gate as ever.
     func testTheGatesHold() throws {
         try requirePack("boop")
         let quiet = rig(try Self.voiced(), talk: .quiet)
@@ -155,13 +153,6 @@ import XCTest
         upset.run(AsidesTests.finish, AsidesTests().failed(), face: "sad")
         XCTAssertEqual(upset.sent.first?.say?.takes.map(\.meaning), ["upset.it-broke"])
         XCTAssertEqual(upset.sent.last?.sign, "Aw. Buddygotchi broke.")
-        for voice in [AppSettings.Voice.speaks, .cloud] {
-            let voiced = rig(try Self.voiced(), voice: voice), plain = rig(.active, voice: voice)
-            voiced.run(AsidesTests.finish, win(), face: "happy")
-            plain.run(AsidesTests.finish, win(), face: "happy")
-            XCTAssertEqual(played(voiced), played(plain), "\(voice)")
-            XCTAssertEqual(voiced.sent.map(\.aloud), plain.sent.map(\.aloud), "\(voice)")
-        }
     }
 
     /// Jev's seat offers the sentences that fit, and its pick is said.
@@ -179,5 +170,15 @@ import XCTest
                               now: AsidesTests.finish, log: Transcript.log().view(now: AsidesTests.finish.at))
             XCTAssertEqual(rig.sent.first?.say?.takes.map(\.text), [pick])
         }
+    }
+
+    /// A settings file from the spoken modes still loads: their keys are
+    /// ignored, and nothing else changes.
+    func testOldSettingsWithAVoiceStillLoad() throws {
+        let old = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"talk":"quiet","volume":3,"voice":"cloud","cloudVoice":{"voice":"nova"}}"#.utf8))
+        XCTAssertEqual(old.talk, .quiet)
+        XCTAssertEqual(old.volume, 3)
+        let written = String(decoding: try JSONEncoder().encode(old), as: UTF8.self)
+        XCTAssertFalse(written.contains("oice"))
     }
 }
