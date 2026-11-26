@@ -64,6 +64,7 @@ the owner's. For agents:
 ```sh
 git submodule update --init                           # first, in every new worktree
 make -C internal build                                # everything Swift
+make -C internal quick                                # while you work: the Swift and firmware tests, about 1.5 min
 make -C internal check                                # the tests that need no board, camera or Jev key; not the board's build
 make -C internal boards                               # the board's firmware, as CI builds it
 make -C internal test                                 # the Swift tests

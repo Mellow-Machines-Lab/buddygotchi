@@ -3,7 +3,7 @@
 # them as `make -C internal <target>` from the repo root. Every recipe runs
 # from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: build app simulator check boards test tools fw fw-test sim sim-test mirror demos e2e tools-test
+.PHONY: build app simulator check quick boards test tools fw fw-test sim sim-test mirror demos e2e tools-test
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -46,6 +46,15 @@ simulator:
 	cd $(ROOT) && python3 characters/charactergen.py --stage
 	cd $(ROOT) && simulator/web/build.sh
 	cd $(ROOT) && python3 simulator/web/serve.py
+
+# What a behavior change needs while you work, in about 1.5 min: Boop's
+# Swift tests and the firmware's (the engine's and the gel's). Not the
+# packages', the tools', the pictures or the mirror: run `check` before
+# you push.
+quick:
+	$(MAKE) build
+	cd $(ROOT) && CHARACTER=boop internal/app/tools/run-tests.sh
+	cd $(ROOT) && $(PIO) test -e native
 
 # Every check that needs no board, camera or Jev key, one after another:
 # the Swift tests, the firmware's, the tools', the simulator's scenarios
