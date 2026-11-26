@@ -105,7 +105,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   beatClip_ = nullptr, called_ = false;
   for (int i = 0; i < 5; ++i) beatFrom_[i] = 0, beatOn_[i] = false;
   for (auto& m : marks_) m = rig::Ramp{};
-  earSide_ = 1;
+  earSide_ = 1, earNow_ = earReach_ = 0, look_ = SceneState::kNone, lit_ = false;
   pawPhaseQ_ = 0, fastSeen_ = 0;
   pointer_ = pointerNear_ = false, pointerX_ = pointerY_ = 0;
   for (int i = 0; i < kFollows; ++i) followTo_[i] = followBy_[i] = 0;
@@ -140,6 +140,7 @@ void GelFace::advanceTo(uint32_t t) {
   if (t == lastTick_) return;
   const uint32_t dt = t - lastTick_;
   Measure measure(gel::profile.engine);
+  ++gel::profile.steps;
   const uint64_t scaled = uint64_t(t - lastTick_) * pace_ + engineFrac_;
   engineMs_ += uint32_t(scaled / 100);
   engineFrac_ = uint32_t(scaled % 100);
@@ -472,6 +473,7 @@ void GelFace::showAlong(uint32_t t) {
   SceneState look;
   const WhatsTrue now = truths(t, &look);
   owners_ = whoHasWhat(now);
+  look_ = look, lit_ = now.light;
   const uint32_t when = e.scenes.when;
   const bool typing = now.typing;
   const bool was = tapping_;
@@ -608,12 +610,13 @@ void GelFace::followLean(uint32_t dt) {
   for (int i = 0; i < kFollows; ++i) follow(followBy_[i], followTo_[i], kLeanMs);
   follow(lookBy_, lookTo_, lookTo_ ? kLookInMs : kLookOutMs);
   engine_->faceNod = followBy_[kFollowNod] / 256 + lookBy_ / 256 * kLookNod / 1000;
-  engine_->ear = ear();
+  earNow_ = earAt(false), earReach_ = earAt(true);
+  engine_->ear = earNow_;
 }
 
 bool GelFace::deskOut(uint32_t t) const { return engine_->scenes.desk.x > q(.5) || along_.value(t) > 500; }
 
-int GelFace::ear(bool reach) const {
+int GelFace::earAt(bool reach) const {
   // A card held keeps its hands. With the desk out the hand goes from its
   // keys and back to them, and the motion layer's springs carry it all the
   // way.
@@ -705,16 +708,14 @@ bool GelFace::playClip(const char* name, uint32_t t) {
 // eyes turned to the point they give, or let go.
 void GelFace::showGaze(uint32_t t) {
   Engine& e = *engine_;
-  SceneState look;
   GazeFacts f;
-  showsLook(source_.anim, look);
   const uint32_t when = e.scenes.when;
   f.eyes = owners_.eyes;
-  f.needsYou = look == SceneState::kNeedsYou;
+  f.needsYou = look_ == SceneState::kNeedsYou;
   f.lookMs = e.scenes.lookMs;
   f.mac = (when & kMacLeftTag) ? -1 : (when & kMacRightTag) ? 1 : 0;
   f.up = !f.mac && (when & kMacUpTag);
-  f.along = tapping_ && !light(look);
+  f.along = tapping_ && !lit_;
   f.thinking = thought_ && within(t, thinkAt_, Gaze::kThinkMs), f.thinkMs = t - thinkAt_;
   if (!f.thinking) thought_ = false;
   f.pointerNear = pointerNear_, f.pointerX = pointerX_, f.pointerY = pointerY_;
@@ -1155,11 +1156,12 @@ int GelFace::profile(char* out, size_t n, uint32_t frames) {
   int written = std::snprintf(
       out, n,
       "gel_parts engine_us=%lu sync_us=%lu body_us=%lu art_us=%lu layers_us=%lu props_us=%lu clear_us=%lu "
-      "lane_us=%lu stream_us=%lu behind_us=%lu front_us=%lu hands_us=%lu\n",
+      "lane_us=%lu stream_us=%lu behind_us=%lu front_us=%lu hands_us=%lu steps_x100=%lu\n",
       (unsigned long)(p.engine / frames), (unsigned long)(p.sync / frames), (unsigned long)(p.body / frames),
       (unsigned long)(p.art / frames), (unsigned long)(p.layers / frames), (unsigned long)(p.props / frames),
       (unsigned long)(p.clear / frames), (unsigned long)(p.lane / frames), (unsigned long)(p.stream / frames),
-      (unsigned long)(p.behind / frames), (unsigned long)(p.front / frames), (unsigned long)(p.hands / frames));
+      (unsigned long)(p.behind / frames), (unsigned long)(p.front / frames), (unsigned long)(p.hands / frames),
+      (unsigned long)(p.steps * 100 / frames));
   p = Profile{};
   return written > 0 && size_t(written) < n ? written : 0;
 }

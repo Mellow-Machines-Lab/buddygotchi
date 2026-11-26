@@ -5,6 +5,9 @@
 #include "render/profile.h"
 namespace render::gel {
 struct Profile {
+  // The engine's steps: engine is theirs, so a frame's engine over its
+  // steps is a step's, whatever the frame rate.
+  uint32_t steps = 0;
   uint32_t engine = 0, sync = 0, body = 0, clear = 0, art = 0, layers = 0, props = 0, lane = 0, stream = 0, behind = 0, front = 0, hands = 0;
 };
 inline Profile profile;

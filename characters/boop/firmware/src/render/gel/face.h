@@ -183,7 +183,7 @@ class GelFace final : public Face {
   // How far the rig's hand is out at its ear while you speak (Engine::ear):
   // 0 to 1000, less than 0 the left; 0 while a clip or a card has that
   // hand. Its `reach`, where it goes: with the desk out, all the way at once.
-  int ear(bool reach = false) const;
+  int ear(bool reach = false) const { return reach ? earReach_ : earNow_; }
 
  private:
   bool bodyFree() const;
@@ -212,6 +212,13 @@ class GelFace final : public Face {
   // Whether the desk is out, its paws on the keys: the motion layer's hands
   // go from them and back to them.
   bool deskOut(uint32_t t) const;
+  // The ear's hand as this step found it (followLean, from earAt), and
+  // the look and its light size as showAlong found them: worked out once
+  // a step, read by what comes after.
+  int earAt(bool reach) const;
+  int earNow_ = 0, earReach_ = 0;
+  SceneState look_ = SceneState::kNone;
+  bool lit_ = false;
   // The Zs, as the engine's tags and state call for them
   // (layerContents), each fading in and out.
   rig::Layers layers_;
