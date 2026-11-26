@@ -25,6 +25,7 @@ struct WhatsTrue {
   bool posed = false;      // at work in a pose whose clip has the eyes
   bool signUp = false;     // a sign held up has its hands
   bool keepsFace = false;  // its mood keeps its own face (slime::kKeepsFaceThroughGestures)
+  bool mac = false;        // the Mac's side is told (`macleft`, `macright`)
   // You at the Mac: the tags, and `ptr`.
   bool call = false, speaking = false, music = false, typing = false, scrolling = false, pointer = false;
 };
@@ -32,7 +33,7 @@ struct WhatsTrue {
 // Each part's owners, lowest first where there's an order.
 enum class BodyBy : uint8_t { kLook, kPastime, kListening, kNeedsYou, kFinger, kMoment };
 enum class BeatBy : uint8_t { kBreath, kTyping, kMusic, kSpeaking, kCall };
-enum class EyesBy : uint8_t { kOwn, kJam, kPointer, kScroll, kCall, kPose, kBody, kFinger };
+enum class EyesBy : uint8_t { kOwn, kJam, kPointer, kSpeaking, kScroll, kCall, kPose, kBody, kFinger };
 enum class FaceBy : uint8_t { kMood, kJam, kMoment };
 enum class MarkBy : uint8_t { kNone, kTicks, kNotes, kEar, kMuted };
 
@@ -42,6 +43,7 @@ struct Owners {
   bool with = false;              // going with you rides on its look now
   bool beatShows = false;         // the beat rides on the body now
   bool small = false;             // at the desk's size: the jam's smaller there
+  bool light = false;             // the light size: the body is the work's
   EyesBy eyes = EyesBy::kOwn;
   FaceBy face = FaceBy::kMood;
   MarkBy mark = MarkBy::kNone;
@@ -65,7 +67,7 @@ inline Owners whoHasWhat(const WhatsTrue& f) {
   // Going with you rides on its own look alone; the facts stay true under
   // whatever has the body, so each is there again, in phase, as it leaves.
   const bool with = f.place && o.body == BodyBy::kLook;
-  o.with = with, o.beatShows = with && o.beat != BeatBy::kBreath, o.small = f.desk;
+  o.with = with, o.beatShows = with && o.beat != BeatBy::kBreath, o.small = f.desk, o.light = f.light;
   const bool jam = o.beatShows && o.beat == BeatBy::kMusic && !f.desk;  // the whole jam, eyes shut
   // At the light size the eyes stay the pose's.
   o.eyes = f.finger                                                 ? EyesBy::kFinger
@@ -74,6 +76,7 @@ inline Owners whoHasWhat(const WhatsTrue& f) {
            : f.light                                                ? (f.posed ? EyesBy::kPose : EyesBy::kOwn)
            : f.call                                                 ? EyesBy::kCall
            : f.scrolling                                            ? EyesBy::kScroll
+           : f.speaking && f.mac                                    ? EyesBy::kSpeaking
            : f.pointer                                              ? EyesBy::kPointer
            : jam                                                    ? EyesBy::kJam
                                                                     : EyesBy::kOwn;

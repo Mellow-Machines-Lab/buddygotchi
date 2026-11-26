@@ -106,6 +106,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   beatClip_ = nullptr, called_ = false;
   for (int i = 0; i < 5; ++i) beatFrom_[i] = 0, beatOn_[i] = false;
   for (auto& m : marks_) m = rig::Ramp{};
+  earSide_ = 1;
   pawPhaseQ_ = 0, fastSeen_ = 0;
   pointer_ = pointerNear_ = false, pointerX_ = pointerY_ = 0;
   for (int i = 0; i < kFollows; ++i) followTo_[i] = followBy_[i] = 0;
@@ -441,7 +442,7 @@ WhatsTrue GelFace::truths(uint32_t t, SceneState* lookOut) const {
   f.signUp = signUp_;
   f.keepsFace = slime::kKeepsFaceThroughGestures[e.emotion];
   f.call = when & kCallTag, f.speaking = when & kSpeakingTag, f.music = when & kMusicTag;
-  f.typing = when & kTypingTag, f.pointer = pointer_;
+  f.typing = when & kTypingTag, f.pointer = pointer_, f.mac = when & (kMacLeftTag | kMacRightTag);
   // Only the way known: with none, nothing rather than a guess.
   f.scrolling = (when & kScrollingTag) && (when & (kScrollDownTag | kScrollUpTag));
   return f;
@@ -535,20 +536,21 @@ void GelFace::showWithYou(uint32_t t) {
   fastOn_ = fast;
   // The engine's own idle gestures wait while it's with you.
   if (o.beatShows || o.eyes == EyesBy::kScroll) holdGestures(0);
-  engine_->speaking = o.beatShows && o.beat == BeatBy::kSpeaking;
-  engine_->speakingSide = when & kMacLeftTag ? -1 : 1;
-  const int mac = (when & kMacLeftTag) ? -1 : (when & kMacRightTag) ? 1 : 0;
+  const int mac = (when & kMacLeftTag) ? -1 : (when & kMacRightTag) ? 1 : 0, side = mac < 0 ? -1 : 1;
   // The scroll's look: straight the way you scroll (followLean eases it).
   lookTo_ = o.eyes != EyesBy::kScroll ? 0 : (when & kScrollDownTag) ? 1000 : -1000;
   shut_.retarget(o.eyes == EyesBy::kJam ? 1000 : 0, t);
-  // The one mark beside it, each fading in and out.
-  for (int i = 0; i < kMarks; ++i) marks_[i].retarget(int(o.mark) == i + 1 ? 1000 : 0, t);
+  // The one mark beside it, each fading in and out; the ear's on the Mac's
+  // side, gone in before it comes out on the other.
+  if (side != earSide_ && !marks_[int(MarkBy::kEar) - 1].value(t)) earSide_ = side;
+  for (int i = 0; i < kMarks; ++i)
+    marks_[i].retarget(int(o.mark) == i + 1 && (o.mark != MarkBy::kEar || side == earSide_) ? 1000 : 0, t);
   Engine::With& w = engine_->with;
   auto opacity = [&](MarkBy m) { return (marks_[int(m) - 1].value(t) * 255 + 500) / 1000; };
-  w.ticks = opacity(MarkBy::kTicks), w.notes = opacity(MarkBy::kNotes), w.ear = opacity(MarkBy::kEar),
+  w.ticks = opacity(MarkBy::kTicks), w.notes = opacity(MarkBy::kNotes), w.heard = opacity(MarkBy::kEar),
   w.muted = opacity(MarkBy::kMuted);
   w.side = mac ? mac : 1;
-  w.notesMs = t - beatFrom_[int(BeatBy::kMusic)];
+  w.notesMs = t - beatFrom_[int(BeatBy::kMusic)], w.heardMs = t - beatFrom_[int(BeatBy::kSpeaking)];
   // To the pointer while it has the eyes, a little more toward its reach,
   // and further at the edge nearest the board, reaching toward it.
   const bool up = !mac && (when & kMacUpTag);
@@ -578,6 +580,8 @@ void GelFace::showWithYou(uint32_t t) {
       to[kFollowNod] = (pointerY_ > 0 ? 1 : -1) * edgeY * kEdgeNod / 1000;
     }
   }
+  // Speaking's beat leans the body to the Mac's side, but at the light size.
+  if (o.beatShows && o.beat == BeatBy::kSpeaking && !o.light) to[kFollowLean] += side * kEarLean;
 }
 
 void GelFace::once(const rig::Clip& clip, uint32_t t) {
@@ -598,6 +602,18 @@ void GelFace::followLean(uint32_t dt) {
   for (int i = 0; i < kFollows; ++i) follow(followBy_[i], followTo_[i], kLeanMs);
   follow(lookBy_, lookTo_, lookTo_ ? kLookInMs : kLookOutMs);
   engine_->faceNod = followBy_[kFollowNod] / 256 + lookBy_ / 256 * kLookNod / 1000;
+  engine_->ear = ear();
+}
+
+bool GelFace::deskOut(uint32_t t) const { return engine_->scenes.desk.x > q(.5) || along_.value(t) > 500; }
+
+int GelFace::ear(bool reach) const {
+  // A card held keeps its hands. With the desk out the hand goes from its
+  // keys and back to them, and the motion layer's springs carry it all the
+  // way.
+  const rig::Ramp& r = marks_[int(MarkBy::kEar) - 1];
+  const int ear = card_.on ? 0 : earSide_ * (reach && deskOut(lastTick_) ? r.target() : r.value(lastTick_));
+  return mixer_.channels()[rig::hand(ear > 0, rig::HandPart::kSize)] > 0 ? 0 : ear;
 }
 
 rig::Channels GelFace::channels() const {
@@ -612,8 +628,7 @@ rig::Channels GelFace::channels() const {
 void GelFace::showLively(uint32_t dt, uint32_t t) {
   Engine& e = *engine_;
   const F unit = F(kPxPerUnit);
-  const bool desk = e.scenes.desk.x > q(.5) || along_.value(t) > 500;
-  lively_.advance(dt, clipChannels(), e.life()[0] * unit, e.acting.slide.x * unit, desk);
+  lively_.advance(dt, clipChannels(), e.life()[0] * unit, e.acting.slide.x * unit, deskOut(t));
   e.faceLagX16 = lively_.faceX16(), e.faceLagY16 = lively_.faceY16();
 }
 
@@ -633,6 +648,15 @@ rig::Channels GelFace::clipChannels() const {
   const int shut = kJamShut * shut_.value(lastTick_) / 1000;
   add(rig::Channel::kEyeOpenL, -shut);
   add(rig::Channel::kEyeOpenR, -shut);
+  // The hand at its ear: out of the body as it grows, its palm opening.
+  using rig::HandPart;
+  if (const int reach = ear(true)) {
+    const int side = reach > 0 ? 1 : -1, out = std::abs(reach);
+    add(rig::hand(reach > 0, HandPart::kX), side * (kEarX - kEarFrom + kEarFrom * out / 1000));
+    add(rig::hand(reach > 0, HandPart::kY), kEarY);
+    add(rig::hand(reach > 0, HandPart::kSize), kEarSize * out / 1000);
+  }
+  if (const int open = ear()) add(rig::hand(open > 0, HandPart::kShape), std::abs(open));
   // The scroll's look: the eyes all the way, the body flatter looking down,
   // taller and up a little looking up.
   const int look = lookBy_ / 256;

@@ -102,6 +102,8 @@ void test_who_has_what() {
        MarkBy::kNotes, true},
       {"typing, speaking", facts({&W::typing, &W::speaking}), BodyBy::kLook, BeatBy::kSpeaking, true, EyesBy::kOwn,
        FaceBy::kMood, MarkBy::kEar, true},
+      {"speaking, the Mac's side told, the pointer", facts({&W::speaking, &W::mac, &W::pointer}), BodyBy::kLook,
+       BeatBy::kSpeaking, true, EyesBy::kSpeaking, FaceBy::kMood, MarkBy::kEar, false},
       {"typing, a sign up", facts({&W::typing, &W::signUp}), BodyBy::kLook, BeatBy::kTyping, true, EyesBy::kOwn,
        FaceBy::kMood, MarkBy::kNone, false},
       {"a call over all", facts({&W::call, &W::speaking, &W::music, &W::typing, &W::scrolling, &W::pointer}), BodyBy::kLook,
@@ -158,6 +160,11 @@ void test_the_eyes_with_you_in_order() {
   f.pointerX = 1, f.pointerY = 0, f.pointerNear = true;
   p = g.look(f, 48);
   TEST_ASSERT_TRUE(p.x == Gaze::kMidX + Gaze::kNearReach && p.y == Gaze::kEyesY);  // right at it, at the edge
+  // Speaking: to the Mac's side, where the sound comes from.
+  f.eyes = EyesBy::kSpeaking, f.mac = 1;
+  p = g.look(f, 56);
+  TEST_ASSERT_TRUE(p.on && p.x == Gaze::kMidX + Gaze::kMacReach && p.y == Gaze::kEyesY);
+  f.mac = 0;
   // Every other owner but its own gaze rests it, typing along and all.
   f.along = true;
   for (EyesBy other : {EyesBy::kJam, EyesBy::kScroll, EyesBy::kCall, EyesBy::kPose, EyesBy::kBody, EyesBy::kFinger}) {
@@ -496,7 +503,7 @@ void test_nothing_with_you_without_the_facts() {
 
 // Pins speaking along: another app recording with no camera (`speaking`)
 // leans it in and nods on the 1.6 s beat: it has the beat and the mark over
-// typing along, whose keys go on (one hand's at its ear, render/gel/hands.h);
+// typing along, whose keys go on (one hand's at its ear, the rig's);
 // the mark goes over to the key's ticks as you stop, fading.
 void test_speaking_has_the_beat_over_typing() {
   Board board(SceneState::kIdle, kDay | tierBit(1));
@@ -507,14 +514,99 @@ void test_speaking_has_the_beat_over_typing() {
   TEST_ASSERT_TRUE(face.owners().beat == BeatBy::kSpeaking && face.owners().mark == MarkBy::kEar);
   TEST_ASSERT_EQUAL_STRING("speaking", face.passing(board.t));
   TEST_ASSERT_TRUE(face.pastimes(board.t).tapping);
-  TEST_ASSERT_TRUE(face.engine().speaking && face.engine().with.ear == 255 && !face.engine().with.ticks);
+  TEST_ASSERT_TRUE(face.engine().ear && face.engine().with.heard == 255 && !face.engine().with.ticks);
   board.tags(kDay | tierBit(1) | tagBit("typing"));
   board.to(board.t + 100);
   const Engine::With& w = face.engine().with;
-  TEST_ASSERT_TRUE(w.ear > 0 && w.ear < 255 && w.ticks > 0 && w.ticks < 255);  // one fades over the other
+  TEST_ASSERT_TRUE(w.heard > 0 && w.heard < 255 && w.ticks > 0 && w.ticks < 255);  // one fades over the other
   board.to(board.t + 900);
-  TEST_ASSERT_FALSE(face.engine().speaking);
-  TEST_ASSERT_TRUE(face.pastimes(board.t).tapping && w.ticks == 255 && !w.ear);
+  TEST_ASSERT_EQUAL_INT(0, face.engine().ear);
+  TEST_ASSERT_TRUE(face.pastimes(board.t).tapping && w.ticks == 255 && !w.heard);
+}
+
+namespace {
+// A frame's rig hand on `side` (0 the left), as the motion layer draws it.
+struct Drawn {
+  int x, y, size;
+};
+Drawn drawn(GelFace& face, int side) {
+  const rig::Channels c = face.channels();
+  using rig::HandPart;
+  return {c[rig::hand(side, HandPart::kX)], c[rig::hand(side, HandPart::kY)], c[rig::hand(side, HandPart::kSize)]};
+}
+// Steps `board` to `until`, each frame's hand on `side` no more than
+// `size` thousandths bigger or smaller than the last, nor `place` px from
+// it, once it's out (`from`, the first frame out, its size then), but as
+// the desk's paw takes it back at the keys; the other hand in.
+void noPop(Board& board, uint32_t until, int side, int size = 200, int place = 30, Drawn* from = nullptr) {
+  Drawn last = drawn(board.face(), side);
+  board.to(until, [&] {
+    const Drawn now = drawn(board.face(), side);
+    const bool home = !now.size && std::abs(now.x - Lively::kDeskX) <= Lively::kHome &&
+                      std::abs(now.y - Lively::kDeskY) <= Lively::kHome;
+    if (!last.size && now.size && from) *from = now, from = nullptr;
+    else if (!home) TEST_ASSERT_INT_WITHIN(size, last.size, now.size);
+    if (last.size && now.size) TEST_ASSERT_TRUE(std::abs(now.x - last.x) + std::abs(now.y - last.y) <= place);
+    TEST_ASSERT_EQUAL_INT(0, drawn(board.face(), 1 - side).size);
+    last = now;
+  });
+}
+}  // namespace
+
+// Pins speaking's hand: the rig's on the Mac's side, budding out of the
+// body to its ear and an open palm there, and sinking back in as you stop,
+// never a frame's pop either way; the other hand stays in. With the
+// keyboard out it goes from its keys and back to them. Holding a card,
+// the card keeps its hands: the sound comes in, no hand.
+void test_speakings_hand_buds_out_at_the_macs_side() {
+  static_assert(GelFace::kEarSize >= 1350 && GelFace::kEarSize <= 1550, "about 23 to 26 px, as a hand at an ear");
+  for (int side = 0; side < 2; ++side) {
+    const uint32_t mac = tagBit(side ? "macright" : "macleft");
+    Board board(SceneState::kIdle, kDay | tierBit(1) | mac);
+    GelFace& face = board.face();
+    board.to(1000);
+    board.tags(kDay | tierBit(1) | mac | tagBit("speaking"));
+    noPop(board, board.t + 66, side);
+    TEST_ASSERT_TRUE(drawn(face, side).size < GelFace::kEarSize / 2);  // on its way
+    noPop(board, board.t + 1500, side);
+    TEST_ASSERT_EQUAL_INT(side ? 1000 : -1000, face.engine().ear);
+    const Drawn out = drawn(face, side);
+    TEST_ASSERT_INT_WITHIN(40, GelFace::kEarSize, out.size);
+    TEST_ASSERT_INT_WITHIN(4, (side ? 1 : -1) * GelFace::kEarX, out.x);
+    TEST_ASSERT_EQUAL_INT(1000, face.channels()[rig::hand(side, rig::HandPart::kShape)]);  // an open palm
+    TEST_ASSERT_GREATER_THAN_INT(0, face.engine().with.heard);
+    board.tags(kDay | tierBit(1) | mac);
+    noPop(board, board.t + 1500, side);
+    TEST_ASSERT_TRUE(face.engine().ear == 0 && drawn(face, side).size == 0 && face.engine().with.heard == 0);
+  }
+  // From the keys: its first frame out is a step from the desk's paw, where
+  // the desk had it, and back at the desk it's the desk's again.
+  const uint32_t typing = kDay | tierBit(1) | tagBit("macright") | tagBit("typing");
+  Board keys(SceneState::kIdle, typing);
+  keys.to(2000);
+  TEST_ASSERT_TRUE(keys.face().pastimes(keys.t).keys > 128);
+  keys.tags(typing | tagBit("speaking"));
+  Drawn from{};
+  noPop(keys, keys.t + 1500, 1, 200, 30, &from);
+  TEST_ASSERT_INT_WITHIN(150, Lively::kDeskSize, from.size);
+  TEST_ASSERT_TRUE(std::abs(from.x - Lively::kDeskX) <= 10 && std::abs(from.y - Lively::kDeskY) <= 10);
+  TEST_ASSERT_INT_WITHIN(40, GelFace::kEarSize, drawn(keys.face(), 1).size);
+  keys.tags(typing);
+  noPop(keys, keys.t + 1500, 1);
+  TEST_ASSERT_TRUE(keys.face().engine().ear == 0 && drawn(keys.face(), 1).size == 0);
+  TEST_ASSERT_TRUE(keys.face().pastimes(keys.t).tapping);
+  // A card held: its hands are the card's.
+  Board card(SceneState::kIdle, kDay | tierBit(1) | tagBit("macright"));
+  CardShow held;
+  held.on = true;
+  card.face().card(held);
+  card.to(1000);
+  card.tags(kDay | tierBit(1) | tagBit("macright") | tagBit("speaking"));
+  card.to(card.t + 2000, [&] {
+    TEST_ASSERT_TRUE(!drawn(card.face(), 0).size && !drawn(card.face(), 1).size && !card.face().engine().ear);
+  });
+  TEST_ASSERT_EQUAL_INT(int(BeatBy::kSpeaking), int(card.face().owners().beat));
+  TEST_ASSERT_EQUAL_INT(255, card.face().engine().with.heard);
 }
 
 // Pins the one mark beside it (Engine::With), so each reads at a glance:
@@ -573,7 +665,7 @@ Probe probe(Board& b) {
   const Engine& e = f.engine();
   const rig::Channels c = f.channels();
   for (int i = 0; i < rig::kChannelCount; ++i) p.v[i] = c.v[i];
-  p.v[kTicksMark] = e.with.ticks, p.v[kNotesMark] = e.with.notes, p.v[kEarMark] = e.with.ear;
+  p.v[kTicksMark] = e.with.ticks, p.v[kNotesMark] = e.with.notes, p.v[kEarMark] = e.with.heard;
   p.v[kMutedMark] = e.with.muted, p.v[kNod] = e.faceNod;
   p.v[kGazeX] = (e.motion.gaze * 10000).integer(), p.v[kGazeUp] = (e.motion.gazeUp * 10000).integer();
   const PastimeShow s = f.pastimes(b.t);
@@ -587,6 +679,26 @@ Probe probe(Board& b) {
   p.v[kLids] = sleepyLids(e);
   return p;
 }
+// Whether channel `i` is a rig hand's with nothing to compare across these
+// two frames: drawn in only one of them, it has no place in the other; and
+// it comes out of the desk's paw, or goes back into it, a frame's step from
+// where the paw is (Lively's kDeskX, the motion layer's route from the
+// keys), about the paw's size.
+bool handover(const Probe& a, const Probe& b, int i) {
+  using rig::HandPart;
+  for (int side = 0; side < 2; ++side) {
+    const int size = int(rig::hand(side, HandPart::kSize));
+    if (i < int(rig::hand(side, HandPart::kX)) || i > int(rig::hand(side, HandPart::kGlass))) continue;
+    if (a.v[size] && b.v[size]) return false;
+    if (i != size) return true;
+    const Probe& out = a.v[size] ? a : b;
+    return std::abs(std::abs(out.v[int(rig::hand(side, HandPart::kX))]) - Lively::kDeskX) <= 10 &&
+           std::abs(out.v[int(rig::hand(side, HandPart::kY))] - Lively::kDeskY) <= 10 &&
+           std::abs(out.v[size] - Lively::kDeskSize) <= 150;
+  }
+  return false;
+}
+
 // The most each part moved in a frame, and when.
 struct Steps {
   int most[kItems]{}, at[kItems]{};
@@ -594,7 +706,8 @@ struct Steps {
   bool seen = false;
   void add(const Probe& p, uint32_t t) {
     for (int i = 0; seen && i < kItems; ++i)
-      if (std::abs(p.v[i] - last.v[i]) > most[i]) most[i] = std::abs(p.v[i] - last.v[i]), at[i] = int(t);
+      if (std::abs(p.v[i] - last.v[i]) > most[i] && !handover(last, p, i))
+        most[i] = std::abs(p.v[i] - last.v[i]), at[i] = int(t);
     last = p, seen = true;
   }
   void merge(const Steps& o) {
@@ -711,7 +824,8 @@ int limitOf(const Steps& moments, int i) {
 
 void judge(const Steps& moments, const char* base, const char* what, const Steps& s, bool hands = true) {
   for (int i = 0; i < kItems; ++i) {
-    // A move's hands are the Moment's own (render/gel/moves.h).
+    // A move's hands are the Moment's own (render/gel/moves.h): the knock
+    // slaps the glass in a frame.
     if (!hands && i >= int(rig::Channel::kHandLX) && i <= int(rig::Channel::kHandRGlass)) continue;
     char message[160];
     std::snprintf(message, sizeof message, "%s, %s: %s moved %d in a frame at %d ms, over its %d", base, what,

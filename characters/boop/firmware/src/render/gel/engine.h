@@ -47,11 +47,10 @@ class Engine {
   // Boop's energy, the Mac's (FaceContext::energy): the painter draws it on
   // the lids (sleepyLids) and the eyes' size.
   render::Energy energy = render::Energy::kNormal;
-  // You're speaking (the face's with-you pose, `speaking`): the layers draw
-  // its hand cupped at its ear and rings pulsing by it, on the side of the
-  // Mac (`speakingSide`, -1 left, 1 right).
-  bool speaking = false;
-  int speakingSide = 1;
+  // You're speaking: how far the rig's hand on the Mac's side is out at its
+  // ear, 0 to 1000, less than 0 the left (GelFace::ear): the frame draws
+  // that hand cupped there (render/gel/hands.h).
+  int ear = 0;
   // Where the paws are in their beats as it types along (briskLift's), for
   // the key's ticks (With::ticks); `typingFast` quicker.
   bool typingFast = false;
@@ -61,13 +60,13 @@ class Engine {
   // (0–255) as one fades out and the next in, in any pose and at the light
   // size too: a key's tick beside the paw that taps, on its beat, as it
   // types along; while music plays, a note now and then rising from behind
-  // it (`notesMs` into the music); the ear's sound, rings by its cupped
-  // hand, while you speak; a muted mic by its ear on a call. `side` is the
-  // Mac's: -1 left, 1 right, as speaking's.
+  // it (`notesMs` into the music); the sound coming in to its ear while you
+  // speak (`heardMs` into its nod's beat); a muted mic by its ear on a
+  // call. `side` is the Mac's: -1 left, 1 right.
   struct With {
-    int ticks = 0, notes = 0, ear = 0, muted = 0;
+    int ticks = 0, notes = 0, heard = 0, muted = 0;
     int side = 1;
-    uint32_t notesMs = 0;
+    uint32_t notesMs = 0, heardMs = 0;
   } with;
   // The invite showing (render/gel/invite.h), its time the board's as of the
   // last step: the face's to set, the painter's to draw.

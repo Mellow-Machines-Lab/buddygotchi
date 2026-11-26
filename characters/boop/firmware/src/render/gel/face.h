@@ -164,6 +164,13 @@ class GelFace final : public Face {
   // taller and kLookLift px up looking up (the rig's thousandths and px).
   static constexpr uint32_t kLookInMs = 90, kLookOutMs = 300;
   static constexpr int kLookNod = 170, kLookSquash = 120, kLookStretch = 140, kLookLift = 4;
+  // Speaking (`speaking`): the rig's hand on the Mac's side buds out of the
+  // body and goes to its ear, kEarX px out and kEarY up from where it holds
+  // things, an open palm kEarSize big (the rig's px and thousandths), from
+  // kEarFrom px further in, and back, on the ear's mark's ramp, the motion
+  // layer's springs over that. The body leans kEarLean that way (the rig's
+  // lean), but at the light size, where the pose is the work's.
+  static constexpr int kEarX = 94, kEarY = 66, kEarSize = 1470, kEarFrom = 30, kEarLean = 340;
   // Typing fast stays fast through a flicker off this long (showAlong).
   static constexpr uint32_t kFastLingerMs = 800;
   // Who has each part now (render/gel/owners.h), and the rig's channels
@@ -172,6 +179,10 @@ class GelFace final : public Face {
   const Owners& owners() const { return owners_; }
   rig::Channels channels() const;
   rig::Channels clipChannels() const;
+  // How far the rig's hand is out at its ear while you speak (Engine::ear):
+  // 0 to 1000, less than 0 the left; 0 while a clip or a card has that
+  // hand. Its `reach`, where it goes: with the desk out, all the way at once.
+  int ear(bool reach = false) const;
 
  private:
   bool bodyFree() const;
@@ -197,6 +208,9 @@ class GelFace final : public Face {
   // The motion layer over the clips' channels, stepped with the engine.
   Lively lively_;
   void showLively(uint32_t dt, uint32_t t);
+  // Whether the desk is out, its paws on the keys: the motion layer's hands
+  // go from them and back to them.
+  bool deskOut(uint32_t t) const;
   // The Zs, as the engine's tags and state call for them
   // (layerContents), each fading in and out.
   rig::Layers layers_;
@@ -292,9 +306,12 @@ class GelFace final : public Face {
   };
   static const Clips clips_;
   // The marks, by MarkBy less one: the key's ticks, the notes, the ear's
-  // sound, the muted mic.
+  // sound, the muted mic. The ear's is the hand's at its ear too (ear),
+  // on earSide_, -1 the left: the Mac gone to the other side, it goes in
+  // before it comes out there.
   static constexpr int kMarks = 4;
   rig::Ramp marks_[kMarks];
+  int earSide_ = 1;
   bool pointer_ = false, pointerNear_ = false;
   int pointerX_ = 0, pointerY_ = 0;
   // What it follows on the rig's channels, over the mixer's: the lean, the

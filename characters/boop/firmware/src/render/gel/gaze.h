@@ -4,7 +4,8 @@
 // while it moves and the Mac knows where the board sits (`state.ptr`), its
 // eyes follow it, as you see the board beside the screen, further the
 // further it is, up to kPointerReach; at the edge of the screen nearest the
-// board, right at it, to the Mac's side. Its own gaze rests forward, and
+// board, right at it, to the Mac's side. While you speak, to the Mac's side,
+// where the sound comes from. Its own gaze rests forward, and
 // turns to one thing at a time, for a reason you can name, held long enough
 // to read and never darting, the first that applies:
 //

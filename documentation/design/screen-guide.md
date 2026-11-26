@@ -224,9 +224,7 @@ Under all of Boop's own moves the gel runs one motion layer (motion V2,
 the slime's `CONTINUITY.md`, The motion layer): the body stretches tall
 as it moves fast and goes flat as it lands, overshoots a stop and
 settles, its crown drags behind a slide, the hands arrive and leave late,
-and the face trails the body by a few px and catches up. Until V2 the face
-never moved on the body by itself; now it does, on purpose, only while
-the body moves, and it's still again at rest. Each rule has a switch
+and the face trails the body by a few px, only while the body moves. Each rule has a switch
 (`dbg.motion`) to judge it on the board.
 
 ## Meme faces
@@ -253,10 +251,10 @@ of its own, or with a card held, it is light (rule 3 below).
 | You | Signal, never content | What Boop does |
 | --- | --- | --- |
 | Type | `typing`, `typingfast` | Keyboard out, it types with you, swaying, a key's tick bursting beside the hand that taps |
-| Speak | Another app records and no camera runs | It leans in and nods, a hand cupped at its ear, rings by it |
+| Speak | Another app records and no camera runs | It leans and looks to the Mac's side and nods, a hand cupped at its ear there, short arcs of sound coming in to it |
 | Scroll | `scrolling`, and `scrolldown` or `scrollup` | It looks straight the way you scroll, face nodded, easing back as you stop. Nothing with no way known |
 | Move the pointer | `ptr` | Eyes follow, and the body leans and slides a little its way |
-| Play music | `music`, any sound after 10 s of it, a video's too | It jams: a bounce on the beat, eyes shut in a content face, a note rising behind it. The Mac says "Boop likes your music" |
+| Play music | `music`, any sound after 10 s of it, a video's too | It jams: a bounce on the beat, eyes shut in a content face, a note rising behind it |
 | Take a call | A camera runs | Still and silent, eyes half shut, a muted mic by its ear |
 
 ## Who has what
@@ -268,17 +266,17 @@ is true now (`whoHasWhat`, `render/gel/owners.h`).
 | --- | --- | --- |
 | Body | What it does | A Moment or an invite, your finger, needs you, listening, a pastime or a transition, the work pose or idle |
 | Beat | You | A call (still), speaking (a nod), music (the bounce), typing (a sway), its own breath |
-| Eyes | Its attention | Your finger, whatever has the body, at light size the pose's, a call (half shut), the scroll's look, your pointer, the jam (shut), its own gaze |
+| Eyes | Its attention | Your finger, whatever has the body, at light size the pose's, a call (half shut), the scroll's look, speaking (the Mac's side), your pointer, the jam (shut), its own gaze |
 | Face | How it feels | A Moment's emotion, the jam's content face while the jam has the eyes (unless the mood keeps its own), the mood |
 | Hands | One job each | A move, a sign, a card, the low sign, the ear (speaking), the keys (typing, but on a call) |
-| Mark | One thing beside it | The muted mic, the ear's rings, the note, the key's ticks |
+| Mark | One thing beside it | The muted mic, the sound coming in to the ear, the note, the key's ticks |
 
-Going with you rides only on its own look, idle or at work, with the Mac
-here; the mark stays through a pastime. No pastime is dealt on a call, while
-you speak or in the scroll's look; music holds none off.
+Going with you rides only on its own look, with the Mac here; the mark
+stays through a pastime. No pastime is dealt on a call, while you speak or
+in the scroll's look; music holds none off.
 
 1. **Covered, not stopped.** A lower owner still true runs on under the
-   upper one, in step, and is simply there again when it leaves: the jam
+   upper one, in step, and is there again when it leaves: the jam
    keeps its beat under speaking and through a pastime.
 2. **Never a cut.** Every change of owner is a fade or a spring: a beat
    over 0.3 to 0.6 s, a mark over 0.2 s, the eyes and the face eased.

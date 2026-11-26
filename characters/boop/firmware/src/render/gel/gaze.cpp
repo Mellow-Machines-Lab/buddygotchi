@@ -12,6 +12,8 @@ GazePoint Gaze::look(const GazeFacts& f, uint32_t) {
     }
     return {true, kMidX + f.pointerX * kPointerX, kEyesY + f.pointerY * kPointerY};
   }
+  // Speaking: to the Mac's side, where the sound comes from.
+  if (f.eyes == EyesBy::kSpeaking) return {true, kMidX + f.mac * kMacReach, kEyesY};
   if (f.eyes != EyesBy::kOwn) return {};
   if (f.needsYou) {
     if (f.lookMs < kNoticeMs) return {true, kMidX, kYouY};

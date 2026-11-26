@@ -794,7 +794,7 @@ for a reason:
 | Melt | `melt`, `work-waiting`, the stroke | `work-waiting` loops with its chin on the desk and sways; `melt` drips and pulls itself up; the stroke is a gesture's bit |
 | Yawn | `to-sleep`, the yawns | One clip; the yawns are acting bits |
 | Shrug | `reply-dunno`, the missed high five | The miss is a sequence (look at the palm, lower it, shrug), timed to the engine's `kShrugMs` |
-| Lean in | `reply-comfort`, `speak-along`, the hand-off, `work-looking` | `speak-along` and `work-looking` loop (a nod; a slide to the monitor), `reply-comfort` plays once; the hand-off is a bit |
+| Lean in | `reply-comfort`, `speak-along`, the hand-off, `work-looking` | `speak-along` and `work-looking` loop (a nod, its lean the face's toward the Mac's side; a slide to the monitor), `reply-comfort` plays once; the hand-off is a bit |
 | Wave | `reply-wave`, `reply-bye`, `reply-hello` | Merged but for `reply-hello` (a hop then a sway). No hand: a size scales every track, a hand's place and shape too, so a small wave's hand would sit inside the body |
 
 While something needs you the face doesn't play, so neither does its
@@ -869,10 +869,11 @@ shape so it fades evenly. It never grows fingers.
 
 The same two hands are every hand Boop has. Each frame `paintFrame` says
 who holds each (`HandsPlan`), and only that part draws it, in its place:
-a move's (the rig's hand channels: the palm, the knock, the flop); else a
+the rig's (its hand channels): a move's (the palm, the knock, the flop)
+or speaking's, cupped at its ear on the Mac's side (`cupped`); else a
 sign's or a card's, gripping its sides (`gripping`); the low sign's, by
-its top corners (`holdingUp`); speaking's, cupped at its ear (`cupped`);
-the desk's, a pad flat on the keys, typing (`onKeys`); and under the
+its top corners (`holdingUp`); the desk's, a pad flat on the keys,
+typing (`onKeys`); and under the
 drawer, one hung over its edge (`hung`). A move with one hand out leaves
 the other where it was: the knock's first fist knocks while the other
 hand stays on the keys.
@@ -1141,10 +1142,11 @@ at work, with nothing else on the body: on a call (`oncall`) it
 keeps still and a little smaller, its eyes half (`on-call`), with no
 music's bounce or pastime, its paws at rest though you type, and stretches up
 as the call ends; while
-you speak (`speaking`, another app recording with no camera) it leans in,
-nods on a slow 1.6 s beat (`speak-along`) and holds a hand cupped at its
-ear on the Mac's side with rings pulsing by it (`gel/layers.cpp`), the
-beat and the mark over typing along, whose other hand types on; while you scroll (`scrolling`, which the Mac holds
+you speak (`speaking`, another app recording with no camera) it leans and
+looks to the Mac's side, nods on a slow 1.6 s beat (`speak-along`) and
+holds a hand cupped at its ear there (`GelFace::kEarX`), short arcs of
+sound coming in to it and caught on the nod (`gel/layers.cpp`), the beat
+and the mark over typing along, whose other hand types on; while you scroll (`scrolling`, which the Mac holds
 1.5 s after the last scroll) it looks straight the way you scroll and
 holds it, unmistakable at arm's length: scrolling down (`scrolldown`), its
 eyes all the way down (the rig's gaze 1000), its face nodded down the
@@ -1185,7 +1187,7 @@ only its way.
 
 A pose alone is too small to tell apart from across a desk, so each has a
 mark drawn at the body's anchors, rimmed dark to read over anything, one at
-a time (the muted mic, the ear's rings, the note, the key's ticks), each
+a time (the muted mic, the sound coming in, the note, the key's ticks), each
 fading in and out over the rig's fade (`Engine::With`, drawn by
 `paintWith` in `gel/layers.cpp`), in any pose and at the light size too,
 so at work it still shows what you're doing while the pose has the body:

@@ -755,9 +755,9 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
                 const Stream* stream, uint32_t now, const PastimeShow* pastimes, const Drawer* drawer,
                 const char* note, const WishShow* wish, const CardShow* card) {
   rig::Anchors at;
-  // One pair of hands (render/gel/hands.h): a move's that it has out, else
-  // a sign's or a card held up, the low sign's, speaking's at its ear, else
-  // the desk's.
+  // One pair of hands (render/gel/hands.h): the rig's that it has out, a
+  // move's or speaking's at its ear, else a sign's or a card held up, the
+  // low sign's, else the desk's.
   HandsPlan& hands = handsPlan();
   hands = HandsPlan{};
   // Drawn, each part draws its own again, as it would alone.
@@ -817,11 +817,11 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   const int hop = held ? cardHop(*card) : signHop(sign);
   for (int side = 0; side < 2; ++side) {
     HandsAt& who = hands.at[side];
-    if (rig[rig::hand(side, rig::HandPart::kSize)] > 0) who = HandsAt::kMove;
+    const bool ear = e.ear && (e.ear > 0) == (side > 0);
+    if (rig[rig::hand(side, rig::HandPart::kSize)] > 0) who = ear ? HandsAt::kEar : HandsAt::kMove;
     else if (sign.text && !sign.low) who = HandsAt::kSign;
     else if (held) who = HandsAt::kCard;
     else if (low.shows()) who = HandsAt::kLowSign;
-    else if (e.speaking && (e.speakingSide > 0) == (side > 0)) who = HandsAt::kEar;
     else who = HandsAt::kDesk;
   }
   // The low sign drawn without a hand its move has: its lane is drawn again.
@@ -850,6 +850,7 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
     Raster r{surface};
     for (int side = 0; side < 2; ++side)
       if (hands.at[side] == HandsAt::kMove) paintHand(r, hands.moved[side]);
+      else if (hands.at[side] == HandsAt::kEar) paintHand(r, cupped(hands.moved[side], e.ear));
     paintHits(surface, currentMove(e), hands.moved);
   }
   paintInvite(surface, e.invite, at, spot, glowRadius);
