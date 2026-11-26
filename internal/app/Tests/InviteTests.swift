@@ -649,7 +649,8 @@ extension InviteTests {
             runtime.device(Self.hello)
             ended()
             win()
-            XCTAssertEqual(transport.dos.last.flatMap(ttl), BoopDevice.finishTTL, "the invite rides the finish")
+            // The invite rides the last Moment queued: the aside behind the finish.
+            XCTAssertNotNil(transport.dos.last.flatMap(invite), "the invite rides the aside after the finish")
             XCTAssertEqual(records().last?[InviteLedger.askedFact]?.string, "palm")
             ended(last: 1, "skipped", why: "late")
             let log = runtime.harness.log.view(now: now)
@@ -703,14 +704,14 @@ extension InviteTests {
             runtime.hook(HookLine(agent: "claude", hook: "Stop", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
             _ = runtime.harness.force([MomentOutput.emotionKey: "happy"], by: Runtime.forcedBy)
             let inviting = try? XCTUnwrap(transport.dos.last)
-            XCTAssertNotNil((inviting.flatMap(object)?["args"] as? [String: Any])?["invite"], "the win invites")
-            XCTAssertEqual(ttl(inviting), BoopDevice.finishTTL)
+            XCTAssertNotNil((inviting.flatMap(object)?["args"] as? [String: Any])?["invite"], "the win invites, on its aside")
+            XCTAssertEqual(ttl(inviting), BoopDevice.behindFinishTTL)
 
             clock.now += 1000
             var gold = Moment(mood: "happy", loops: 1)
             gold.gold = Core.ringSign(daysInARow: 1)
             runtime.playRule(gold)
-            XCTAssertEqual(ttl(transport.dos.last), BoopDevice.finishTTL + BoopDevice.inviteHoldsMs(InviteLedger.firstWaitMs) - 1000,
+            XCTAssertEqual(ttl(transport.dos.last), BoopDevice.behindFinishTTL + BoopDevice.inviteHoldsMs(InviteLedger.firstWaitMs) - 1000,
                            "the gold waits out the invite")
 
             if let id = inviting.map(FakeTransport.id) { runtime.device(FakeTransport.ended(id, "done")) }
@@ -730,9 +731,11 @@ extension InviteTests {
     var facts: InviteTests.Facts = [:]
     var card: Card?
     var pack: CharacterPack = .active
+    var talk = Talk.normal
     lazy var react: MomentOutput = {
         let react = MomentOutput(queue: { [unowned self] m, _ in sent.append(m) }, blocked: { [unowned self] in blocked }, pack: pack,
-                                 signs: RuntimeTests.steering.signs, line: { [unowned self] _ in Line("", facts: facts) })
+                                 signs: RuntimeTests.steering.signs, talk: { [unowned self] in talk },
+                                 line: { [unowned self] _ in Line("", facts: facts) })
         react.offered = { [unowned self] _ in card }
         return react
     }()

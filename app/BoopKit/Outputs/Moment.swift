@@ -171,6 +171,10 @@ public struct Moment: Equatable, Sendable {
     /// It answers a touch, a poke or a gesture: it plays at once
     /// (`BoopDevice.play(brain:finishing:)`). Not sent.
     public var answersTouch = false
+    /// The sentence the Mac says aloud as this Moment is sent (its aside
+    /// or remark), when Settings' Voice speaks (`Speaker`), in its `mood`. Not sent: the
+    /// board plays no take with it.
+    public var aloud: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,

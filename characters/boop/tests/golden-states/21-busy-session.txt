@@ -758,6 +758,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop had a happy moment (small), holding up a sign: "scritches?".
 1 min ago: claude finished turn 4 on "landing": done, a very long turn, no tool calls.
   Boop had a happy moment (big), playing a success, and said "Job done".
+  After it, Boop held up an aside about it.
 just now: claude started turn 5 on "landing".
 Boop has been happy for 17 min.
 
@@ -778,6 +779,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop had a happy moment (small), holding up a sign: "scritches?".
 3 min ago: claude finished turn 4 on "landing": done, a very long turn, no tool calls.
   Boop had a happy moment (big), playing a success, and said "Job done".
+  After it, Boop held up an aside about it.
 2 min ago: claude started turn 5 on "landing".
 1 min ago: claude finished turn 5 on "landing": done, a short turn, 1 tool call.
   Boop had a happy moment (small), playing a success.
@@ -798,6 +800,7 @@ Today: 7 turns.
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude finished turn 4 on "landing": done, a very long turn, no tool calls.
   Boop had a happy moment (big), playing a success, and said "Job done".
+  After it, Boop held up an aside about it.
 6 min ago: claude started turn 5 on "landing".
 5 min ago: claude finished turn 5 on "landing": done, a short turn, 1 tool call.
   Boop had a happy moment (small), playing a success.

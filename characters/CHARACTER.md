@@ -528,6 +528,26 @@ Every other moment has none.
 A `win` or a `back` may also carry a remark, the pack's `[remark …]` line
 in `signs.md` (`Remarks`): text, never a take, at most one skit in three.
 
+A `win`, an `upset` and a `fix`, and a check failing the 1st or 2nd time
+in a row (`oops`), also get Boop's aside: one short sentence about what
+happened, held low (`Asides`). It's the agent's offered line when it gave
+one, else one of `signs.md`'s `[aside <moment> …]` rows. `{what}` is the
+check ("the tests"), or for a turn what the agent said it was doing: its
+last status card's doing ("writing the report"), its result's headline
+unless that says how it came out, its last work act, the thread's name or
+the project's, a gerund kept small inside a sentence. So a row must read
+well with "writing the report", "the tests" and "Fix Safari export": no
+"is", no subject-verb agreement. `{n}` is the failures. A row may add
+tags that must hold, and of the rows that fit, those with the most tags
+are picked from: `long` a very long turn, `hard` a check failed on the way
+(a fix after 2 or more), `glum` a win in a cross or sad mood (only those),
+`check` the 3rd failed check, `stuck` the agent gave up, `again` the 2nd
+failed check, `swear` when the skit swears. Filled, a row is at most 40
+characters in two rows of 26, or it's left out; no questions. On a win, a
+remark takes its place. With Settings' Voice set to speak, the Mac says
+the sentence the Moment shows (the aside or the remark) and the board
+plays no take for that Moment.
+
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the
   voice file's version on its first line after the comments, the same one

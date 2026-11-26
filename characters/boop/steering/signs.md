@@ -1,4 +1,4 @@
-<!-- Boop's signs: what it may hold up on a sign when it reacts to your prompt (Signs, the react.sign question), and, tagged [idle], its idle musings: held up at an idle check-in when nothing else is due (IdleBeat), never on Quiet, asking nothing; {turns} is today's turns and {thread} the busiest thread, and a line may need a kept answer's tag ([cookie]). Tagged [notice waiting], [notice stretch], [notice rough] or [notice late], what it may hold up for something it noticed (Notices): at an idle check-in, as the idle beat, by name, {agent} being the agent's name. Tagged [world], with the gesture's kind ([world boop], [world wave], [world heart], [world cheer]), what it holds up when another buddy reaches out from the world, its kind's first: code picks one (MomentRule.world), no brain. Tagged [invite tap] and [invite stroke], the word the board shows by the place to touch when a skit invites that touch, until you know it (InviteLedger), the first of each. Tagged [remark fast], [remark slow], [remark run], [remark count], [remark early], [remark late], [remark soon] and [remark longBreak], what it holds up for a remark, how now differs from your usual (Remarks): code picks one, no brain; {n} is the run, or today's wins. A line may start with tags in brackets, every one of which the prompt's reading must have: its kind (fix, feature, cleanup, refactor, tests, deploy, docs, question, carry_on, other), its tone (calm, frustrated, rushed, polite, playful, shouting, careful), its length (words, sentence, paragraph, essay), named (you said its name, the one you gave it), and the calendar's (morning, night, friday, party…, characters/CHARACTER.md §9). {words} is one of your phrases as you wrote it, {WORDS} the same in capitals: such a line is offered once for each. Your words come first, at most three, then tagged captions, then the rest; at most six, each at most 18 characters, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
+<!-- Boop's signs: what it may hold up on a sign when it reacts to your prompt (Signs, the react.sign question), and, tagged [idle], its idle musings: held up at an idle check-in when nothing else is due (IdleBeat), never on Quiet, asking nothing; {turns} is today's turns and {thread} the busiest thread, and a line may need a kept answer's tag ([cookie]). Tagged [notice waiting], [notice stretch], [notice rough] or [notice late], what it may hold up for something it noticed (Notices): at an idle check-in, as the idle beat, by name, {agent} being the agent's name. Tagged [world], with the gesture's kind ([world boop], [world wave], [world heart], [world cheer]), what it holds up when another buddy reaches out from the world, its kind's first: code picks one (MomentRule.world), no brain. Tagged [invite tap] and [invite stroke], the word the board shows by the place to touch when a skit invites that touch, until you know it (InviteLedger), the first of each. Tagged [remark fast], [remark slow], [remark run], [remark count], [remark early], [remark late], [remark soon] and [remark longBreak], what it holds up for a remark, how now differs from your usual (Remarks): code picks one, no brain; {n} is the run, or today's wins. Tagged [aside win], [aside upset], [aside fix] or [aside oops], with what is true after ([aside upset check], [aside win hard]…), Boop's aside: one short sentence about what just happened, held low after it, and said aloud when Settings' Voice speaks (Asides): code picks one of the rows with the most tags that hold and fit, no brain; {what} is the check (the tests), or for a turn what the agent said it was doing (writing the report), its result's headline, its last work act, the thread or the project, so a row must read well with a phrase like writing the report, the tests or Fix Safari export; {n} the failures; up to 40 characters filled, in two rows of 26, each sentence with a capital. A line may start with tags in brackets, every one of which the prompt's reading must have: its kind (fix, feature, cleanup, refactor, tests, deploy, docs, question, carry_on, other), its tone (calm, frustrated, rushed, polite, playful, shouting, careful), its length (words, sentence, paragraph, essay), named (you said its name, the one you gave it), and the calendar's (morning, night, friday, party…, characters/CHARACTER.md §9). {words} is one of your phrases as you wrote it, {WORDS} the same in capitals: such a line is offered once for each. Your words come first, at most three, then tagged captions, then the rest; at most six, each at most 18 characters, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
 - [frustrated] {words} :(
 - [frustrated] {words}?!
 - [frustrated] {words}. again.
@@ -67,3 +67,69 @@
 - [remark late] there you are
 - [remark soon] back so soon
 - [remark longBreak] missed you
+- [aside win] Yay, {what}, done!
+- [aside win] Ta-da! {what}, done.
+- [aside win] Done! {what}, all yours.
+- [aside win] {what}, wrapped up. Nice.
+- [aside win] Woo! {what}, finished.
+- [aside win] High five! {what}, done.
+- [aside win] Look! {what}, all done.
+- [aside win] {what}: done. Nice one.
+- [aside win] {what}: done!
+- [aside win long] Phew. {what}, done at last!
+- [aside win long] Big one! {what}, done.
+- [aside win long] Finally! {what}, done.
+- [aside win long] Long haul. {what}, done!
+- [aside win hard] {what} fought back. Done!
+- [aside win hard] Bumpy, but {what}: done.
+- [aside win hard] {n} fails, then {what}: done.
+- [aside win hard] {what}, done the hard way.
+- [aside win hard] {what}: done, finally.
+- [aside win glum] {what}, done. Good.
+- [aside win glum] Mm. {what}, done.
+- [aside win glum] {what}, done. That helps.
+- [aside upset] Aw. {what} broke.
+- [aside upset] Oh no. {what} didn't land.
+- [aside upset] Aw. {what} hit a wall.
+- [aside upset] Hmm. {what} went sideways.
+- [aside upset] Ouch. {what} fell over.
+- [aside upset] Not today, {what}.
+- [aside upset] {what}: broke. Aw.
+- [aside upset long] All that, and {what} broke.
+- [aside upset long] So close. {what} fell over.
+- [aside upset long] Hours in, and {what} broke.
+- [aside upset long] Long one. {what} broke.
+- [aside upset stuck] Aw. {what}: stuck.
+- [aside upset stuck] {what} hit a wall. Ugh.
+- [aside upset stuck] {what}, given up on. Aw.
+- [aside upset swear] Oh shit. {what} broke.
+- [aside upset swear] Damn it. {what} fell over.
+- [aside upset swear] Well, crap. {what} broke.
+- [aside upset swear] Crap. {what} broke.
+- [aside upset check] Oh man, {what} failed again.
+- [aside upset check] {what}, {n} in a row. Ugh.
+- [aside upset check] {what} failed again. Grr.
+- [aside upset check] Not {what} again!
+- [aside upset check] {what}, failing again. Hmm.
+- [aside upset check swear] Dammit, {what} failed again.
+- [aside upset check swear] Oh, crap. {what}, again.
+- [aside upset check swear] Shit. {what}, {n} times now.
+- [aside fix] Phew. {what}, fixed.
+- [aside fix] {what}: green again.
+- [aside fix] Yes! Fixed {what}.
+- [aside fix] Ahh. {what}, all good now.
+- [aside fix] Nice save on {what}.
+- [aside fix] {what}: back to green. Phew.
+- [aside fix hard] {n} tries. {what}, fixed!
+- [aside fix hard] Took {n} goes. {what}, fixed!
+- [aside fix hard] Finally. {what}, fixed.
+- [aside oops] Uh oh, {what} failed.
+- [aside oops] Oops. {what} failed.
+- [aside oops] Hmm, {what} said no.
+- [aside oops] Eek, {what} failed.
+- [aside oops] Bonk. {what} failed.
+- [aside oops] {what} failed. Hm.
+- [aside oops again] {what} failed again.
+- [aside oops again] Uh oh, {what} again.
+- [aside oops again] Twice now. {what} failed.
+- [aside oops again] Again, {what}. Hmm.
