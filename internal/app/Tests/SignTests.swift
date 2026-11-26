@@ -112,8 +112,8 @@ final class SignTests: XCTestCase {
         let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
         let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
         XCTAssertGreaterThan(signs.count, 10, pack)
-        // Boop's lines (`[line …]`) are held low, up to 40: `LinesTests` checks them.
-        for line in signs where line.tags.first != "line" {
+        // Boop's asides (`[aside …]`) are held low, up to 40: `AsidesTests` checks them.
+        for line in signs where line.tags.first != "aside" {
             let filled = line.text.replacingOccurrences(of: "{words}", with: "ok").replacingOccurrences(of: "{WORDS}", with: "OK")
                 .replacingOccurrences(of: "{turns}", with: "12").replacingOccurrences(of: "{thread}", with: "api")
                 .replacingOccurrences(of: "{agent}", with: "claude").replacingOccurrences(of: "{n}", with: "10")

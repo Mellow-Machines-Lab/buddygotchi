@@ -201,11 +201,12 @@ extension Runtime {
     /// can't be sent. On `home`.
     func queue(_ reaction: Moment, _ pending: Pending) {
         let reaction = calmed(reaction)
-        // The line said aloud as it's sent, never waited on.
-        if let line = reaction.aloud, let speaker {
+        // Its sentence said aloud as it's sent, never waited on: the link
+        // reports only how a `do` ended, never when it starts playing.
+        if let sentence = reaction.aloud, let speaker {
             let mood = reaction.mood ?? ""
-            options.log("voice: says a line (\(settings.voice.rawValue))")
-            Task.detached { await speaker.speak(line, mood: mood) }
+            options.log("voice: says a sentence (\(settings.voice.rawValue))")
+            Task.detached { await speaker.speak(sentence, mood: mood) }
         }
         let now = options.clock(), reactions = rig.reactions, ttl = reactions.ttl(BoopDevice.ttl(reaction), now: now)
         var sent: Int?

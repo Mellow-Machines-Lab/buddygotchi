@@ -1,18 +1,18 @@
 import AVFoundation
 import Foundation
 
-/// Says Boop's line aloud on the Mac, when Settings' Voice speaks
+/// Says Boop's sentence (an aside, or a remark) aloud on the Mac, when Settings' Voice speaks
 /// (`AppSettings.Voice`): the core decided the words (`Moment.aloud`),
 /// this only makes them heard. It never blocks the Moment: the runtime
 /// starts it and moves on. Two kinds: this Mac's own voice
 /// (`SystemSpeaker`) and a cloud voice (`CloudSpeaker`).
 public protocol Speaker: Sendable {
-    func speak(_ line: String, mood: String) async
+    func speak(_ sentence: String, mood: String) async
 }
 
 extension AppSettings.Voice {
-    /// What says a line for this choice, or nil for the board's own
-    /// sounds. With a `folder`, each line is written there as a file
+    /// What says a sentence for this choice, or nil for the board's own
+    /// sounds. With a `folder`, each sentence is written there as a file
     /// instead of played, for checks that mustn't make a sound.
     public func speaker(cloud: CloudSpeaker.Config?, key: @escaping @Sendable () -> String?, folder: URL? = nil) -> (any Speaker)? {
         switch self {
@@ -31,7 +31,7 @@ extension AppSettings.Voice {
 /// better on-device voice would go.
 public final class SystemSpeaker: Speaker, @unchecked Sendable {
     let synthesizer = AVSpeechSynthesizer()
-    /// Where each line is written as a file instead, or nil to play it.
+    /// Where each sentence is written as a file instead, or nil to play it.
     let folder: URL?
     private let lock = NSLock()
     private var written = 0
@@ -69,8 +69,8 @@ public final class SystemSpeaker: Speaker, @unchecked Sendable {
         }
     }
 
-    func utterance(_ line: String, mood: String) -> AVSpeechUtterance {
-        let u = AVSpeechUtterance(string: line)
+    func utterance(_ sentence: String, mood: String) -> AVSpeechUtterance {
+        let u = AVSpeechUtterance(string: sentence)
         u.voice = Self.voice()
         let (pitch, rate) = Self.tone(mood: mood)
         u.pitchMultiplier = pitch
@@ -79,22 +79,22 @@ public final class SystemSpeaker: Speaker, @unchecked Sendable {
         return u
     }
 
-    public func speak(_ line: String, mood: String) async {
-        guard let folder else { return synthesizer.speak(utterance(line, mood: mood)) }
+    public func speak(_ sentence: String, mood: String) async {
+        guard let folder else { return synthesizer.speak(utterance(sentence, mood: mood)) }
         let n = lock.withLock {
             written += 1
             return written
         }
-        try? await render(line, mood: mood, to: folder.appendingPathComponent(String(format: "line-%03d.caf", n)))
+        try? await render(sentence, mood: mood, to: folder.appendingPathComponent(String(format: "said-%03d.caf", n)))
     }
 
-    /// Writes `line` as `mood` speaks it to an audio file at `url` (its
+    /// Writes `sentence` as `mood` speaks it to an audio file at `url` (its
     /// kind by the extension: `.caf`, `.wav`, `.m4a`), never a sound.
-    public func render(_ line: String, mood: String, to url: URL) async throws {
+    public func render(_ sentence: String, mood: String, to url: URL) async throws {
         let renderer = AVSpeechSynthesizer()
         let box = FileBox(url)
         try await withCheckedThrowingContinuation { (done: CheckedContinuation<Void, Error>) in
-            renderer.write(utterance(line, mood: mood)) { buffer in
+            renderer.write(utterance(sentence, mood: mood)) { buffer in
                 guard let pcm = buffer as? AVAudioPCMBuffer else { return }
                 // An empty buffer is the end.
                 guard pcm.frameLength > 0 else { return box.finish(done) }
@@ -145,10 +145,10 @@ public final class SystemSpeaker: Speaker, @unchecked Sendable {
 }
 
 /// A cloud voice: an OpenAI-style `POST …/audio/speech` on your own key,
-/// its audio played on the Mac. Only the line's words, the model, the
+/// its audio played on the Mac. Only the sentence's words, the model, the
 /// voice and a sentence of how to say them in the face's mood are sent.
 /// Too slow (over `deadline`) or failing, this Mac's voice says it
-/// instead (`fallback`), so a line is never lost to the network.
+/// instead (`fallback`), so a sentence is never lost to the network.
 public final class CloudSpeaker: Speaker, @unchecked Sendable {
     /// Where it asks, with which model and voice (`settings.json`'s
     /// `cloudVoice`): OpenAI's unless set.
@@ -202,26 +202,26 @@ public final class CloudSpeaker: Speaker, @unchecked Sendable {
         return Keychain.voiceKey(account: Keychain.account(for: stateDir))
     }
 
-    /// The request for `line` in `mood`.
-    public func request(_ line: String, mood: String, key: String) -> URLRequest? {
+    /// The request for `sentence` in `mood`.
+    public func request(_ sentence: String, mood: String, key: String) -> URLRequest? {
         guard let url = URL(string: config.url.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/audio/speech") else { return nil }
         var r = URLRequest(url: url, timeoutInterval: deadline)
         r.httpMethod = "POST"
         r.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         r.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let body: [String: String] = [
-            "model": config.model, "voice": config.voice, "input": line, "response_format": "mp3",
+            "model": config.model, "voice": config.voice, "input": sentence, "response_format": "mp3",
             "instructions": "You are a small, warm, slightly cheeky desk creature. Say this short and lively, feeling \(mood).",
         ]
         r.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         return r
     }
 
-    public func speak(_ line: String, mood: String) async {
-        if let key = key(), let request = request(line, mood: mood, key: key), let audio = await fetch(request) {
+    public func speak(_ sentence: String, mood: String) async {
+        if let key = key(), let request = request(sentence, mood: mood, key: key), let audio = await fetch(request) {
             return await play(audio)
         }
-        await fallback?.speak(line, mood: mood)
+        await fallback?.speak(sentence, mood: mood)
     }
 
     /// The audio, or nil on any error, a status that isn't 2xx, or no

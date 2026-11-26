@@ -649,8 +649,8 @@ extension InviteTests {
             runtime.device(Self.hello)
             ended()
             win()
-            // The invite rides the last Moment queued: the line behind the finish.
-            XCTAssertNotNil(transport.dos.last.flatMap(invite), "the invite rides the line after the finish")
+            // The invite rides the last Moment queued: the aside behind the finish.
+            XCTAssertNotNil(transport.dos.last.flatMap(invite), "the invite rides the aside after the finish")
             XCTAssertEqual(records().last?[InviteLedger.askedFact]?.string, "palm")
             ended(last: 1, "skipped", why: "late")
             let log = runtime.harness.log.view(now: now)
@@ -704,7 +704,7 @@ extension InviteTests {
             runtime.hook(HookLine(agent: "claude", hook: "Stop", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
             _ = runtime.harness.force([MomentOutput.emotionKey: "happy"], by: Runtime.forcedBy)
             let inviting = try? XCTUnwrap(transport.dos.last)
-            XCTAssertNotNil((inviting.flatMap(object)?["args"] as? [String: Any])?["invite"], "the win invites, on its line")
+            XCTAssertNotNil((inviting.flatMap(object)?["args"] as? [String: Any])?["invite"], "the win invites, on its aside")
             XCTAssertEqual(ttl(inviting), BoopDevice.behindFinishTTL)
 
             clock.now += 1000

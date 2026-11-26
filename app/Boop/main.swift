@@ -22,7 +22,7 @@ let usage = """
                 [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]] [--speech-to DIR]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --talk overrides the saved one for this run only.
-               With Settings' Voice speaking, its lines go to audio files in --speech-to DIR (default
+               With Settings' Voice speaking, what it says goes to audio files in --speech-to DIR (default
                DIR/speech), never out loud.
                The world of buddies only with BOOP_WORLD_URL set: npm run dev in internal/world serves a
                fake one on http://localhost:8787.

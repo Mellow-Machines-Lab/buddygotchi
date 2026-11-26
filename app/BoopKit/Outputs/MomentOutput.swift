@@ -226,7 +226,7 @@ public final class MomentOutput: Output {
         self.moodID = moodID
         self.moodLevel = moodLevel
         takes = SplitMix64(seed: seed)
-        lineRng = SplitMix64(seed: seed ^ 0x11E5)
+        asideRng = SplitMix64(seed: seed ^ 0x11E5)
         self.pack = pack
         asked = Self.questions(in: pack)
         askedOfTalk = Self.talkQuestions(asked, in: pack)
@@ -462,28 +462,49 @@ public final class MomentOutput: Output {
     }
     public var remarking: Remarking?
 
-    /// How a line is heard (Settings' Voice, `AppSettings.Voice`): with
-    /// `speaks` or `cloud` the Mac says it aloud, and the Moment's board
-    /// plays no take; and whether the Mac keeps quiet now, on a call or
-    /// while you talk.
+    /// How an aside is heard (Settings' Voice, `AppSettings.Voice`): with
+    /// `speaks` or `cloud` the Mac says the sentence the Moment shows (an
+    /// aside, or a remark) aloud, and the Moment's board plays no take; and
+    /// whether the Mac keeps quiet now, on a call or while you talk.
     public var voice: () -> AppSettings.Voice = { .sounds }
     public var hushed: () -> Bool = { false }
-    /// The last of the pack's line rows said, which the next doesn't say
+    /// Whether the Mac says a Moment's sentence now, in its board's place.
+    var speaksAloud: Bool { voice() != .sounds && !hushed() }
+    /// The last of the pack's aside rows said, which the next doesn't say
     /// again while another fits.
-    var lastLineRow: String?
-    /// Picks the pack's lines, apart from `takes`, so a line never moves
-    /// which take or sign comes next.
-    var lineRng = SplitMix64(seed: 0x11E5)
+    var lastAsideRow: String?
+    /// Picks the pack's asides, apart from `takes`, so an aside never
+    /// moves which take or sign comes next.
+    var asideRng = SplitMix64(seed: 0x11E5)
 
-    /// The pack's line for `skit` or a failed check at `slot`, if any
-    /// (`Lines`): none on Quiet; it swears only when the skit does.
-    func packLine(skit: Skits.Play?, slot: RulesBrain.Slot?, facts: [String: JSONValue], log: LogView) -> String? {
-        guard let slot, let moment = Lines.moment(skit: skit, slot: slot),
-              let (row, text) = Lines.pick(signs, moment: moment, slot: slot, facts: facts, mood: moodID(log) ?? pack.defaultMood,
-                                           swears: skit?.swears ?? false, quiet: talk() == .quiet, avoiding: lastLineRow, rng: &lineRng)
+    /// The pack's aside for `skit` or a failed check at `slot`, if any
+    /// (`Asides`): none on Quiet; it swears only when the skit does.
+    func packAside(skit: Skits.Play?, slot: RulesBrain.Slot?, about: Event, facts: [String: JSONValue], log: LogView) -> String? {
+        guard let slot, let moment = Asides.moment(skit: skit, slot: slot),
+              let (row, text) = Asides.pick(signs, moment: moment, slot: slot, facts: facts, work: work(about, facts: facts, log: log),
+                                            mood: moodID(log) ?? pack.defaultMood, swears: skit?.swears ?? false,
+                                            quiet: talk() == .quiet, avoiding: lastAsideRow, rng: &asideRng)
         else { return nil }
-        lastLineRow = row
+        lastAsideRow = row
         return text
+    }
+
+    /// What the turn `about` finished was, as its agent put it
+    /// (`Asides.work`): its last status card's `doing` this turn, its
+    /// result's headline, its last work act, the thread's name, the
+    /// project's. Nil for anything but a finish.
+    func work(_ about: Event, facts: [String: JSONValue], log: LogView) -> String? {
+        guard MomentRule.finish(facts) != nil, let key = TranscriptView.about(about, facts: facts) else { return nil }
+        var doing: String?, act: String?
+        for e in log.events.reversed() where e.seq < about.seq {
+            if e.type == .turn, e.phase == .start, TranscriptView.about(e, facts: nil) == key { break }
+            if doing == nil, e.type == .card, e.phase == .start, TranscriptView.about(e, facts: nil) == key { doing = e["text"]?.string }
+            if act == nil, e.type == .act, e["session"]?.string == key { act = e.specificType }
+            if doing != nil { break }
+        }
+        let project = facts["thread"]?.object?["name"]?.string
+        let thread = who(about)?.thread
+        return Asides.work(doing: doing, headline: offered(about)?.text, act: act, thread: thread == project ? nil : thread, project: project)
     }
 
     /// The remark on `skit` at `about`, whose line has `facts`, and its
@@ -613,6 +634,9 @@ public final class MomentOutput: Output {
     /// At a skit with more than one thing it may say, which it says: only
     /// Jev answers it. With no answer, Voice picks, as it does with no key.
     func takeQuestion(_ now: Event?, _ log: LogView) -> Question? {
+        // Speaking on the Mac, the take is dropped for the Moment's
+        // sentence: nothing to ask.
+        guard !speaksAloud else { return nil }
         let about = Self.about(now, log)
         let facts = about.flatMap { line($0)?.facts } ?? [:]
         guard let about, let slot = self.slot(about, facts: facts, ruled: false), let skit = self.skit(at: slot, facts: facts) else { return nil }
@@ -972,7 +996,7 @@ public final class MomentOutput: Output {
             spoken = behind(line.says)
             spoken?.reason = reaction.who.map { "\($0.agent) offered it" }
             after["offered_line"] = true
-            after["line"] = .string(line.says)
+            after["aside"] = .string(line.says)
             afterSaid = "After it, \(pack.name) held up the agent's words"
         }
         // A remark on the skit, as text: a finish names its thread and holds
@@ -997,34 +1021,36 @@ public final class MomentOutput: Output {
             }
             lastSign = words
         }
-        // The pack's line, where neither took the place (`Lines`): a
+        // The pack's aside, where neither took the place (`Asides`): a
         // finish's behind it, held low; a check's as the Moment's own low
         // sign, over a fix's. Its words never go to HISTORY, nor does a
         // check's: its record has them.
-        var lined: String?
-        if ruled == nil, !talk, finishing ? spoken == nil : (asking == nil && beat == nil && remembering == nil),
-           let line = packLine(skit: skit, slot: slot, facts: lineFacts, log: log) {
+        var asided: String?
+        if ruled == nil, !talk, let about, finishing ? spoken == nil : (asking == nil && beat == nil && remembering == nil),
+           let aside = packAside(skit: skit, slot: slot, about: about, facts: lineFacts, log: log) {
             if finishing {
-                spoken = behind(line)
-                after["line"] = .string(line)
-                after["sign"] = .string(line)
-                afterSaid = "After it, \(pack.name) held up a line about it"
+                spoken = behind(aside)
+                after["aside"] = .string(aside)
+                after["sign"] = .string(aside)
+                afterSaid = "After it, \(pack.name) held up an aside about it"
             } else {
                 reaction.low = true
-                reaction.sign = line
+                reaction.sign = aside
                 reaction.ask = nil
-                sign = line
-                lined = line
+                sign = aside
+                asided = aside
             }
-            lastSign = line
+            lastSign = aside
         }
-        // With Settings' Voice speaking, the Mac says the line aloud, the
-        // agent's or the pack's, and the board plays no take for it; not
-        // on a call or while you talk, and then the take plays as ever.
+        // With Settings' Voice speaking, the Mac says the sentence the
+        // Moment shows, an aside (the agent's or the pack's) or a remark,
+        // and its board plays no take; not on a call or while you talk,
+        // and then the take plays as ever.
         var aloud: AppSettings.Voice?
-        if voice() != .sounds, !hushed(), !silent, let line = after["line"]?.string ?? lined {
+        let behindWords = spoken.flatMap { $0.sign }, ownWords = asided ?? (remarked != nil ? reaction.sign : nil)
+        if speaksAloud, !silent, let words = behindWords ?? ownWords {
             aloud = voice()
-            if after["line"] != nil { spoken?.aloud = line } else { reaction.aloud = line }
+            if behindWords != nil { spoken?.aloud = words } else { reaction.aloud = words }
             after["voice"] = .string(voice().rawValue)
             said = []
             reaction.say = Moment.Say(takes: [])
@@ -1063,7 +1089,7 @@ public final class MomentOutput: Output {
         // The takes' ids in order, and the reply as it played, for the
         // tools to say what it did.
         let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }
-            ?? (lined != nil ? "" : nil)
+            ?? (asided != nil ? "" : nil)
             ?? sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
             + (show == StatusReply.drawer ? " and showing every agent" : "")
         let spoke: String = (reaction.say?.text.map { ", and said \"\($0)\"" } ?? "") + inviting(reaction) + "."
@@ -1084,10 +1110,10 @@ public final class MomentOutput: Output {
         if let remembering { facts["felt"] = .string(remembering.line) }
         // A remark this Moment showed: what your usual counts the skits since by.
         if let remarked { facts[Normals.remarkFact] = .string(remarked) }
-        // A line it held up, and said aloud with Settings' Voice: what the
-        // counts read.
-        if let lined { facts["line"] = .string(lined) }
-        if lined != nil, let aloud { facts["voice"] = .string(aloud.rawValue) }
+        // An aside it held up, and what it said aloud with Settings'
+        // Voice: what the counts read.
+        if let asided { facts["aside"] = .string(asided) }
+        if ownWords != nil, behindWords == nil, let aloud { facts["voice"] = .string(aloud.rawValue) }
         // An invite this Moment asked, or skipped for the misses: what the
         // ledger reads.
         if spoken == nil { facts.merge(invitedFacts) { _, new in new } }

@@ -46,23 +46,23 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Apple Intelligence's place, on the plan you have. On unless you
     /// turn it off.
     public var agentsThink = true
-    /// Who says Boop's line aloud (`Voice`): its board's own sounds unless
+    /// How Boop's asides are heard (`Voice`): its board's own sounds unless
     /// you choose a voice.
     public var voice = Voice.sounds
     /// Where the cloud voice is asked, with which model and voice: nil
     /// for OpenAI's (`CloudSpeaker.Config`). Only set by hand.
     public var cloudVoice: CloudSpeaker.Config?
 
-    /// How Boop's line (`Lines`) is heard, chosen in Settings. Whatever
-    /// the choice, the line shows as text, low on the board.
+    /// How Boop's aside (`Asides`), or a remark, is heard, chosen in
+    /// Settings. Whatever the choice, it shows as text, low on the board.
     public enum Voice: String, CaseIterable, Codable, Sendable {
         /// The board plays its recorded takes, as it always has.
         case sounds
-        /// This Mac says the line aloud, with a voice of its own
+        /// This Mac says it aloud, with a voice of its own
         /// (`SystemSpeaker`); the board plays no take for it.
         case speaks
         /// The same, with a cloud voice on your own key (`CloudSpeaker`):
-        /// the line's words leave the Mac.
+        /// its words leave the Mac.
         case cloud
 
         /// Its name in Settings.

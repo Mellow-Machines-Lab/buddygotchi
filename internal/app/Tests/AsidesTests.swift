@@ -7,7 +7,7 @@ import XCTest
 /// Boop's line (`Lines`): one short sentence about what just happened,
 /// held low, and said aloud with Settings' Voice (`AppSettings.Voice`,
 /// `Speaker`).
-final class LinesTests: XCTestCase {
+final class AsidesTests: XCTestCase {
     typealias Facts = [String: JSONValue]
     var rows: [TaggedLine] { RuntimeTests.steering.signs }
 
@@ -33,49 +33,87 @@ final class LinesTests: XCTestCase {
         ["topic": .string(topic), "result": .string(result), "failed_before": .int(before), "thread": Self.thread]
     }
 
-    func pool(_ moment: String, _ slot: RulesBrain.Slot, _ facts: Facts, mood: String = "calm", swears: Bool = false) -> [String] {
-        BoopKit.Lines.pool(rows, moment: moment, slot: slot, facts: facts, mood: mood, swears: swears, quiet: false).map(\.text)
+    func pool(_ moment: String, _ slot: RulesBrain.Slot, _ facts: Facts, work: String? = nil, mood: String = "calm",
+              swears: Bool = false) -> [String] {
+        Asides.pool(rows, moment: moment, slot: slot, facts: facts, work: work, mood: mood, swears: swears, quiet: false).map(\.text)
     }
 
-    /// Pins `BoopKit.Lines.moment`: the skits' but `back`, and a failed check
+    /// Pins `Asides.moment`: the skits' but `back`, and a failed check
     /// before its skit.
-    func testWhichMomentsHaveALine() {
+    func testWhichMomentsHaveAnAside() {
         func skit(_ id: String, swears: Bool = false) -> Skits.Play { Skits.Play(skit: Skit(id: id, slots: []), swears: swears) }
-        XCTAssertEqual(BoopKit.Lines.moment(skit: skit("win"), slot: .doneLong), "win")
-        XCTAssertEqual(BoopKit.Lines.moment(skit: skit("upset"), slot: .failed), "upset")
-        XCTAssertEqual(BoopKit.Lines.moment(skit: skit("upset"), slot: .checkFailing), "upset")
-        XCTAssertEqual(BoopKit.Lines.moment(skit: skit("fix"), slot: .checkFixed), "fix")
-        XCTAssertNil(BoopKit.Lines.moment(skit: skit("back"), slot: .back))
-        XCTAssertEqual(BoopKit.Lines.moment(skit: nil, slot: .checkFailed), "oops")
-        XCTAssertEqual(BoopKit.Lines.moment(skit: nil, slot: .checkFailing), "oops", "the 2nd in a row, before the skit")
-        XCTAssertNil(BoopKit.Lines.moment(skit: nil, slot: .doneShort), "a short win: none")
-        XCTAssertNil(BoopKit.Lines.moment(skit: nil, slot: .other))
+        XCTAssertEqual(Asides.moment(skit: skit("win"), slot: .doneLong), "win")
+        XCTAssertEqual(Asides.moment(skit: skit("upset"), slot: .failed), "upset")
+        XCTAssertEqual(Asides.moment(skit: skit("upset"), slot: .checkFailing), "upset")
+        XCTAssertEqual(Asides.moment(skit: skit("fix"), slot: .checkFixed), "fix")
+        XCTAssertNil(Asides.moment(skit: skit("back"), slot: .back))
+        XCTAssertEqual(Asides.moment(skit: nil, slot: .checkFailed), "oops")
+        XCTAssertEqual(Asides.moment(skit: nil, slot: .checkFailing), "oops", "the 2nd in a row, before the skit")
+        XCTAssertNil(Asides.moment(skit: nil, slot: .doneShort), "a short win: none")
+        XCTAssertNil(Asides.moment(skit: nil, slot: .other))
     }
 
-    /// Each moment's lines, filled from the facts, by what's true.
-    func testEachMomentsLinesSayWhatHappened() throws {
+    /// Pins `Asides.work`: what a turn was, the first there is.
+    func testWhatATurnWas() {
+        XCTAssertEqual(Asides.work(doing: "writing the report", headline: "Fix Safari export", act: "tests", thread: "t", project: "p"),
+                       "writing the report", "its status first")
+        XCTAssertEqual(Asides.work(doing: nil, headline: "Fix Safari export", act: "tests", thread: "t", project: "p"), "Fix Safari export")
+        XCTAssertEqual(Asides.work(doing: " ", headline: "nav overflow fixed", act: "tests", thread: "t", project: "p"), "the tests",
+                       "a headline that says how it came out isn't the work")
+        XCTAssertEqual(Asides.work(doing: nil, headline: "2.1x faster", act: "push", thread: nil, project: "p"), "the push")
+        XCTAssertEqual(Asides.work(doing: nil, headline: nil, act: nil, thread: "Fix Safari export", project: "buddygotchi"), "Fix Safari export")
+        XCTAssertEqual(Asides.work(doing: nil, headline: nil, act: nil, thread: nil, project: "buddygotchi"), "buddygotchi")
+        XCTAssertEqual(Asides.work(doing: "fixing the nav overflow in Safari", headline: nil, act: nil, thread: nil, project: nil),
+                       "fixing the nav overflow", "cut at a word to 24")
+    }
+
+    /// Every win and upset row reads well with the three kinds of fill: a
+    /// gerund (small inside a sentence, a capital starting one), a noun,
+    /// and a name; and each kind leaves a few rows to pick from.
+    func testTurnAsidesReadWithEveryKindOfFill() throws {
         try requirePack("boop")
-        let wins = pool("win", .doneLong, win())
-        XCTAssertGreaterThanOrEqual(wins.count, 6)
-        XCTAssertTrue(wins.allSatisfy { $0.lowercased().contains("buddygotchi") }, "\(wins)")
-        XCTAssertTrue(wins.contains("Yay, buddygotchi, done!"))
+        for work in ["writing the report", "Writing the report", "the tests", "Fix Safari export"] {
+            let wins = pool("win", .doneLong, win(), work: work), upsets = pool("upset", .failed, failed(), work: work)
+            XCTAssertGreaterThanOrEqual(wins.count, 5, work)
+            XCTAssertGreaterThanOrEqual(upsets.count, 4, work)
+            XCTAssertGreaterThanOrEqual(pool("upset", .gaveUp, failed(), work: work).count, 2, work)
+            XCTAssertGreaterThanOrEqual(pool("win", .doneVeryLong, win(minutes: 90, checksFailed: 2), work: work).count, 2, work)
+            for text in wins + upsets {
+                XCTAssertTrue(text.lowercased().contains(work.lowercased()), text)
+                XCTAssertFalse(text.contains(" is ") || text.contains(" was "), "no verb that agrees with one kind only: \(text)")
+            }
+        }
+        let gerund = pool("win", .doneLong, win(), work: "Writing the report")
+        XCTAssertTrue(gerund.contains("Yay, writing the report, done!"), "\(gerund)")
+        XCTAssertTrue(pool("upset", .failed, failed(), work: "writing the report").contains("Aw. Writing the report hit a wall."))
+        XCTAssertTrue(pool("win", .doneLong, win(), work: "Fix Safari export").contains("Yay, Fix Safari export, done!"))
+        XCTAssertTrue(pool("upset", .failed, failed(), work: "the tests").contains("Ouch. The tests fell over."))
+        // No work: the thread's name.
+        XCTAssertTrue(pool("win", .doneLong, win()).contains("Yay, buddygotchi, done!"))
+        // A check names the check, whatever the turn's work.
+        XCTAssertTrue(pool("oops", .checkFailed, check("failed", before: 0), work: "writing the report").allSatisfy { $0.lowercased().contains("the tests") })
+    }
+
+    /// Each moment's asides, filled from the facts, by what's true.
+    func testEachMomentsAsidesSayWhatHappened() throws {
+        try requirePack("boop")
+        let w = "writing the report"
         // A very long win, a hard-won one: their own rows.
-        let long = pool("win", .doneVeryLong, win(minutes: 90))
-        XCTAssertTrue(long.contains("Phew, buddygotchi took ages. Done!"), "\(long)")
-        XCTAssertFalse(long.contains("Yay, buddygotchi, done!"))
-        XCTAssertTrue(pool("win", .doneLong, win(checksFailed: 2)).contains("2 fails, but buddygotchi is done."))
+        let long = pool("win", .doneVeryLong, win(minutes: 90), work: w)
+        XCTAssertTrue(long.contains("Phew. Writing the report, done at last!"), "\(long)")
+        XCTAssertFalse(long.contains("Yay, writing the report, done!"))
+        XCTAssertTrue(pool("win", .doneLong, win(checksFailed: 2), work: w).contains("2 fails, then writing the report: done."))
         // A cross or sad mood doesn't cheer.
         for mood in ["cross", "sad"] {
-            let glum = pool("win", .doneLong, win(checksFailed: 2), mood: mood)
+            let glum = pool("win", .doneLong, win(checksFailed: 2), work: w, mood: mood)
             XCTAssertFalse(glum.isEmpty)
             XCTAssertTrue(glum.allSatisfy { !$0.contains("!") && !$0.contains("Yay") }, "\(mood): \(glum)")
         }
-        // A failed turn, and the 3rd failed check in a row: "again".
-        XCTAssertTrue(pool("upset", .failed, failed()).contains("Aw. Buddygotchi broke."))
+        // The 3rd failed check in a row: "again".
         let again = pool("upset", .checkFailing, check("failed", before: 2))
         XCTAssertTrue(again.contains("Oh man, the tests failed again."), "\(again)")
         XCTAssertTrue(again.contains("The tests, 3 in a row. Ugh."), "\(again)")
-        XCTAssertTrue(pool("upset", .gaveUp, failed()).contains("Buddygotchi is stuck. Ugh."))
+        XCTAssertTrue(pool("upset", .gaveUp, failed(), work: w).contains("Aw. Writing the report: stuck."))
         // A fix, and the 1st and 2nd failed check.
         XCTAssertTrue(pool("fix", .checkFixed, check("ok", before: 1)).contains("Phew. The tests, fixed."))
         XCTAssertTrue(pool("fix", .checkFixed, check("ok", before: 3)).contains("3 tries. The tests, fixed!"))
@@ -93,19 +131,19 @@ final class LinesTests: XCTestCase {
         let swear = Set(rows.filter { $0.tags.contains("swear") }.map(\.text))
         XCTAssertFalse(swear.isEmpty)
         for (slot, facts) in [(RulesBrain.Slot.failed, failed()), (.checkFailing, check("failed", before: 2))] {
-            let mild = BoopKit.Lines.pool(rows, moment: "upset", slot: slot, facts: facts, mood: "calm", swears: false, quiet: false).map(\.row)
+            let mild = Asides.pool(rows, moment: "upset", slot: slot, facts: facts, mood: "calm", swears: false, quiet: false).map(\.row)
             XCTAssertTrue(Set(mild).isDisjoint(with: swear), "\(slot): \(mild)")
-            let sworn = BoopKit.Lines.pool(rows, moment: "upset", slot: slot, facts: facts, mood: "calm", swears: true, quiet: false).map(\.row)
+            let sworn = Asides.pool(rows, moment: "upset", slot: slot, facts: facts, mood: "calm", swears: true, quiet: false).map(\.row)
             XCTAssertFalse(Set(sworn).isDisjoint(with: swear), "\(slot)")
         }
     }
 
-    /// On Quiet, no line.
-    func testQuietHasNoLine() throws {
+    /// On Quiet, no aside.
+    func testQuietHasNoAside() throws {
         try requirePack("boop")
         var rng = SplitMix64(seed: 1)
-        XCTAssertNil(BoopKit.Lines.pick(rows, moment: "upset", slot: .failed, facts: failed(), mood: "calm", swears: false, quiet: true, rng: &rng))
-        XCTAssertNotNil(BoopKit.Lines.pick(rows, moment: "upset", slot: .failed, facts: failed(), mood: "calm", swears: false, quiet: false, rng: &rng))
+        XCTAssertNil(Asides.pick(rows, moment: "upset", slot: .failed, facts: failed(), mood: "calm", swears: false, quiet: true, rng: &rng))
+        XCTAssertNotNil(Asides.pick(rows, moment: "upset", slot: .failed, facts: failed(), mood: "calm", swears: false, quiet: false, rng: &rng))
     }
 
     /// Never the same row twice running, while another fits.
@@ -114,35 +152,37 @@ final class LinesTests: XCTestCase {
         var rng = SplitMix64(seed: 7)
         var last: String?
         for _ in 0..<40 {
-            let (row, _) = try XCTUnwrap(BoopKit.Lines.pick(rows, moment: "oops", slot: .checkFailed, facts: check("failed", before: 0), mood: "calm",
+            let (row, _) = try XCTUnwrap(Asides.pick(rows, moment: "oops", slot: .checkFailed, facts: check("failed", before: 0), mood: "calm",
                                                     swears: false, quiet: false, avoiding: last, rng: &rng))
             XCTAssertNotEqual(row, last)
             last = row
         }
     }
 
-    /// Pins `BoopKit.Lines.maxLength` and the low sign's rows: every row of the
-    /// pack, filled with the longest `{what}` and a two-digit `{n}`, fits
-    /// two rows of 26; and a row that wouldn't is left out.
-    func testEveryLineFitsTheLowSign() throws {
+    /// Pins `Asides.maxLength` and the low sign's rows: every row of the
+    /// pack fits two rows of 26 with a short fill and a two-digit `{n}`,
+    /// and a row too long for a long fill is left out, never cut.
+    func testEveryAsideFitsTheLowSign() throws {
         try requirePack("boop")
-        XCTAssertEqual(BoopKit.Lines.maxLength, 40)
-        XCTAssertEqual(BoopKit.Lines.rowLength, 26)
-        let lines = rows.filter { $0.tags.first == "line" }
-        XCTAssertGreaterThan(lines.count, 40)
+        XCTAssertEqual(Asides.maxLength, 40)
+        XCTAssertEqual(Asides.rowLength, 26)
+        XCTAssertEqual(Asides.whatLength, 24)
+        let asides = rows.filter { $0.tags.first == "aside" }
+        XCTAssertGreaterThan(asides.count, 40)
         let moments: Set<String> = ["win", "upset", "fix", "oops"]
         let tags: Set<String> = ["long", "hard", "glum", "check", "stuck", "swear", "again"]
-        for line in lines {
-            XCTAssertTrue(moments.contains(line.tags[1]), line.text)
-            XCTAssertTrue(Set(line.tags.dropFirst(2)).isSubset(of: tags), line.text)
-            XCTAssertFalse(line.text.contains("?"), "no questions: \(line.text)")
-            for what in ["the deploy", String(repeating: "w", count: BoopKit.Lines.whatLength)] {
-                let filled = BoopKit.Lines.filled(line.text, what: what, n: 10)
-                XCTAssertNotNil(filled, "\(line.text) with \(what)")
+        for aside in asides {
+            XCTAssertTrue(moments.contains(aside.tags[1]), aside.text)
+            XCTAssertTrue(Set(aside.tags.dropFirst(2)).isSubset(of: tags), aside.text)
+            XCTAssertFalse(aside.text.contains("?"), "no questions: \(aside.text)")
+            for what in ["the deploy", "writing the report"] {
+                XCTAssertNotNil(Asides.filled(aside.text, what: what, n: 10), "\(aside.text) with \(what)")
+            }
+            if let long = Asides.filled(aside.text, what: String(repeating: "w", count: Asides.whatLength), n: 10) {
+                XCTAssertTrue(Asides.fits(long), long)
             }
         }
-        XCTAssertTrue(BoopKit.Lines.fits("Phew, buddygotchi took ages. Done!"))
-        XCTAssertFalse(BoopKit.Lines.fits(String(repeating: "a", count: 27)))
+        XCTAssertFalse(Asides.fits(String(repeating: "a", count: 27)))
         // A long thread's name is cut to fit.
         var f = win()
         f["thread"] = ["name": "a-very-long-workspace-name-indeed"]
@@ -160,35 +200,35 @@ final class LinesTests: XCTestCase {
         return rig
     }
 
-    /// With the board's sounds, a long win's line is a low Moment behind
-    /// the finish, its record's `line`; the finish keeps its take, and the
-    /// line's words never go to HISTORY.
-    @MainActor func testSoundsShowTheLineAndKeepTheTake() throws {
+    /// With the board's sounds, a long win's aside is a low Moment behind
+    /// the finish, its record's `aside`; the finish keeps its take, and the
+    /// aside's words never go to HISTORY.
+    @MainActor func testSoundsShowTheAsideAndKeepTheTake() throws {
         try requirePack("boop")
         let rig = rig(.sounds)
         let result = try XCTUnwrap(rig.run(Self.finish, win()))
         XCTAssertEqual(rig.sent.count, 2)
-        let line = try XCTUnwrap(rig.sent.last?.sign)
-        XCTAssertTrue(line.contains("buddygotchi"), line)
+        let aside = try XCTUnwrap(rig.sent.last?.sign)
+        XCTAssertTrue(aside.lowercased().contains("buddygotchi"), aside)
         XCTAssertEqual(rig.sent.last?.low, true)
         XCTAssertNil(rig.sent.last?.aloud)
         XCTAssertFalse(rig.sent.first?.say?.takes.isEmpty ?? true, "the board plays its take")
         let after = try XCTUnwrap(rig.react.following)
-        XCTAssertEqual(after.facts["line"]?.string, line)
+        XCTAssertEqual(after.facts["aside"]?.string, aside)
         XCTAssertNil(after.facts["voice"])
-        XCTAssertFalse(after.message.contains(line), after.message)
-        XCTAssertFalse(result.message.contains(line))
+        XCTAssertFalse(after.message.contains(aside), after.message)
+        XCTAssertFalse(result.message.contains(aside))
     }
 
-    /// Speaking, on this Mac or in the cloud: the same line, said aloud by
+    /// Speaking, on this Mac or in the cloud: the same aside, said aloud by
     /// the Mac, and no take on the board.
-    @MainActor func testSpeakingSaysTheLineAndPlaysNoTake() throws {
+    @MainActor func testSpeakingSaysTheAsideAndPlaysNoTake() throws {
         try requirePack("boop")
         for voice in [AppSettings.Voice.speaks, .cloud] {
             let rig = rig(voice)
             let result = try XCTUnwrap(rig.run(Self.finish, win()))
-            let line = try XCTUnwrap(rig.sent.last?.sign)
-            XCTAssertEqual(rig.sent.last?.aloud, line, "\(voice)")
+            let aside = try XCTUnwrap(rig.sent.last?.sign)
+            XCTAssertEqual(rig.sent.last?.aloud, aside, "\(voice)")
             XCTAssertNil(rig.sent.first?.aloud)
             XCTAssertEqual(rig.sent.first?.say?.takes, [], "\(voice)")
             XCTAssertEqual(result.facts["takes"], .array([]))
@@ -196,7 +236,7 @@ final class LinesTests: XCTestCase {
         }
     }
 
-    /// The agent's offered line is the line: said aloud too.
+    /// The agent's offered line is the aside: said aloud too.
     @MainActor func testTheAgentsLineIsSaidAloud() throws {
         try requirePack("boop")
         let rig = rig(.speaks)
@@ -205,31 +245,31 @@ final class LinesTests: XCTestCase {
         rig.card = card
         rig.run(Self.finish, win())
         XCTAssertEqual(rig.sent.last?.aloud, "nav, shipped. nice")
-        XCTAssertEqual(rig.react.following?.facts["line"]?.string, "nav, shipped. nice")
+        XCTAssertEqual(rig.react.following?.facts["aside"]?.string, "nav, shipped. nice")
         XCTAssertEqual(rig.react.following?.facts["offered_line"], true)
     }
 
-    /// A failed check's line is the Moment's own low sign, over a fix's;
+    /// A failed check's aside is the Moment's own low sign, over a fix's;
     /// HISTORY says only that it held one up.
-    @MainActor func testACheckHoldsItsLineLow() throws {
+    @MainActor func testACheckHoldsItsAsideLow() throws {
         try requirePack("boop")
         let rig = rig(.speaks)
         let result = try XCTUnwrap(rig.run(Self.check, check("failed", before: 0), face: "annoyed"))
         XCTAssertEqual(rig.sent.count, 1)
-        let line = try XCTUnwrap(rig.sent.first?.sign)
-        XCTAssertTrue(line.lowercased().contains("the tests"), line)
+        let aside = try XCTUnwrap(rig.sent.first?.sign)
+        XCTAssertTrue(aside.lowercased().contains("the tests"), aside)
         XCTAssertEqual(rig.sent.first?.low, true)
-        XCTAssertEqual(rig.sent.first?.aloud, line)
-        XCTAssertEqual(result.facts["line"]?.string, line)
+        XCTAssertEqual(rig.sent.first?.aloud, aside)
+        XCTAssertEqual(result.facts["aside"]?.string, aside)
         XCTAssertEqual(result.facts["voice"], "speaks")
-        XCTAssertFalse(result.message.contains(line), result.message)
-        // The fix: its line, said.
+        XCTAssertFalse(result.message.contains(aside), result.message)
+        // The fix: its aside, said.
         let fixed = try XCTUnwrap(rig.run(Self.check, check("ok", before: 2), face: "proud"))
-        XCTAssertNotNil(fixed.facts["line"])
+        XCTAssertNotNil(fixed.facts["aside"])
         XCTAssertEqual(rig.sent.last?.aloud, rig.sent.last?.sign)
     }
 
-    /// On a call the Mac says nothing: the line shows, and the board's
+    /// On a call the Mac says nothing: the aside shows, and the board's
     /// take plays as ever (which `speaks` keeps quiet itself).
     @MainActor func testOnACallNothingIsSaid() throws {
         try requirePack("boop")
@@ -241,13 +281,56 @@ final class LinesTests: XCTestCase {
         XCTAssertNotEqual(result.facts["takes"], .array([]))
     }
 
-    /// On Quiet, no line and nothing said.
-    @MainActor func testQuietSaysNoLine() throws {
+    /// On Quiet, no aside and nothing said.
+    @MainActor func testQuietSaysNoAside() throws {
         try requirePack("boop")
         let rig = rig(.speaks, talk: .quiet)
         rig.run(Self.check, check("failed", before: 0), face: "annoyed")
         XCTAssertNil(rig.sent.first?.sign)
         XCTAssertNil(rig.sent.first?.aloud)
+    }
+
+    /// A remark is the sentence a win shows: said aloud too, and no take.
+    @MainActor func testARemarkIsSaidAloud() throws {
+        try requirePack("boop")
+        let rig = RemarksTests().rig()
+        rig.react.voice = { .speaks }
+        rig.run(RemarksTests.finish(), RemarksTests().win(minutes: 2))
+        let words = try XCTUnwrap(rig.sent.last?.sign)
+        XCTAssertTrue(Signs.remark(RuntimeTests.steering.signs, "fast").contains(words), words)
+        XCTAssertEqual(rig.sent.last?.aloud, words)
+        XCTAssertEqual(rig.sent.first?.say?.takes, [])
+        XCTAssertEqual(rig.react.following?.facts["voice"], "speaks")
+    }
+
+    /// Speaking, the brain isn't asked which take: it'd be dropped.
+    @MainActor func testSpeakingAsksNoTake() throws {
+        try requirePack("boop")
+        for (voice, asked) in [(AppSettings.Voice.sounds, true), (.speaks, false), (.cloud, false)] {
+            let rig = rig(voice)
+            rig.facts = win(minutes: 20)
+            let questions = rig.react.questions(now: Self.finish, log: Transcript.log().view(now: Self.finish.at))
+            XCTAssertEqual(questions.contains { $0.key == MomentOutput.takeKey }, asked, "\(voice)")
+        }
+    }
+
+    /// A finished turn's aside says what the agent said it was doing: its
+    /// last status card this turn, before the thread's name.
+    @MainActor func testAFinishSaysWhatTheAgentWasDoing() throws {
+        try requirePack("boop")
+        let log = Transcript.log()
+        _ = log.append(Event(at: 100, source: .claude, type: .turn, phase: .start, specificType: "UserPromptSubmit", session: "s1"), now: 100)
+        _ = log.append(Event(at: 200, source: .claude, type: .card, phase: .start, specificType: "status", session: "s1",
+                             data: ["agent": "claude", "text": "drafting the outline"]), now: 200)
+        _ = log.append(Event(at: 300, source: .claude, type: .card, phase: .start, specificType: "status", session: "s1",
+                             data: ["agent": "claude", "text": "Writing the report"]), now: 300)
+        var finish = Event(at: 1000, source: .claude, type: .turn, phase: .end, specificType: "Stop", session: "s1")
+        finish = log.append(finish, now: 1000)
+        let rig = rig(.sounds)
+        rig.facts = win()
+        rig.react.run([MomentOutput.emotionKey: Answer(choice: "happy", probabilities: ["happy": 1])], now: finish, log: log.view(now: 1000))
+        let aside = try XCTUnwrap(rig.sent.last?.sign)
+        XCTAssertTrue(aside.lowercased().contains("writing the report"), aside)
     }
 
     // MARK: The setting

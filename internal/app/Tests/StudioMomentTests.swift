@@ -29,8 +29,8 @@ final class StudioMomentTests: XCTestCase {
         let react = MomentOutput(queue: { m, _ in sent.append(m) }, blocked: { nil },
                                  who: { $0?.type == .turn ? Moment.Who(agent: "claude", thread: "Studio") : nil },
                                  turnMs: { $0?.type == .turn ? 180_000 : nil },
-                                 // The skit's own `do`, without Boop's line (`LinesTests`).
-                                 signs: RuntimeTests.steering.signs.filter { $0.tags.first != "line" }, line: { _ in Line("", facts: facts) })
+                                 // The skit's own `do`, without Boop's aside (`AsidesTests`).
+                                 signs: RuntimeTests.steering.signs.filter { $0.tags.first != "aside" }, line: { _ in Line("", facts: facts) })
         react.earned = { _ in earned }
         // Not the very first invite, which waits longer, and care has room.
         var ledger = InviteLedger()

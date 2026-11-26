@@ -835,7 +835,7 @@ public struct Eval {
         let (harness, mood) = Runtime.harness(
             pipeline: pipeline, steering: steering, reactions: reactions,
             queue: { reaction, pending in
-                // A low Moment behind a finish (the line, a remark) is the
+                // A low Moment behind a finish (an aside, a remark) is the
                 // rules' text after it: the step reads the finish.
                 if !reaction.behindFinish {
                     ending.said = reaction.say?.text

@@ -352,7 +352,7 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude finished turn 1 on "landing": done, a very long turn, no tool calls, saying it's done.
   Boop's mood changed: calm → happy.
   Boop had a happy moment (big), playing a success, and said "All done".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 Boop has been happy for 2 min.
 
 NOW (09:15)
@@ -905,7 +905,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop had an annoyed moment (small).
 2 min ago: claude finished turn 2 on "landing": failed, a long turn, 1 tool call, after a failed check, giving up, saying it couldn't finish.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
   Boop's mood settled: cross → calm.
 just now: claude started turn 3 on "landing".
 
@@ -928,7 +928,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop had an annoyed moment (small).
 5 min ago: claude finished turn 2 on "landing": failed, a long turn, 1 tool call, after a failed check, giving up, saying it couldn't finish.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
   Boop's mood settled: cross → calm.
 3 min ago: claude started turn 3 on "landing".
 3 min ago: You asked claude on "landing" for a fix, in a few words.
@@ -1106,7 +1106,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop had an annoyed moment (small).
 5 min ago: claude finished turn 2 on "landing": failed, a long turn, 1 tool call, after a failed check, giving up, saying it couldn't finish.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
   Boop's mood settled: cross → calm.
 3 min ago: claude started turn 3 on "landing".
 3 min ago: You asked claude on "landing" for a fix, in a few words.
@@ -1132,7 +1132,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop had an annoyed moment (small).
 8 min ago: claude finished turn 2 on "landing": failed, a long turn, 1 tool call, after a failed check, giving up, saying it couldn't finish.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
   Boop's mood settled: cross → calm.
 6 min ago: claude started turn 3 on "landing".
 6 min ago: You asked claude on "landing" for a fix, in a few words.
@@ -1582,7 +1582,7 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude finished turn 4 on "landing": done, a very long turn, no tool calls, saying it's done.
   Boop's mood changed: calm → happy.
   Boop had a happy moment (big), playing a success, and said "Job done".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 just now: claude started turn 5 on "landing".
 Boop has been happy for 3 min.
 
@@ -1602,7 +1602,7 @@ HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude finished turn 4 on "landing": done, a very long turn, no tool calls, saying it's done.
   Boop's mood changed: calm → happy.
   Boop had a happy moment (big), playing a success, and said "Job done".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 3 min ago: claude started turn 5 on "landing".
 3 min ago: You asked claude on "landing" for a fix, in a sentence, in a hurry.
   Boop had a focused moment (medium).
@@ -1782,14 +1782,14 @@ HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude finished turn 4 on "landing": done, a very long turn, no tool calls, saying it's done.
   Boop's mood changed: calm → happy.
   Boop had a happy moment (big), playing a success, and said "Job done".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 5 min ago: claude started turn 5 on "landing".
 5 min ago: You asked claude on "landing" for a fix, in a sentence, in a hurry.
   Boop had a focused moment (medium).
 2 min ago: claude finished turn 5 on "landing": failed, a long turn, no tool calls.
   Boop's mood changed: happy → cross.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 just now: claude started turn 6 on "landing".
 Boop has been cross for 2 min.
 
@@ -1966,7 +1966,7 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude finished turn 5 on "landing": failed, a long turn, no tool calls.
   Boop's mood changed: happy → cross.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 3 min ago: claude started turn 6 on "landing".
 3 min ago: You asked claude on "landing" for a fix, in a few words.
   Boop had a focused moment (small).
@@ -2142,7 +2142,7 @@ HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude finished turn 5 on "landing": failed, a long turn, no tool calls.
   Boop's mood changed: happy → cross.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 4 min ago: claude started turn 6 on "landing".
 4 min ago: You asked claude on "landing" for a fix, in a few words.
   Boop had a focused moment (small).
@@ -2150,7 +2150,7 @@ HISTORY (oldest first; indented lines add to the line above)
 just now: claude finished turn 6 on "landing": done, a long turn, no tool calls, saying it's done.
   Boop's mood changed: calm → happy.
   Boop had a happy moment (medium), playing a success, and said "Done".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 Boop has been happy for under a minute.
 
 NOW (12:56)
@@ -2579,7 +2579,7 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude finished turn 7 on "landing": done, a very long turn, no tool calls, saying it's done.
   Boop's mood changed: calm → happy.
   Boop had a happy moment (big), playing a success, and said "We did it".
-  After it, Boop held up a line about it.
+  After it, Boop held up an aside about it.
 Boop has been happy for 7 min.
 
 NOW (14:55)
