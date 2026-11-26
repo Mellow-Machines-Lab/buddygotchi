@@ -1190,6 +1190,11 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
         eventually("a mumble") { runtime.home.sync { sentLines.all.contains { $0.contains(#""say":"#) } } }
         eventually("the brain's status") { debugLines().contains { ($0["status"] as? [String: Any])?["brain"] as? String == "scripted" } }
+        // The status that lists the session is written a moment after the
+        // brain's: on a slow machine the last one had none yet.
+        eventually("the session's status") {
+            debugLines().contains { !((($0["status"] as? [String: Any])?["sessions"] as? [[String: String]]) ?? []).isEmpty }
+        }
         runtime.home.sync {}
 
         let text = try String(contentsOf: dir.appendingPathComponent(DebugLog.fileName), encoding: .utf8)
