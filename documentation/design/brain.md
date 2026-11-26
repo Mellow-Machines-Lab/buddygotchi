@@ -52,7 +52,7 @@ not run out.
 | 2. The calling agent | Offers Boop's line for the turn's end, says how you seemed, notes one thing worth remembering | While an agent's turn runs | None | The card tools the agent already calls |
 | 3. The dream | Writes Boop's memory, and fresh lines for the next day | While Boop sleeps | None | The buyer's own agent tool, run by Boop |
 | 4. Skits | Says a word at the few moments that call for one, each from takes of its own, and may invite one touch after | A long win, a failure, a fix, you back | None | Recorded takes on the board |
-| On top: Jev | A finer pick in five seats, for people who add a key | When a key is there and it answers in time | Up to 1.4 s, the pass's deadline less a margin, never waited past it | A key |
+| On top: Jev | A finer pick in five seats, for people who add a key | When a key is there and it answers in time | Up to 1.2 s, the pass's deadline less a margin, never waited past it | A key |
 
 Each layer works without the ones below it in the table, and Boop is whole
 with only the first. A later layer adds life; it never adds a duty.
