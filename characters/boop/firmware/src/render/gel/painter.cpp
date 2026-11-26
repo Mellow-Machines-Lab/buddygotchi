@@ -16,6 +16,14 @@
 #include <array>
 #include <cstring>
 #include <new>
+#ifdef ARDUINO_ARCH_ESP32
+#include <esp_attr.h>
+// The body's inner loops run from internal RAM: through flash they missed
+// the ESP32-S3's 16 KB instruction cache.
+#define GEL_HOT IRAM_ATTR
+#else
+#define GEL_HOT
+#endif
 namespace render::gel {
 namespace {
 using render::helper;
@@ -54,14 +62,14 @@ const uint16_t* material = slime::kMaterial;
 const uint16_t* madeMaterial = slime::kMaterial;
 uint16_t* tintedMaterial = nullptr;
 int bodyColorNow = 0;
-uint16_t texel(int ut, int vt, const Level& l) {
+GEL_HOT uint16_t texel(int ut, int vt, const Level& l) {
   int tx = std::clamp(texelAt(ut, l.shift), 0, l.width - 1), ty = std::clamp(texelAt(vt, l.shift), 0, l.height - 1);
   return material[l.offset + ty * l.width + tx];
 }
 // `n` pixels of the material from (ut, vt), a step of (ux, vx) a pixel.
 // The UVs step evenly, so when both ends round onto the grid every pixel
 // between does: the loop that takes most of the body's time needs no clamp.
-void texture(uint16_t* row, int ut, int vt, int ux, int vx, int n, const Level& l) {
+GEL_HOT void texture(uint16_t* row, int ut, int vt, int ux, int vx, int n, const Level& l) {
   if (n <= 0) return;
   const auto on = [&](int t, int size) { return unsigned(texelAt(t, l.shift)) < unsigned(size); };
   if (!on(ut, l.width) || !on(ut + ux * (n - 1), l.width) || !on(vt, l.height) || !on(vt + vx * (n - 1), l.height)) {
@@ -77,7 +85,7 @@ void texture(uint16_t* row, int ut, int vt, int ux, int vx, int n, const Level& 
 constexpr int kEraseBand = 16;
 // An inner triangle, by pixel centre: most of the body, kept to the
 // tightest loop.
-void fill(Surface& s, Vertex a, Vertex b, Vertex c, const Level& level, int from, int to) {
+GEL_HOT void fill(Surface& s, Vertex a, Vertex b, Vertex c, const Level& level, int from, int to) {
   int area = edge(a, b, c.x, c.y);
   if (area <= 0) return;
   int x0 = std::max(0, (std::min({a.x, b.x, c.x}) + 7) / 16),
@@ -139,7 +147,7 @@ void fill(Surface& s, Vertex a, Vertex b, Vertex c, const Level& level, int from
 // other edges would end it: a sliver of a triangle on the outline, about to
 // turn away or just turned toward the camera, still draws the fringe beyond
 // it, and the outline doesn't jump as the mesh turns.
-void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned outline, const Level& level, int from, int to) {
+GEL_HOT void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned outline, const Level& level, int from, int to) {
   if (!outline) return fill(s, a, b, c, level, from, to);
   int area = edge(a, b, c.x, c.y);
   if (area <= 0) return;
@@ -242,7 +250,7 @@ constexpr uint8_t kToward = 8;
 // each of its columns keeps its own: the outline may pass it more than once.
 int8_t bends[kRings + 1][kSectors][2];
 int8_t* bend(int ring, int col) { return bends[ring][col % kSectors]; }
-Vertex vertex(int ring, int col) {
+GEL_HOT Vertex vertex(int ring, int col) {
   const int8_t* b = bend(ring, col);
   return Vertex{px[ring][col], py[ring][col], col * 4096 / kSectors, ring * 2048 / kRings, b[0], b[1]};
 }
@@ -285,7 +293,7 @@ int16_t ringTop[kRings + 1], ringLow[kRings + 1];
 // rest, as the AMOLED draws the dome. Fixed, so a triangle's grain never
 // changes as it moves.
 uint64_t smaller[kRings + 1];
-void body(Surface& s, int from, int to) {
+GEL_HOT void body(Surface& s, int from, int to) {
   // Whether a quad's rows, its fringe's included, reach [from, to): asked
   // first, of its corners' rows alone, as most of a ring's don't.
   const auto reaches = [&](int ring, int col) {
@@ -316,7 +324,7 @@ struct Rows {
   int from, to, body;
   uint32_t us;  // how long they took
 };
-void draw(Rows& rows) {
+GEL_HOT void draw(Rows& rows) {
   for (int y = rows.from; y < rows.to; y += kEraseBand) {
     const int end = std::min(rows.to, y + kEraseBand);
     if (rows.erasing) rows.s->erase(*rows.erasing, y, end);
