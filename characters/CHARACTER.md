@@ -544,9 +544,7 @@ are picked from: `long` a very long turn, `hard` a check failed on the way
 `check` the 3rd failed check, `stuck` the agent gave up, `again` the 2nd
 failed check, `swear` when the skit swears. Filled, a row is at most 40
 characters in two rows of 26, or it's left out; no questions. On a win, a
-remark takes its place. With Settings' Voice set to speak, the Mac says
-the sentence the Moment shows (the aside or the remark) and the board
-plays no take for that Moment.
+remark takes its place.
 
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the
@@ -554,7 +552,7 @@ plays no take for that Moment.
   the board reports, then a take a line, tab separated: id, text, part,
   meaning, kind, moods (space separated), a column kept empty (it once said
   the finish a take needed; none does, and readers still find eight) and ms. It
-  lists only what a reply or a skit says: a take that's the words of
+  lists only what a reply, a skit or a sentence says: a take that's the words of
   several is in it once for each, by the same id (voicegen's `REPLY_OF`,
   `SKIT_OF`), and the voice file has it once. The table may list fewer
   takes than the voice file holds: Boop's card keeps every take it was
@@ -565,6 +563,32 @@ Both are built files and checked in, and a pack has both or neither. Boop's
 pack holds the recordings and voicegen, the tool that makes the two files;
 espeak-ng placeholders stand in for lines not recorded yet
 (`plans/regenerate.json` in its `design/assets/boop-voice-v1/`).
+
+**Sentences.** A take of part `sentence` is one of the pack's lines said
+whole: a `signs.md` row (an aside's, a remark's, or `[aside back]`'s and
+`[aside ship]`'s, which are only for this) names it in its brackets,
+`take=<id>`, and its meaning is that id. Where the board's voice has it in
+the face shown, only such rows
+are picked from, and the Moment plays that take and shows that row's text:
+in a skit's word's place, and at a failed check or a push, which say
+nothing otherwise. With none, the Moment is as it was: the skit's word and
+the aside picked from every row. Jev's `skit.take` seat offers the fitting
+sentences then. Its spoken words are the bank's `plans/sentences.json`
+(the shown text, which may hold `{what}`, is the row's), each recorded once
+in each of its deliveries, B bright, F flat or G glum, each a bank mood, an
+audio tag, an acting direction and the faces it plays in. `tools/voicegen/
+record.py` records them with ElevenLabs (`--tier`, `--only`, `--redo`,
+`--dry-run`; the key from `ELEVENLABS_API_KEY` or `~/.config/boop/
+elevenlabs.key`), with the bank's settings (seed 42, the acting as the
+script's leading tag), keeps the masters outside the repo with a listening
+copy, makes the bank's `original` texture and its `robot-soft` one (the
+chain provenance.json describes, rebuilt from those words: the original
+code isn't in the repo, nor any pair to prove it the same) and files each
+in the manifest as `sentence.<id>__<mood>`; voicegen then lists it with no
+other change. A new
+voice file is a new version: a board whose card has the old one stays
+silent (§10) until the card has the new one (a card reader, or `boopctl
+card` over USB, which takes hours).
 
 A pack without a voice leaves both out, and its Moments play faces and
 sound effects only.

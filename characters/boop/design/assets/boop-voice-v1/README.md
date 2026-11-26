@@ -32,9 +32,10 @@ and 2 (50 sentences, 76 takes): each one's spoken words, when it fits, and
 its deliveries (bright, flat, glum: a recorded mood, an audio tag, a
 direction and the faces it plays in). `character/tools/voicegen/record.py`
 records them (`--dry-run` first), files each as `sentence.<id>__<mood>`
-with entry `sentence.<id>` (not in dictionary.json) and only an `original`
-texture; its `robot-soft` file has to be made with the chain
-provenance.json describes, whose code isn't here, before voicegen lists it.
+with entry `sentence.<id>` (not in dictionary.json), its `original`
+texture and a `robot-soft` one from the chain provenance.json describes,
+rebuilt in record.py from those words (the original code isn't here, nor
+an original/robot-soft pair to prove it the same: listen first).
 
 ## Start here: find an actual recording in seconds
 
