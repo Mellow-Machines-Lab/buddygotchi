@@ -67,7 +67,7 @@ void paintPatch(Surface& s, const PaintControls& c, rig::Anchors& at);
 // band of the push (render/push.h's PushPlan::kRows): the frame's bands
 // then hold what they held before, one band up, so the panel is sent no
 // more pixels a frame. 20 sent about 1% more in working, wounded and pokes.
-constexpr int kSceneLift = 16;
+constexpr int kSceneLift = 0;
 inline int sceneLift(int height) { return height * kSceneLift / 410; }
 // The canvas row the body stands on (restBodyBottom), and how far above it
 // its eyes are.
