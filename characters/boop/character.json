@@ -45,7 +45,7 @@
       "id": "happy",
       "meaning": "Glad: things are going well, a win, kind words, or you came back.",
       "fade": {
-        "minutes": 10
+        "minutes": 30
       }
     },
     {
@@ -61,7 +61,7 @@
       "id": "proud",
       "meaning": "Proud: something hard finally worked.",
       "fade": {
-        "minutes": 5,
+        "minutes": 15,
         "to": "happy"
       }
     },
@@ -75,14 +75,14 @@
         "angry"
       ],
       "fade": {
-        "minutes": 3
+        "minutes": 6
       }
     },
     {
       "id": "sad",
       "meaning": "Down or hurt: a very long turn failed, the agent gave up, sad news, or unkind words to Boop.",
       "fade": {
-        "minutes": 10
+        "minutes": 20
       }
     },
     {

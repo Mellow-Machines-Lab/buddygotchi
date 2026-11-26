@@ -174,7 +174,7 @@ Boop's, cut to two of its 7 lasting moods and two of its 18 faces:
       "id": "cross",
       "meaning": "Cross: a failure, pokes or shakes that keep coming, an interruption, or being hushed.",
       "levels": ["annoyed", "grumpy", "angry"],
-      "fade": {"minutes": 3}
+      "fade": {"minutes": 6}
     }
   ],
   "moods": [
