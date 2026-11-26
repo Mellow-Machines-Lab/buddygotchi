@@ -1067,13 +1067,16 @@ bool Device::needsYouShows(uint32_t t) const { return b_.look(t) == render::Scen
 
 // A touch of an invite's kind is the invite's, the Mac's poke or stroke: a
 // tap, a boop on the nose or a tickle; a stroke, a ruffle or a finger the
-// face leaned into. It plays the payoff and nothing else: no tap or gesture
-// goes to the Mac, the invite's end does.
+// face leaned into. A swipe is a stroke here too, unless there are agents
+// to swipe between: a finger petting a back lifts still moving. It plays
+// the payoff and nothing else: no tap or gesture goes to the Mac, the
+// invite's end does.
 bool Device::invited(TouchGesture::Kind kind, render::Gesture g, uint32_t t, bool injected) {
   using G = render::Gesture;
   const bool gesture = kind == TouchGesture::kGesture;
+  const bool swipe = kind == TouchGesture::kSwipe && b_.model().pipCount <= 1;
   const bool tap = kind == TouchGesture::kTap || (gesture && (g == G::kNose || g == G::kTickle));
-  const bool stroke = kind == TouchGesture::kLean || (gesture && (g == G::kStroke || g == G::kRuffle));
+  const bool stroke = kind == TouchGesture::kLean || ((gesture || swipe) && (g == G::kStroke || g == G::kRuffle));
   if (!(tap || stroke) || !b_.inviteTouch(stroke, t, injected)) return false;
   input("invite", t);
   dirty_ = true;

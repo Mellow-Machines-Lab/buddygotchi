@@ -2774,6 +2774,11 @@ struct InviteRig {
     line("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
     run(500);
   }
+  // A stroke that lets go still moving fast, as a finger petting does.
+  void swipe() {
+    line("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":220,\"to_y\":120,\"ms\":120}");
+    run(220);
+  }
   // dbg.state's invite: its stage, "null" for none.
   std::string stage() {
     usb.text.clear();
@@ -3008,6 +3013,28 @@ static void test_a_touch_of_the_other_kind_passes_through() {
   q.stroke();
   TEST_ASSERT_TRUE_MESSAGE(has(q.usb.text, inviteLine("answered", "stroke")), q.usb.text.c_str());
   TEST_ASSERT_FALSE(has(q.usb.text, "\"kind\":\"gesture\""));
+}
+
+// A stroke let go fast, a swipe, answers a stroke's invite, in its wait
+// and late: a real finger on Boop's back lifts still moving.
+static void test_a_fast_stroke_answers_a_stroke() {
+  InviteRig r;
+  r.runTo(1000);
+  r.doLine(1, "next", skitWith("back", "stroke", "sigh"));
+  r.run(kSaid + 200);
+  r.usb.text.clear();
+  r.swipe();
+  TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, inviteLine("answered", "stroke")), r.usb.text.c_str());
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
+
+  InviteRig q;
+  q.runTo(1000);
+  q.doLine(1, "next", skitWith("back", "stroke", "sigh", ",\"ms\":4000"));
+  q.run(kSaid + 4000 + render::InviteShow::kShrugMs + 1000);
+  TEST_ASSERT_EQUAL_STRING("window", q.stage().c_str());
+  q.usb.text.clear();
+  q.swipe();
+  TEST_ASSERT_TRUE_MESSAGE(has(q.usb.text, inviteLine("late", "stroke")), q.usb.text.c_str());
 }
 
 // An invite with a pose, touch or payoff the board doesn't know is none,
@@ -3517,6 +3544,7 @@ int main() {
   RUN_TEST(test_an_invite_ends_on_a_call_or_asleep);
   RUN_TEST(test_an_invite_ends_once);
   RUN_TEST(test_an_invites_end_names_its_skit_whole);
+  RUN_TEST(test_a_fast_stroke_answers_a_stroke);
   RUN_TEST(test_a_touch_of_the_other_kind_passes_through);
   RUN_TEST(test_an_invite_it_cannot_play_is_ignored);
   RUN_TEST(test_an_invites_wait_is_held_in_range);
