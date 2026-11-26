@@ -136,12 +136,14 @@ class GelFace final : public Face {
   PastimeShow pastimes(uint32_t t) const;
   // How long its keyboard stays out after you stop typing (showAlong).
   static constexpr uint32_t kAlongLingerMs = 4000;
-  // With you at the Mac (showWithYou): a pose's clip comes and goes over
-  // kWithFadeMs. The pointer leans the body its way kPointerLean a step of
-  // its way across (the rig's lean, thousandths), kNearLean at the edge
+  // With you at the Mac (showWithYou): a beat's clip comes and goes over
+  // kWithFadeMs, and the jam shuts the eyes kJamShut (the rig's eyeOpen,
+  // thousandths) while it has them. The pointer leans the body its way
+  // kPointerLean a step of its way across (the rig's lean, thousandths), kNearLean at the edge
   // nearest the board; up its way, it stretches up kPointerStretch a step,
   // kNearStretch at the edge; and the body follows both over about kLeanMs.
   static constexpr uint32_t kWithFadeMs = 600, kLeanMs = 350;
+  static constexpr int kJamShut = 450;
   static constexpr int kNearLean = 215, kPointerLean = 19, kPointerStretch = 8, kNearStretch = 68;
   // The pointer also slides the body its way, kPointerSlide tenths of a px
   // a step, and turns the eyes further than a look alone, kPointerGaze a
@@ -166,21 +168,21 @@ class GelFace final : public Face {
   // Speaking (`speaking`): the rig's hand on the Mac's side buds out of the
   // body and goes to its ear, kEarX px out and kEarY up from where it holds
   // things, an open palm kEarSize big (the rig's px and thousandths), from
-  // kEarFrom px further in, and back, over the rig's fade, the motion
+  // kEarFrom px further in, and back, on the ear's mark's ramp, the motion
   // layer's springs over that. The body leans kEarLean that way (the rig's
   // lean), but at the light size, where the pose is the work's.
   static constexpr int kEarX = 94, kEarY = 66, kEarSize = 1470, kEarFrom = 30, kEarLean = 340;
   // Typing fast stays fast through a flicker off this long (showAlong).
   static constexpr uint32_t kFastLingerMs = 800;
-  // What it does with you now besides typing along, and the rig's channels
+  // Who has each part now (render/gel/owners.h), and the rig's channels
   // as it paints them: the mixer's, with the lean it follows and the move
   // playing (clipChannels), under the motion layer, and a hit's shake.
-  WithYou withYou() const { return with_; }
+  const Owners& owners() const { return owners_; }
   rig::Channels channels() const;
   rig::Channels clipChannels() const;
   // How far the rig's hand is out at its ear while you speak (Engine::ear):
-  // 0 to 1000, less than 0 the left; 0 while a clip has that hand. Its
-  // `reach`, where it goes: with the desk out, all the way at once.
+  // 0 to 1000, less than 0 the left; 0 while a clip or a card has that
+  // hand. Its `reach`, where it goes: with the desk out, all the way at once.
   int ear(bool reach = false) const;
 
  private:
@@ -251,18 +253,14 @@ class GelFace final : public Face {
   // The mood's idle move playing (Acting's move), and until when.
   const rig::Clip* idleMove_ = nullptr;
   uint32_t idleMoveEnds_ = 0;
-  // Typing along with you (showAlong): while your hands are busy at the Mac
-  // (the `typing` tag) it types as you do: its paws swing higher than the
-  // agents' soft typing, and its body sways a little over the keys, keeping
-  // time (the rig's `type-along` clip), never hopping. At work that's at its desk, in place of
-  // the agents' soft typing, and only in its typing pose: looking, running
-  // or waiting, its paws are off the keys and the pose has the body. Idle,
-  // it has its keyboard out for it, its paws rest when you stop, and the
-  // keyboard goes kAlongLingerMs after. It's the lowest thing there is: it
-  // waits for a pastime or a transition to end, and gives way at once to a
-  // finger, a Moment, a word forward, needs you or sleep. While the
-  // keyboard is out alone no pastime is dealt; at work they're dealt as
-  // ever, and it types with you again after each.
+  // Typing along with you (showAlong): while the keys have its hands
+  // (owners.h) it types as you do: its paws swing higher than the agents'
+  // soft typing, and the beat is yours, a small sway over the keys (the
+  // rig's `type-along`). At work that's at its desk, and only in its typing
+  // pose: in another, the pose keeps its paws. Idle, it has its keyboard
+  // out for it, its paws rest when you stop, and the keyboard goes
+  // kAlongLingerMs after. While the keyboard is out alone no pastime is
+  // dealt; at work they're dealt as ever, and it types with you again after.
   rig::Ramp along_;
   bool tapping_ = false;
   uint32_t typedAt_ = 0;
@@ -270,8 +268,14 @@ class GelFace final : public Face {
   void showAlong(uint32_t t);
   bool typingPose() const;
   bool light(SceneState look) const;
-  // Free for you at the Mac: typing along and the poses of showWithYou.
-  bool freeForYou(uint32_t t, SceneState& look) const;
+  // What's true now for who has what (owners.h), and the look.
+  WhatsTrue truths(uint32_t t, SceneState* look = nullptr) const;
+  Owners owners_;
+  // How far its paws type with you, 0 … 1000, so they go from your beat to
+  // the agents' soft typing and back without a jump (Paws::brisk).
+  rig::Ramp brisk_;
+  // A sign held up as last drawn: its hands are the sign's.
+  bool signUp_ = false;
   // Where its paws are in their beats (painter.h, briskLift), in
   // thousandths of a phase unit, and when typing fast was last seen.
   uint64_t pawPhaseQ_ = 0;
@@ -281,61 +285,34 @@ class GelFace final : public Face {
   // open a little wider (the rig's `type-along-fast`). A stretch of typing
   // along kThinkAfterMs or longer that stops: it looks up at you
   // (render/gel/gaze.h, thinking with you).
-  bool fast_ = false, typingTag_ = false, thought_ = false;
-  uint32_t typingFrom_ = 0, thinkAt_ = 0;
-  // With you at the Mac besides typing along: each is the body, the eyes and
-  // the paws, and for music and a call one mark on or beside it that reads
-  // at arm's length, as typing along's ticks and speaking's rings do
-  // (Engine::With, drawn in render/gel/layers.cpp). Lowest of all, below typing along: it waits for
-  // a pastime or a transition, gives way at once to a finger, a Moment, a
-  // word forward, needs you or sleep. At work in a pose of its own, or with
-  // a card held, it's light (GelFace::light): a call and speaking show, and
-  // the scroll's look gives way to the pose's. At work in any pose, or with a
-  // card held, music jams smaller at the desk (`jam-desk`), over the pose,
-  // the notes staying. The one shown, first that fits:
-  //
-  // - on a call (`oncall`): still and a little smaller, its eyes half
-  //   closed (`on-call`), a muted mic held still by its ear on the Mac's
-  //   side and nothing else; no typing along, music or pastime, and its
-  //   board silent (the Mac sends no volume). As the call ends, it stretches
-  //   up (`stretch`);
-  // - speaking (`speaking`): it listens, nodding on a slow beat
-  //   (`speak-along`), a hand cupped at its ear on the Mac's side (kEarX)
-  //   and the sound coming in to it, leaning and looking that way; over
-  //   typing along;
-  // - scrolling (`scrolling`, with `scrolldown` or `scrollup`): it looks
-  //   straight down or straight up the way you scroll and holds it, its eyes
-  //   as far as they go, its face nodded that way and its body a little
-  //   flatter or taller (kLookNod), easing back as you stop; with the way not
-  //   known, nothing;
-  // - music (`music`): it jams along for as long as it plays, its eyes
-  //   closed in a content face, a bounce on the beat and its head bobbing
-  //   side to side (`jam`), a note now and then rising from behind it,
-  //   typing along too; as the music stops it opens its eyes and looks
-  //   around (`look-around`).
-  //
-  // While a call, the scroll's look or a jam is on, no pastime is dealt. The pointer (state.ptr) moves the eyes (gaze.h) and leans the
-  // body a little its way, more at the edge nearest the board.
-  WithYou with_ = WithYou::kNone, wanted_ = WithYou::kNone;
-  const rig::Clip* withClip_ = nullptr;
-  bool music_ = false, called_ = false, deskJam_ = false;
-  // The clips it plays for you, found once (none for a pose: none plays):
-  // a pose's by what it is, the jam at the desk, typing along's and its
-  // fast one, and the moves once.
+  bool fast_ = false, fastOn_ = false, typingTag_ = false, thought_ = false;
+  uint32_t thinkAt_ = 0;
+  // With you at the Mac (showWithYou), by who has what (owners.h): the
+  // beat's clip on the mixer, each from where its own beat has got to since
+  // its fact came (beatFrom_), so one covered comes back in step; the
+  // scroll's look and the pointer's follow on the eyes; the jam's shut eyes;
+  // and the one mark beside it (Engine::With, drawn in render/gel/layers.cpp),
+  // each fading in and out over the rig's fade. As a call ends it stretches
+  // up, as the music stops it looks round, once each.
+  const rig::Clip* beatClip_ = nullptr;
+  uint32_t beatFrom_[5]{};
+  bool beatOn_[5]{};
+  bool called_ = false;
+  rig::Ramp shut_;
+  // The clips it plays for you, found once: each beat's (none for its own
+  // breath), the jam at the desk, typing fast's, and the moves once.
   struct Clips {
-    const rig::Clip* with[5];
-    const rig::Clip *deskJam, *along, *fast, *stretch, *lookAround;
+    const rig::Clip* beat[5];
+    const rig::Clip *deskJam, *fast, *stretch, *lookAround;
   };
   static const Clips clips_;
-  uint32_t musicFrom_ = 0;
-  // What it has on or beside it (Engine::With), each fading in and out over
-  // the rig's fade: the music's notes, the muted mic, the sound it hears;
-  // and when speaking's nod began, which the sound keeps time with. The
-  // hand at its ear (ear), how far out, and its side, -1 the left.
-  enum Mark { kNotes, kMuted, kHeard, kMarks };
-  rig::Ramp marks_[kMarks], ear_;
+  // The marks, by MarkBy less one: the key's ticks, the notes, the ear's
+  // sound, the muted mic. The ear's is the hand's at its ear too (ear),
+  // on earSide_, -1 the left: the Mac gone to the other side, it goes in
+  // before it comes out there.
+  static constexpr int kMarks = 4;
+  rig::Ramp marks_[kMarks];
   int earSide_ = 1;
-  uint32_t heardFrom_ = 0;
   bool pointer_ = false, pointerNear_ = false;
   int pointerX_ = 0, pointerY_ = 0;
   // What it follows on the rig's channels, over the mixer's: the lean, the

@@ -1,5 +1,5 @@
 {
-  "about": "Music playing: it jams along, eyes closed in a content curve. A bounce on every beat, about 111 a minute (a squash on the hit and a little lift), the head bobbing side to side every other beat; three bars that differ so minutes of it don't look mechanical: the bounce and the side-to-side, then quicker small bobs, then a wider swing with a big bop on its second beat.",
+  "about": "Music playing: it jams along, a bounce on every beat, about 111 a minute (a squash on the hit and a little lift), the head bobbing side to side every other beat; three bars that differ so minutes of it don't look mechanical: the bounce and the side-to-side, then quicker small bobs, then a wider swing with a big bop on its second beat. Its eyes shut with it while nothing else has them (GelFace::kJamShut).",
   "group": "with_you",
   "ms": 6480,
   "loop": true,
@@ -421,16 +421,6 @@
         6480,
         -220,
         "inout"
-      ]
-    ],
-    "eyeOpen": [
-      [
-        0,
-        -450
-      ],
-      [
-        6480,
-        -450
       ]
     ]
   }

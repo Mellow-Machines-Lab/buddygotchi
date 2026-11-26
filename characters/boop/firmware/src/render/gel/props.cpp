@@ -305,14 +305,18 @@ void paintProps(Surface& surface, const Engine& e, const Paws* paws, const Strea
     // At the desk the paws type on softly between its keys; while you type
     // they type with you, briskly, at the desk or with the keyboard alone;
     // the keyboard alone and you still, they rest.
-    const bool brisk = paws && paws->tapping, soft = brisk || deskAlpha >= alongAlpha;
-    auto lift = [&](int side) { return brisk ? briskLift(paws->phase, side) : typeLift(ms, side); };
+    // Between the two as it starts and stops, so no paw jumps.
+    const int brisk = paws ? paws->brisk : 0;
+    auto lift = [&](int side) {
+      const int soft = deskAlpha >= alongAlpha ? typeLift(ms, side) : 0;
+      return (briskLift(paws ? paws->phase : 0, side) * brisk + soft * (1000 - brisk)) / 1000;
+    };
     desk(387, 713, 258, 30, 8, rgb565(49, 88, 107));
     for (int row = 0; row < 2; ++row)
       for (int key = 0; key < 9; ++key) {
         bool pressed = contact > q(.35) && key == (s.hasLast && s.last.side < 0 ? 2 : 6);
         // Typing with you: the keys under a paw light as it comes down.
-        if (brisk && (key == 1 || key == 2 || key == 6 || key == 7))
+        if (brisk > 500 && (key == 1 || key == 2 || key == 6 || key == 7))
           pressed = pressed || lift(key < 4 ? -1 : 1) < kBriskLift / 3;
         desk(397 + key * 26, 718 + row * 10, 19, 6, 2, pressed ? light : rgb565(144, 170, 176));
       }
@@ -324,7 +328,7 @@ void paintProps(Surface& surface, const Engine& e, const Paws* paws, const Strea
             waiting = s.posed(Activity::kWaiting), typing = clamp(F(1) - looking - running - waiting, 0, 1);
     for (int side : {-1, 1}) {
       const int i = side > 0;
-      const int taps = (typing * std::max(tapLift(s, side), soft ? lift(side) : 0)).integer();
+      const int taps = (typing * std::max(tapLift(s, side), lift(side))).integer();
       const int lift =
           taps + (paws ? paws->lift[i] : 0) +
           (looking * kLookingPaws.lift[i] + running * kRunningPaws.lift[i] + waiting * kWaitingPaws.lift[i]).integer();

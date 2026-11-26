@@ -1,6 +1,6 @@
 # The screen guide
 
-Updated 2026-11-25. What takes which space on the gel's 502 by 410 screen,
+Updated 2026-11-26. What takes which space on the gel's 502 by 410 screen,
 how large it is, what shape it has, and what wins when two things want the
 same place. The why is in [theory.md](theory.md); each case moves in
 [animations.html](animations.html).
@@ -69,8 +69,7 @@ is a ball, an open palm (at most three small fingertips) or a fist, and
 never grows fingers. The same two hands type on the keys, grip a card or
 a sign by its sides, hold the low sign by its top corners, cup an ear
 while you speak, hang over the drawer's edge, and act in a move: a palm on
-the glass, a fist knocking. Each frame one owner has each hand: a move
-first, then a sign, a card, the low sign, the ear, the keys.
+the glass, a fist knocking. Who has each hand is in "Who has what".
 
 The glass is the screen, a pane Boop lives behind. Up at the glass the
 whole body is bigger, 1.15 at most. What touches it, a hand, a cheek, the
@@ -181,24 +180,7 @@ and sends it as a blob (linkkit's SPEC.md §3), the headline showing
 alone until it arrives. As built, the finish's hop and low sign play
 first and the show comes up after them, held 30 s from the turn's end.
 
-The draft of the tool's instructions:
-
-```text
-show: put one picture on the person's desk companion when your turn made,
-found or decided something. Call it once, right before your final message,
-in every turn that used tools. Skip it only for a plain chat answer.
-
-headline: the conclusion in a few plain words, at most 28 characters.
-  "search is 2.1x faster", not "performance results".
-svg: one picture that proves the headline. Or image: an absolute path to a
-  PNG you made, such as a screenshot.
-link: optional. A URL or an absolute path to open on tap.
-
-Show the bad news too: what failed, what you did not check.
-Pick the form that fits: bars for a before and after, a row of boxes for a
-chain or a flow, two frames for a visual change, a short check list for
-done and not done.
-```
+The tool's own words are `Card.showTool`'s.
 
 ## Shape and light
 
@@ -246,9 +228,7 @@ Under all of Boop's own moves the gel runs one motion layer (motion V2,
 the slime's `CONTINUITY.md`, The motion layer): the body stretches tall
 as it moves fast and goes flat as it lands, overshoots a stop and
 settles, its crown drags behind a slide, the hands arrive and leave late,
-and the face trails the body by a few px and catches up. Until V2 the face
-never moved on the body by itself; now it does, on purpose, only while
-the body moves, and it's still again at rest. Each rule has a switch
+and the face trails the body by a few px, only while the body moves. Each rule has a switch
 (`dbg.motion`) to judge it on the board.
 
 ## Meme faces
@@ -269,24 +249,45 @@ on the Mac picks one yet, but the back wears side-eye.
 
 ## Going with you
 
-Each is a rhythm and a gaze. Full size is for idle. Light size rides on any
-work pose and on a held picture.
+Each is a beat, a look or a mark, at full size when idle. At work in a pose
+of its own, or with a card held, it is light (rule 3 below).
 
-| You | Signal, never content | Full size, idle | Light size, at work |
-| --- | --- | --- | --- |
-| Type | `typing`, `typingfast` | Keyboard out, Boop types with you, and a key's tick bursts beside the hand that taps | The pose sways at your speed, and the same ticks burst beside it |
-| Speak | Another app records and no camera runs | Boop leans and looks to the Mac's side and nods. A hand buds out to its ear there, cupped, and short arcs of sound come in to it, caught on the nod. As you stop, the hand sinks back in | The hand, the sound and the nod, in the pose. With a card held, the card keeps its hands |
-| Scroll | `scrolling`, and `scrolldown` or `scrollup` when the Mac knows the way | It looks straight down as you scroll down, straight up as you scroll up, and holds it: its eyes all the way, its face nodded that way, a little flatter looking down and taller looking up; it eases back as you stop. Nothing with no way known | The pose keeps its eyes |
-| Move the pointer | `ptr` | Eyes follow, and the body leans and slides a little its way, a little more far out, its face turning that way | Eyes follow |
-| Play music | `music`, any sound after 10 s of it, a video's too | Jams along the whole time: eyes closed, a bounce on the beat, its head bobbing side to side, a note now and then rising from behind it. The Mac says "Boop likes your music" | At its desk, jamming smaller over the pose, the notes rising |
-| Take a call | A camera runs | Still and silent, a muted mic by its ear | The same, in the pose |
+| You | Signal, never content | What Boop does |
+| --- | --- | --- |
+| Type | `typing`, `typingfast` | Keyboard out, it types with you, swaying, a key's tick bursting beside the hand that taps |
+| Speak | Another app records and no camera runs | It leans and looks to the Mac's side and nods, a hand cupped at its ear there, short arcs of sound coming in to it |
+| Scroll | `scrolling`, and `scrolldown` or `scrollup` | It looks straight the way you scroll, face nodded, easing back as you stop. Nothing with no way known |
+| Move the pointer | `ptr` | Eyes follow, and the body leans and slides a little its way |
+| Play music | `music`, any sound after 10 s of it, a video's too | It jams: a bounce on the beat, eyes shut in a content face, a note rising behind it |
+| Take a call | A camera runs | Still and silent, eyes half shut, a muted mic by its ear |
 
-One rhythm at a time. If you type and speak together, speaking wins. There
-is no symbol to decode: typing, speaking, music and a call each have a mark
-on or behind the body that reads from a chair (the ticks, the rings, the
-rising note, the muted mic); scrolling is the look alone, the whole face
-going that way. A sign held up hides the ticks; a call shows the muted mic
-and nothing else. A video is music: any sound that goes on is.
+## Who has what
+
+Boop has six parts. Each has one owner a frame: the first in its list that
+is true now (`whoHasWhat`, `render/gel/owners.h`).
+
+| Part | It says | Owners, first wins |
+| --- | --- | --- |
+| Body | What it does | A Moment or an invite, your finger, needs you, listening, a pastime or a transition, the work pose or idle |
+| Beat | You | A call (still), speaking (a nod), music (the bounce), typing (a sway), its own breath |
+| Eyes | Its attention | Your finger, whatever has the body, at light size the pose's, a call (half shut), the scroll's look, speaking (the Mac's side), your pointer, the jam (shut), its own gaze |
+| Face | How it feels | A Moment's emotion, the jam's content face while the jam has the eyes (unless the mood keeps its own), the mood |
+| Hands | One job each | A move, a sign, a card, the low sign, the ear (speaking), the keys (typing, but on a call) |
+| Mark | One thing beside it | The muted mic, the sound coming in to the ear, the note, the key's ticks |
+
+Going with you rides only on its own look, with the Mac here; the mark
+stays through a pastime. No pastime is dealt on a call, while you speak or
+in the scroll's look; music holds none off.
+
+1. **Covered, not stopped.** A lower owner still true runs on under the
+   upper one, in step, and is there again when it leaves: the jam
+   keeps its beat under speaking and through a pastime.
+2. **Never a cut.** Every change of owner is a fade or a spring: a beat
+   over 0.3 to 0.6 s, a mark over 0.2 s, the eyes and the face eased.
+3. **Light at work.** At work in a pose of its own, or with a card held,
+   the body is the work's: the beat rides on it small, the eyes and the
+   hands stay the pose's but the ear, and the mark shows. Going with you
+   never changes the Doing.
 
 ## The strip's words
 
@@ -354,7 +355,7 @@ level is not normal, such as "Boop's getting sleepy."
 | Busy and frantic typing | Cut | The tempo is yours |
 | The "copied" pose | Cut | Tiny, and it says nothing |
 | Music | Keep | It is you, on your channel |
-| A video | Cut: its sound is music | A screen beside it needed decoding, and music in a browser tab read as a video and stopped the jam |
+| A video | Cut: its sound is music | A screen beside it needed decoding |
 | A special day | Keep as one sign at the hello | No costume |
 | Zs, the hello, the bye | Keep | Clear and rare |
 

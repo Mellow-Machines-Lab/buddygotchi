@@ -11,11 +11,12 @@
 // as energy, on its lids and in its tempo (sleepyLids). Only these show:
 //
 // - beside it: Zs rising while it sleeps at night;
-// - with you at the Mac (GelFace::showWithYou, Engine::With): typing
-//   along's ticks; the sound coming in to its ear while you speak (its
-//   hand cupped there is the rig's, render/gel/hands.h); a note now and
-//   then rising from behind it while music plays; a muted mic by its ear
-//   on a call. Each is for what you do at the Mac, never for a day;
+// - with you at the Mac, one mark at a time (render/gel/owners.h,
+//   Engine::With): typing along's ticks; the sound coming in to its ear
+//   while you speak (its hand cupped there is the rig's, render/gel/hands.h);
+//   a note now and then rising from behind it while music plays; a muted
+//   mic by its ear on a call. Each is for what you do at the Mac, never
+//   for a day;
 // - the sign a reaction holds up (its `sign`): a dark card held at its
 //   front, under its mouth, with a little gel hand at either side, the words
 //   on it, sliding up as the reaction starts and bobbing while it's held. It

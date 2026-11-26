@@ -1024,8 +1024,9 @@ Some clips' ids mean something to a face:
 - You at the Mac: the gel loops `type-along` while it types with you, and
   `type-along-fast` over it while you type fast; `jam` (at work
   `jam-desk`, over the pose),
-  `speak-along` and `on-call` while it's with you so (its
-  `GelFace::showWithYou`); and once, `stretch` as a call ends, `look-around` as the
+  `speak-along` and `on-call` while each has the beat (its
+  `GelFace::showWithYou`, `render/gel/owners.h`), each from where its beat
+  has got to; and once, `stretch` as a call ends, `look-around` as the
   music stops. The scroll's look straight down or up is no clip: the gel
   moves the eyes, the face and the body itself (`GelFace::kLookNod`).
 

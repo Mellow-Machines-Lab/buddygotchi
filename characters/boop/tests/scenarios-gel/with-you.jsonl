@@ -123,11 +123,30 @@
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music","typing"]}
 {"clock": 2500}
 {"shot": "music-typing"}
+// Together, by who has what (render/gel/owners.h): music has the beat, the
+// scroll's look and then the pointer the eyes, open over the jam, which
+// shut again as each goes; speaking over music at work, the jam's beat
+// covered and its note giving way to the sound coming in.
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music","scrolling","scrolldown","macright"]}
+{"clock": 3500}
+{"shot": "music-scrolling"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music","macright"],"ptr":[-7,-2]}
+{"clock": 5000}
+{"shot": "music-pointer"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music","macright"]}
+{"clock": 6000}
+{"shot": "music-pointer-rested"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":1,"calls":[[0,2,"editing Core.swift +12"]],"when":["day","music","speaking","macright"]}
+{"clock": 2500}
+{"shot": "music-speaking-at-work"}
 // You speak (another app records, no camera): it listens, nodding on a
 // slow beat, leaning and looking to the Mac's side, a hand budding out to
 // its ear there, cupped, the sound coming in to it, and sinking back in as
-// you stop; speaking wins over typing. Idle, on the left, at work (the
-// hand from its keys), and with a card held (the card keeps its hands).
+// you stop; the beat and the mark over typing, whose other paw types on.
+// Idle, on the left, at work (the hand from its keys), and with a card
+// held (the card keeps its hands).
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","speaking","typing","macright"]}

@@ -142,7 +142,7 @@ constexpr uint16_t kNoteInk = rgb565(236, 232, 244);
 // While music plays: a note rising from behind it, one at a time, every
 // 3.2 s, from behind its shoulder on one side and then the other, drifting
 // up over 3 s with a small sway and fading in and out, rimmed dark.
-void notes(Raster& r, const rig::Anchors& at, uint32_t ms, int alpha) {
+void notes(Raster& r, const rig::Anchors& at, uint32_t ms) {
   constexpr int kEvery = 3200, kLife = 3000, kRise = 60, kSize = 6;
   const int n = int(ms / kEvery), age = int(ms % kEvery);
   if (age >= kLife) return;
@@ -151,7 +151,7 @@ void notes(Raster& r, const rig::Anchors& at, uint32_t ms, int alpha) {
   const int x = at.crown.x / 16 + side * (48 + age * 12 / kLife) + 2 * sway.x / 4096;
   // Never over the screen's top, which a big bop's crown comes near.
   const int y = std::max(3 * kSize, at.crown.y / 16 + 22 - age * kRise / kLife);
-  r.alpha = alpha * std::min(255, std::min(age * 255 / 500, (kLife - age) * 255 / 1000)) / 255;
+  r.alpha = std::min(255, std::min(age * 255 / 500, (kLife - age) * 255 / 1000));
   // Behind the body: only what has come up over its shoulder shows.
   r.bounds = {0, 0, 1 << 30, at.crown.y / 16 + 12};
   for (int pass = 0; pass < 2; ++pass) {
@@ -167,11 +167,11 @@ void notes(Raster& r, const rig::Anchors& at, uint32_t ms, int alpha) {
 
 // On a call: a muted mic by its ear on the Mac's side, where speaking's
 // hand would be, held still.
-void mutedMic(Raster& r, const rig::Anchors& at, int side, int alpha) {
+void mutedMic(Raster& r, const rig::Anchors& at, int side) {
   const Ears e = ears(at);
   const Sides b = sides(at);
   const int hx = (side > 0 ? b.right - 4 : b.left + 4) + side * 8, hy = e.y - 24;
-  r.alpha = alpha;
+  r.alpha = 255;
   r.disk(hx, hy, 22, kCardInk);
   r.disk(hx, hy, 20, kCardRim);
   r.disk(hx, hy, 18, kCardInk);
@@ -197,7 +197,7 @@ void mutedMic(Raster& r, const rig::Anchors& at, int side, int alpha) {
 // the hand there (or with none, of its ear) over the whole beat, from
 // kTall px tall and faint to kShort and whole, and is caught there, one at
 // the nod's dip, kCaught into the beat. 3 px pale strokes, five points.
-void heard(Raster& r, const Engine& e, const rig::Anchors& at, int side, uint32_t ms, int alpha) {
+void heard(Raster& r, const Engine& e, const rig::Anchors& at, int side, uint32_t ms) {
   constexpr int kBeat = 1600, kCaught = 700, kGone = 120;
   constexpr int kFrom = 70, kBow = 40, kTall = 40, kShort = 26;
   const Hand& hand = handsPlan().moved[side > 0];
@@ -212,7 +212,7 @@ void heard(Raster& r, const Engine& e, const rig::Anchors& at, int side, uint32_
     const int in = age * 1000 / kBeat;
     // Faint far out, whole near; gone into the palm over its last kGone ms.
     const int fade = std::min(90 + in * 165 / 1000, (kBeat - age) * 255 / kGone);
-    r.alpha = alpha * fade / 255;
+    r.alpha = fade;
     // The arc's circle, out beyond it from the ear: a wave going in, `tall`
     // px from end to end (its half kBow * sin(span), span in a turn's 4096ths).
     const int near16 = rim16 + (kFrom * 16 - rim16) * (1000 - in) / 1000;
@@ -229,11 +229,15 @@ void heard(Raster& r, const Engine& e, const rig::Anchors& at, int side, uint32_
   r.alpha = 255;
 }
 
+// The one mark beside it (Engine::With), each at its own opacity, so as one
+// fades out the next fades in.
 void paintWith(Raster& r, const Engine& e, const rig::Anchors& at) {
   const Engine::With& w = e.with;
-  if (w.heard) heard(r, e, at, w.side, w.heardMs, w.heard);
-  if (w.notes) notes(r, at, w.notesMs, w.notes);
-  if (w.muted) mutedMic(r, at, w.side, w.muted);
+  if ((r.fade = w.ticks)) typingTicks(r, at, e.typingPhase, e.typingFast);
+  if ((r.fade = w.notes)) notes(r, at, w.notesMs);
+  if ((r.fade = w.heard)) heard(r, e, at, w.side, w.heardMs);
+  if ((r.fade = w.muted)) mutedMic(r, at, w.side);
+  r.fade = 255;
 }
 
 }  // namespace
@@ -262,7 +266,6 @@ void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at, const rig:
   auto content = [&](Layer l, uint32_t whole) { return layers ? layers->content(l, t) : whole; };
   auto fade = [&](Layer l) { return layers ? (layers->opacity(l, t) * 255 + 500) / 1000 : 255; };
   paintWith(r, e, at);
-  if (e.typingAlong) typingTicks(r, at, e.typingPhase, e.typingFast);
   r.fade = fade(Layer::kBeside);
   if (content(Layer::kBeside, now.beside) == kZs) zs(r, at, ms);
 }
