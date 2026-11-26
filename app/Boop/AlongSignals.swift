@@ -6,9 +6,8 @@ import CoreMediaIO
 
 /// The Mac's facts for what Boop notices of you at the Mac (`Along`), read
 /// on the runtime's queue every hands tick. None asks for a permission and
-/// none is content: idle times, the pointer's place, which apps play or
-/// record sound and whether a camera runs, and the frontmost app's bundle
-/// id.
+/// none is content: idle times, the pointer's place, the sign of the last
+/// scroll, whether an app plays or records sound and whether a camera runs.
 ///
 /// The pointer, the keys and the scroll are read every tick (4 a second);
 /// sound, the mic and the camera once a second, which they debounce over
@@ -17,8 +16,11 @@ import CoreMediaIO
 /// (`AudioWatch`), so only those are asked.
 final class AlongSignals: @unchecked Sendable {
     private let lock = NSLock()
-    private var front: String?
-    private var token: NSObjectProtocol?
+    /// Which way the last scroll went, from a global monitor of scroll
+    /// events, which needs no permission (only key events do): its sign
+    /// alone is kept, never how far, where or in which app.
+    private var scrollDown: Bool?
+    private var scrollMonitor: Any?
     /// The slow facts as last read, and when.
     private var slow = Along.Facts()
     private var slowAt: Date?
@@ -30,28 +32,27 @@ final class AlongSignals: @unchecked Sendable {
         if #available(macOS 14.2, *) { audio = AudioWatch() } else { audio = nil }
     }
 
-    /// Keeps the frontmost app's bundle id as it changes, on the main
-    /// thread, where NSWorkspace says so.
+    /// Starts watching which way you scroll, on the main thread.
     @MainActor func start() {
-        front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-        token = NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
-        ) { [weak self] note in
-            let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            self?.lock.withLock { self?.front = app?.bundleIdentifier }
+        // AppKit's delta is the content's: below zero, the page moves on
+        // toward its end, as the person sees it, natural scrolling or not.
+        scrollMonitor = NSEvent.addGlobalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            let dy = event.scrollingDeltaY
+            guard dy != 0 else { return }
+            self?.lock.withLock { self?.scrollDown = dy < 0 }
         }
     }
 
     /// The facts now, but the key and input idle times (`PresenceSignals`).
     func read() -> Along.Facts {
-        let front = lock.withLock { self.front }
+        let scrollDown = lock.withLock { self.scrollDown }
         if slowAt.map({ -$0.timeIntervalSinceNow >= Self.slowEvery }) ?? true {
             slowAt = Date()
-            slow = readSlow(front: front)
+            slow = readSlow()
         }
         var f = slow
-        f.front = front
         f.scrollIdleMs = Self.idleMs(.scrollWheel)
+        f.scrollDown = scrollDown
         f.clickIdleMs = min(Self.idleMs(.leftMouseDown), Self.idleMs(.rightMouseDown))
         // CoreGraphics' global coordinates, y down, as the anchor keeps them.
         if let p = CGEvent(source: nil)?.location {
@@ -79,7 +80,7 @@ final class AlongSignals: @unchecked Sendable {
     }
 
     /// Sound, the mic and the camera.
-    func readSlow(front: String?) -> Along.Facts {
+    func readSlow() -> Along.Facts {
         var f = Along.Facts()
         f.camera = Self.cameraRunning()
         // Which app plays or records sound is Core Audio's process objects,
@@ -87,9 +88,7 @@ final class AlongSignals: @unchecked Sendable {
         // mic facts at all there (the camera still counts for a call).
         if #available(macOS 14.2, *), let audio = audio as? AudioWatch {
             for p in audio.processes() where p.pid != getpid() {
-                if p.output {
-                    if p.belongs(to: front) { f.frontSound = true } else { f.otherSound = true }
-                }
+                if p.output { f.sound = true }
                 if p.input, !AudioProcess.alwaysListening.contains(p.bundle ?? "") { f.otherInput = true }
             }
         }
@@ -135,15 +134,6 @@ struct AudioProcess {
     static let alwaysListening: Set<String> = [
         "com.apple.CoreSpeech", "com.apple.assistantd", "com.apple.Siri", "com.apple.accessibility.heard",
     ]
-
-    /// Whether this is the frontmost app's sound: its own process, one of
-    /// its helpers (Chrome's play from `com.google.Chrome.helper`), or for
-    /// Safari, WebKit's (Safari plays from `com.apple.WebKit.GPU`).
-    func belongs(to front: String?) -> Bool {
-        guard let front, let bundle else { return false }
-        if bundle == front || bundle.hasPrefix(front + ".") { return true }
-        return front == "com.apple.Safari" && bundle.hasPrefix("com.apple.WebKit.")
-    }
 
     static let system = AudioObjectID(kAudioObjectSystemObject)
 

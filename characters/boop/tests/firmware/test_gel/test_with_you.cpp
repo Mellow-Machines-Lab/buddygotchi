@@ -68,8 +68,8 @@ const uint32_t kDay = tagBit("day");
 }  // namespace
 
 // Pins the rule list's order (gaze.h): needs you, typing along, thinking
-// with you, a pose's clip, a call, the pointer, reading along, a video;
-// each only while the eyes are free.
+// with you, a pose's clip, a call, scrolling, the pointer; each only while
+// the eyes are free.
 void test_the_eyes_with_you_in_order() {
   static_assert(Gaze::kThinkAfterMs == 8000 && Gaze::kThinkMs == 2000, "thinking with you, as this test pins");
   Gaze g;
@@ -85,7 +85,7 @@ void test_the_eyes_with_you_in_order() {
   TEST_ASSERT_TRUE(p.x > Gaze::kMidX && p.y < Gaze::kYouY + 20);  // up and to its right
   f.pointerX = 1, f.pointerY = 0, f.pointerNear = true;
   p = g.look(f, 48);
-  TEST_ASSERT_TRUE(p.x == Gaze::kMidX + Gaze::kMacReach && p.y == Gaze::kEyesY);  // right at it, at the edge
+  TEST_ASSERT_TRUE(p.x == Gaze::kMidX + Gaze::kNearReach && p.y == Gaze::kEyesY);  // right at it, at the edge
   f.pointerNear = false;
   // Above it: a call keeps the eyes still; a pose's clip has them; thinking
   // looks up at you; typing along is down at the keys; needs you first.
@@ -101,22 +101,15 @@ void test_the_eyes_with_you_in_order() {
   TEST_ASSERT_TRUE(g.look(f, 128).y == Gaze::kKeysY);
   f.needsYou = true, f.lookMs = 0;
   TEST_ASSERT_TRUE(g.look(f, 144).y == Gaze::kYouY);
-  // Below the pointer: reading along, then a video.
+  // Above the pointer: scrolling rests the look, the face's own look has the eyes.
   Gaze r;
   f = GazeFacts{};
-  f.free = true, f.mac = 1, f.with = WithYou::kReading;
-  p = r.look(f, 1000);
-  TEST_ASSERT_TRUE(p.on && p.x == Gaze::kMidX + Gaze::kPageReach && p.y == Gaze::kPageY);  // at the page
+  f.free = true, f.mac = 1, f.with = WithYou::kScrolling;
+  TEST_ASSERT_FALSE(r.look(f, 1000).on);
   f.pointer = true, f.pointerX = -3;
-  TEST_ASSERT_TRUE(r.look(f, 7016).x < Gaze::kMidX);  // the pointer comes first
-  f.pointer = false, f.mac = 0;
-  TEST_ASSERT_EQUAL_INT(Gaze::kMidX, r.look(f, 7032).x);  // no side told: forward
-  f.up = true;
-  TEST_ASSERT_EQUAL_INT(Gaze::kPageUpY, r.look(f, 7040).y);  // the screen above: its page up there
-  f.up = false;
-  f.with = WithYou::kVideo, f.mac = -1;
-  p = r.look(f, 7048);
-  TEST_ASSERT_TRUE(p.x == Gaze::kMidX - Gaze::kPageReach && p.y == Gaze::kEyesY);
+  TEST_ASSERT_FALSE(r.look(f, 7016).on);  // scrolling comes first
+  f.with = WithYou::kNone;
+  TEST_ASSERT_TRUE(r.look(f, 7032).x < Gaze::kMidX);
   // The screen above it: needs you looks up at you, then up at the screen.
   Gaze up;
   GazeFacts u;
@@ -132,8 +125,8 @@ void test_the_eyes_with_you_in_order() {
 // go, back to rest. Not in a work pose, not under needs you, nothing with
 // no pointer.
 void test_the_eyes_follow_your_pointer() {
-  static_assert(GelFace::kLeanReach == 160 && GelFace::kPointerLean == 14 && GelFace::kPointerStretch == 6 &&
-                    GelFace::kNearStretch == 50,
+  static_assert(GelFace::kNearLean == 215 && GelFace::kPointerLean == 19 && GelFace::kPointerStretch == 8 &&
+                    GelFace::kNearStretch == 68,
                 "the lean this test pins");
   Board board(SceneState::kIdle, kDay | tierBit(1));
   GelFace& face = board.face();
@@ -145,7 +138,7 @@ void test_the_eyes_follow_your_pointer() {
   TEST_ASSERT_TRUE(face.engine().motion.attending && face.engine().motion.attendX < F(0) &&
                    face.engine().motion.attendUp > F(0));
   const int lean = board.channel(rig::Channel::kLean) - face.mixer().channels()[rig::Channel::kLean];
-  TEST_ASSERT_TRUE(lean < -100 && lean >= -112);  // its way: 14 a step, eased
+  TEST_ASSERT_TRUE(lean < -170 && lean >= -186);  // its way: 19 a step, a fifth more out here, eased
   TEST_ASSERT_TRUE(board.channel(rig::Channel::kSquash) - face.mixer().channels()[rig::Channel::kSquash] <
                    -20);  // up: taller
   board.pointer(true, 9, 0);
@@ -155,8 +148,8 @@ void test_the_eyes_follow_your_pointer() {
   board.pointer(true, 1, 0, true);
   board.to(board.t + 1200);
   const rig::Channels mixed = face.mixer().channels();
-  TEST_ASSERT_TRUE(board.channel(rig::Channel::kLean) - mixed[rig::Channel::kLean] > 150);
-  TEST_ASSERT_TRUE(board.channel(rig::Channel::kSquash) - mixed[rig::Channel::kSquash] < -45);
+  TEST_ASSERT_TRUE(board.channel(rig::Channel::kLean) - mixed[rig::Channel::kLean] > 200);
+  TEST_ASSERT_TRUE(board.channel(rig::Channel::kSquash) - mixed[rig::Channel::kSquash] < -60);
   // Moving the eyes and the body never pops: the lean eases.
   board.pointer(true, -10, 0);
   int last = board.channel(rig::Channel::kLean) - face.mixer().channels()[rig::Channel::kLean], jump = 0;
@@ -190,85 +183,149 @@ void test_the_eyes_follow_your_pointer() {
   TEST_ASSERT_TRUE(work.face().engine().motion.attendUp > F(0) && abs(work.face().engine().motion.attendX) < q(.01));
 }
 
-// Pins reading along: while you scroll, and kReadLingerMs after, it reads
-// along, turned to the Mac's side and a little lower, no pastime dealt; a
-// read of kSettleMs settles it in, its lids half down; and none at work in
-// a pose of its own.
-void test_it_reads_along_while_you_scroll() {
-  static_assert(GelFace::kReadLingerMs == 6000 && GelFace::kSettleMs == 120000 && GelFace::kReadGapMs == 60000,
-                "the times this test pins");
-  const uint32_t scrolling = tagBit("scrolling"), right = tagBit("macright");
-  Board board(SceneState::kIdle, kDay | tierBit(2) | right);
-  GelFace& face = board.face();
-  board.to(1000);
-  board.tags(kDay | tierBit(2) | right | scrolling);
-  board.to(board.t + 1000);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kReading), int(face.withYou()));
-  TEST_ASSERT_EQUAL_STRING("reading", face.passing(board.t));
-  TEST_ASSERT_TRUE(face.engine().motion.attending && face.engine().motion.attendX > F(0));  // to the Mac, on its right
-  TEST_ASSERT_TRUE(board.channel(rig::Channel::kLean) > 120 && board.channel(rig::Channel::kSquash) > 20);
-  // You stop: it reads on a while, then rests.
-  board.tags(kDay | tierBit(2) | right);
-  const uint32_t stopped = board.t;
-  board.to(stopped + GelFace::kReadLingerMs - 64);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kReading), int(face.withYou()));
-  board.to(stopped + GelFace::kReadLingerMs + 64);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(face.withYou()));
-  // Two minutes of reading along, scrolling now and then: settled in, lids
-  // half down, and never a pastime over it.
-  bool pastime = false;
-  int lids = 1000;
-  for (int i = 0; i < 30; ++i) {
-    board.tags(kDay | tierBit(2) | right | scrolling);
-    board.to(board.t + 2000, [&] { pastime = pastime || face.pastimes(board.t).playing != Pastime::kNone; });
-    board.tags(kDay | tierBit(2) | right);
-    board.to(board.t + 3000, [&] { pastime = pastime || face.pastimes(board.t).playing != Pastime::kNone; });
-  }
-  board.to(board.t + 800, [&] { lids = std::min(lids, int(board.channel(rig::Channel::kEyeOpenL))); });
-  TEST_ASSERT_FALSE(pastime);
-  TEST_ASSERT_TRUE(lids < 600);  // settled in for a comfortable read
-  // At work in a pose of its own: no reading along.
-  Board work(SceneState::kWorking, kDay | right | scrolling);
-  work.m.act = SceneState::kTerminal;
-  work.state();
-  work.to(3000, [&] { TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(work.face().withYou())); });
+// Pins the pointer toward its reach: from 4 of its 10 steps out, on a smooth
+// curve, the lean, the slide and the stretch go up to a quarter further,
+// and the face turns its way across and nods its way up or down; in the
+// middle, all as it was.
+void test_the_pointer_a_little_more_at_its_reach() {
+  static_assert(GelFace::kEdgeFrom == 4 && GelFace::kEdgeFull == 9 && GelFace::kEdgeMore == 250 &&
+                    GelFace::kEdgeTurn == 15 && GelFace::kEdgeNod == 60,
+                "the edge this test pins");
+  struct Seen {
+    int lean, x, turn, nod;
+  };
+  auto at = [](int px, int py) {
+    Board board(SceneState::kIdle, kDay | tierBit(1));
+    board.to(1000);
+    board.pointer(true, px, py);
+    board.to(board.t + 2500);
+    const rig::Channels mixed = board.face().mixer().channels();
+    return Seen{board.channel(rig::Channel::kLean) - mixed[rig::Channel::kLean],
+                board.channel(rig::Channel::kX) - mixed[rig::Channel::kX],
+                board.channel(rig::Channel::kTurn) - mixed[rig::Channel::kTurn], board.face().engine().faceNod};
+  };
+  const Seen middle = at(4, 0), edge = at(9, 0), left = at(-9, 0), high = at(0, -9), low = at(0, 9);
+  TEST_ASSERT_TRUE(std::abs(middle.lean - 4 * GelFace::kPointerLean) <= 1);  // as it was
+  TEST_ASSERT_TRUE(middle.turn == 0 && middle.nod == 0);
+  TEST_ASSERT_TRUE(std::abs(edge.lean - 9 * GelFace::kPointerLean * 5 / 4) <= 2);  // a quarter more
+  TEST_ASSERT_TRUE(edge.x >= 1 && edge.turn >= GelFace::kEdgeTurn - 1 && left.turn <= -GelFace::kEdgeTurn + 1);
+  TEST_ASSERT_TRUE(edge.nod == 0 && high.nod <= -GelFace::kEdgeNod + 1 && low.nod >= GelFace::kEdgeNod - 1);
+  TEST_ASSERT_TRUE(high.turn == 0);
 }
 
-// Pins music: it gets into it kGrooveMs (eyes half closed, a slow sway and
-// a nod, no hop), then rests kGrooveRestMs, and again; as the music stops
-// it looks round once. Watching a video: turned to the screen, still.
-void test_it_grooves_to_your_music_and_watches_with_you() {
-  static_assert(GelFace::kGrooveMs == 24000 && GelFace::kGrooveRestMs == 180000, "the groove this test pins");
-  const uint32_t music = tagBit("music"), left = tagBit("macleft");
-  Board board(SceneState::kIdle, kDay | tierBit(1) | left);
+// Pins scrolling: while you scroll it looks straight the way you scroll and
+// holds it, its eyes all the way, its face nodded that way, flatter looking
+// down and taller and up a little looking up; in quick, back slower as you
+// stop, and from one straight to the other as the way changes, never
+// stopping between. With the way not known, nothing; no pastime dealt; the
+// pointer waits; none at work in a pose of its own.
+void test_it_looks_the_way_you_scroll() {
+  static_assert(GelFace::kLookInMs == 90 && GelFace::kLookOutMs == 300 && GelFace::kLookNod == 170 &&
+                    GelFace::kLookSquash == 120 && GelFace::kLookStretch == 140 && GelFace::kLookLift == 4,
+                "the look this test pins");
+  const uint32_t scrolling = tagBit("scrolling"), right = tagBit("macright"), base = kDay | tierBit(2) | right;
+  Board board(SceneState::kIdle, base);
+  GelFace& face = board.face();
+  auto off = [&](rig::Channel c) { return board.channel(c) - face.mixer().channels()[c]; };
+  const int& nod = face.engine().faceNod;
+  board.to(1000);
+  // Down: the eyes all the way within a quarter second, and held still.
+  board.tags(base | scrolling | tagBit("scrolldown"));
+  board.to(board.t + 250);
+  TEST_ASSERT_EQUAL_INT(int(WithYou::kScrolling), int(face.withYou()));
+  TEST_ASSERT_EQUAL_STRING("scrolling", face.passing(board.t));
+  TEST_ASSERT_TRUE(off(rig::Channel::kGazeY) >= 900 && nod >= GelFace::kLookNod * 9 / 10);
+  int low = 1 << 30, high = -(1 << 30);
+  bool pastime = false;
+  board.pointer(true, -9, 0);  // the pointer waits
+  board.to(board.t + 500);
+  board.to(board.t + 3000, [&] {
+    low = std::min(low, off(rig::Channel::kGazeY)), high = std::max(high, off(rig::Channel::kGazeY));
+    pastime = pastime || face.pastimes(board.t).playing != Pastime::kNone;
+  });
+  TEST_ASSERT_TRUE(low >= 990 && high <= 1000 && !pastime);
+  TEST_ASSERT_TRUE(off(rig::Channel::kSquash) > 100 && off(rig::Channel::kLean) == 0);
+  // Straight to up, never stopping between, and there within 0.4 s.
+  board.tags(base | scrolling | tagBit("scrollup"));
+  int last = off(rig::Channel::kGazeY);
+  board.to(board.t + 400, [&] {
+    TEST_ASSERT_TRUE(off(rig::Channel::kGazeY) < last || off(rig::Channel::kGazeY) <= -990);
+    last = off(rig::Channel::kGazeY);
+  });
+  TEST_ASSERT_TRUE(last <= -900 && nod <= -GelFace::kLookNod * 9 / 10);
+  TEST_ASSERT_TRUE(off(rig::Channel::kSquash) < -100 && off(rig::Channel::kLift) >= 3);  // taller, up a little
+  // Stopped: back, slower than it came: half way still after 0.15 s, home by 1.5 s.
+  board.pointer(false);
+  board.tags(base);
+  board.to(board.t + 150);
+  TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(face.withYou()));
+  TEST_ASSERT_TRUE(off(rig::Channel::kGazeY) <= -500);
+  board.to(board.t + 1350);
+  TEST_ASSERT_TRUE(std::abs(off(rig::Channel::kGazeY)) <= 10 && std::abs(nod) <= 5);
+  // The way not known: nothing rather than a guess.
+  board.tags(base | scrolling);
+  board.to(board.t + 1000, [&] {
+    TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(face.withYou()));
+    TEST_ASSERT_TRUE(std::abs(off(rig::Channel::kGazeY)) <= 10);
+  });
+  // At work in a pose of its own: the pose has the eyes.
+  Board work(SceneState::kWorking, kDay | right | scrolling | tagBit("scrolldown"));
+  work.m.act = SceneState::kTerminal;
+  work.state();
+  work.to(3000, [&] {
+    TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(work.face().withYou()));
+    TEST_ASSERT_EQUAL_INT(0, work.face().engine().faceNod);
+  });
+}
+
+// Pins music: idle, it jams along the whole time it plays, eyes closed, a
+// bounce on the beat (a lift) and its head bobbing side to side, no pastime
+// dealt; as the music stops it looks round once. At work, in any pose, it
+// jams smaller over the pose, still at its desk.
+void test_it_jams_to_your_music() {
+  const uint32_t music = tagBit("music");
+  Board board(SceneState::kIdle, kDay | tierBit(1));
   GelFace& face = board.face();
   board.to(1000);
-  board.tags(kDay | tierBit(1) | left | music);
+  board.tags(kDay | tierBit(1) | music);
   const uint32_t from = board.t;
   int low = 1 << 30, high = -(1 << 30), lifted = 0, lids = 1000;
-  board.to(from + 12000, [&] {
+  bool pastime = false;
+  board.to(from + 120000, [&] {
     if (board.t < from + 1000) return;
     const int lean = board.channel(rig::Channel::kLean);
-    low = std::min(low, lean), high = std::max(high, lean),
+    low = std::min(low, lean), high = std::max(high, lean);
     lifted = std::max(lifted, board.channel(rig::Channel::kLift));
     lids = std::min(lids, board.channel(rig::Channel::kEyeOpenL));
+    pastime = pastime || face.pastimes(board.t).playing != Pastime::kNone;
+    if (face.withYou() != WithYou::kMusic) TEST_FAIL_MESSAGE("it stopped jamming while the music played");
   });
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kMusic), int(face.withYou()));
-  TEST_ASSERT_TRUE(high - low > 100 && high - low < 200);  // a slow sway, side to side
-  TEST_ASSERT_EQUAL_INT(0, lifted);                        // never a hop
-  TEST_ASSERT_TRUE(lids < 650);                            // eyes half closed
-  board.to(from + GelFace::kGrooveMs + 100);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(face.withYou()));  // it rests
-  board.to(from + GelFace::kGrooveMs + GelFace::kGrooveRestMs + 100);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kMusic), int(face.withYou()));  // and again
-  board.tags(kDay | tierBit(1) | left);
+  TEST_ASSERT_EQUAL_STRING("music", face.passing(board.t));
+  TEST_ASSERT_TRUE(high - low > 350);  // its head bobbing side to side
+  TEST_ASSERT_TRUE(lifted >= 6);       // a bounce on the beat
+  TEST_ASSERT_TRUE(lids < 650);        // eyes closed
+  TEST_ASSERT_FALSE(pastime);
+  board.tags(kDay | tierBit(1));
   board.to(board.t + 64);
   TEST_ASSERT_EQUAL_STRING("look-around", board.cueing());  // the music's stopped: a look round
-  // Watching: to the screen, on its left, its eyes still.
-  Board video(SceneState::kIdle, kDay | tierBit(1) | left | tagBit("video"));
-  video.to(2000);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kVideo), int(video.face().withYou()));
-  TEST_ASSERT_TRUE(video.face().engine().motion.attendX < F(0) && video.channel(rig::Channel::kLean) < -120);
+  // At work, typing pose and a pose of its own: smaller, over the pose.
+  for (SceneState act : {SceneState::kToolUse, SceneState::kAnalyzing}) {
+    Board work(SceneState::kWorking, kDay);
+    work.m.act = act;
+    work.state();
+    work.to(2000);
+    const int rest = work.channel(rig::Channel::kLean);
+    work.tags(kDay | music);
+    int wlow = 1 << 30, whigh = -(1 << 30);
+    work.to(12000, [&] {
+      if (work.t < 4000) return;
+      const int lean = work.channel(rig::Channel::kLean) - rest;
+      wlow = std::min(wlow, lean), whigh = std::max(whigh, lean);
+    });
+    TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(work.face().withYou()));
+    TEST_ASSERT_TRUE(whigh - wlow > 60 && whigh - wlow < 300);  // jamming, smaller
+    TEST_ASSERT_EQUAL_INT(255, work.face().engine().with.notes);
+  }
 }
 
 // Pins the call: still and a little smaller, its eyes half closed; no
@@ -343,7 +400,7 @@ void test_nothing_with_you_without_the_facts() {
     TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(face.withYou()));
     TEST_ASSERT_EQUAL_INT(face.mixer().channels()[rig::Channel::kLean], board.channel(rig::Channel::kLean));
   });
-  const uint32_t all = tagBit("music") | tagBit("video") | tagBit("scrolling");
+  const uint32_t all = tagBit("music") | tagBit("scrolling") | tagBit("scrolldown");
   for (SceneState look : {SceneState::kAsleep, SceneState::kNeedsYou}) {
     Board other(look == SceneState::kNeedsYou ? SceneState::kWorking : look, kDay | all);
     if (look == SceneState::kNeedsYou) {
@@ -385,65 +442,35 @@ void test_speaking_wins_over_typing() {
 }
 
 // Pins what it has on or beside it (Engine::With), so each reads at a
-// glance: headphones while music plays, the groove's notes only in the
-// groove, kept through its rest, while it types along and at work in a pose
-// of its own; a page beside it while it reads along, on the Mac's side,
-// whose lines scroll kPageScroll px a second only while you scroll; a
-// screen while it watches; a muted mic on a call and nothing else then;
-// and none of them asleep or with a card held but the headphones.
-void test_what_it_wears_and_has_beside_it() {
-  static_assert(GelFace::kPageScroll == 14, "the page's scroll this test pins");
-  const uint32_t music = tagBit("music"), scrolling = tagBit("scrolling"), left = tagBit("macleft");
+// glance: the music's notes while music plays, through its pastimes, while
+// it types along and at work in a pose of its own; a muted mic on a call
+// and nothing else then; and nothing asleep. Scrolling has no mark.
+void test_what_it_has_on_or_beside_it() {
+  const uint32_t music = tagBit("music"), scrolling = tagBit("scrolling");
   Board board(SceneState::kIdle, kDay | tierBit(1));
   const Engine::With& w = board.face().engine().with;
   board.to(1000);
-  TEST_ASSERT_TRUE(!w.headphones && !w.page && !w.screen && !w.muted && !w.notes);
+  TEST_ASSERT_TRUE(!w.notes && !w.muted);
   board.tags(kDay | tierBit(1) | music);
-  const uint32_t from = board.t;
-  board.to(from + 2000);
-  TEST_ASSERT_TRUE(w.headphones == 255 && w.notes);
+  board.to(board.t + 2000);
+  TEST_ASSERT_EQUAL_INT(255, w.notes);
   board.tags(kDay | tierBit(1) | music | tagBit("typing"));
   board.to(board.t + 1000);
-  TEST_ASSERT_TRUE(board.face().pastimes(board.t).tapping && w.headphones == 255 && !w.notes);
-  board.tags(kDay | tierBit(1) | music);
-  // Resting from the groove, through its pastimes: still on, no notes.
-  board.to(from + GelFace::kGrooveMs + 1000);
-  board.to(from + GelFace::kGrooveMs + 60000, [&] { TEST_ASSERT_TRUE(w.headphones == 255 && !w.notes); });
-  // Reading along: the page on the Mac's side, scrolling while you do.
-  board.tags(kDay | tierBit(1) | left | scrolling);
+  TEST_ASSERT_TRUE(board.face().pastimes(board.t).tapping && w.notes == 255);
+  board.tags(kDay | tierBit(1) | scrolling);
   board.to(board.t + 1000);
-  const int scrolled = w.scroll;
-  TEST_ASSERT_TRUE(w.page == 255 && w.side == -1 && !w.headphones && !w.screen);
-  board.to(board.t + 1000);
-  TEST_ASSERT_INT_WITHIN(1, GelFace::kPageScroll, w.scroll - scrolled);
-  board.tags(kDay | tierBit(1) | left);
-  const int stopped = w.scroll;
-  board.to(board.t + 2000);
-  TEST_ASSERT_TRUE(w.page == 255 && w.scroll == stopped);  // you stopped: it reads on, the page still
-  // A video: the screen, not the page.
-  board.to(board.t + GelFace::kReadLingerMs);
-  board.tags(kDay | tierBit(1) | left | tagBit("video"));
-  board.to(board.t + 1000);
-  TEST_ASSERT_TRUE(w.screen == 255 && !w.page);
+  TEST_ASSERT_TRUE(!w.notes && !w.muted);
   // A call: the muted mic, and nothing else.
-  board.tags(kDay | tierBit(1) | left | tagBit("video") | music | tagBit("oncall"));
+  board.tags(kDay | tierBit(1) | music | tagBit("oncall"));
   board.to(board.t + 1000);
-  TEST_ASSERT_TRUE(w.muted == 255 && !w.screen && !w.headphones && !w.page);
-  // At work in a pose of its own: the light size has them too.
+  TEST_ASSERT_TRUE(w.muted == 255 && !w.notes);
+  // At work in a pose of its own: the notes too.
   Board work(SceneState::kWorking, kDay | music);
   work.m.act = SceneState::kAnalyzing;
   work.state();
   work.to(2000);
-  TEST_ASSERT_EQUAL_INT(255, work.face().engine().with.headphones);
-  work.tags(kDay | scrolling);
-  work.to(4000);
-  TEST_ASSERT_EQUAL_INT(255, work.face().engine().with.page);
-  // Asleep, nothing; a card held, its hands are full: nothing beside it.
-  Board asleep(SceneState::kAsleep, kDay | music | scrolling);
-  asleep.to(3000, [&] { TEST_ASSERT_TRUE(!asleep.face().engine().with.headphones && !asleep.face().engine().with.page); });
-  Board card(SceneState::kIdle, kDay | scrolling);
-  CardShow held;
-  held.on = true;
-  card.face().card(held);
-  card.to(3000, [&] { TEST_ASSERT_EQUAL_INT(0, card.face().engine().with.page); });
+  TEST_ASSERT_EQUAL_INT(255, work.face().engine().with.notes);
+  // Asleep, nothing.
+  Board asleep(SceneState::kAsleep, kDay | music);
+  asleep.to(3000, [&] { TEST_ASSERT_EQUAL_INT(0, asleep.face().engine().with.notes); });
 }

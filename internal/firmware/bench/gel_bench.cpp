@@ -69,6 +69,15 @@ std::vector<Scene> scenes() {
        R"({"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]})",
        {R"({"t":"do","name":"react","play":"now","args":{"sign":"nice!","mood":"happy","loops":1,"invite":{"skit":"win","pose":"palm","touch":"tap","payoff":"highfive","ms":60000,"xp":3,"label":"tap"}}})"},
        {}},
+      // Going with you: the jam, idle and at work, the scroll's look either
+      // way, and the pointer far to the right.
+      {"jam", R"({"t":"state","base":"idle","mood":"calm","idle":1,"vol":0,"when":["day","music"]})", {}, {}},
+      {"jam-desk", std::string("{") + kWorking + R"(,"when":["day","music"]})", {}, {}},
+      {"scroll", R"({"t":"state","base":"idle","mood":"calm","idle":1,"vol":0,"when":["day","scrolling","scrolldown"]})",
+       {}, {}},
+      {"scroll-up", R"({"t":"state","base":"idle","mood":"calm","idle":1,"vol":0,"when":["day","scrolling","scrollup"]})",
+       {}, {}},
+      {"pointer", R"({"t":"state","base":"idle","mood":"calm","idle":1,"vol":0,"when":["day"],"ptr":[9,-3]})", {}, {}},
   };
 }
 

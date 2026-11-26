@@ -947,6 +947,12 @@ enum Snapshots {
                 s.celebrating = [Narration.Celebrating(why: "Mochi is 50 days old today")]
                 return model(installer, status: s)
             }()),
+            // Music plays: the Mood card says Boop likes it.
+            ("music", {
+                var s = status(base: "idle", sessions: [["claude", "jetpack", "idle"]])
+                s.snapshot.when = ["day", "music"]
+                return model(installer, status: s)
+            }()),
             // An agent showed a picture of its result (the show).
             ("shown", {
                 var s = status(sessions: [["claude", "jetpack", "idle"]])

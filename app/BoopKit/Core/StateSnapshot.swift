@@ -343,6 +343,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// You're speaking to another app (`Along`): Boop nods along and says
     /// nothing, so no dictation hears it.
     public var speaking: Bool { when.contains("speaking") }
+    /// Music plays (`Along`): Boop jams along.
+    public var music: Bool { when.contains("music") }
 
     /// How many sessions need you: `attn`'s and its `more`. The popover's
     /// headline; the message doesn't carry it.
