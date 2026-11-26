@@ -818,7 +818,7 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   // then the invite's word and its payoff over them.
   int glowRadius = 0;
   const Point spot = inviteSpot(e.invite, at, hands.moved, glowRadius);
-  paintInviteGlow(surface, e.invite, spot, glowRadius);
+  paintInviteGlow(surface, e.invite, at, spot, glowRadius);
   {
     Raster r{surface};
     for (int side = 0; side < 2; ++side)

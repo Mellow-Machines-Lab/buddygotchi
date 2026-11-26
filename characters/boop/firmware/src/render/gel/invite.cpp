@@ -103,6 +103,84 @@ void glow(Raster& r, Point at, int radius, int shown, int ms) {
   r.alpha = 255;
 }
 
+// How far along a stroke's pass is (Q12), and how much of it shows. The
+// glide is half eased, half steady, so it eases in and out yet never stands
+// still: it fades in already moving and fades out still moving, and between
+// glides nothing shows.
+struct PassTime {
+  int head = 0, shown = 0;
+};
+
+PassTime passTime(const InviteShow& v) {
+  if (!invitesStroke(v) || v.phase != Phase::kPose) return {};
+  const int u = int(v.ms % kPassMs);
+  PassTime p;
+  if (u >= kPassGlideMs) return p.head = 4096, p;  // at its end, unseen
+  p.head = (rampIn(u, 0, kPassGlideMs) + ease(u, 0, kPassGlideMs)) / 2;
+  p.shown = of(of(ease(u, 0, 110), 4096 - ease(u, kPassGlideMs - 160, kPassGlideMs)), glowShown(v));
+  return p;
+}
+
+// The pass: a soft round light about its head, a fingertip's size, a white
+// middle, and its trail behind, thinning and dimming to nothing at its far
+// end. Drawn as
+// one pass over its box, each pixel blended once by the brighter of its
+// distances to the head and to the trail's line, each column's share
+// worked out once.
+void pass(Raster& r, const InvitePass& p) {
+  constexpr int kCols = 256, kWhiteIn = 56;  // the white middle: 56/256ths of its reach, squared
+  if (p.shown <= 0 || p.reach <= 0) return;
+  const int x0 = std::max(0, std::min(p.tail, p.head - p.reach));
+  const int x1 = std::min({r.s.width, p.head + p.reach + 1, x0 + kCols});
+  const int y0 = std::max(0, p.y - p.reach), y1 = std::min(r.s.height, p.y + p.reach + 1);
+  if (x0 >= x1 || y0 >= y1) return;
+  const int gold = of(215, p.shown), white = of(160, p.shown);
+  // A distance squared times `per`, >> 16, is 256ths of the reach squared.
+  const uint32_t perHead = (256u << 16) / uint32_t(p.reach * p.reach);
+  struct Column {
+    uint16_t head2, dim;  // its distance to the head, squared; the trail's light here (Q12)
+    uint32_t per;         // the trail's reach here, as `per`
+  } col[kCols];
+  for (int x = x0; x < x1; ++x) {
+    Column& c = col[x - x0];
+    c.head2 = uint16_t((x - p.head) * (x - p.head));
+    c.dim = 0, c.per = 0;
+    if (x >= p.tail && x < p.head) {
+      const int along = (x - p.tail) * 4096 / (p.head - p.tail);
+      const int reach = std::max(2, of(p.reach, 1300 + of(2796, along)));
+      c.dim = uint16_t(4096 - of(4096 - along, 4096 - along)), c.per = (256u << 16) / uint32_t(reach * reach);
+    }
+  }
+  r.touch(x0, y0, x1, y1);
+  for (int y = y0; y < y1; ++y) {
+    const uint32_t dy2 = uint32_t((y - p.y) * (y - p.y));
+    for (int x = x0; x < x1; ++x) {
+      const Column& c = col[x - x0];
+      const uint32_t near = ((c.head2 + dy2) * perHead) >> 16;
+      const int head = near < 256 ? 256 - int(near) : 0;
+      int lit = head * head;  // of 65536
+      if (c.dim) {
+        const uint32_t off = (dy2 * c.per) >> 16;
+        const int trail = off < 256 ? 256 - int(off) : 0;
+        lit = std::max(lit, of(trail * trail, c.dim));
+      }
+      // The white middle: the head's, and a line down the trail, fading.
+      int whiteLit = 0;  // of 65536
+      if (near < kWhiteIn) whiteLit = (kWhiteIn - int(near)) * (kWhiteIn - int(near)) * 65536 / (kWhiteIn * kWhiteIn);
+      if (c.dim) {
+        const uint32_t off = (dy2 * c.per) >> 16;
+        if (off < kWhiteIn) {
+          const int w = kWhiteIn - int(off);
+          whiteLit = std::max(whiteLit, of(w * w * 65536 / (kWhiteIn * kWhiteIn), of(c.dim, c.dim) * 3 / 4));
+        }
+      }
+      if (const int a = gold * lit >> 16) r.alpha = a, r.pixel(x, y, kGlow);
+      if (const int a = white * whiteLit >> 16) r.alpha = a, r.pixel(x, y, kWhite);
+    }
+  }
+  r.alpha = 255;
+}
+
 // The label: one short word, big, rimmed dark to read over anything, its
 // letters rippling a little, one after another.
 void label(Raster& r, const char* word, int x, int y, int shown, int ms) {
@@ -201,11 +279,57 @@ Point inviteSpot(const InviteShow& v, const rig::Anchors& at, const Hand hands[2
   }
 }
 
-void paintInviteGlow(Surface& s, const InviteShow& v, Point spot, int radius) {
+bool invitesStroke(const InviteShow& v) { return v.pose == InvitePose::kLean || v.pose == InvitePose::kBack; }
+
+InvitePass invitePass(const InviteShow& v, const Surface& s, const rig::Anchors& at, int radius) {
+  InvitePass p;
+  if (!invitesStroke(v) || !v.shows()) return p;
+  const PassTime t = passTime(v);
+  p.reach = radius * 5 / 4;
+  // Across most of the body, a fifth of its width in from each side: its
+  // back's middle, or the lean's brow, above its eyes, clear of its face.
+  // Its outline's widest (`lap`), not its brim's.
+  int left = at.lap[0].x, right = left;  // the body's outline, its widest
+  for (const Point q : at.lap) left = std::min(left, q.x), right = std::max(right, q.x);
+  left /= 16;
+  const int width = right / 16 - left;
+  const int eyes = (at.eyeL.y + at.eyeR.y) / 32;
+  const int row =
+      v.pose == InvitePose::kBack ? (at.brimF.y + at.handF.y) / 32 : at.crown.y / 16 + (eyes - at.crown.y / 16) * 2 / 5;
+  p.y = std::max(p.reach, std::min(row, s.height * 4 / 5 - p.reach - 2));
+  const int edge = s.inset(p.y - p.reach, p.y + p.reach) + 2;
+  p.from = std::max(edge + p.reach, left + width / 5), p.to = std::min(s.width - edge - p.reach, left + width * 4 / 5);
+  p.to = std::max(p.to, p.from + 1);
+  // The head, and its trail a third of the way behind its edge, though
+  // never further back than half that before the way's start.
+  const int way = p.to - p.from;
+  p.head = p.from + of(way, t.head);
+  p.tail = std::max(p.from - way / 6, p.head - p.reach / 2 - way / 3);
+  p.shown = t.shown;
+  return p;
+}
+
+void addInvitePass(rig::Channels& c, const InviteShow& v) {
+  const PassTime t = passTime(v);
+  if (t.shown <= 0) return;
+  // Most as the light crosses the middle of its way.
+  const int by = of(sinTurn(t.head / 2), t.shown);
+  auto add = [&](rig::Channel ch, int most) {
+    const rig::ChannelInfo& info = rig::kChannelInfo[int(ch)];
+    c[ch] = int16_t(std::clamp(int(c[ch]) + of(most, by), int(info.lo), int(info.hi)));
+  };
+  add(rig::Channel::kLean, 60);
+  add(rig::Channel::kSquash, 40);
+}
+
+void paintInviteGlow(Surface& s, const InviteShow& v, const rig::Anchors& at, Point spot, int radius) {
   const int shown = glowShown(v);
-  if (!v.shows() || !s.pixels || shown <= 0) return;
+  if (!v.shows() || !s.pixels) return;
   Raster r{s};
-  glow(r, spot, radius, shown, int(v.ms));
+  if (invitesStroke(v))
+    pass(r, invitePass(v, s, at, radius));
+  else if (shown > 0)
+    glow(r, spot, radius, shown, int(v.ms));
 }
 
 void paintInvite(Surface& s, const InviteShow& v, const rig::Anchors& at, Point spot, int radius) {
@@ -220,19 +344,26 @@ void paintInvite(Surface& s, const InviteShow& v, const rig::Anchors& at, Point 
     r.alpha = 255;
   }
   // The word by the glow: beside the palm, on the side away from the head's
-  // tilt, under the glow on its back; inside the panel.
+  // tilt, under the glow on its back; under a stroke's pass, where it
+  // glides, so it never runs through it; inside the panel.
   if (v.label && shown > 0) {
     const Font& f = kSign;
     const int w = glyphsIn(v.label) * f.w, reach = radius * 2;
     int x = spot.x + reach, y = spot.y - f.h / 2;
-    // Under the palm, and under the glow on its back; beside the cheek, on
-    // the side away from the face.
-    if (v.pose != InvitePose::kLean)
+    if (invitesStroke(v)) {
+      // By the middle of the passes' way: under it on its back, over it on
+      // the lean's brow, its face under it.
+      const InvitePass p = invitePass(v, s, at, radius);
+      x = (p.from + p.to - w) / 2;
+      y = v.pose == InvitePose::kBack ? p.y + p.reach * 3 / 4 : std::max(4, p.y - p.reach - f.h);
+    } else if (v.pose != InvitePose::kLean) {
+      // Under the palm, and under the glow on its back.
       x = spot.x - w / 2, y = spot.y + radius * (v.pose == InvitePose::kPalm ? 2 : 3) / 2;
-    else if (spot.x < (at.eyeL.x + at.eyeR.x) / 32)
-      x = spot.x - reach - w;
+    } else if (spot.x < (at.eyeL.x + at.eyeR.x) / 32) {
+      x = spot.x - reach - w;  // beside the cheek, on the side away from the face
+    }
     const int edge = s.inset(y, y + f.h) + 10;
-    if (x + w > s.width - edge) x = spot.x - reach - w;
+    if (!invitesStroke(v) && x + w > s.width - edge) x = spot.x - reach - w;
     x = std::clamp(x, edge, s.width - edge - w);
     y = std::min(y, s.height * 4 / 5 - f.h - 4);
     label(r, v.label, x, y, shown, ms);

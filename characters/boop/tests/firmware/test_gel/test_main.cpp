@@ -846,6 +846,122 @@ static void test_the_gel_draws_invites() {
   TEST_ASSERT_EQUAL_STRING("invite-back-late", inviteMove(late).clip->id);
 }
 
+// A stroke's invite (the lean, the back) never glows still, as a tap's
+// does: its light passes across the body, left to right, from a fifth of
+// its width to four fifths, along its back's middle or the lean's brow,
+// above its eyes. It eases in and out yet never stands still, fading in
+// moving and out moving, its trail a third of its way behind it from the
+// start of the glide to its end; nothing between glides, and again every
+// kPassMs. It stays inside the screen and above the strip, and costs far
+// fewer blends than the tap's glow. A tap's invite has no pass, and the
+// body answers only a pass, a little.
+static void test_a_stroke_invite_passes_across() {
+  constexpr int kW = 502, kH = 410, kStrip = kH * 4 / 5;
+  std::vector<uint16_t> px(kW * kH);
+  Surface s{kW, kH, px.data(), 110};
+  const int radius = 34;
+  // A body: its outline's widest `left` to `right`, its crown, eyes and
+  // the middle of its back (brimF to handF) at `back`.
+  auto body = [](int left, int right, int crown, int eyes, int back) {
+    rig::Anchors a;
+    for (int i = 0; i < rig::Anchors::kRingPoints; ++i)
+      a.lap[i] = {(left + (right - left) * i / (rig::Anchors::kRingPoints - 1)) * 16, back * 16};
+    a.crown = {(left + right) / 2 * 16, crown * 16};
+    a.eyeL = {(left + right) / 2 * 16 - 400, eyes * 16}, a.eyeR = {(left + right) / 2 * 16 + 400, eyes * 16};
+    a.brimF = {0, (back - 10) * 16}, a.handF = {0, (back + 10) * 16};
+    return a;
+  };
+  TEST_ASSERT_FALSE(invitesStroke(InviteShow{}));
+  InviteShow palm;
+  palm.phase = InviteShow::kPose, palm.pose = InvitePose::kPalm, palm.ms = 2000;
+  TEST_ASSERT_FALSE(invitesStroke(palm));
+  TEST_ASSERT_EQUAL_INT(0, invitePass(palm, s, body(100, 400, 110, 226, 230), radius).reach);
+  rig::Channels still = rig::kRest;
+  addInvitePass(still, palm);
+  for (int i = 0; i < rig::kChannelCount; ++i) TEST_ASSERT_EQUAL_INT(rig::kRest.v[i], still.v[i]);
+  // The back and the lean as the gel stands them, and a body pushed to the
+  // screen's corner.
+  const rig::Anchors bodies[] = {body(102, 398, 112, 226, 230), body(49, 391, 86, 232, 260), body(-60, 240, 260, 380, 390)};
+  for (int b = 0; b < 3; ++b) {
+    const rig::Anchors& at = bodies[b];
+    const int left = at.lap[0].x / 16, width = at.lap[rig::Anchors::kRingPoints - 1].x / 16 - left;
+    for (InvitePose pose : {InvitePose::kLean, InvitePose::kBack}) {
+      InviteShow v;
+      v.phase = InviteShow::kPose, v.pose = pose;
+      TEST_ASSERT_TRUE(invitesStroke(v));
+      const uint32_t from = 2200;  // the glow well in, a pass's start
+      int last = -1, passes = 0;
+      for (uint32_t ms = from; ms < from + 2 * kPassMs; ms += 25) {
+        v.ms = ms;
+        const InvitePass p = invitePass(v, s, at, radius);
+        const int u = int(ms % kPassMs), way = p.to - p.from;
+        const int inset = s.inset(p.y - p.reach, p.y + p.reach);
+        // Inside the screen, above the strip.
+        TEST_ASSERT_TRUE(p.reach > 0 && way > 0);
+        TEST_ASSERT_TRUE(p.from - p.reach >= inset && p.to + p.reach <= kW - inset);
+        TEST_ASSERT_TRUE(p.y - p.reach >= 0 && p.y + p.reach < kStrip);
+        if (b < 2) {
+          // Across most of the body: a fifth in from each side.
+          TEST_ASSERT_EQUAL_INT(left + width / 5, p.from);
+          TEST_ASSERT_EQUAL_INT(left + width * 4 / 5, p.to);
+          // Along its back's middle; on the lean's brow, its light clear
+          // of its eyes.
+          if (pose == InvitePose::kBack) TEST_ASSERT_EQUAL_INT(at.brimF.y / 16 + 10, p.y);
+          else TEST_ASSERT_TRUE(p.y + p.reach < at.eyeL.y / 16 - 8 && p.y > at.crown.y / 16);
+        }
+        TEST_ASSERT_TRUE(p.from <= p.head && p.head <= p.to && p.tail < p.head);
+        TEST_ASSERT_TRUE(p.tail >= p.from - way / 6);
+        if (u == 0) {
+          TEST_ASSERT_TRUE(p.head == p.from && p.shown == 0);
+          ++passes;
+        }
+        if (u >= kPassGlideMs) TEST_ASSERT_TRUE(p.head == p.to && p.shown == 0);  // between glides
+        if (u > 0 && u < kPassGlideMs) {
+          TEST_ASSERT_TRUE(p.head > last);  // never still, only on to the right
+          if (p.shown > 0) TEST_ASSERT_TRUE(p.head - p.tail >= way / 6);  // its trail, from the start
+          if (u >= 100 && u <= kPassGlideMs - 100) TEST_ASSERT_TRUE(p.shown > 2000);  // moving as it fades
+        }
+        // A third of its way behind its head's edge, or back to half that
+        // before its start.
+        TEST_ASSERT_EQUAL_INT(std::min(p.reach / 2 + way / 3, p.head - (p.from - way / 6)), p.head - p.tail);
+        last = p.head;
+        if (u + 25 >= int(kPassMs)) last = -1;
+        // It loops: a pass later, the same.
+        InviteShow next = v;
+        next.ms = ms + kPassMs;
+        const InvitePass q = invitePass(next, s, at, radius);
+        TEST_ASSERT_TRUE(q.head == p.head && q.tail == p.tail && q.shown == p.shown);
+      }
+      TEST_ASSERT_EQUAL_INT(2, passes);
+      // Drawn: only inside its box, above the strip, every pixel once.
+      v.ms = from + 450;
+      const InvitePass p = invitePass(v, s, at, radius);
+      std::fill(px.begin(), px.end(), 0), s.invalidate(), s.clear();
+      paintInviteGlow(s, v, at, {0, 0}, radius);
+      int lit = 0;
+      for (int y = 0; y < kH; ++y)
+        for (int x = 0; x < kW; ++x) {
+          if (!px[size_t(y) * kW + x]) continue;
+          ++lit;
+          TEST_ASSERT_TRUE(y < kStrip && std::abs(y - p.y) <= p.reach);
+          TEST_ASSERT_TRUE(x >= std::min(p.tail, p.head - p.reach) && x <= p.head + p.reach);
+        }
+      TEST_ASSERT_TRUE(lit > 3000 && lit < 16000);
+      TEST_ASSERT_TRUE(px[size_t(p.y) * kW + p.head] != 0);                  // its head
+      TEST_ASSERT_TRUE(px[size_t(p.y) * kW + p.head - p.reach / 2 - (p.to - p.from) / 4] != 0);  // its trail
+      // The body leans with it and squashes a little under it.
+      rig::Channels ch = rig::kRest;
+      addInvitePass(ch, v);
+      TEST_ASSERT_TRUE(ch[rig::Channel::kLean] > rig::kRest[rig::Channel::kLean]);
+      TEST_ASSERT_TRUE(ch[rig::Channel::kSquash] > rig::kRest[rig::Channel::kSquash]);
+    }
+  }
+  // Once the pose is over, no pass.
+  InviteShow over;
+  over.phase = InviteShow::kPayoff, over.pose = InvitePose::kBack, over.ms = 400;
+  TEST_ASSERT_EQUAL_INT(0, invitePass(over, s, bodies[0], radius).shown);
+}
+
 // The glass (render/gel/painter.h): the rig's glass brings the body up to
 // it, 1.15 its size at the whole and never more, about where it stands,
 // over a finish's own scale; with none, it's its own size.
@@ -3433,6 +3549,7 @@ int main() {
   RUN_TEST(test_gel_clips_use_the_shared_mixer);
   RUN_TEST(test_each_cue_carries_its_own_duck);
   RUN_TEST(test_the_gel_draws_invites);
+  RUN_TEST(test_a_stroke_invite_passes_across);
   RUN_TEST(test_the_glass_scales_the_body_to_115_at_most);
   RUN_TEST(test_one_pair_of_hands);
   RUN_TEST(test_the_knock_is_one_move_that_climbs);

@@ -2,6 +2,8 @@
 // skit's invite. It flinches, stomps and turns its back, only its face
 // going round the dome; waiting, it looks over its shoulder, one eye at
 // the rim in side-eye, to check whether you saw, and turns its back again.
+// A stroke, not a tap: the light passes across its back, left to right,
+// its trail behind it, and passes again, the word under its way.
 // No stroke comes, so it huffs and comes on round by itself.
 {"t": "dbg.reset"}
 {"clock": 0}
@@ -13,8 +15,12 @@
 {"expect": {"invite": {"stage": "pose", "pose": "back"}}}
 {"clock": 1800}
 {"shot": "turning"}
-{"clock": 3000}
+{"clock": 3300}
+{"shot": "pass-starts"}
+{"clock": 3500}
 {"shot": "its-back", "pin": true}
+{"clock": 3800}
+{"shot": "pass-ends"}
 {"clock": 4000}
 {"shot": "over-the-shoulder", "pin": true}
 {"clock": 5200}

@@ -317,7 +317,8 @@ face that draws invites, are `test_device`'s invite tests. `knock` shows
 each step of needs you's climbing knock, `flop` the flop of relief,
 which `dbg.clip` plays, and `fix` the same flop as a fix's Moment brings
 it, by its `clip`. `back` and `spin` show the rig's turn: the upset
-skit's back with its look over the shoulder, and the high five's spin.
+skit's back with its look over the shoulder and the light passing across
+its back, and the high five's spin.
 `meme-deadpan-side-eye`, `meme-squint-smug` and `meme-scream-faint` show
 the six meme faces at rest and in their moves, which `dbg.clip` plays.
 

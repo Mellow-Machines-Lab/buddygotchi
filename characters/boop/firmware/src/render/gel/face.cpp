@@ -634,8 +634,10 @@ rig::Channels GelFace::clipChannels() const {
   add(rig::Channel::kX, followBy_[kFollowX] / 256);
   add(rig::Channel::kGazeX, followBy_[kFollowGazeX] / 256);
   add(rig::Channel::kGazeY, followBy_[kFollowGazeY] / 256);
-  // A move (an invite's, the knock): its clip at its time, over the rest.
+  // A move (an invite's, the knock): its clip at its time, over the rest;
+  // and the body going a little with a stroke's pass.
   addMove(c, currentMove(*engine_), false);
+  addInvitePass(c, engine_->invite);
   return c;
 }
 

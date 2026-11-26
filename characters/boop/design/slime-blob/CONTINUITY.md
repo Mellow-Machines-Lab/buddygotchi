@@ -810,17 +810,29 @@ round, below); `gel/invite.h` holds only what no clip is: the glow, the
 word, the payoff's sparks, hearts or breath, the "+3 XP" low sign, the
 face it wears and its sound. Once the skit's face, words and sign are
 over, Boop holds its pose, the palm and the lean up at the glass, 1.15 its
-size, the back turned away from it; the place to touch glows
-(light means "this is for you"), a warm gold light that breathes, a ripple
-going out from it every 1.6 s, so it reads as "touch here" with no word,
-and the Mac's `label` ("tap", "pet") stands by it in the sign's font,
-rimmed dark, its letters rippling one after another.
+size, the back turned away from it; the place to touch lights up
+(light means "this is for you"). For a tap, the palm, it's a still warm
+gold glow that breathes, a ripple going out from it every 1.6 s, so it
+reads as "touch here" with no word. For a stroke, the lean and the back,
+the light never stands still, or it would say "press here" too: it passes
+across the body as a finger would (`invitePass`): from a fifth of its
+width to four fifths, along the middle of its back, or across the lean's
+brow, above its eyes, clear of its face. A soft light a fingertip's size
+glides right over 0.9 s, easing in and out yet never still: it fades in
+moving and fades out moving, a streak a third of its way long behind it,
+thinning and fading, so the way reads at a glance; then a beat, and it
+passes again every 1.1 s. The body leans with it and squashes a little
+under it. It stays inside the screen and above the strip, and costs fewer
+blends than the glow. The Mac's `label` ("tap", "pet") stands by it in
+the sign's font, rimmed dark, its letters rippling one after another:
+under the palm, under the back's way, over the lean's, so the light never
+runs through it.
 
 | Pose | What it does | Glows | Touch | Payoff |
 | --- | --- | --- | --- | --- |
 | palm | A hop, then faces you, happy, eyes wide, leaning a little to its right; its right hand, an open palm, flat on the glass beside its right eye (`invite-palm`, then `invite-palm-wait`), about 85 px across, its patch pale, the word under it | the palm, a ring round it | tap | high five (`invite-highfive`): the palm claps, a ring and a shake, sparks; it squashes, hops and spins all the way round (turning round), excited, the palm sinking back into its side |
-| lean | It perks up, comes up to the glass and rests its cheek on it, leaning, the patch pale where it touches, eyes up at you (`invite-lean`, `invite-lean-wait`) | its cheek, the word beside it, away from the face | stroke | purr (`invite-purr`): eyes shut, a fast small wiggle against the glass, three hearts rising |
-| back | A flinch and a stomp, then it turns its back, slumped, its face gone round the dome to its left (`invite-back`); waiting, it looks over its shoulder now and then, one eye at the rim in side-eye looking back at you, then turns its back again (`invite-back-wait`). It wears side-eye in every mood | its back, on the side away from its face, the word under it | stroke | sigh (`invite-sigh`): a breath in, its shoulders drop as it comes on round, pleased, a puff of breath |
+| lean | It perks up, comes up to the glass and rests its cheek on it, leaning, the patch pale where it touches, eyes up at you (`invite-lean`, `invite-lean-wait`) | its brow, the light passing across it above its eyes, the word over it | stroke | purr (`invite-purr`): eyes shut, a fast small wiggle against the glass, three hearts rising |
+| back | A flinch and a stomp, then it turns its back, slumped, its face gone round the dome to its left (`invite-back`); waiting, it looks over its shoulder now and then, one eye at the rim in side-eye looking back at you, then turns its back again (`invite-back-wait`). It wears side-eye in every mood | its back, on the side away from its face, the light passing across it, the word under it | stroke | sigh (`invite-sigh`): a breath in, its shoulders drop as it comes on round, pleased, a puff of breath |
 
 Missed, the palm's looks at its palm, lowers it and shrugs with both
 hands (`invite-palm-miss`); the lean's eases off the glass and shrugs

@@ -18,8 +18,10 @@
 // (render/gel/moves.h), the back and the spin on the rig's `turn`; what's
 // here is what no clip is: the glow, the word, the payoff's sparks, hearts
 // or breath, the "+3 XP" low sign, the face it wears and the sound. Light
-// means "this is for you": the glow breathes and a ripple goes out from it
-// now and then, so it reads as "touch here" with no word. A late touch (kLate)
+// means "this is for you": for a tap the glow breathes and a ripple goes out
+// from it now and then, so it reads as "touch here" with no word; for a
+// stroke it never stands still, but passes across the place as a finger
+// would (the pass), so it reads as "stroke here". A late touch (kLate)
 // brings it back, pleased, into the payoff. A function of the InviteShow,
 // the body's anchors and its hands alone, so the board, the simulator and
 // the Mac's mirror draw the same.
@@ -40,6 +42,27 @@ namespace render::gel {
 // and its breath and its ripple's period.
 constexpr int kGlowRadius = 30, kGlowBreathMs = 1400, kRippleMs = 1600;
 
+// A stroke's pass: its light comes up at the left of the place, glides
+// right over kPassGlideMs, easing in and out yet never still, its trail a
+// third of its way behind it, and fades, kPassMs a pass.
+constexpr int kPassMs = 1100, kPassGlideMs = 900;
+struct InvitePass {
+  int y = 0, from = 0, to = 0;  // the row it glides along, and where it starts and stops, px
+  int head = 0, tail = 0;       // its light now, and its trail's far end, px along the row
+  int reach = 0;                // how far its light reaches about its head, px
+  int shown = 0;                // how much of it shows, Q12: none between passes
+};
+// Whether the pose asks for a stroke (the lean and the back), not a tap.
+bool invitesStroke(const InviteShow& show);
+// A stroke's pass at the invite's time, across the body (`at`) from a fifth
+// of its width to four fifths: along its back's middle, or the lean's brow,
+// above its eyes; inside the screen and above the strip. None for a tap's
+// invite; its way, with none showing, once the pose is over.
+InvitePass invitePass(const InviteShow& show, const Surface& s, const rig::Anchors& at, int radius);
+// The body answers the pass a little: it leans with it and squashes under
+// it as the light goes by.
+void addInvitePass(rig::Channels& c, const InviteShow& show);
+
 // The face it wears now, by expression name: the pose's, the payoff's or a
 // late turn's; null for the mood's own (the shrug, the sigh's first
 // breath). The back's is side-eye, whatever the mood.
@@ -48,8 +71,8 @@ const char* inviteFace(const InviteShow& show);
 // right hand, `hands[1]`), the cheek on the glass (the anchors' patch), or
 // its back; and the glow's radius there.
 Point inviteSpot(const InviteShow& show, const rig::Anchors& at, const Hand hands[2], int& radius);
-// The glow and its ripple, behind a palm.
-void paintInviteGlow(Surface& s, const InviteShow& show, Point spot, int radius);
+// The glow and its ripple, or a stroke's pass, behind a palm.
+void paintInviteGlow(Surface& s, const InviteShow& show, const rig::Anchors& at, Point spot, int radius);
 // Over it all: a ring round the palm, the label, and the payoff's sparks,
 // hearts or breath.
 void paintInvite(Surface& s, const InviteShow& show, const rig::Anchors& at, Point spot, int radius);
