@@ -105,6 +105,12 @@ void paintHand(Raster& r, const Hand& h) {
   r.covered = {};
   const int lit = 4096 - of(2600, g);
   pad.fill(r, 0, -of(radius, 300), -of(radius, 380), 3500, ink(mix565(kGel, kPatch, of(120, g))));
+  // Cupped: the hollow of its palm, in shadow, opening the way its
+  // fingertips are turned.
+  if (const int cup = of(h.cup, palm)) {
+    const Point in = turned(0, -of(radius, 1500));
+    r.disk16(h.x16 + in.x, h.y16 + in.y, of(radius, of(1900, cup)), ink(mix565(kDeep, kShade, 110)));
+  }
   r.alpha = base * h.alpha / 255 * lit / 4096;
   pad.fill(r, 0, -of(radius, 1100), -of(radius, 1300), 1900, ink(kLight));
   if (tipR >= 12)
@@ -144,13 +150,10 @@ Hand holdingUp(int x, int y, int side, int px) {
   return h;
 }
 
-Hand cupped(const rig::Anchors& at, int side) {
-  // Beside its ear, its open palm toward the sound, fingertips leaning in.
-  const int ear = side > 0 ? at.brimR.x : at.brimL.x, earY = (at.brimF.y + at.eyeL.y) / 2;
-  Hand h;
-  h.x16 = ear + side * 14 * 16, h.y16 = earY;
-  h.radius16 = 15 * 16;
-  h.shape = 2900, h.turn = -side * 300;
+Hand cupped(Hand h, int ear) {
+  // Its palm open to the sound, cupped, tipped out toward it.
+  h.turn = ear * 520 / 1000;
+  h.cup = 4096;
   return h;
 }
 

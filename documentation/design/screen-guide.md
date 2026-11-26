@@ -271,7 +271,7 @@ work pose and on a held picture.
 | You | Signal, never content | Full size, idle | Light size, at work |
 | --- | --- | --- | --- |
 | Type | `typing`, `typingfast` | Keyboard out, Boop types with you, and a key's tick bursts beside the hand that taps | The pose sways at your speed, and the same ticks burst beside it |
-| Speak | Another app records and no camera runs | One hand cups an ear, Boop leans in, rings pulse by the ear | The same, in the pose |
+| Speak | Another app records and no camera runs | Boop leans and looks to the Mac's side and nods. A hand buds out to its ear there, cupped, and short arcs of sound come in to it, caught on the nod. As you stop, the hand sinks back in | The hand, the sound and the nod, in the pose. With a card held, the card keeps its hands |
 | Scroll | `scrolling`, and `scrolldown` or `scrollup` when the Mac knows the way | It looks straight down as you scroll down, straight up as you scroll up, and holds it: its eyes all the way, its face nodded that way, a little flatter looking down and taller looking up; it eases back as you stop. Nothing with no way known | The pose keeps its eyes |
 | Move the pointer | `ptr` | Eyes follow, and the body leans and slides a little its way, a little more far out, its face turning that way | Eyes follow |
 | Play music | `music`, any sound after 10 s of it, a video's too | Jams along the whole time: eyes closed, a bounce on the beat, its head bobbing side to side, a note now and then rising from behind it. The Mac says "Boop likes your music" | At its desk, jamming smaller over the pose, the notes rising |

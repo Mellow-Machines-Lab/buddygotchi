@@ -21,7 +21,10 @@
 //    `scrolldown` or `scrollup`, showWithYou): rest; its look straight down
 //    or straight up is the face's, the eyes all the way and the face nodded
 //    that way (GelFace::kLookNod), over the pointer too.
-// 7. The pointer: while your pointer moves and the Mac knows where the board
+// 7. Speaking with you (the `speaking` tag, showWithYou): to the Mac's side,
+//    where the sound comes from, at the eyes' height, over the pointer;
+//    with no side told, the pointer's rule.
+// 8. The pointer: while your pointer moves and the Mac knows where the board
 //    sits (`state.ptr`), its eyes follow it, as you see the board beside the
 //    screen: further the further it is, up to kPointerReach. At the edge of
 //    the screen nearest the board, it looks right at it, to the Mac's side.

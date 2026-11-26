@@ -2041,6 +2041,7 @@ void test_it_looks_the_way_you_scroll();
 void test_it_jams_to_your_music();
 void test_a_call_keeps_it_still();
 void test_speaking_wins_over_typing();
+void test_speakings_hand_buds_out_at_the_macs_side();
 void test_what_it_has_on_or_beside_it();
 void test_typing_fast_is_quicker_not_higher();
 void test_nothing_with_you_without_the_facts();
@@ -3597,6 +3598,7 @@ int main() {
   RUN_TEST(test_it_jams_to_your_music);
   RUN_TEST(test_a_call_keeps_it_still);
   RUN_TEST(test_speaking_wins_over_typing);
+  RUN_TEST(test_speakings_hand_buds_out_at_the_macs_side);
   RUN_TEST(test_what_it_has_on_or_beside_it);
   RUN_TEST(test_typing_fast_is_quicker_not_higher);
   RUN_TEST(test_nothing_with_you_without_the_facts);

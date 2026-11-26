@@ -106,6 +106,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   with_ = wanted_ = WithYou::kNone, withClip_ = nullptr;
   music_ = called_ = deskJam_ = false, musicFrom_ = 0;
   for (auto& m : marks_) m = rig::Ramp{};
+  ear_ = rig::Ramp{}, earSide_ = 1, heardFrom_ = 0;
   pawPhaseQ_ = 0, fastSeen_ = 0;
   pointer_ = pointerNear_ = false, pointerX_ = pointerY_ = 0;
   for (int i = 0; i < kFollows; ++i) followTo_[i] = followBy_[i] = 0;
@@ -520,6 +521,7 @@ void GelFace::showWithYou(uint32_t t) {
   if (clip != withClip_) {
     if (withClip_) mixer_.stop(*withClip_);
     if (clip) mixer_.play(*clip, kWithFadeMs);
+    if (now == WithYou::kSpeaking) heardFrom_ = t;
     withClip_ = clip;
   }
   const bool deskJam = free && music && desk && !call && !(when & kSpeakingTag);
@@ -529,8 +531,6 @@ void GelFace::showWithYou(uint32_t t) {
   if (clip) holdGestures(clip->ms);
   else if (now != WithYou::kNone) holdGestures(0);
   with_ = now;
-  engine_->speaking = now == WithYou::kSpeaking;
-  engine_->speakingSide = when & kMacLeftTag ? -1 : 1;
   const int mac = (when & kMacLeftTag) ? -1 : (when & kMacRightTag) ? 1 : 0;
   // What it has on or beside it (Engine::With), so each reads at a glance
   // where a pose alone is too small to see: at the light size too, and the
@@ -547,13 +547,13 @@ void GelFace::showWithYou(uint32_t t) {
     const bool shows = showsLook(source_.anim, shown) && (shown == SceneState::kIdle || shown == SceneState::kWorking) &&
                        !finger_ && !alone_ && !e.router.listening;
     const bool notes = shows && music && !call && !speaks;
-    const bool on[kMarks] = {notes, open && call};
+    const bool on[kMarks] = {notes, open && call, now == WithYou::kSpeaking};
     for (int i = 0; i < kMarks; ++i) marks_[i].retarget(on[i] ? 1000 : 0, t);
     Engine::With& w = engine_->with;
     auto opacity = [&](Mark m) { return (marks_[m].value(t) * 255 + 500) / 1000; };
-    w.notes = opacity(kNotes), w.muted = opacity(kMuted);
+    w.notes = opacity(kNotes), w.muted = opacity(kMuted), w.heard = opacity(kHeard);
     w.side = mac ? mac : 1;
-    w.notesMs = t - musicFrom_;
+    w.notesMs = t - musicFrom_, w.heardMs = t - heardFrom_;
   }
   // To the pointer while it moves, a little more toward its reach, and
   // further at the edge nearest the board, reaching toward it. Never on a
@@ -585,6 +585,14 @@ void GelFace::showWithYou(uint32_t t) {
       to[kFollowNod] = (pointerY_ > 0 ? 1 : -1) * edgeY * kEdgeNod / 1000;
     }
   }
+  // Speaking: its hand to its ear on the Mac's side, unless a card has its
+  // hands, and the body leaning that way, unless the pose is the work's.
+  // The Mac gone to the other side, it goes in before it comes out there.
+  const int side = mac < 0 ? -1 : 1;
+  const bool speaking = now == WithYou::kSpeaking;
+  if (side != earSide_ && !ear_.value(t)) earSide_ = side;
+  if (const int ear = speaking && !card_.on && side == earSide_ ? 1000 : 0; ear != ear_.target()) ear_.retarget(ear, t);
+  if (speaking && !light(look)) to[kFollowLean] += side * kEarLean;
 }
 
 void GelFace::once(const rig::Clip& clip, uint32_t t) {
@@ -607,6 +615,16 @@ void GelFace::followLean(uint32_t dt) {
   for (int i = 0; i < kFollows; ++i) follow(followBy_[i], followTo_[i], kLeanMs);
   follow(lookBy_, lookTo_, lookTo_ ? kLookInMs : kLookOutMs);
   engine_->faceNod = followBy_[kFollowNod] / 256 + lookBy_ / 256 * kLookNod / 1000;
+  engine_->ear = ear();
+}
+
+bool GelFace::deskOut(uint32_t t) const { return engine_->scenes.desk.x > q(.5) || along_.value(t) > 500; }
+
+int GelFace::ear(bool reach) const {
+  // With the desk out the hand goes from its keys and back to them, and the
+  // motion layer's springs carry it all the way.
+  const int ear = earSide_ * (reach && deskOut(lastTick_) ? ear_.target() : ear_.value(lastTick_));
+  return mixer_.channels()[rig::hand(ear > 0, rig::HandPart::kSize)] > 0 ? 0 : ear;
 }
 
 rig::Channels GelFace::channels() const {
@@ -621,8 +639,7 @@ rig::Channels GelFace::channels() const {
 void GelFace::showLively(uint32_t dt, uint32_t t) {
   Engine& e = *engine_;
   const F unit = F(kPxPerUnit);
-  const bool desk = e.scenes.desk.x > q(.5) || along_.value(t) > 500;
-  lively_.advance(dt, clipChannels(), e.life()[0] * unit, e.acting.slide.x * unit, desk);
+  lively_.advance(dt, clipChannels(), e.life()[0] * unit, e.acting.slide.x * unit, deskOut(t));
   e.faceLagX16 = lively_.faceX16(), e.faceLagY16 = lively_.faceY16();
 }
 
@@ -644,6 +661,15 @@ rig::Channels GelFace::clipChannels() const {
   add(rig::Channel::kGazeY, look);
   add(rig::Channel::kSquash, look * (look > 0 ? kLookSquash : kLookStretch) / 1000);
   add(rig::Channel::kLift, look < 0 ? -look * kLookLift / 1000 : 0);
+  // The hand at its ear: out of the body as it grows, its palm opening.
+  using rig::HandPart;
+  if (const int reach = ear(true)) {
+    const int side = reach > 0 ? 1 : -1, out = std::abs(reach);
+    add(rig::hand(reach > 0, HandPart::kX), side * (kEarX - kEarFrom + kEarFrom * out / 1000));
+    add(rig::hand(reach > 0, HandPart::kY), kEarY);
+    add(rig::hand(reach > 0, HandPart::kSize), kEarSize * out / 1000);
+  }
+  if (const int open = ear()) add(rig::hand(open > 0, HandPart::kShape), std::abs(open));
   // A move (an invite's, the knock): its clip at its time, over the rest;
   // and the body going a little with a stroke's pass.
   addMove(c, currentMove(*engine_), false);

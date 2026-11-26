@@ -8,6 +8,7 @@
 
 #include "render/font.h"
 #include "render/gel/engine.h"
+#include "render/gel/fixed.h"
 #include "render/gel/hands.h"
 #include "render/gel/lane.h"
 #include "render/gel/painter.h"
@@ -85,30 +86,6 @@ void zs(Raster& r, const rig::Anchors& at, int ms) {
   r.alpha = 255;
 }
 
-// Listening to you speak: a gel hand cupped at its ear on `side` (-1 left,
-// 1 right), and three rings beside it, each swelling out and fading on the
-// 1.6 s beat of its nod, `ms` into it.
-void speakingHand(Raster& r, const rig::Anchors& at, int side, int ms) {
-  const Hand hand = cupped(at, side);
-  const int hx = hand.x16 / 16, hy = hand.y16 / 16;
-  r.alpha = 255;
-  if (handsPlan().has(side, HandsAt::kEar)) paintHand(r, hand);
-  const int beat = ms % 1600;
-  for (int i = 0; i < 3; ++i) {
-    const int age = (beat + 1600 - i * 330) % 1600, radius = 26 + i * 11 + age * 12 / 1600;
-    r.alpha = std::max(0, 255 - age * 255 / 1600);
-    // A third of a turn about the hand, facing out: turn() counts
-    // thirty-seconds clockwise from the right.
-    Point arc[11];
-    for (int k = 0; k < 11; ++k) {
-      const Point p = turn((side > 0 ? 32 : 16) + k - 5);
-      arc[k] = {hx * 16 + radius * p.x / 256, hy * 16 + radius * p.y / 256};
-    }
-    r.stroke16(arc, 11, 3 * 16, kShine);
-  }
-  r.alpha = 255;
-}
-
 // Typing along with you: on each of the paws' beats, a key's tick beside
 // the paw that taps, three short strokes bursting out and up from it and
 // fading by its next tap, the left's and the right's in turn; brighter and
@@ -141,7 +118,7 @@ void typingTicks(Raster& r, const rig::Anchors& at, int phase, bool fast) {
 // drawn shape at the body's anchors, rimmed dark to read over anything.
 
 // Where its ears would be: the brim ring's sides, at the height between the
-// brim's front and its eyes (speaking's hand is held there too), px.
+// brim's front and its eyes, px.
 struct Ears {
   int left, right, y;
 };
@@ -212,8 +189,46 @@ void mutedMic(Raster& r, const rig::Anchors& at, int side, int alpha) {
   r.alpha = 255;
 }
 
+// While you speak: the sound coming in to its ear on `side`, from the
+// Mac's side. Each beat of its nod (`ms` into it), three short arcs, each
+// bowed toward the ear as a wave from far off is, come in from kFrom px
+// out, faint, to the rim of the hand there (or with none, of its ear),
+// brightening, and are caught there about its nod's dip, kCaught into the
+// beat. Thin pale strokes on the dark beside it, five points each.
+void heard(Raster& r, const Engine& e, const rig::Anchors& at, int side, uint32_t ms, int alpha) {
+  constexpr int kBeat = 1600, kCaught = 700, kTravel = 380, kApart = 170, kGone = 70;
+  constexpr int kFrom = 46, kBow = 40;
+  const Hand& hand = handsPlan().moved[side > 0];
+  const bool held = e.ear && (e.ear > 0) == (side > 0) && hand.shown();
+  const Ears ear = ears(at);
+  const Point to = held ? Point{hand.x16, hand.y16}
+                        : Point{(side > 0 ? ear.right + 6 : ear.left - 6) * 16, ear.y * 16};
+  // Into the palm a little: a wave's caught, not stopped at its edge.
+  const int rim16 = held ? hand.drawn16() * 3 / 4 : 8 * 16;
+  const int beat = int(ms % kBeat);
+  for (int i = 0; i < 3; ++i) {
+    const int age = beat - (kCaught + (i - 1) * kApart - kTravel);
+    if (age < 0 || age >= kTravel + kGone) continue;
+    const int in = std::min(age, kTravel) * 1000 / kTravel;  // 0 far out … 1000 caught
+    const int fade = age < kTravel ? 50 + in * 190 / 1000 : 240 * (kTravel + kGone - age) / kGone;
+    r.alpha = alpha * fade / 255;
+    // The arc's circle, out beyond it from the ear: a wave going in.
+    const int far16 = rim16 + kFrom * 16 * (1000 - in) / 1000;
+    const int cx = to.x + side * (far16 + kBow * 16), cy = to.y;
+    const int span = 340 - in * 80 / 1000;  // 4096ths of a turn either way, less as it comes in
+    Point arc[5];
+    for (int k = 0; k < 5; ++k) {
+      const int a = -span + k * span / 2;
+      arc[k] = {cx - side * kBow * sinTurn(a + 1024) * 16 / 4096, cy + kBow * sinTurn(a) * 16 / 4096};
+    }
+    r.stroke16(arc, 5, 3 * 16, kShine);
+  }
+  r.alpha = 255;
+}
+
 void paintWith(Raster& r, const Engine& e, const rig::Anchors& at) {
   const Engine::With& w = e.with;
+  if (w.heard) heard(r, e, at, w.side, w.heardMs, w.heard);
   if (w.notes) notes(r, at, w.notesMs, w.notes);
   if (w.muted) mutedMic(r, at, w.side, w.muted);
 }
@@ -244,8 +259,7 @@ void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at, const rig:
   auto content = [&](Layer l, uint32_t whole) { return layers ? layers->content(l, t) : whole; };
   auto fade = [&](Layer l) { return layers ? (layers->opacity(l, t) * 255 + 500) / 1000 : 255; };
   paintWith(r, e, at);
-  if (e.speaking) speakingHand(r, at, e.speakingSide, ms);
-  else if (e.typingAlong) typingTicks(r, at, e.typingPhase, e.typingFast);
+  if (e.typingAlong) typingTicks(r, at, e.typingPhase, e.typingFast);
   r.fade = fade(Layer::kBeside);
   if (content(Layer::kBeside, now.beside) == kZs) zs(r, at, ms);
 }
