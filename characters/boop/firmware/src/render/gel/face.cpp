@@ -1031,8 +1031,10 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
   if (borrowed < 0 && context.invite.shows() &&
       (sideEye || !slime::kKeepsFaceThroughGestures[profileFor(context.mood)]))
     borrowed = expressionFromName(inviteFace(context.invite));
-  // Last, jamming to your music: a content face, unless its mood keeps its own.
-  if (borrowed < 0 && source.anim == SceneState::kNone && whoHasWhat(truths(t)).face == FaceBy::kJam)
+  // Last, jamming to your music: a content face, unless its mood keeps its
+  // own. By who had what as the last step found it (showAlong): gathering
+  // the facts again here costs the board a third of a millisecond a frame.
+  if (borrowed < 0 && source.anim == SceneState::kNone && owners_.face == FaceBy::kJam)
     borrowed = expressionFromName("pleased");
   bool next = source.anim != SceneState::kNone && (source.anim != source_.anim || source.at != source_.at);
   if (next) {
