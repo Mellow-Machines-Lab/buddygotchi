@@ -11,7 +11,7 @@
 //   invite's palm, the knock, the flop;
 // - a sign or a card held up, a hand gripping either side (gripping);
 // - the low sign, held up by its top corners (holdingUp);
-// - speaking along with you, one cupped at its ear (cupped);
+// - speaking along with you, the rig's one at its ear, cupped (cupped);
 // - the desk, a pad flat on the keys, typing (onKeys);
 // - the agents' drawer, one hung over the sheet's edge (hung).
 //
@@ -37,6 +37,7 @@ struct Hand {
   int glass = 0;         // Q12: how flat on the glass it's pressed
   int flat = 0;          // Q12: a pad resting on something, wider and lower
   int turn = 0;          // 4096ths of a turn its fingertips are turned from up
+  int cup = 0;           // Q12: an open palm's hollow, under its fingertips
   int alpha = 255;
   bool shown() const { return radius16 >= 16 && alpha > 0; }
   // Its radius drawn, the glass's growth in.
@@ -69,8 +70,9 @@ void paintHand(Raster& r, const Hand& h);
 Hand gripping(int x, int y, int side, int px);
 // Holding the low sign up by its top corner at (x, y), px.
 Hand holdingUp(int x, int y, int side, int px);
-// Cupped at its ear on `side`, by the body's anchors.
-Hand cupped(const rig::Anchors& at, int side);
+// The rig's hand `h` at its ear, `ear` (Engine::ear) of the way out, less
+// than 0 the left: turned so its fingertips fan round its outer edge.
+Hand cupped(Hand h, int ear);
 // A pad flat on the keys at (x, y), px: its middle; `px` its radius.
 Hand onKeys(int x, int y, int px);
 // Hung over the drawer's sheet at (x, y), px, its fingertips down.

@@ -163,6 +163,13 @@ class GelFace final : public Face {
   // taller and kLookLift px up looking up (the rig's thousandths and px).
   static constexpr uint32_t kLookInMs = 90, kLookOutMs = 300;
   static constexpr int kLookNod = 170, kLookSquash = 120, kLookStretch = 140, kLookLift = 4;
+  // Speaking (`speaking`): the rig's hand on the Mac's side buds out of the
+  // body and goes to its ear, kEarX px out and kEarY up from where it holds
+  // things, an open palm kEarSize big (the rig's px and thousandths), from
+  // kEarFrom px further in, and back, over the rig's fade, the motion
+  // layer's springs over that. The body leans kEarLean that way (the rig's
+  // lean), but at the light size, where the pose is the work's.
+  static constexpr int kEarX = 94, kEarY = 66, kEarSize = 1470, kEarFrom = 30, kEarLean = 340;
   // Typing fast stays fast through a flicker off this long (showAlong).
   static constexpr uint32_t kFastLingerMs = 800;
   // What it does with you now besides typing along, and the rig's channels
@@ -171,6 +178,10 @@ class GelFace final : public Face {
   WithYou withYou() const { return with_; }
   rig::Channels channels() const;
   rig::Channels clipChannels() const;
+  // How far the rig's hand is out at its ear while you speak (Engine::ear):
+  // 0 to 1000, less than 0 the left; 0 while a clip has that hand. Its
+  // `reach`, where it goes: with the desk out, all the way at once.
+  int ear(bool reach = false) const;
 
  private:
   bool bodyFree() const;
@@ -196,6 +207,9 @@ class GelFace final : public Face {
   // The motion layer over the clips' channels, stepped with the engine.
   Lively lively_;
   void showLively(uint32_t dt, uint32_t t);
+  // Whether the desk is out, its paws on the keys: the motion layer's hands
+  // go from them and back to them.
+  bool deskOut(uint32_t t) const;
   // The Zs, as the engine's tags and state call for them
   // (layerContents), each fading in and out.
   rig::Layers layers_;
@@ -285,6 +299,10 @@ class GelFace final : public Face {
   //   side and nothing else; no typing along, music or pastime, and its
   //   board silent (the Mac sends no volume). As the call ends, it stretches
   //   up (`stretch`);
+  // - speaking (`speaking`): it listens, nodding on a slow beat
+  //   (`speak-along`), a hand cupped at its ear on the Mac's side (kEarX)
+  //   and the sound coming in to it, leaning and looking that way; over
+  //   typing along;
   // - scrolling (`scrolling`, with `scrolldown` or `scrollup`): it looks
   //   straight down or straight up the way you scroll and holds it, its eyes
   //   as far as they go, its face nodded that way and its body a little
@@ -311,9 +329,13 @@ class GelFace final : public Face {
   static const Clips clips_;
   uint32_t musicFrom_ = 0;
   // What it has on or beside it (Engine::With), each fading in and out over
-  // the rig's fade: the music's notes, the muted mic.
-  enum Mark { kNotes, kMuted, kMarks };
-  rig::Ramp marks_[kMarks];
+  // the rig's fade: the music's notes, the muted mic, the sound it hears;
+  // and when speaking's nod began, which the sound keeps time with. The
+  // hand at its ear (ear), how far out, and its side, -1 the left.
+  enum Mark { kNotes, kMuted, kHeard, kMarks };
+  rig::Ramp marks_[kMarks], ear_;
+  int earSide_ = 1;
+  uint32_t heardFrom_ = 0;
   bool pointer_ = false, pointerNear_ = false;
   int pointerX_ = 0, pointerY_ = 0;
   // What it follows on the rig's channels, over the mixer's: the lean, the

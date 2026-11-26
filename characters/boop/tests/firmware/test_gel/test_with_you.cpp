@@ -116,6 +116,13 @@ void test_the_eyes_with_you_in_order() {
   u.free = u.needsYou = u.up = true, u.lookMs = Gaze::kNoticeMs;
   p = up.look(u, 100);
   TEST_ASSERT_TRUE(p.on && p.x == Gaze::kMidX && p.y == Gaze::kScreenUpY);
+  // Speaking: to the Mac's side, where the sound comes from, over the
+  // pointer; with no side, the pointer's.
+  f.with = WithYou::kSpeaking;
+  p = r.look(f, 7048);
+  TEST_ASSERT_TRUE(p.on && p.x == Gaze::kMidX + Gaze::kMacReach && p.y == Gaze::kEyesY);
+  f.mac = 0;
+  TEST_ASSERT_TRUE(r.look(f, 7056).x < Gaze::kMidX);
   f.free = false;
   TEST_ASSERT_FALSE(r.look(f, 7064).on);  // something else has the eyes
 }
@@ -424,7 +431,7 @@ void test_nothing_with_you_without_the_facts() {
 
 // Pins speaking along: another app recording with no camera (`speaking`)
 // leans it in and nods on the 1.6 s beat, and wins over typing along, one
-// rhythm at a time; the layers draw its cupped hand while it does.
+// rhythm at a time; its hand is at its ear while it does.
 void test_speaking_wins_over_typing() {
   Board board(SceneState::kIdle, kDay | tierBit(1));
   GelFace& face = board.face();
@@ -434,11 +441,96 @@ void test_speaking_wins_over_typing() {
   TEST_ASSERT_EQUAL_INT(int(WithYou::kSpeaking), int(face.withYou()));
   TEST_ASSERT_EQUAL_STRING("speaking", face.passing(board.t));
   TEST_ASSERT_FALSE(face.pastimes(board.t).tapping);
-  TEST_ASSERT_TRUE(face.engine().speaking);
+  TEST_ASSERT_NOT_EQUAL_INT(0, face.engine().ear);
   board.tags(kDay | tierBit(1) | tagBit("typing"));
   board.to(board.t + 1000);
-  TEST_ASSERT_FALSE(face.engine().speaking);
+  TEST_ASSERT_EQUAL_INT(0, face.engine().ear);
   TEST_ASSERT_TRUE(face.pastimes(board.t).tapping);
+}
+
+namespace {
+// A frame's rig hand on `side` (0 the left), as the motion layer draws it.
+struct Drawn {
+  int x, y, size;
+};
+Drawn drawn(GelFace& face, int side) {
+  const rig::Channels c = face.channels();
+  using rig::HandPart;
+  return {c[rig::hand(side, HandPart::kX)], c[rig::hand(side, HandPart::kY)], c[rig::hand(side, HandPart::kSize)]};
+}
+// Steps `board` to `until`, each frame's hand on `side` no more than
+// `size` thousandths bigger or smaller than the last, nor `place` px from
+// it, once it's out (`from`, the first frame out, its size then), but as
+// the desk's paw takes it back at the keys; the other hand in.
+void noPop(Board& board, uint32_t until, int side, int size = 200, int place = 30, Drawn* from = nullptr) {
+  Drawn last = drawn(board.face(), side);
+  board.to(until, [&] {
+    const Drawn now = drawn(board.face(), side);
+    const bool home = !now.size && std::abs(now.x - Lively::kDeskX) <= Lively::kHome &&
+                      std::abs(now.y - Lively::kDeskY) <= Lively::kHome;
+    if (!last.size && now.size && from) *from = now, from = nullptr;
+    else if (!home) TEST_ASSERT_INT_WITHIN(size, last.size, now.size);
+    if (last.size && now.size) TEST_ASSERT_TRUE(std::abs(now.x - last.x) + std::abs(now.y - last.y) <= place);
+    TEST_ASSERT_EQUAL_INT(0, drawn(board.face(), 1 - side).size);
+    last = now;
+  });
+}
+}  // namespace
+
+// Pins speaking's hand: the rig's on the Mac's side, budding out of the
+// body to its ear and an open palm there, and sinking back in as you stop,
+// never a frame's pop either way; the other hand stays in. With the
+// keyboard out it goes from its keys and back to them. Holding a card,
+// the card keeps its hands: the sound comes in, no hand.
+void test_speakings_hand_buds_out_at_the_macs_side() {
+  static_assert(GelFace::kEarSize >= 1350 && GelFace::kEarSize <= 1550, "about 23 to 26 px, as a hand at an ear");
+  for (int side = 0; side < 2; ++side) {
+    const uint32_t mac = tagBit(side ? "macright" : "macleft");
+    Board board(SceneState::kIdle, kDay | tierBit(1) | mac);
+    GelFace& face = board.face();
+    board.to(1000);
+    board.tags(kDay | tierBit(1) | mac | tagBit("speaking"));
+    noPop(board, board.t + 66, side);
+    TEST_ASSERT_TRUE(drawn(face, side).size < GelFace::kEarSize / 2);  // on its way
+    noPop(board, board.t + 1500, side);
+    TEST_ASSERT_EQUAL_INT(side ? 1000 : -1000, face.engine().ear);
+    const Drawn out = drawn(face, side);
+    TEST_ASSERT_INT_WITHIN(40, GelFace::kEarSize, out.size);
+    TEST_ASSERT_INT_WITHIN(4, (side ? 1 : -1) * GelFace::kEarX, out.x);
+    TEST_ASSERT_EQUAL_INT(1000, face.channels()[rig::hand(side, rig::HandPart::kShape)]);  // an open palm
+    TEST_ASSERT_GREATER_THAN_INT(0, face.engine().with.heard);
+    board.tags(kDay | tierBit(1) | mac);
+    noPop(board, board.t + 1500, side);
+    TEST_ASSERT_TRUE(face.engine().ear == 0 && drawn(face, side).size == 0 && face.engine().with.heard == 0);
+  }
+  // From the keys: its first frame out is a step from the desk's paw, where
+  // the desk had it, and back at the desk it's the desk's again.
+  const uint32_t typing = kDay | tierBit(1) | tagBit("macright") | tagBit("typing");
+  Board keys(SceneState::kIdle, typing);
+  keys.to(2000);
+  TEST_ASSERT_TRUE(keys.face().pastimes(keys.t).keys > 128);
+  keys.tags(typing | tagBit("speaking"));
+  Drawn from{};
+  noPop(keys, keys.t + 1500, 1, 200, 30, &from);
+  TEST_ASSERT_INT_WITHIN(150, Lively::kDeskSize, from.size);
+  TEST_ASSERT_TRUE(std::abs(from.x - Lively::kDeskX) <= 10 && std::abs(from.y - Lively::kDeskY) <= 10);
+  TEST_ASSERT_INT_WITHIN(40, GelFace::kEarSize, drawn(keys.face(), 1).size);
+  keys.tags(typing);
+  noPop(keys, keys.t + 1500, 1);
+  TEST_ASSERT_TRUE(keys.face().engine().ear == 0 && drawn(keys.face(), 1).size == 0);
+  TEST_ASSERT_TRUE(keys.face().pastimes(keys.t).tapping);
+  // A card held: its hands are the card's.
+  Board card(SceneState::kIdle, kDay | tierBit(1) | tagBit("macright"));
+  CardShow held;
+  held.on = true;
+  card.face().card(held);
+  card.to(1000);
+  card.tags(kDay | tierBit(1) | tagBit("macright") | tagBit("speaking"));
+  card.to(card.t + 2000, [&] {
+    TEST_ASSERT_TRUE(!drawn(card.face(), 0).size && !drawn(card.face(), 1).size && !card.face().engine().ear);
+  });
+  TEST_ASSERT_EQUAL_INT(int(WithYou::kSpeaking), int(card.face().withYou()));
+  TEST_ASSERT_EQUAL_INT(255, card.face().engine().with.heard);
 }
 
 // Pins what it has on or beside it (Engine::With), so each reads at a

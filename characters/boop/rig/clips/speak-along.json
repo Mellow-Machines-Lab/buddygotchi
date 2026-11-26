@@ -1,10 +1,9 @@
 {
-  "about": "You're speaking (another app records, no camera: dictation, a voice prompt): leaning in toward you and nodding on a slow, even 1.6 s beat, eyes open and up at you, mouth closed. It can't follow your words, since it never hears them: an even beat reads as listening. The face draws a cupped hand at its side and rings pulsing by it (render/gel/layers.h, paintListening).",
+  "about": "You're speaking (another app records, no camera: dictation, a voice prompt): nodding on a slow, even 1.6 s beat, eyes open wide, mouth closed. It can't follow your words, since it never hears them: an even beat reads as listening. The face adds what goes by the Mac's side: the lean that way, the eyes, the rig's hand cupped at its ear and the sound coming in to it, caught at the dip (render/gel/face.h, kEarX).",
   "group": "with_you",
   "ms": 1600,
   "loop": true,
   "tracks": {
-    "lean": [[0, 160], [1600, 160]],
     "squash": [[0, -40], [700, 70, "out"], [900, 70], [1600, -40, "inout"]],
     "lift": [[0, 4], [700, -2, "out"], [900, -2], [1600, 4, "inout"]],
     "gazeY": [[0, -160], [700, -90, "out"], [900, -90], [1600, -160, "inout"]],
