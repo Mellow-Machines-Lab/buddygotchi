@@ -2036,7 +2036,8 @@ void test_it_types_along_with_you();
 // test_with_you.cpp
 void test_the_eyes_with_you_in_order();
 void test_the_eyes_follow_your_pointer();
-void test_its_eyes_dart_while_you_scroll();
+void test_the_pointer_a_little_more_at_its_reach();
+void test_it_looks_the_way_you_scroll();
 void test_it_jams_to_your_music();
 void test_a_call_keeps_it_still();
 void test_speaking_wins_over_typing();
@@ -3583,7 +3584,8 @@ int main() {
   RUN_TEST(test_it_types_along_with_you);
   RUN_TEST(test_the_eyes_with_you_in_order);
   RUN_TEST(test_the_eyes_follow_your_pointer);
-  RUN_TEST(test_its_eyes_dart_while_you_scroll);
+  RUN_TEST(test_the_pointer_a_little_more_at_its_reach);
+  RUN_TEST(test_it_looks_the_way_you_scroll);
   RUN_TEST(test_it_jams_to_your_music);
   RUN_TEST(test_a_call_keeps_it_still);
   RUN_TEST(test_speaking_wins_over_typing);

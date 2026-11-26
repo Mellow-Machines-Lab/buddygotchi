@@ -141,6 +141,21 @@ class GelFace final : public Face {
   // step across and kPointerGazeUp up or down (the rig's gaze, thousandths).
   // With the screen up (`macup`), at the edge its eyes go kScreenGazeUp up.
   static constexpr int kPointerSlide = 14, kPointerGaze = 75, kPointerGazeUp = 60, kScreenGazeUp = 600;
+  // Toward the pointer's reach, from kEdgeFrom of its steps to kEdgeFull on
+  // a smooth curve, the lean, the slide and the stretch go up to kEdgeMore
+  // thousandths further, and the face turns its way across (kEdgeTurn, the
+  // rig's turn) and nods its way up or down (kEdgeNod, Q12 of a whole
+  // turn); nearer the middle, none of it.
+  static constexpr int kEdgeFrom = 4, kEdgeFull = 9, kEdgeMore = 250, kEdgeTurn = 15, kEdgeNod = 60;
+  // The scroll's look (`scrolldown`, `scrollup`): straight down or straight
+  // up, held while you scroll, eased in over about kLookInMs and back over
+  // about kLookOutMs, from one straight to the other as the way changes. At
+  // its whole: the eyes as far as the rig's gaze takes them, the face
+  // nodded kLookNod that way on the body, its mouth with it (Q12 of a whole
+  // turn), and the body kLookSquash flatter looking down, kLookStretch
+  // taller and kLookLift px up looking up (the rig's thousandths and px).
+  static constexpr uint32_t kLookInMs = 90, kLookOutMs = 300;
+  static constexpr int kLookNod = 170, kLookSquash = 120, kLookStretch = 140, kLookLift = 4;
   // Typing fast stays fast through a flicker off this long (showAlong).
   static constexpr uint32_t kFastLingerMs = 800;
   // What it does with you now besides typing along, and the rig's channels
@@ -254,7 +269,7 @@ class GelFace final : public Face {
   // a pastime or a transition, gives way at once to a finger, a Moment, a
   // word forward, needs you or sleep. At work in a pose of its own, or with
   // a card held, it's light (GelFace::light): a call and speaking show, and
-  // the scroll's eyes give way to the pose's. At work in any pose, or with a
+  // the scroll's look gives way to the pose's. At work in any pose, or with a
   // card held, music jams smaller at the desk (`jam-desk`), over the pose,
   // the notes staying. The one shown, first that fits:
   //
@@ -263,27 +278,28 @@ class GelFace final : public Face {
   //   side and nothing else; no typing along, music or pastime, and its
   //   board silent (the Mac sends no volume). As the call ends, it stretches
   //   up (`stretch`);
-  // - scrolling (`scrolling`): its eyes dart, anime style, a little wide,
-  //   the way you scroll: down and snapping back up (`scroll-down`, with
-  //   `scrolldown`), up and snapping back down (`scroll-up`), or both by
-  //   turns when the Mac doesn't know the way (`scroll`);
+  // - scrolling (`scrolling`, with `scrolldown` or `scrollup`): it looks
+  //   straight down or straight up the way you scroll and holds it, its eyes
+  //   as far as they go, its face nodded that way and its body a little
+  //   flatter or taller (kLookNod), easing back as you stop; with the way not
+  //   known, nothing;
   // - music (`music`): it jams along for as long as it plays, its eyes
   //   closed in a content face, a bounce on the beat and its head bobbing
   //   side to side (`jam`), a note now and then rising from behind it,
   //   typing along too; as the music stops it opens its eyes and looks
   //   around (`look-around`).
   //
-  // While a call, the scroll's eyes or a jam is on, no pastime is dealt. The pointer (state.ptr) moves the eyes (gaze.h) and leans the
+  // While a call, the scroll's look or a jam is on, no pastime is dealt. The pointer (state.ptr) moves the eyes (gaze.h) and leans the
   // body a little its way, more at the edge nearest the board.
   WithYou with_ = WithYou::kNone, wanted_ = WithYou::kNone;
   const rig::Clip* withClip_ = nullptr;
   bool music_ = false, called_ = false, deskJam_ = false;
   // The clips it plays for you, found once (none for a pose: none plays):
-  // a pose's by what it is, the scroll's either way, the jam at the desk,
-  // typing along's and its fast one, and the moves once.
+  // a pose's by what it is, the jam at the desk, typing along's and its
+  // fast one, and the moves once.
   struct Clips {
     const rig::Clip* with[5];
-    const rig::Clip *scrollDown, *scrollUp, *deskJam, *along, *fast, *stretch, *lookAround;
+    const rig::Clip *deskJam, *along, *fast, *stretch, *lookAround;
   };
   static const Clips clips_;
   uint32_t musicFrom_ = 0;
@@ -294,10 +310,14 @@ class GelFace final : public Face {
   bool pointer_ = false, pointerNear_ = false;
   int pointerX_ = 0, pointerY_ = 0;
   // What it follows on the rig's channels, over the mixer's: the lean, the
-  // stretch (squash), the whole body's slide (x, px) and the eyes' way
-  // (gazeX, gazeY); where each is going, and where it is now, in 256ths.
-  enum Follow { kFollowLean, kFollowSquash, kFollowX, kFollowGazeX, kFollowGazeY, kFollows };
+  // stretch (squash), the whole body's slide (x, px), the eyes' way (gazeX,
+  // gazeY) and the face's turn, and the face's nod (Engine::faceNod); where
+  // each is going, and where it is now, in 256ths.
+  enum Follow { kFollowLean, kFollowSquash, kFollowX, kFollowGazeX, kFollowGazeY, kFollowTurn, kFollowNod, kFollows };
   int followTo_[kFollows]{}, followBy_[kFollows]{};
+  // The scroll's look, -1000 straight up to 1000 straight down: where it's
+  // going, and where it is now, in 256ths.
+  int lookTo_ = 0, lookBy_ = 0;
   void showWithYou(uint32_t t);
   void followLean(uint32_t dt);
   // A move once, as one of them ends, if the body is free.
@@ -376,8 +396,9 @@ class GelFace final : public Face {
   // by a test. It counts as the last dealt, so the deal doesn't
   // play it again next, and the rest before the next starts as it ends.
   void start(const PastimeInfo& p, SceneState look, uint32_t t);
-  // The engine's own idle gestures wait for the clip dealt or asked for.
-  void holdGestures(const rig::Clip& clip);
+  // The engine's own idle gestures wait for the clip dealt or asked for,
+  // `ms` long, or for a pose held with you.
+  void holdGestures(uint32_t ms);
   // A reply or a clip asked for: its pack's clip, reply-<name>, else
   // <name> itself (a skit's clip, the fix's flop).
   void reply(const char* name);

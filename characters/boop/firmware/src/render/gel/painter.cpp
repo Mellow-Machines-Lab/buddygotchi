@@ -764,6 +764,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   applyRig(c, rig);
   // Canvas px to the panel's, as the rig's lift and x are drawn; y down.
   c.faceDx16 = e.faceLagX16 * 128 / kPxPerUnit, c.faceDy16 = -e.faceLagY16 * 128 / kPxPerUnit;
+  c.nod = e.faceNod;
   if (squeeze) {
     c.squeezeTop = squeeze->top, c.squeezeBottom = squeeze->bottom, c.widen = squeeze->widen;
   } else if (duck > 0) {

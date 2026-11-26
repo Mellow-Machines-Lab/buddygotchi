@@ -12,7 +12,7 @@ GazePoint Gaze::look(const GazeFacts& f, uint32_t) {
   }
   if (f.along) return {true, kMidX, kKeysY};
   if (f.thinking && f.thinkMs < kThinkMs) return {true, kMidX, kYouY};
-  if (f.posed || f.with == WithYou::kCall) return {};
+  if (f.posed || f.with == WithYou::kCall || f.with == WithYou::kScrolling) return {};
   if (f.pointer) {
     if (f.pointerNear) {
       // Right at it, to the Mac's side: where the pointer points from.

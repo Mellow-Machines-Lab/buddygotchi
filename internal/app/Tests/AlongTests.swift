@@ -120,52 +120,43 @@ final class AlongTests: XCTestCase, HeadlessRig {
         XCTAssertTrue(paused.hands == .typing && !paused.fast)
     }
 
-    func sounding(_ who: String, front: String?) -> (Int64) -> Along.Facts {
+    func sounding(_ on: Bool) -> (Int64) -> Along.Facts {
         { _ in
             var f = self.reading()
-            f.frontSound = who == "front"
-            f.otherSound = who == "other"
-            f.front = front
+            f.sound = on
             return f
         }
     }
 
-    /// Pins music: on once sound has played 10 s, so only music counts and
-    /// never the seconds an app's output keeps running after an effect; off
-    /// once it has been off 3 s. Sound a frontmost player plays itself is a
-    /// video, which counts as nothing; music from any other app, or a
-    /// frontmost one that isn't a player, counts; none on a call.
-    func testMusicFromWhoPlaysIt() {
-        XCTAssertEqual([Along.soundOnMs, Along.soundOffMs], [10_000, 3000])
-        for app in ["com.apple.Safari", "com.google.Chrome", "company.thebrowser.Browser", "org.mozilla.firefox",
-                    "com.microsoft.edgemac", "com.apple.QuickTimePlayerX", "com.apple.TV", "com.colliderli.iina", "org.videolan.vlc"] {
-            XCTAssertTrue(Along.players.contains(app), app)
-        }
+    /// Pins music: any sound, whatever plays it (a music app, a browser in
+    /// front or not, a video), on once it has played 10 s, so never the
+    /// seconds an app's output keeps running after an effect; off once it
+    /// has been off 8 s, so a gap between tracks or videos doesn't end it;
+    /// none on a call.
+    func testMusicIsAnySoundThatGoesOn() {
+        XCTAssertEqual([Along.soundOnMs, Along.soundOffMs], [10_000, 8000])
         // Effects, each running the output 4 s, a second or two apart, for a minute: never music.
         var effects = Along()
-        let bursts = { (t: Int64) in self.sounding((t - t0) % 6000 < 4000 ? "other" : "none", front: nil)(t) }
+        let bursts = { (t: Int64) in self.sounding((t - t0) % 6000 < 4000)(t) }
         for t in stride(from: t0, through: t0 + 60_000, by: 250) {
             XCTAssertFalse(effects.read(bursts(t), anchor: nil, at: t).music, "effects aren't music")
         }
         var along = Along()
-        let other = sounding("other", front: "com.apple.Safari")
-        XCTAssertFalse(run(&along, from: t0, to: t0 + 9750, other).music, "a short sound isn't music")
-        XCTAssertEqual(along.read(other(0), anchor: nil, at: t0 + 10_000).tags, ["reading", "music"],
-                       "Safari in front, the music from another app")
-        // A gap: still on; three seconds off: gone.
-        XCTAssertTrue(run(&along, from: t0 + 10_250, to: t0 + 12_500, sounding("none", front: nil)).music)
-        XCTAssertFalse(run(&along, from: t0 + 12_750, to: t0 + 13_500, sounding("none", front: nil)).music)
-        // A video, Safari in front playing it itself, for a minute: nothing.
-        var video = Along()
-        let watched = run(&video, from: t0, to: t0 + 60_000, sounding("front", front: "com.apple.Safari"))
-        XCTAssertFalse(watched.music)
-        XCTAssertEqual(watched.tags, ["reading"])
-        // An app in front that isn't a player: music.
-        var music = Along()
-        XCTAssertTrue(run(&music, from: t0, to: t0 + 10_000, sounding("front", front: "com.spotify.client")).music)
+        XCTAssertFalse(run(&along, from: t0, to: t0 + 9750, sounding(true)).music, "a short sound isn't music")
+        XCTAssertEqual(along.read(sounding(true)(0), anchor: nil, at: t0 + 10_000).tags, ["reading", "music"])
+        // An hour of it: music the whole time.
+        for t in stride(from: t0 + 10_000, through: t0 + 3_600_000, by: 250) {
+            XCTAssertTrue(along.read(sounding(true)(t), anchor: nil, at: t).music)
+        }
+        // A gap of 7 s (the next video loading): still on; 8 s off: gone.
+        let back = t0 + 3_600_000
+        XCTAssertTrue(run(&along, from: back + 250, to: back + 7250, sounding(false)).music)
+        XCTAssertTrue(run(&along, from: back + 7500, to: back + 9000, sounding(true)).music, "back before 8 s")
+        XCTAssertTrue(run(&along, from: back + 9250, to: back + 17_000, sounding(false)).music)
+        XCTAssertFalse(run(&along, from: back + 17_250, to: back + 17_500, sounding(false)).music)
         // On a call, none.
         var onCall = Along()
-        let call = run(&onCall, from: t0, to: t0 + 10_000) { _ in var r = self.reading(); r.otherSound = true; r.camera = true; return r }
+        let call = run(&onCall, from: t0, to: t0 + 10_000) { _ in var r = self.reading(); r.sound = true; r.camera = true; return r }
         XCTAssertTrue(call.onCall && !call.music)
         XCTAssertEqual(call.tags, ["reading", "oncall"])
     }
@@ -266,7 +257,7 @@ final class AlongTests: XCTestCase, HeadlessRig {
         dev(runtime, #"{"dev":"presence","idle_ms":0,"key_idle_ms":60000}"#)
         dev(runtime, #"{"dev":"along","scroll_idle_ms":0}"#)
         XCTAssertTrue(snapshot().when.contains("scrolling") && !snapshot().when.contains("reading"))
-        dev(runtime, #"{"dev":"along","scroll_idle_ms":60000,"sound":"other","front":"com.apple.Terminal"}"#)
+        dev(runtime, #"{"dev":"along","scroll_idle_ms":60000,"sound":true}"#)
         dev(runtime, #"{"dev":"advance","ms":10000}"#)
         XCTAssertTrue(snapshot().when.contains("music") && snapshot().music)
         // The pointer: none until Boop knows where it sits.

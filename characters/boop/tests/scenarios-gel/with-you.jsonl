@@ -1,8 +1,9 @@
 // With you at the Mac (render/gel/face.h, showWithYou; render/gel/gaze.h), each on a frozen clock after a
 // reset. Nothing told: it rests. Your pointer, while it moves: its eyes follow it and it leans and slides
-// its way (to your left, your right, up), and at the screen's edge nearest it, it looks right at it and
-// leans in. Scrolling: its eyes dart, anime style, the way you scroll: down and snapping back up, up and
-// snapping back down, or both by turns with the way not known. Typing fast: hunched in, eyes wide, paws
+// its way (to your left, your right, up), a little more and its face turned that way far out, and at the
+// screen's edge nearest it, it looks right at it and leans in. Scrolling: it looks straight down or
+// straight up the way you scroll, its face nodded that way, and eases back as you stop; with the way not
+// known, nothing. Typing fast: hunched in, eyes wide, paws
 // quicker; a long stretch of typing stopped, a look up at you. Music: it jams along, eyes closed, a bounce
 // on the beat and its head bobbing, a note rising from behind it now and then; a look round as it stops.
 // A call: still, smaller, eyes half, a muted mic by its ear; a stretch as it ends.
@@ -35,21 +36,19 @@
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright"]}
 {"clock": 500}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling","scrolldown"]}
-{"clock": 1720}
-{"shot": "scroll-down-eyes-down", "pin": true}
-{"clock": 1940}
-{"shot": "scroll-down-eyes-snapped-up"}
+{"clock": 1500}
+{"shot": "scroll-down-looks-down", "pin": true}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling","scrollup"]}
-{"clock": 3180}
-{"shot": "scroll-up-eyes-up"}
-{"clock": 3400}
-{"shot": "scroll-up-eyes-snapped-down"}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
-{"clock": 4100}
-{"shot": "scroll-either-way"}
+{"clock": 2300}
+{"shot": "scroll-up-looks-up"}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","reading"]}
-{"clock": 5000}
+{"clock": 2450}
+{"shot": "scroll-stopped-easing-back"}
+{"clock": 3500}
 {"shot": "scroll-stopped"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
+{"clock": 4500}
+{"shot": "scroll-way-not-known-nothing"}
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","typing"]}

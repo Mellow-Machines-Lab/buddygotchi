@@ -270,18 +270,17 @@ work pose and on a held picture.
 | --- | --- | --- | --- |
 | Type | `typing`, `typingfast` | Keyboard out, Boop types with you, and a key's tick bursts beside the hand that taps | The pose sways at your speed, and the same ticks burst beside it |
 | Speak | Another app records and no camera runs | One hand cups an ear, Boop leans in, rings pulse by the ear | The same, in the pose |
-| Scroll | `scrolling`, and `scrolldown` or `scrollup` when the Mac knows the way | Its eyes dart, anime style, quick and a little wide: down and snapping back up as you scroll down, up and back down as you scroll up, both by turns with no way known | The pose keeps its eyes |
-| Move the pointer | `ptr` | Eyes follow, and the body leans and slides a little its way | Eyes follow |
-| Play music | `music`, after 10 s of it | Jams along the whole time: eyes closed, a bounce on the beat, its head bobbing side to side, a note now and then rising from behind it. The Mac says "Boop likes your music" | At its desk, jamming smaller over the pose, the notes rising |
+| Scroll | `scrolling`, and `scrolldown` or `scrollup` when the Mac knows the way | It looks straight down as you scroll down, straight up as you scroll up, and holds it: its eyes all the way, its face nodded that way, a little flatter looking down and taller looking up; it eases back as you stop. Nothing with no way known | The pose keeps its eyes |
+| Move the pointer | `ptr` | Eyes follow, and the body leans and slides a little its way, a little more far out, its face turning that way | Eyes follow |
+| Play music | `music`, any sound after 10 s of it, a video's too | Jams along the whole time: eyes closed, a bounce on the beat, its head bobbing side to side, a note now and then rising from behind it. The Mac says "Boop likes your music" | At its desk, jamming smaller over the pose, the notes rising |
 | Take a call | A camera runs | Still and silent, a muted mic by its ear | The same, in the pose |
 
 One rhythm at a time. If you type and speak together, speaking wins. There
 is no symbol to decode: typing, speaking, music and a call each have a mark
 on or behind the body that reads from a chair (the ticks, the rings, the
-rising note, the muted mic); scrolling is the eyes alone, quick enough to
-see. A sign held up hides the ticks; a call shows the muted mic and nothing
-else. A video gets no reaction: sound from a player you have in front is
-not music.
+rising note, the muted mic); scrolling is the look alone, the whole face
+going that way. A sign held up hides the ticks; a call shows the muted mic
+and nothing else. A video is music: any sound that goes on is.
 
 ## The strip's words
 
@@ -349,7 +348,7 @@ level is not normal, such as "Boop's getting sleepy."
 | Busy and frantic typing | Cut | The tempo is yours |
 | The "copied" pose | Cut | Tiny, and it says nothing |
 | Music | Keep | It is you, on your channel |
-| A video | Cut, for now | A tutorial is not a jam, and a screen beside it needed decoding |
+| A video | Cut: its sound is music | A screen beside it needed decoding, and music in a browser tab read as a video and stopped the jam |
 | A special day | Keep as one sign at the hello | No costume |
 | Zs, the hello, the bye | Keep | Clear and rare |
 

@@ -48,12 +48,10 @@ constexpr uint32_t kCallTag = bitOf("oncall"), kScrollingTag = bitOf("scrolling"
 
 const voice::EffectClips& GelFace::clips() const { return gel::clips(); }
 
-// By WithYou's order: none, music, scrolling (the way not known), speaking,
-// on a call.
+// By WithYou's order: none, music, scrolling (the face's own look, no
+// clip), speaking, on a call.
 const GelFace::Clips GelFace::clips_ = {
-    {nullptr, &clipNamed("jam"), &clipNamed("scroll"), &clipNamed("speak-along"), &clipNamed("on-call")},
-    &clipNamed("scroll-down"),
-    &clipNamed("scroll-up"),
+    {nullptr, &clipNamed("jam"), nullptr, &clipNamed("speak-along"), &clipNamed("on-call")},
     &clipNamed("jam-desk"),
     &clipNamed("type-along"),
     &clipNamed("type-along-fast"),
@@ -110,6 +108,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   pawPhaseQ_ = 0, fastSeen_ = 0;
   pointer_ = pointerNear_ = false, pointerX_ = pointerY_ = 0;
   for (int i = 0; i < kFollows; ++i) followTo_[i] = followBy_[i] = 0;
+  lookTo_ = lookBy_ = 0;
   gaze_.reset();
 }
 
@@ -273,7 +272,7 @@ void GelFace::showTransition(uint32_t t) {
     if (transition_) mixer_.stop(*transition_);
     transition_ = clip, transitionEnds_ = t + clip->ms;
     play(*clip);
-    holdGestures(*clip);
+    holdGestures(clip->ms);
   }
 }
 
@@ -369,7 +368,7 @@ void GelFace::start(const PastimeInfo& p, SceneState look, uint32_t t) {
     clip_ = clip;
     ms = clip->ms;
     play(*clip);
-    holdGestures(*clip);
+    holdGestures(clip->ms);
   } else if (const int gag = bitOf(p); gag >= 0) {
     engine_->playBit(gag);
     ms = uint32_t(F(slime::kGags[gag].gesture.duration * 1000).integer());
@@ -381,9 +380,9 @@ void GelFace::start(const PastimeInfo& p, SceneState look, uint32_t t) {
   pastimeEnds_ = t + std::max<uint32_t>(1, ms);
 }
 
-void GelFace::holdGestures(const rig::Clip& clip) {
+void GelFace::holdGestures(uint32_t ms) {
   auto& acting = engine_->acting;
-  acting.nextPerformance = max(acting.nextPerformance, engine_->motion.time + int(clip.ms / 1000) + 2);
+  acting.nextPerformance = max(acting.nextPerformance, engine_->motion.time + int(ms / 1000) + 2);
 }
 
 void GelFace::playPastime(Pastime p, uint32_t t) {
@@ -431,7 +430,7 @@ bool GelFace::freeForYou(uint32_t t, SceneState& look) const {
 // Whether going with you is at its light size: at work, or holding a card.
 // The pose is the work's then, so only the rhythm and the gaze ride on it:
 // the paws stay where the pose puts them, and the poses that move the whole
-// body (reading, a video, music) give way to the eyes alone.
+// body (the scroll's look, music) give way to the eyes alone.
 bool GelFace::light(SceneState look) const {
   return card_.on || (look == SceneState::kWorking && !typingPose());
 }
@@ -495,7 +494,8 @@ void GelFace::showWithYou(uint32_t t) {
   SceneState look;
   const bool free = freeForYou(t, look) && !tapping_ && !e.acting.current() && !e.router.listening;
   const bool call = when & kCallTag;
-  const bool scrolling = (when & kScrollingTag) && !light(look);
+  // Only the way known: with none, nothing rather than a guess.
+  const bool scrolling = (when & kScrollingTag) && (when & (kScrollDownTag | kScrollUpTag)) && !light(look);
   const bool music = when & kMusicTag;
   // At work, in any pose, or with a card held: the jam's smaller, at the desk.
   const bool desk = light(look) || look == SceneState::kWorking;
@@ -513,11 +513,9 @@ void GelFace::showWithYou(uint32_t t) {
   if (called_ && !call) once(*clips_.stretch, t);
   else if (musicStopped && !call) once(*clips_.lookAround, t);
   called_ = call;
-  // The scroll's eyes go the way you scroll, when the Mac knows it.
-  const rig::Clip* clip = now != WithYou::kScrolling ? clips_.with[int(now)]
-                          : (when & kScrollDownTag)  ? clips_.scrollDown
-                          : (when & kScrollUpTag)    ? clips_.scrollUp
-                                                     : clips_.with[int(now)];
+  const rig::Clip* clip = clips_.with[int(now)];
+  // The scroll's look: straight the way you scroll (followLean eases it).
+  lookTo_ = now != WithYou::kScrolling ? 0 : (when & kScrollDownTag) ? 1000 : -1000;
   if (clip != withClip_) {
     if (withClip_) mixer_.stop(*withClip_);
     if (clip) mixer_.play(*clip, kWithFadeMs);
@@ -527,7 +525,8 @@ void GelFace::showWithYou(uint32_t t) {
   if (deskJam != deskJam_) deskJam ? mixer_.play(*clips_.deskJam, kWithFadeMs) : mixer_.stop(*clips_.deskJam);
   deskJam_ = deskJam;
   // The engine's own idle gestures wait while it's with you.
-  if (clip) holdGestures(*clip);
+  if (clip) holdGestures(clip->ms);
+  else if (now != WithYou::kNone) holdGestures(0);
   with_ = now;
   engine_->speaking = now == WithYou::kSpeaking;
   engine_->speakingSide = when & kMacLeftTag ? -1 : 1;
@@ -555,12 +554,13 @@ void GelFace::showWithYou(uint32_t t) {
     w.side = mac ? mac : 1;
     w.notesMs = t - musicFrom_;
   }
-  // To the pointer while it moves, and further at the edge nearest the
-  // board, reaching toward it. Never on a call.
+  // To the pointer while it moves, a little more toward its reach, and
+  // further at the edge nearest the board, reaching toward it. Never on a
+  // call, nor while it looks the way you scroll.
   const bool up = !mac && (when & kMacUpTag);
   int* to = followTo_;
   for (int i = 0; i < kFollows; ++i) to[i] = 0;
-  if (free && now != WithYou::kCall && pointer_) {
+  if (free && now != WithYou::kCall && now != WithYou::kScrolling && pointer_) {
     const int side = pointerX_ > 0 ? 1 : pointerX_ < 0 ? -1 : mac;
     if (pointerNear_) {
       to[kFollowLean] = side * kNearLean, to[kFollowSquash] = -kNearStretch;
@@ -568,9 +568,20 @@ void GelFace::showWithYou(uint32_t t) {
       to[kFollowGazeX] = side * Gaze::kPointerReach * kPointerGaze;
       if (!side && up) to[kFollowGazeY] = -kScreenGazeUp;
     } else {
-      to[kFollowLean] = pointerX_ * kPointerLean, to[kFollowSquash] = pointerY_ < 0 ? pointerY_ * kPointerStretch : 0;
-      to[kFollowX] = pointerX_ * kPointerSlide / 10;
+      // How far toward its reach, 0 to 1000: none in the middle.
+      auto edge = [](int step) {
+        const int e = std::clamp((std::abs(step) - kEdgeFrom) * 1000 / (kEdgeFull - kEdgeFrom), 0, 1000);
+        return e * e / 1000 * (3000 - 2 * e) / 1000;
+      };
+      const int edgeX = edge(pointerX_), edgeY = edge(pointerY_);
+      const int moreX = 1000 + edgeX * kEdgeMore / 1000, moreY = 1000 + edgeY * kEdgeMore / 1000;
+      to[kFollowLean] = pointerX_ * kPointerLean * moreX / 1000;
+      to[kFollowSquash] = pointerY_ < 0 ? pointerY_ * kPointerStretch * moreY / 1000 : 0;
+      to[kFollowX] = pointerX_ * kPointerSlide * moreX / 10000;
       to[kFollowGazeX] = pointerX_ * kPointerGaze, to[kFollowGazeY] = pointerY_ * kPointerGazeUp;
+      // The turn's to its own right, which is your right as its face goes round.
+      to[kFollowTurn] = (pointerX_ > 0 ? 1 : -1) * edgeX * kEdgeTurn / 1000;
+      to[kFollowNod] = (pointerY_ > 0 ? 1 : -1) * edgeY * kEdgeNod / 1000;
     }
   }
 }
@@ -580,18 +591,21 @@ void GelFace::once(const rig::Clip& clip, uint32_t t) {
   const Engine& e = *engine_;
   if (!freeForYou(t, look) || tapping_ || e.acting.current() || e.router.listening) return;
   play(clip);
-  holdGestures(clip);
+  holdGestures(clip.ms);
   // No pastime straight after it.
   if (after(t + clip.ms + kRestMinMs, restUntil_)) restUntil_ = t + clip.ms + kRestMinMs;
 }
 
-// The lean and the stretch ease to where they're going, over about kLeanMs.
+// The lean and the stretch ease to where they're going, over about kLeanMs;
+// the scroll's look in over about kLookInMs and back over kLookOutMs.
 void GelFace::followLean(uint32_t dt) {
-  auto follow = [&](int& by, int to) {
+  auto follow = [&](int& by, int to, uint32_t ms) {
     const int64_t goal = int64_t(to) * 256;
-    by = int(by + (goal - by) * int64_t(dt) / int64_t(dt + kLeanMs));
+    by = int(by + (goal - by) * int64_t(dt) / int64_t(dt + ms));
   };
-  for (int i = 0; i < kFollows; ++i) follow(followBy_[i], followTo_[i]);
+  for (int i = 0; i < kFollows; ++i) follow(followBy_[i], followTo_[i], kLeanMs);
+  follow(lookBy_, lookTo_, lookTo_ ? kLookInMs : kLookOutMs);
+  engine_->faceNod = followBy_[kFollowNod] / 256 + lookBy_ / 256 * kLookNod / 1000;
 }
 
 rig::Channels GelFace::channels() const {
@@ -622,6 +636,13 @@ rig::Channels GelFace::clipChannels() const {
   add(rig::Channel::kX, followBy_[kFollowX] / 256);
   add(rig::Channel::kGazeX, followBy_[kFollowGazeX] / 256);
   add(rig::Channel::kGazeY, followBy_[kFollowGazeY] / 256);
+  add(rig::Channel::kTurn, followBy_[kFollowTurn] / 256);
+  // The scroll's look: the eyes all the way, the body flatter looking down,
+  // taller and up a little looking up.
+  const int look = lookBy_ / 256;
+  add(rig::Channel::kGazeY, look);
+  add(rig::Channel::kSquash, look * (look > 0 ? kLookSquash : kLookStretch) / 1000);
+  add(rig::Channel::kLift, look < 0 ? -look * kLookLift / 1000 : 0);
   // A move (an invite's, the knock): its clip at its time, over the rest;
   // and the body going a little with a stroke's pass.
   addMove(c, currentMove(*engine_), false);

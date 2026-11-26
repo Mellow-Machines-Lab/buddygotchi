@@ -180,11 +180,9 @@ extension Runtime {
 
     /// `{"dev":"along",…}`: `scroll_idle_ms`, `scroll` (the way: "up" or
     /// "down"), `click_idle_ms`, `pointer`
-    /// ([x, y]) and its `display` ([x, y, w, h]), `sound` (who plays it:
-    /// "front", the frontmost app, "other", another, or "none"), `front` (a
-    /// bundle id, or "" for none), and `camera` and `mic` (another app
-    /// records: true or false). Each stays as set until the next says
-    /// otherwise.
+    /// ([x, y]) and its `display` ([x, y, w, h]), and `sound` (an app plays
+    /// sound), `camera` and `mic` (another app records): true or false.
+    /// Each stays as set until the next says otherwise.
     func alongLine(_ object: [String: Any]) {
         var r = devAlong
         if let ms = (object["scroll_idle_ms"] as? NSNumber)?.int64Value { r.scrollIdleMs = max(0, ms) }
@@ -196,8 +194,7 @@ extension Runtime {
             r.display = r.display ?? Self.devDisplay
         }
         if let display = rect(object["display"]) { r.display = display }
-        if let who = object["sound"] as? String { (r.frontSound, r.otherSound) = (who == "front", who == "other") }
-        if let front = object["front"] as? String { r.front = front.isEmpty ? nil : front }
+        if let on = object["sound"] as? Bool { r.sound = on }
         if let on = object["camera"] as? Bool { r.camera = on }
         if let on = object["mic"] as? Bool { r.otherInput = on }
         devAlong = r

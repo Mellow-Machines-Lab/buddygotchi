@@ -1092,8 +1092,8 @@ quick as they follow a finger, so a look is a turn and never a dart.
 | A stretch of typing along of 8 s or more stops (thinking with you) | Up at you | 2 s (`kThinkAfterMs`, `kThinkMs`) |
 | At work in a pose of its own: looking, running, waiting | Where the pose's clip has its eyes (down a page, on the monitor, out at you: the rig's `gazeX` and `gazeY`); the rule itself rests | While the pose lasts |
 | On a call (`oncall`) | Forward, still | While the call lasts |
+| Scrolling, the way known (`scrolling` with `scrolldown` or `scrollup`) | The rule rests; the face looks straight down or straight up itself, the eyes all the way (`GelFace::kLookNod`), over the pointer too | While you scroll |
 | Your pointer moves (`state.ptr`), where it's free for you (never asleep) | Its way, as you see the board: across `ptr`'s x × 57 px and up or down y × 48 (`kPointerX`, `kPointerY`); at the edge of the screen nearest the board, right at it on the Mac's side, 560 px out (`kNearReach`), or up | Until the Mac stops sending it, 3 s after it stops |
-| Scrolling (`scrolling`) | Forward; the darts up and down are its clip's (`scroll-down`, `scroll-up`, `scroll`) | While you scroll |
 | Otherwise | Forward, with the engine's own small wander | |
 
 Nothing of it applies while anything else has the eyes: a finger, a
@@ -1139,26 +1139,33 @@ you speak (`speaking`, another app recording with no camera) it leans in,
 nods on a slow 1.6 s beat (`speak-along`) and holds a hand cupped at its
 ear on the Mac's side with rings pulsing by it (`gel/layers.cpp`), winning
 over typing along; while you scroll (`scrolling`, which the Mac holds
-1.5 s after the last scroll) its eyes dart, anime style, a little wide
-(200): scrolling down (`scrolldown`) they sweep down in 150 ms past the
-mark, settle, and snap back up in 60 ms, a 520 ms loop (`scroll-down`, its
-gaze ±900, 1000 at the overshoot), with a small tick of the body each
-sweep; scrolling up (`scrollup`) the other way (`scroll-up`); with the
-way not known, both by turns (`scroll`, 1.04 s); at work in a pose of its
-own the pose keeps its eyes. Music (`music`) has it jam along the whole
+1.5 s after the last scroll) it looks straight the way you scroll and
+holds it, unmistakable at arm's length: scrolling down (`scrolldown`), its
+eyes all the way down (the rig's gaze 1000), its face nodded down the
+dome with its mouth (`kLookNod`, 170 of a whole turn's 4096) and its body
+120 flatter; scrolling up (`scrollup`), all of it up, 140 taller and 4 px
+up. It comes in over about 90 ms and goes back over about 300 ms as you
+stop (`kLookInMs`, `kLookOutMs`), and a change of way swings straight
+from one to the other; the pointer waits. With the way not known it
+does nothing rather than guess; at work in a pose of its own the pose
+keeps its eyes. Music (`music`) has it jam along the whole
 time it plays, idle: its eyes closed, a content face (the `pleased` one,
 unless its mood keeps its own), a bounce on every beat at 540 ms (about 111
-a minute: a squash on the hit, then up taller with a lift of 9 px), its
+a minute: a squash on the hit, then up taller with a lift of 8 px), its
 head bobbing side to side every other beat, in three bars that differ so
 minutes of it never look mechanical: the bounce and the swing, then
 quicker small bobs, then a wider swing with a big bop (`jam`, 6.48 s); at
 work, in any pose, or with a card held, the same at 0.4 over the pose, at
-its desk (`jam-desk`); as it stops, a look round (`look-around`). A video
-gets nothing. Each pose comes and goes over 600 ms (`kWithFadeMs`). The
+its desk (`jam-desk`); as it stops, a look round (`look-around`). Any
+sound that goes on, a video's too, is music. Each pose comes and goes over 600 ms (`kWithFadeMs`). The
 pointer leans it its way, 19 a step of `ptr`, slides it 1.4 px a step and
 turns the eyes further (the rig's gaze, 75 a step across, 60 up or down),
-and up its way it stretches up 8 a step; at the edge nearest the board it
-leans in 215 toward the Mac's side, reaching up 68. The lean, slide and
+and up its way it stretches up 8 a step. Toward its reach (from 4 of
+its 10 steps, whole at 9, on a smooth curve) the lean, slide and stretch
+go up to a quarter further (`kEdgeMore`) and its face turns that way
+across, 15 of the rig's turn (`kEdgeTurn`), or nods up or down, 60 of a
+whole turn's 4096 (`kEdgeNod`); nearer the middle, none of it. At the edge
+nearest the board it leans in 215 toward the Mac's side, reaching up 68. The lean, slide and
 gaze follow over about 350 ms (`kLeanMs`), so a pointer that jumps is
 followed, never jumped to. While any of them is on, no pastime is dealt.
 The Mac never says what you scroll, hear, watch, say or copy: of a scroll,

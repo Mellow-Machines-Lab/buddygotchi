@@ -28,9 +28,10 @@ struct World {
 struct Projector {
   const Surface& surface;
   const PaintControls& c;
-  int sx, sy, sn, cs, turnSin, turnCos;
+  int sx, sy, sn, cs, turnSin, turnCos, nodSin, nodCos;
   Projector(const Surface& s, const PaintControls& controls) : surface(s), c(controls) {
     turnSin = sinTurn(c.turn), turnCos = sinTurn(c.turn + 1024);
+    nodSin = sinTurn(c.nod), nodCos = sinTurn(c.nod + 1024);
     sy = 4096 + product(c.squash, 2130);
     sx = 16777216 / std::max(1, root(uint32_t(std::max(3113, sy)) * 4096));
     sn = c.roll - product(product(c.roll, c.roll), c.roll) / 6;
@@ -92,10 +93,15 @@ struct Projector {
   // faces the camera (`facing`, Q12: 4096 straight at it, 0 at the dome's
   // rim). Turned (the rig's turn), each point goes round the dome on its
   // own circle, so a feature near the rim narrows by itself; one gone round
-  // behind is held at the rim, facing 0, for paintArt to fade.
+  // behind is held at the rim, facing 0, for paintArt to fade. Nodded, each
+  // goes down or up it the same way.
   Point face(int x, int y, int* facing = nullptr) const {
     // Undo the face texture's 1.24 scale and .92 UV mapping.
     int bx = product(x, 5521), by = product(y, 5521), bz = root(uint32_t(std::max(0, 16777216 - bx * bx - by * by)));
+    if (c.nod) {
+      const int noddedY = product(by, nodCos) - product(bz, nodSin), noddedZ = product(bz, nodCos) + product(by, nodSin);
+      by = noddedY, bz = std::max(0, noddedZ);
+    }
     if (c.turn) {
       const int turnedX = product(bx, turnCos) + product(bz, turnSin),
                 turnedZ = product(bz, turnCos) - product(bx, turnSin);

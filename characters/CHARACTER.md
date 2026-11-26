@@ -679,8 +679,8 @@ Besides drawing each mood and state, a face:
     Mac, `typing` or `reading` (`Hands`); the Mac's side, `macleft` or
     `macright` (from where Boop sits, `Anchor.side`); and, last in the table
     so no pack's numbering of the others moves, the rest of you at the Mac
-    (`Along`): `scrolling`, `typingfast`, `music` or `video` and `oncall`
-    (`copied` keeps its place but is no longer sent); `macup`, the screen above the board (its anchor in the middle
+    (`Along`): `scrolling`, `typingfast`, `music`, `scrollup` (in the place
+    of `video`, no longer sent), `oncall` and `scrolldown` (in `copied`'s); `macup`, the screen above the board (its anchor in the middle
     third of its display); and `speaking`, another app recording with no camera. Boop's level puts no tag on: its body is one
     size at every level. A board with no Mac keeps none of the Mac's tags,
     as they go stale.
@@ -1000,11 +1000,12 @@ Some clips' ids mean something to a face:
 - A clip named for a Moment's state (Boop's `notice`): the gel plays it once
   as the Moment starts. The gel's recipe for that state times it.
 - You at the Mac: the gel loops `type-along` while it types with you, and
-  `type-along-fast` over it while you type fast; `scroll-down`,
-  `scroll-up` or `scroll`, `jam` (at work `jam-desk`, over the pose),
+  `type-along-fast` over it while you type fast; `jam` (at work
+  `jam-desk`, over the pose),
   `speak-along` and `on-call` while it's with you so (its
   `GelFace::showWithYou`); and once, `stretch` as a call ends, `look-around` as the
-  music stops.
+  music stops. The scroll's look straight down or up is no clip: the gel
+  moves the eyes, the face and the body itself (`GelFace::kLookNod`).
 
 **`looks.json`**: for each look (§9), keys `clip`, `tiers` and `acts`:
 

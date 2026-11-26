@@ -34,6 +34,10 @@ struct PaintControls {
   // the eye nearer its rim narrows on its own and goes behind it
   // (Projector::face), its outline and its light where they were.
   int turn = 0;
+  // The face nodded down (more than 0) or up, Q12 of a whole turn: each
+  // point of the face art goes down or up the dome on its own circle, as
+  // turn takes it round (Projector::face), its outline where it was.
+  int nod = 0;
   // The face trailing the body (render/gel/lively.h's face rule): its art
   // drawn this far from where the body puts it, sixteenths of a panel px,
   // at the body's size.

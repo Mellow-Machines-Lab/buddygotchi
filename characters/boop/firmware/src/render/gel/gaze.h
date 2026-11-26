@@ -17,14 +17,15 @@
 //    pull against it. One it was in the middle of is dropped.
 // 5. On a call (the `oncall` tag), with you at the Mac (GelFace::showWithYou):
 //    rest. It keeps still.
-// 6. The pointer: while your pointer moves and the Mac knows where the board
+// 6. Scrolling with you, the way known (the `scrolling` tag with
+//    `scrolldown` or `scrollup`, showWithYou): rest; its look straight down
+//    or straight up is the face's, the eyes all the way and the face nodded
+//    that way (GelFace::kLookNod), over the pointer too.
+// 7. The pointer: while your pointer moves and the Mac knows where the board
 //    sits (`state.ptr`), its eyes follow it, as you see the board beside the
 //    screen: further the further it is, up to kPointerReach. At the edge of
 //    the screen nearest the board, it looks right at it, to the Mac's side.
 //    Let go once the Mac stops sending it (still 3 s): rest.
-// 7. Scrolling with you (the `scrolling` tag, showWithYou): forward; the
-//    quick darts up and down, the one time they dart, are its clip's
-//    (`scroll-down`, `scroll-up`, `scroll`).
 //
 // At work, typing, with none of these: forward, at rest.
 //

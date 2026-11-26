@@ -108,8 +108,8 @@ public struct Pointer: Equatable, Sendable {
 /// reading (`Hands`): which way you scroll, typing fast, music playing, on
 /// a call, and where your pointer is. Each is a plain fact read from the
 /// Mac's state, never content: key timing from idle times, never keys;
-/// only the sign of a scroll, never how far or where; which apps play or
-/// record sound and whether a camera runs, never what they play; the
+/// only the sign of a scroll, never how far or where; whether an app plays
+/// or records sound and whether a camera runs, never what it plays; the
 /// pointer's place. They go to the board as tags (`Tags.along`) and the
 /// pointer as `state`'s `ptr`, and the board decides what the body does
 /// with them. No event, nothing in the transcript, nothing the brain, the
@@ -133,12 +133,8 @@ public struct Along: Sendable {
         public var pointerY: Double?
         /// The display the pointer is on, for a new anchor.
         public var display: Anchor.Rect?
-        /// The frontmost app itself plays sound, and another app does
-        /// (never Boop's own).
-        public var frontSound = false
-        public var otherSound = false
-        /// The frontmost app's bundle id.
-        public var front: String?
+        /// An app plays sound, any app but Boop itself.
+        public var sound = false
         /// A camera runs, for any app.
         public var camera = false
         /// Another app records sound: any input device, never Boop's own
@@ -154,7 +150,7 @@ public struct Along: Sendable {
         /// While you scroll, which way, when the Mac knows.
         public var scroll: Scroll?
         public var fast = false
-        /// Music plays (`Along.music`).
+        /// Music plays: any sound, held `soundOnMs`.
         public var music = false
         public var onCall = false
         /// You're speaking: another app records with no camera running
@@ -183,7 +179,7 @@ public struct Along: Sendable {
         }
     }
 
-    /// Which way you scroll: the board's eyes dart that way.
+    /// Which way you scroll: the board looks straight that way.
     public enum Scroll: String, Sendable {
         case up = "scrollup", down = "scrolldown"
     }
@@ -201,21 +197,14 @@ public struct Along: Sendable {
     public static let slowSlots = 3
     public static let slowMs: Int64 = 1000
 
-    /// Sound counts once it's run this long: only music or a video does.
-    /// An app keeps its sound output running for seconds after a sound
-    /// effect of one second, a system sound or an alert, so a short wait
-    /// lets those through. It stops once it's been off this long, so a gap
-    /// between tracks doesn't stop it.
+    /// Sound is music once it's run this long, whatever plays it: a music
+    /// app, a browser's tab in front or not, a video. An app keeps its
+    /// sound output running for seconds after a sound effect of one second,
+    /// a system sound or an alert, so a short wait lets those through. It
+    /// stops once it's been off this long, so a gap between tracks, an ad's
+    /// or the next video's loading doesn't stop it.
     public static let soundOnMs: Int64 = 10_000
-    public static let soundOffMs: Int64 = 3000
-    /// The apps a video plays in, by bundle id: sound from one of them
-    /// while it's frontmost is a video, which counts as nothing (a
-    /// tutorial isn't a jam); any other sound, music.
-    public static let players: Set<String> = [
-        "com.apple.Safari", "com.google.Chrome", "company.thebrowser.Browser", "org.mozilla.firefox",
-        "com.microsoft.edgemac", "com.apple.QuickTimePlayerX", "com.apple.TV", "com.colliderli.iina",
-        "org.videolan.vlc",
-    ]
+    public static let soundOffMs: Int64 = 8000
 
     /// A call starts once a camera has run this long, and ends once it has
     /// been off this long.
@@ -277,17 +266,10 @@ public struct Along: Sendable {
         // (documentation/design/screen-guide.md, "Going with you").
         out.onCall = call.update(f.camera, at: now, onMs: Self.callOnMs, offMs: Self.callOffMs)
         out.speaking = speech.update(f.otherInput && !f.camera, at: now, onMs: Self.speakOnMs, offMs: Self.speakOffMs)
-        let music = sound.update(Self.music(f), at: now, onMs: Self.soundOnMs, offMs: Self.soundOffMs)
+        let music = sound.update(f.sound, at: now, onMs: Self.soundOnMs, offMs: Self.soundOffMs)
         out.music = music && !out.onCall
         out.pointer = pointer(f, anchor: anchor, at: now)
         return out
-    }
-
-    /// Whether music plays now, by who plays it: another app, or a
-    /// frontmost app that isn't a player. A player that's frontmost plays a
-    /// video, which isn't music.
-    static func music(_ f: Facts) -> Bool {
-        f.otherSound || (f.frontSound && !(f.front.map(players.contains) ?? false))
     }
 
     /// Whether keys went down in most of the last quarter seconds. Each

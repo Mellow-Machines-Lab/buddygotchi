@@ -75,6 +75,10 @@ class Engine {
   // sixteenths of a canvas px, x right and y up: the face's to set, the
   // painter's to draw.
   int faceLagX16 = 0, faceLagY16 = 0;
+  // How far the face nods on the body (PaintControls::nod), down for more
+  // than 0: the face's to set (the scroll's look, the pointer high or low),
+  // the painter's to draw.
+  int faceNod = 0;
   void sync();
   void step(uint32_t ms);
   void setMood(int id) {
