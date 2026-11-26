@@ -527,6 +527,21 @@ Every other moment has none.
 A `win` or a `back` may also carry a remark, the pack's `[remark …]` line
 in `signs.md` (`Remarks`): text, never a take, at most one skit in three.
 
+A `win`, an `upset` and a `fix`, and a check failing the 1st or 2nd time
+in a row (`oops`), also get Boop's line: one short sentence about what
+happened, held low (`Lines`). It's the agent's offered line when it gave
+one, else one of `signs.md`'s `[line <moment> …]` rows, `{what}` filled
+with the check ("the tests") or the thread and `{n}` with the failures,
+each sentence given a capital. A row may add tags that must hold, and of
+the rows that fit, those with the most tags are picked from: `long` a
+very long turn, `hard` a check failed on the way (a fix after 2 or more),
+`glum` a win in a cross or sad mood (only those), `check` the 3rd failed
+check, `stuck` the agent gave up, `again` the 2nd failed check, `swear`
+when the skit swears. Up to 40 characters in two rows of 26 filled with a
+16-character `{what}`, no questions. On a win, a remark takes its place.
+With Settings' Voice set to speak, the Mac says the line aloud and the
+board plays no take for that Moment.
+
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the
   voice file's version on its first line after the comments, the same one
