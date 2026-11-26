@@ -180,6 +180,8 @@ The rules that are easy to break, in full in
   as tags and `ptr` and nothing else (`Hands`, `Along`): that you type,
   scroll or listen, never what, with no event, nothing in the
   transcript and nothing for the brain, the world or the daily counts.
+  One exception, and only it: music on keeps Boop from dozing off and
+  ends a nap (`Core.along`), a change of Doing alone.
 - The world gets only `World.State`'s fields (`WorldTests` pins them): the
   buddy's name and level, its UTC offset, one of six activities,
   counts, its days in a row and its colour. Nothing before onboarding's world screen, nothing with it off.

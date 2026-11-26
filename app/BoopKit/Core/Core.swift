@@ -91,8 +91,11 @@ public final class Core {
     /// You at the Mac now (`Along`: your hands, and the rest Boop notices)
     /// and the side of Boop the Mac is on (`Anchor.side`), which the
     /// runtime sets (`Runtime.handsTick`, Settings): facts for the board's
-    /// tags and its `ptr`, never events.
-    public var along = Along.Now()
+    /// tags and its `ptr`, never events. Music alone also touches Doing: it
+    /// keeps Boop from dozing off, and ends a nap as it starts.
+    public var along = Along.Now() {
+        didSet { if along.music, !oldValue.music { napping = false } }
+    }
     public var hands: Hands? { along.hands }
     public var macSide: Anchor.Side?
     /// The cards the agents handed Boop, and the one it holds (`Cards`).
@@ -764,10 +767,11 @@ public final class Core {
     /// Whether Boop sleeps at `now` with no session open: awake while
     /// you're at the Mac; asleep once you're away, the screen is locked,
     /// it went for its nap, or you've been still its doze time (`dozeMs`,
-    /// from your last input), or while nothing has said you're here at all.
+    /// from your last input) with no music on, or while nothing has said
+    /// you're here at all.
     public func sleepsAlone(at now: Int64) -> Bool {
         guard let last = lastInputAt else { return true }
-        return awayFromMac || screenLocked || napping || now - last >= dozeMs(at: now)
+        return awayFromMac || screenLocked || napping || (now - last >= dozeMs(at: now) && !along.music)
     }
 
     /// You touched the board: you're here, for Doing (`lastInputAt`).
@@ -815,12 +819,12 @@ public final class Core {
     }
 
     /// Whether Boop has dozed off at `now` though sessions are open: it
-    /// went for a nap, or they all rest, the latest since `rests.max()`;
-    /// and nothing waits on you.
+    /// went for a nap, or they all rest, the latest since `rests.max()`,
+    /// with no music on; and nothing waits on you.
     func dozedOff(at now: Int64, rests: [Int64], waiting: Bool) -> Bool {
         guard !waiting else { return false }
         if napping { return true }
-        guard let since = rests.max() else { return false }
+        guard !along.music, let since = rests.max() else { return false }
         return now - since >= dozeMs(at: now)
     }
 
