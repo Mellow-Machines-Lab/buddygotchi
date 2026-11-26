@@ -537,6 +537,8 @@ public final class Runtime: @unchecked Sendable {
         }
         rig.link.onHello = { [weak self] hello in
             DeviceInfo(hello).logLines.forEach(log)
+            // Which way up it lies is the board's to say again.
+            self?.pipeline.hello(at: clock())
             // A board that says hello may have restarted: it has no picture.
             self?.showBlobs.forget()
             if let self, let latest = rig.latest { self.show(latest) }

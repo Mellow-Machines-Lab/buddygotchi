@@ -774,6 +774,82 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(third.readBack(now: rig.now), 5, "the torn line was ended, so the next launch's aren't glued to it")
     }
 
+    /// The owner's board on 2026-11-25: laid face down at 18:15, its end
+    /// lost with the link, then two reconnects, the app restarting (its
+    /// transcript replayed), a pick-up and pokes. A new link forgets face
+    /// down in the fold itself, so the replay ends where the run did, and
+    /// the pokes react as ever: annoyed at the second in a row, past
+    /// grumpy by the fourth.
+    func testFaceDownLostWithTheLinkDoesntOutliveIt() async throws {
+        try requirePack("boop")
+        let dir = tempDir("boop-fd")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let time = rig.time
+        func at(_ hms: String) -> Int64 { Int64(ISO8601DateFormatter().date(from: "2026-11-25T\(hms)Z")!.timeIntervalSince1970 * 1000) }
+        final class Clock: @unchecked Sendable { var now: Int64 = 0 }
+        let clock = Clock()
+        var played = 0
+        func launch() -> (pipeline: Pipeline, harness: Harness, mood: Choice, home: DispatchQueue) {
+            let home = DispatchQueue(label: "boop.test.facedown")
+            let pipeline = Pipeline(core: Core(config: .init(time: time), isRunning: { _ in true }, archive: { _ in .open }),
+                                    view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time), time: time,
+                                    clock: Harness.Clock(now: { clock.now }), queue: home, loop: false)
+            let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering, queue: { _, pending in
+                played += 1
+                pending.finish(.done)
+            }, wall: { clock.now })
+            let brain = RulesBrain(seed: 1, facts: { [weak harness] in harness?.line($0)?.facts },
+                                   mood: { log in (MoodOutput.value(mood, log), MoodOutput.level(mood, log)) })
+            home.sync { harness.use(brain) }
+            return (pipeline, harness, mood, home)
+        }
+        var app = launch()
+        func input(_ hms: String, _ body: (Pipeline) -> Pipeline.Step) -> Pipeline.Step {
+            clock.now = at(hms)
+            rig.now = clock.now
+            return app.home.sync { body(app.pipeline) }
+        }
+
+        _ = input("18:00:00") { $0.agent(self.rig.event(.sessionStart)) }
+        _ = input("18:00:01") { $0.link(up: true, at: clock.now) }
+        _ = input("18:00:02") { $0.hello(at: clock.now) }
+        _ = input("18:15:45") { $0.gesture("facedown", at: clock.now) }
+        XCTAssertEqual(input("20:00:00") { $0.gesture("dizzy", at: clock.now) }.waking, [], "really face down: held")
+        for (drop, up) in [("21:18:30", "21:19:00"), ("22:32:10", "22:33:00")] {
+            _ = input(drop) { $0.link(up: false, at: clock.now) }
+            _ = input(up) { $0.link(up: true, at: clock.now) }
+            _ = input(up) { $0.hello(at: clock.now) }
+        }
+
+        // The app restarts: the transcript is read back and folded again.
+        clock.now = at("22:40:00")
+        app = launch()
+        app.home.sync {
+            app.pipeline.readBack(now: clock.now)
+            app.pipeline.view.catchUp(app.pipeline.transcript.view(now: clock.now))
+            XCTAssertNil(app.pipeline.view.fold.faceDownSince, "the replay ends where the run did")
+        }
+        _ = input("22:40:05") { $0.link(up: true, at: clock.now) }
+        _ = input("22:40:06") { $0.hello(at: clock.now) }
+        _ = input("22:53:00") { $0.gesture("pickup", at: clock.now) }
+        _ = input("22:53:04") { $0.gesture("putdown", at: clock.now) }
+
+        var faces: [String] = [], woke: [Bool] = []
+        for s in 0..<4 {
+            let step = input("23:00:0\(s)") { $0.poke(at: clock.now) }
+            let poke = try XCTUnwrap(step.views.first { $0.type == .poke })
+            woke.append(poke.wakesBrain)
+            if poke.wakesBrain, let e = app.home.sync(execute: { app.harness.log.event(poke.seq) }) {
+                _ = await app.harness.respond(to: e)
+            }
+            faces.append(app.home.sync { MoodOutput.face(app.mood, app.harness.log.view(now: clock.now)) })
+        }
+        XCTAssertEqual(Array(woke.prefix(2)), [true, true], "the pokes wake the brain")
+        XCTAssertGreaterThan(played, 0, "and Boop reacts")
+        XCTAssertEqual(faces[1], "annoyed", "\(faces)")
+        XCTAssertTrue(["grumpy", "angry"].contains(faces[3]), "\(faces)")
+    }
+
     /// A write a full disk cut short inside a multi-byte
     /// character loses only its own line. The rest of the day is read,
     /// `seq` goes on from it, and the torn line is ended.

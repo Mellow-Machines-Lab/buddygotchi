@@ -1805,13 +1805,70 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(woke(rig.note(Fx(rig.pipeline.gesture("facedown", at: rig.now)))), [])
         rig.wait(60_000)
         XCTAssertEqual(woke(rig.send(.turnEnd)), [], "a finished turn while it lies face down")
-        XCTAssertEqual(woke(rig.poke()), [])
+        XCTAssertEqual(woke(rig.gesture("dizzy")), [], "a shake, which the board feels face down too")
+        XCTAssertEqual(woke(rig.note(Fx(rig.pipeline.press(at: rig.now)))), [], "BOOT's poke, pressed face down")
+        XCTAssertEqual(woke(rig.said("you there?")).count, 1, "what you say still wakes it")
         rig.wait(5000)
         XCTAssertEqual(events(rig.note(Fx(rig.pipeline.gesture("peekaboo", at: rig.now)))), [], "the board's peekaboo: face down's end")
         rig.wait(5000)
         rig.send(.turnStart)
         rig.wait(60_000)
         XCTAssertEqual(woke(rig.send(.turnEnd)).count, 1, "face up again")
+    }
+
+    /// What the board senses only face up ends face down whatever the Mac
+    /// last heard: a pick-up and its put-down, and a finger on the screen,
+    /// which lies against the desk face down.
+    func testAPickUpOrAFingerOnTheScreenEndsFaceDown() {
+        for (kind, wakes) in [("pickup", true), ("putdown", false), ("stroke", true), ("lean", true), ("swipe", true)] {
+            let rig = CoreRig()
+            rig.gesture("facedown")
+            rig.wait(60_000)
+            XCTAssertEqual(woke(rig.gesture(kind)).count, wakes ? 1 : 0, kind)
+            rig.wait(60_000)
+            XCTAssertEqual(woke(rig.gesture("dizzy")).count, 1, "after \(kind), no longer face down")
+        }
+        let rig = CoreRig()
+        rig.send(.sessionStart)  // awake
+        rig.gesture("facedown")
+        rig.wait(60_000)
+        XCTAssertEqual(woke(rig.poke()).count, 1, "a poke on the screen")
+    }
+
+    /// The board's link coming up or dropping, or its hello, and the Mac no
+    /// longer knows which way up it lies: face down is forgotten, and the
+    /// board says it again if it still lies face down.
+    func testANewLinkForgetsFaceDown() {
+        for (what, link) in [("a drop", { (p: Pipeline, at: Int64) in p.link(up: false, at: at) }),
+                             ("a connect", { p, at in p.link(up: true, at: at) }),
+                             ("a hello", { p, at in p.hello(at: at) })] {
+            let rig = CoreRig()
+            rig.gesture("facedown")
+            rig.wait(60_000)
+            XCTAssertEqual(events(rig.note(Fx(link(rig.pipeline, rig.now)))), [], "\(what) has no line")
+            XCTAssertEqual(woke(rig.gesture("dizzy")).count, 1, what)
+            rig.gesture("facedown")
+            XCTAssertEqual(woke(rig.gesture("dizzy")), [], "the board said it again after \(what)")
+        }
+    }
+
+    /// Face down with no end heard is forgotten at the first event past
+    /// half a day, and the app's log says so once.
+    func testFaceDownIsForgottenAfterHalfADay() {
+        XCTAssertEqual(TranscriptView.faceDownForgetMs, 12 * 3600 * 1000)
+        let rig = CoreRig()
+        var notes: [String] = []
+        rig.view.note = { notes.append($0) }
+        rig.gesture("facedown")
+        rig.now += TranscriptView.faceDownForgetMs
+        XCTAssertEqual(woke(rig.gesture("dizzy")), [], "12 h: still face down")
+        rig.now += 1
+        XCTAssertEqual(woke(rig.gesture("dizzy")).count, 1, "past 12 h")
+        rig.now += 5000
+        rig.gesture("dizzy")
+        XCTAssertEqual(notes.count, 1, "once")
+        XCTAssertTrue(notes.first?.hasPrefix("view: face down since 2026-10-1") == true, "\(notes)")
+        XCTAssertTrue(notes.first?.hasSuffix(", over 12 h with no end heard: forgotten") == true, "\(notes)")
     }
 
     /// A quick swipe across the board is a stroke to the brain: the board's

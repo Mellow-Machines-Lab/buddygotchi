@@ -261,7 +261,7 @@ public final class CountsReader: TranscriptReader {
             if e.phase == .end {
                 s.row.disconnects += 1
                 if s.downSince == nil { s.downSince = e.at }
-            } else if let down = s.downSince {
+            } else if e.phase == .start, let down = s.downSince {
                 // Up again: only the time Boop saw. A gap with no event
                 // may be Boop not running, which says nothing of the board.
                 s.row.unpluggedMinutes += Int(max(0, (s.lastAt ?? down) - down) / 60_000)
