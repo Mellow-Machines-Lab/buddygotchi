@@ -27,6 +27,15 @@ voice file on its card, `internal/tools/boopctl takes --only placeholder.`
 plays them all. `check.mjs` checks the
 recorded bank as before and the placeholders on their own.
 
+**Sentences.** `plans/sentences.json` is Boop's recorded sentences, tiers 1
+and 2 (50 sentences, 76 takes): each one's spoken words, when it fits, and
+its deliveries (bright, flat, glum: a recorded mood, an audio tag, a
+direction and the faces it plays in). `character/tools/voicegen/record.py`
+records them (`--dry-run` first), files each as `sentence.<id>__<mood>`
+with entry `sentence.<id>` (not in dictionary.json) and only an `original`
+texture; its `robot-soft` file has to be made with the chain
+provenance.json describes, whose code isn't here, before voicegen lists it.
+
 ## Start here: find an actual recording in seconds
 
 Read [manifest.json](manifest.json) and [index.json](index.json), not every proposed

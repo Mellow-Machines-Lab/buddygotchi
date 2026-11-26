@@ -479,16 +479,43 @@ public final class MomentOutput: Output {
     /// moves which take or sign comes next.
     var asideRng = SplitMix64(seed: 0x11E5)
 
-    /// The pack's aside for `skit` or a failed check at `slot`, if any
-    /// (`Asides`): none on Quiet; it swears only when the skit does.
-    func packAside(skit: Skits.Play?, slot: RulesBrain.Slot?, about: Event, facts: [String: JSONValue], log: LogView) -> String? {
-        guard let slot, let moment = Asides.moment(skit: skit, slot: slot),
-              let (row, text) = Asides.pick(signs, moment: moment, slot: slot, facts: facts, work: work(about, facts: facts, log: log),
-                                            mood: moodID(log) ?? pack.defaultMood, swears: skit?.swears ?? false,
-                                            quiet: talk() == .quiet, avoiding: lastAsideRow, rng: &asideRng)
+    /// The pack's aside for `skit`, a failed check or a push at `slot`,
+    /// if any (`Asides`): none on Quiet; it swears only when the skit
+    /// does. Of those the board can say whole (`voiced`), the one whose
+    /// sentence says `preferring` (Jev's pick), if it's one.
+    func packAside(skit: Skits.Play?, slot: RulesBrain.Slot?, about: Event, facts: [String: JSONValue], log: LogView,
+                   voiced: (String) -> Bool = { _ in false }, preferring: String? = nil) -> Asides.Pick? {
+        guard let slot, let moment = Asides.moment(skit: skit, slot: slot, pushed: Self.pushed(about)) else { return nil }
+        let mood = moodID(log) ?? pack.defaultMood, work = work(about, facts: facts, log: log), calendar = calendar(about)
+        if let preferring,
+           let liked = Asides.pool(signs, moment: moment, slot: slot, facts: facts, work: work, calendar: calendar, mood: mood,
+                                   swears: skit?.swears ?? false, quiet: talk() == .quiet, voiced: voiced)
+               .first(where: { pick in pick.take.map { sentences(of: $0).contains(preferring) } ?? false }) {
+            lastAsideRow = liked.row
+            return liked
+        }
+        guard let pick = Asides.pick(signs, moment: moment, slot: slot, facts: facts, work: work, calendar: calendar, mood: mood,
+                                     swears: skit?.swears ?? false, quiet: talk() == .quiet, voiced: voiced,
+                                     avoiding: lastAsideRow, rng: &asideRng)
         else { return nil }
-        lastAsideRow = row
-        return text
+        lastAsideRow = pick.row
+        return pick
+    }
+
+    /// Whether `e` is a push that went out.
+    static func pushed(_ e: Event) -> Bool { e.type == .act && e.specificType == "push" && e["passed"]?.bool == true }
+
+    /// The texts the voice's takes of the sentence `id` say, in any face.
+    func sentences(of id: String) -> [String] {
+        Take.all(in: pack).filter { $0.part == .sentence && $0.meaning == id }.map(\.text)
+    }
+
+    /// Whether the board can say the sentence `id` whole in `face`: with
+    /// Settings' Voice on the board's sounds, a board that speaks, and a
+    /// take of it in that face. Nil `face`: in any.
+    func voices(_ id: String, face: String?) -> Bool {
+        voice() == .sounds && speaks()
+            && Take.all(in: pack).contains { $0.part == .sentence && $0.meaning == id && (face.map($0.moods.contains) ?? true) }
     }
 
     /// What the turn `about` finished was, as its agent put it
@@ -513,14 +540,22 @@ public final class MomentOutput: Output {
     /// words, or nil: the rule's pick against your usual before it
     /// (`Remarks.pick`), in one of the pack's lines for it (`Signs.remark`),
     /// not the last sign held up while another fits.
-    func remark(for skit: Skit, about: Event, facts: [String: JSONValue]) -> (id: String, words: String)? {
+    /// Of the lines the board can say whole (`voiced`: the row names a
+    /// sentence recorded for the face), only those, so what it says and
+    /// what it shows are one choice; the sentence comes back with it.
+    func remark(for skit: Skit, about: Event, facts: [String: JSONValue],
+                voiced: (String) -> Bool = { _ in false }) -> (id: String, words: String, take: String?)? {
         guard let remarking, let normals = remarking.normals() else { return nil }
         let usual = normals.usual(before: about.seq, minutes: remarking.minutes)
         guard let id = Remarks.pick(skit: skit.id, facts: facts, usual: usual, minutes: remarking.minutes(about.at), quiet: talk() == .quiet)
         else { return nil }
-        let lines = Self.unrepeated(Signs.remark(signs, id, n: Remarks.number(id, facts: facts, usual: usual)), last: lastSign)
-        guard !lines.isEmpty else { return nil }
-        return (id, lines[takes.int(in: 0...(lines.count - 1))])
+        let rows = Signs.remarkRows(signs, id, n: Remarks.number(id, facts: facts, usual: usual))
+        let said = rows.filter { $0.take.map(voiced) ?? false }
+        let pool = said.isEmpty ? rows.map { ($0.text, nil as String?) } : said.map { ($0.text, $0.take) }
+        let fresh = pool.count > 1 ? pool.filter { $0.0 != lastSign } : pool
+        guard !fresh.isEmpty else { return nil }
+        let (words, take) = fresh[takes.int(in: 0...(fresh.count - 1))]
+        return (id, words, take)
     }
 
     /// Below this, Jev is guessing at what you meant, and a `huh` beats a
@@ -642,6 +677,17 @@ public final class MomentOutput: Output {
         let move = MomentRule.move(about, facts: facts)
         guard speaks(), !silent(size, move: move) else { return [] }
         recall(log)
+        // The recorded sentences that fit, when the board can say any whole.
+        let sentences = Asides.moment(skit: skit, slot: slot).map { moment in
+            Asides.pool(signs, moment: moment, slot: slot, facts: facts, work: work(about, facts: facts, log: log), calendar: calendar(about),
+                        mood: moodID(log) ?? pack.defaultMood, swears: skit.swears, quiet: talk() == .quiet,
+                        voiced: { self.voices($0, face: nil) })
+                .compactMap(\.take).filter { voices($0, face: nil) }.flatMap(self.sentences(of:))
+        } ?? []
+        if !sentences.isEmpty {
+            let texts = sentences.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+            return Array((texts.filter { !lastWords.contains($0) } + texts.filter(lastWords.contains)).prefix(Self.takesOffered))
+        }
         return Voice.texts(.skit, meaning: skit.skit.id, kind: skit.swears ? .swear : size.kind, avoiding: lastWords,
                            never: never(about, slot: slot), limit: Self.takesOffered, in: pack)
     }
@@ -1031,7 +1077,10 @@ public final class MomentOutput: Output {
         let finishing = reaction.outcome != nil
         let room = finishing ? spoken == nil
             : (reaction.sign == nil || about.flatMap(told) != nil) && asking == nil && !reaction.low
-        if let skit, let about, room, let (id, words) = remark(for: skit.skit, about: about, facts: lineFacts) {
+        let voiced = { (id: String) in self.voices(id, face: choice) && !silent }
+        var sentence: String?
+        if let skit, let about, room, let (id, words, take) = remark(for: skit.skit, about: about, facts: lineFacts, voiced: voiced) {
+            sentence = take
             if finishing {
                 spoken = behind(words)
                 after[Normals.remarkFact] = .string(id)
@@ -1049,9 +1098,15 @@ public final class MomentOutput: Output {
         // sign, over a fix's. Its words never go to HISTORY, nor does a
         // check's: its record has them.
         var asided: String?
+        let jev = answers[Self.takeKey]?.choice
         if ruled == nil, !talk, let about, finishing ? spoken == nil : (asking == nil && beat == nil && remembering == nil),
-           let aside = packAside(skit: skit, slot: slot, about: about, facts: lineFacts, log: log) {
-            if finishing {
+           let pick = packAside(skit: skit, slot: slot, about: about, facts: lineFacts, log: log,
+                                voiced: voiced, preferring: jev) {
+            let aside = pick.text
+            if sentence == nil, let take = pick.take, voiced(take) { sentence = take }
+            if Asides.moment(skit: skit, slot: slot ?? .other) == Asides.back {
+                // You back: the sentence only; its sign stays the remark's or the dream's.
+            } else if finishing {
                 spoken = behind(aside)
                 after["aside"] = .string(aside)
                 after["sign"] = .string(aside)
@@ -1063,7 +1118,15 @@ public final class MomentOutput: Output {
                 sign = aside
                 asided = aside
             }
-            lastSign = aside
+            if Asides.moment(skit: skit, slot: slot ?? .other) != Asides.back { lastSign = aside }
+        }
+        // The sentence the Moment shows, said whole by the board in its
+        // skit's word's place (or, at a failed check or a push, where it
+        // said nothing): voice and text are one choice.
+        if let sentence, let take = Voice.take(.sentence, meaning: sentence, kind: .phrase, face: choice, avoiding: lastWords,
+                                               text: jev, in: pack, rng: &takes) {
+            said = [take]
+            reaction.say = Moment.Say(takes: said)
         }
         // With Settings' Voice speaking, the Mac says the sentence the
         // Moment shows, an aside (the agent's or the pack's) or a remark,

@@ -16,8 +16,14 @@ public enum Asides {
     public static let maxLength = MemoryPipeline.signMax, rowLength = 26, rows = 2
     /// The longest `{what}` is: a status card's `doing` whole.
     public static let whatLength = 24
-    /// The moment a failed check has its aside at before its skit plays.
-    public static let oops = "oops"
+    /// The moment a failed check has its aside at before its skit plays,
+    /// and the two moments that have only a recorded sentence, never an
+    /// aside of their own to show: you back (its sign stays the remark's
+    /// or the dream's) and a push that went out (its sign, once said,
+    /// the sentence's).
+    public static let oops = "oops", back = "back", ship = "ship"
+    /// The moments whose rows are only for their recorded sentence.
+    static let voiceOnly: Set<String> = [back, ship]
 
     /// The moment an aside is for, by the skit playing (`Skits.play`) at
     /// `slot`, or nil for none.
@@ -28,14 +34,37 @@ public enum Asides {
     /// | `upset` | the `upset` skit: a turn failed or gave up, or a check failing the 3rd time in a row | the work, or the check | the check's failures in a row | `check` a check, `stuck` gave up, `long` a very long turn, `swear` when the skit swears |
     /// | `fix` | the `fix` skit: a check passing after it failed | the check | its failures before | `hard` after 2 or more |
     /// | `oops` | a check failing the 1st or 2nd time in a row, no skit | the check | its failures in a row | `again` the 2nd |
+    /// | `back` | the `back` skit: you back after a break; a sentence only | | | `hour` away an hour or more, `days` a day or more |
+    /// | `ship` | a push that went out; a sentence only | | | |
+    ///
+    /// A row may also name the check it's for (`tests`, `build`,
+    /// `deploy`) or a time of day the calendar has (`night`): it fits only
+    /// then, and those tags never count toward the most.
     ///
     /// Of the rows whose tags are all true, those with the most tags are
     /// the pool, as replies' are (`Signs.replies`); a row that doesn't fit
     /// the low sign filled in is left out, and so is the last row said
-    /// while another fits. None on Quiet. `back` has no aside.
-    public static func moment(skit: Skits.Play?, slot: RulesBrain.Slot) -> String? {
-        if let skit { return ["win", "upset", "fix"].contains(skit.skit.id) ? skit.skit.id : nil }
+    /// while another fits. Where the board can play some of them whole
+    /// (`voiced`: the row names a take, `TaggedLine.take`, recorded for the
+    /// face), only those are the pool, so what it says and what it shows
+    /// are one choice; where none, the rows as if no take were named, and
+    /// `back` and `ship` none. None on Quiet.
+    public static func moment(skit: Skits.Play?, slot: RulesBrain.Slot, pushed: Bool = false) -> String? {
+        if let skit { return ["win", "upset", "fix", back].contains(skit.skit.id) ? skit.skit.id : nil }
+        if pushed { return ship }
         return slot == .checkFailed || slot == .checkFailing ? oops : nil
+    }
+
+    /// The tags that only say where a row fits, never counted toward the
+    /// most: a check's name and the calendar's.
+    static func filters(_ tags: [String]) -> Int { tags.filter { TranscriptView.checks.contains($0) || Days.calendarTags.contains($0) }.count }
+
+    /// An aside as picked: the row as written, filled in, and the sentence
+    /// that says it whole, if the row names one.
+    public struct Pick: Equatable, Sendable {
+        public var row: String
+        public var text: String
+        public var take: String?
     }
 
     /// What a finished turn was, in plain words, as the agent itself put
@@ -83,10 +112,17 @@ public enum Asides {
             if before >= 2 { on.insert("hard") }
         case oops:
             if before == 1 { on.insert("again") }
+        case back:
+            let away = facts["away_ms"]?.int ?? 0
+            if slot == .backDays || slot == .backAfterADay { on.insert("days") } else if away >= hourMs { on.insert("hour") }
         default: break
         }
+        if let topic = facts["topic"]?.string, TranscriptView.checks.contains(topic) { on.insert(topic) }
         return on
     }
+
+    /// Away this long or more, you're back after a while (`hour`).
+    static let hourMs: Int64 = 60 * 60_000
 
     /// `{what}` at a moment whose event's line has `facts`: a check's
     /// name ("the tests"); else the turn's `work`, a gerund's first letter
@@ -142,27 +178,36 @@ public enum Asides {
         return fits(line) ? line : nil
     }
 
-    /// The pack's aside at `moment`, or nil for none: one of `rows`'
-    /// `[aside <moment> …]` rows that fits, filled in, `{what}` the turn's
-    /// `work` where it's a turn's, not `avoiding` (the last row said) while
-    /// another fits, by `rng`. `row` is the row as written, to avoid next time.
+    /// The pack's aside at `moment`, or nil for none: one of `pool`'s, not
+    /// `avoiding` (the last row said) while another fits, by `rng`.
     public static func pick(_ rows: [TaggedLine], moment: String, slot: RulesBrain.Slot, facts: [String: JSONValue], work: String? = nil,
-                            mood: String, swears: Bool, quiet: Bool, avoiding: String? = nil,
-                            rng: inout SplitMix64) -> (row: String, text: String)? {
-        let pool = self.pool(rows, moment: moment, slot: slot, facts: facts, work: work, mood: mood, swears: swears, quiet: quiet)
+                            calendar: [String] = [], mood: String, swears: Bool, quiet: Bool, voiced: (String) -> Bool = { _ in false },
+                            avoiding: String? = nil, rng: inout SplitMix64) -> Pick? {
+        let pool = self.pool(rows, moment: moment, slot: slot, facts: facts, work: work, calendar: calendar, mood: mood, swears: swears,
+                             quiet: quiet, voiced: voiced)
         let fresh = pool.count > 1 ? pool.filter { $0.row != avoiding } : pool
         return fresh.isEmpty ? nil : fresh[rng.int(in: 0...(fresh.count - 1))]
     }
 
-    /// Every aside `pick` may say at `moment`, filled in.
+    /// Every aside `pick` may say at `moment`, filled in: those the board
+    /// can say whole (`voiced`) when there are any, else every row as if
+    /// none named a take.
     public static func pool(_ rows: [TaggedLine], moment: String, slot: RulesBrain.Slot, facts: [String: JSONValue], work: String? = nil,
-                            mood: String, swears: Bool, quiet: Bool) -> [(row: String, text: String)] {
+                            calendar: [String] = [], mood: String, swears: Bool, quiet: Bool,
+                            voiced: (String) -> Bool = { _ in false }) -> [Pick] {
         guard !quiet else { return [] }
-        let on = tags(moment, slot: slot, facts: facts, mood: mood, swears: swears).union(["aside", moment])
+        let on = tags(moment, slot: slot, facts: facts, mood: mood, swears: swears).union(["aside", moment]).union(calendar)
         let what = what(facts, work: work), n = number(moment, facts: facts)
         let fit = rows.filter { $0.tags.count >= 2 && $0.tags[0] == "aside" && $0.tags[1] == moment && $0.fits(on) }
-            .compactMap { row in filled(row.text, what: what, n: n).map { (row: row.text, tags: row.tags.count, text: $0) } }
-        guard let most = fit.map(\.tags).max() else { return [] }
-        return fit.filter { $0.tags == most }.map { ($0.row, $0.text) }
+            .compactMap { row in
+                filled(row.text, what: what, n: n).map { (pick: Pick(row: row.text, text: $0, take: row.take), tags: row.tags.count - filters(row.tags)) }
+            }
+        func most(_ rows: [(pick: Pick, tags: Int)]) -> [Pick] {
+            guard let most = rows.map(\.tags).max() else { return [] }
+            return rows.filter { $0.tags == most }.map(\.pick)
+        }
+        let said = fit.filter { $0.pick.take.map(voiced) ?? false }
+        if !said.isEmpty { return most(said) }
+        return voiceOnly.contains(moment) ? [] : most(fit)
     }
 }

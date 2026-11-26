@@ -6,10 +6,17 @@ import Foundation
 public struct TaggedLine: Equatable, Sendable {
     public var tags: [String]
     public var text: String
+    /// The recorded sentence that says it, by its id, from a `take=…` in
+    /// its brackets (`- [aside win take=win.all-yours] Done! {what}, all
+    /// yours.`): never a tag, which a moment would have to have. Nil for a
+    /// line no take says. The board plays it when its voice has it
+    /// (`Take.Part.sentence`).
+    public var take: String?
 
-    public init(tags: [String], text: String) {
+    public init(tags: [String], text: String, take: String? = nil) {
         self.tags = tags
         self.text = text
+        self.take = take
     }
 
     /// Whether its words take one of yours (`{words}` or `{WORDS}`).
@@ -22,6 +29,8 @@ public struct TaggedLine: Equatable, Sendable {
     /// Whether `on` has all of its tags.
     public func fits(_ on: Set<String>) -> Bool { Set(tags).isSubset(of: on) }
 
+    static let takePrefix = "take="
+
     /// A file's lines: each `- ` line, its tags read off; anything else
     /// (a comment, a heading) is skipped.
     public static func parse(_ text: String) -> [TaggedLine] {
@@ -30,11 +39,16 @@ public struct TaggedLine: Equatable, Sendable {
             guard line.hasPrefix("- ") else { return nil }
             var body = String(line.dropFirst(2))
             var tags: [String] = []
+            var take: String?
             if body.hasPrefix("["), let close = body.firstIndex(of: "]") {
                 tags = body[body.index(after: body.startIndex)..<close].split(separator: " ").map(String.init)
                 body = String(body[body.index(after: close)...]).trimmingCharacters(in: .whitespaces)
             }
-            return TaggedLine(tags: tags, text: body)
+            if let named = tags.first(where: { $0.hasPrefix(takePrefix) }) {
+                take = String(named.dropFirst(takePrefix.count))
+                tags.removeAll { $0.hasPrefix(takePrefix) }
+            }
+            return TaggedLine(tags: tags, text: body, take: take)
         }
     }
 }

@@ -1,0 +1,580 @@
+{
+ "note": "Boop's recorded sentences, tiers 1 and 2: each one of the pack's lines said whole (signs.md's rows that name it, take=<id>, show its text on the low sign). record.py records each sentence once in each of its deliveries, as `sentence.<id>__<mood>`, and files it in the manifest; voicegen then puts it in voice.bin and takes.tsv (part sentence, meaning the id), playing in its delivery's faces. Tier 3 is drafts, not here yet.",
+ "voiceId": "rErOatUrNIU3vfNcLl6Z",
+ "modelId": "eleven_v4",
+ "deliveries": {
+  "B": {
+   "name": "bright",
+   "mood": "happy",
+   "tag": "[happy]",
+   "faces": [
+    "happy",
+    "pleased",
+    "amused",
+    "affectionate",
+    "excited",
+    "proud",
+    "mischievous",
+    "smug"
+   ],
+   "direction": "Small, warm and bright, a little cheeky: quick and light, a smile in it. No squeal, no shouting."
+  },
+  "F": {
+   "name": "flat",
+   "mood": "calm",
+   "tag": "[calm]",
+   "faces": [
+    "calm",
+    "focused",
+    "determined",
+    "curious",
+    "surprised"
+   ],
+   "direction": "Small and warm, even and matter-of-fact, a dry little wink. No big energy, no drama."
+  },
+  "G": {
+   "name": "glum",
+   "mood": "sad",
+   "tag": "[sad]",
+   "faces": [
+    "sad",
+    "lonely",
+    "faint",
+    "annoyed",
+    "grumpy",
+    "angry",
+    "silent_scream",
+    "wounded"
+   ],
+   "direction": "Small, flat and tired, a soft sigh in it. Never mean, never whiny, never shouting."
+  }
+ },
+ "sentences": [
+  {
+   "id": "win.all-yours",
+   "tier": 1,
+   "when": "win",
+   "spoken": "Done! All yours.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "win.ta-da",
+   "tier": 1,
+   "when": "win",
+   "spoken": "Ta-da! Finished.",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.wrap",
+   "tier": 1,
+   "when": "win",
+   "spoken": "Woo, that's a wrap!",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.nice-one",
+   "tier": 1,
+   "when": "win",
+   "spoken": "And... done. Nice one.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "win.high-five",
+   "tier": 1,
+   "when": "win",
+   "spoken": "High five! Done.",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.finally",
+   "tier": 1,
+   "when": "win, a very long turn",
+   "spoken": "Phew. Finally done!",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "win.hard-way",
+   "tier": 1,
+   "when": "win, checks failed on the way",
+   "spoken": "Done, the hard way.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "win.mm-done",
+   "tier": 1,
+   "when": "win, in a cross or sad mood",
+   "spoken": "Mm. Done.",
+   "kind": "phrase",
+   "deliveries": [
+    "G"
+   ]
+  },
+  {
+   "id": "back.youre-back",
+   "tier": 1,
+   "when": "you come back after a break",
+   "spoken": "Oh! You're back!",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "upset.it-broke",
+   "tier": 1,
+   "when": "a turn failed",
+   "spoken": "Aw. It broke.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "win.look",
+   "tier": 2,
+   "when": "win",
+   "spoken": "Look at that. Done!",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.dusted",
+   "tier": 2,
+   "when": "win",
+   "spoken": "Done and dusted.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "win.next",
+   "tier": 2,
+   "when": "win",
+   "spoken": "Nailed it. Next!",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.thats-that",
+   "tier": 2,
+   "when": "win",
+   "spoken": "That's that. Done.",
+   "kind": "phrase",
+   "deliveries": [
+    "F"
+   ]
+  },
+  {
+   "id": "win.big-one",
+   "tier": 2,
+   "when": "win, very long",
+   "spoken": "Big one! Done.",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.long-haul",
+   "tier": 2,
+   "when": "win, very long",
+   "spoken": "Long haul. But done!",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "win.bumpy",
+   "tier": 2,
+   "when": "win, hard-won",
+   "spoken": "Bumpy ride. Still done.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "win.fought-back",
+   "tier": 2,
+   "when": "win, hard-won",
+   "spoken": "It fought back. We won.",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.on-a-roll",
+   "tier": 2,
+   "when": "win, the 3rd in a row or more",
+   "spoken": "On a roll!",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.that-helps",
+   "tier": 2,
+   "when": "win, cross or sad",
+   "spoken": "Done. That helps.",
+   "kind": "phrase",
+   "deliveries": [
+    "G"
+   ]
+  },
+  {
+   "id": "win.bedtime",
+   "tier": 2,
+   "when": "win, at night",
+   "spoken": "Done. Now go to bed.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "oops.tests",
+   "tier": 2,
+   "when": "the tests fail, 1st time",
+   "spoken": "Uh oh. The tests failed.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "oops.tests-no",
+   "tier": 2,
+   "when": "the tests fail, 1st time",
+   "spoken": "Hmm. The tests said no.",
+   "kind": "phrase",
+   "deliveries": [
+    "F"
+   ]
+  },
+  {
+   "id": "oops.tests-again",
+   "tier": 2,
+   "when": "the tests fail, 2nd in a row",
+   "spoken": "The tests failed again.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "upset.tests-grr",
+   "tier": 2,
+   "when": "the tests fail, 3rd in a row or more",
+   "spoken": "Not the tests again! Grr.",
+   "kind": "phrase",
+   "deliveries": [
+    "G"
+   ]
+  },
+  {
+   "id": "upset.tests-oh-man",
+   "tier": 2,
+   "when": "the tests fail, 3rd or more",
+   "spoken": "Oh man. The tests, again.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "fix.tests-pass",
+   "tier": 2,
+   "when": "the tests pass after failing",
+   "spoken": "Phew. The tests pass!",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "fix.green",
+   "tier": 2,
+   "when": "the tests pass after failing",
+   "spoken": "Green again. Phew.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "fix.tests-finally",
+   "tier": 2,
+   "when": "the tests pass after 2 or more failures",
+   "spoken": "Finally! The tests pass.",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "oops.build",
+   "tier": 2,
+   "when": "the build fails, 1st",
+   "spoken": "Uh oh. The build broke.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "oops.build-again",
+   "tier": 2,
+   "when": "the build fails again",
+   "spoken": "The build broke again.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "fix.builds",
+   "tier": 2,
+   "when": "the build passes after failing",
+   "spoken": "Yes! It builds.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "fix.builds-finally",
+   "tier": 2,
+   "when": "the build passes after 2 or more",
+   "spoken": "Finally. It builds!",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "oops.that",
+   "tier": 2,
+   "when": "another check fails, 1st",
+   "spoken": "Uh oh. That failed.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "oops.again",
+   "tier": 2,
+   "when": "another check fails again",
+   "spoken": "Failed again. Hmm.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "fix.fixed",
+   "tier": 2,
+   "when": "another check passes after failing",
+   "spoken": "Phew. Fixed.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "upset.didnt-land",
+   "tier": 2,
+   "when": "a turn failed",
+   "spoken": "Oh no. That didn't land.",
+   "kind": "phrase",
+   "deliveries": [
+    "F",
+    "G"
+   ]
+  },
+  {
+   "id": "upset.all-that",
+   "tier": 2,
+   "when": "a very long turn failed",
+   "spoken": "All that work, and it broke.",
+   "kind": "phrase",
+   "deliveries": [
+    "G"
+   ]
+  },
+  {
+   "id": "upset.stuck",
+   "tier": 2,
+   "when": "the agent gave up",
+   "spoken": "It's stuck. Ugh.",
+   "kind": "phrase",
+   "deliveries": [
+    "G"
+   ]
+  },
+  {
+   "id": "upset.shit",
+   "tier": 2,
+   "when": "failures piled up, swearing on",
+   "spoken": "Oh, shit. It broke.",
+   "kind": "swear",
+   "deliveries": [
+    "G"
+   ]
+  },
+  {
+   "id": "upset.damn",
+   "tier": 2,
+   "when": "failures piled up, swearing on",
+   "spoken": "Damn it. Again!",
+   "kind": "swear",
+   "deliveries": [
+    "G"
+   ]
+  },
+  {
+   "id": "back.there-you-are",
+   "tier": 2,
+   "when": "you come back",
+   "spoken": "Hey, there you are!",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "back.missed-you",
+   "tier": 2,
+   "when": "back after an hour or more",
+   "spoken": "You're back! I missed you.",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "back.early",
+   "tier": 2,
+   "when": "back, far earlier than your usual",
+   "spoken": "You're early!",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "back.late",
+   "tier": 2,
+   "when": "back, far later than your usual",
+   "spoken": "You're late! ...Hi.",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "back.days",
+   "tier": 2,
+   "when": "back after a day or more",
+   "spoken": "Whoa. It's been days!",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "ship.shipped",
+   "tier": 2,
+   "when": "a push succeeded",
+   "spoken": "Shipped! Woo!",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "ship.out-the-door",
+   "tier": 2,
+   "when": "a push succeeded",
+   "spoken": "It's out the door!",
+   "kind": "phrase",
+   "deliveries": [
+    "B",
+    "F"
+   ]
+  },
+  {
+   "id": "win.quick",
+   "tier": 2,
+   "when": "win, far faster than your usual",
+   "spoken": "That was quick!",
+   "kind": "phrase",
+   "deliveries": [
+    "B"
+   ]
+  },
+  {
+   "id": "win.took-a-while",
+   "tier": 2,
+   "when": "win, far slower than your usual",
+   "spoken": "That took a while. Done!",
+   "kind": "phrase",
+   "deliveries": [
+    "F"
+   ]
+  }
+ ]
+}

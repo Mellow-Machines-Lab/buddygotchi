@@ -40,6 +40,7 @@ final class VoiceTests: XCTestCase {
         XCTAssertEqual(Set(Take.all.map { "\($0.id) \($0.part) \($0.meaning)" }).count, Take.all.count)
         let recorded = Dictionary(Take.all.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let replies = Set(MomentOutput.replies.map(\.name) + ["dunno"])
+        let sentences = Set(RuntimeTests.steering.signs.compactMap(\.take))
         for t in Take.all {
             XCTAssertFalse(t.moods.isEmpty, t.id)
             XCTAssertTrue(Set(t.moods).isSubset(of: moods), "\(t.id) is in \(t.moods)")
@@ -53,12 +54,14 @@ final class VoiceTests: XCTestCase {
             case .reply:
                 XCTAssertTrue(replies.contains(t.meaning), "\(t.id) replies \(t.meaning), which no reply is")
                 XCTAssertNotEqual(t.kind, .swear, "never a swear at you")
+            case .sentence:
+                XCTAssertTrue(sentences.contains(t.meaning), "\(t.id) says sentence \(t.meaning), which no line of signs.md names")
             }
             XCTAssertTrue((300...3000).contains(t.ms), "\(t.id) is \(t.ms) ms")
             XCTAssertTrue(!t.text.isEmpty && t.text.utf8.count <= 35 && t.text.allSatisfy { $0.isASCII }, t.text)
         }
         // Swears only as the upset skit's.
-        XCTAssertEqual(Set(Take.all.filter { $0.kind == .swear }.map { "\($0.part) \($0.meaning)" }), ["skit upset"])
+        XCTAssertEqual(Set(Take.all.filter { $0.kind == .swear && $0.part != .sentence }.map { "\($0.part) \($0.meaning)" }), ["skit upset"])
         XCTAssertEqual(Take.voiceVersion.count, 12)
     }
 

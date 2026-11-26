@@ -48,6 +48,13 @@ so; the audio and the version don't change.
 Placeholder takes, which placeholders.py speaks for lines not recorded
 yet, are built like any other.
 
+A third part is a sentence: one of the pack's lines said whole, an aside's
+or a remark's (`take=<id>` in signs.md's brackets). Its words, deliveries and
+faces are the bank's plans/sentences.json, which record.py records from; a
+recording whose entryId is `sentence.<id>` is one, its text the sentence's
+spoken words, its moods the faces its delivery plays in, its meaning the id.
+Once one is in the manifest, this puts it in both files with no other change.
+
 `--wav-dir` also writes every converted take as a WAV, for listening.
 """
 from __future__ import annotations
@@ -162,6 +169,18 @@ SKIT_OF = {
 }
 
 
+# The sentences' plan: each sentence's spoken words, and each delivery's
+# faces (record.py records from the same file).
+SENTENCES = BANK / "plans" / "sentences.json"
+SENTENCE = "sentence."  # a sentence's recordings' entryId, before its id
+
+
+def sentence_entries(plan: dict) -> dict[str, dict]:
+    """The plan's sentences as dictionary entries, by `sentence.<id>`."""
+    return {SENTENCE + s["id"]: {"id": SENTENCE + s["id"], "text": s["spoken"], "category": "phrase", "intent": "sentence",
+                                 "explicit": s.get("kind") == "swear"} for s in plan["sentences"]}
+
+
 def kind(entry: dict) -> str:
     if entry["explicit"]:
         return "swear"
@@ -179,7 +198,7 @@ def own_reply(entry: dict) -> str | None:
 
 def in_voice(entry: dict) -> bool:
     """Whether the entry's takes go in the voice file: all but needs you's
-    own, those no reply or skit says."""
+    own, those no reply, skit or sentence says."""
     return entry["intent"] != "attention" or entry["id"] in REPLY_OF or entry["id"] in SKIT_OF
 
 
@@ -245,8 +264,8 @@ def mouth(y: list[float]) -> bytes:
     return bytes(1 if f >= MOUTH_OPEN * top else 0 for f in frames)
 
 
-def convert(path: str) -> tuple[bytes, bytes]:
-    y = shape(trim(load(BANK / path)))
+def convert(path: str, bank: Path = BANK) -> tuple[bytes, bytes]:
+    y = shape(trim(load(bank / path)))
     return to_u8(y), mouth(y)
 
 
@@ -285,6 +304,12 @@ def lent(mood: str, borrowed: dict) -> list[str]:
     return [face] + [m for m, lender in borrowed["borrows"].items() if lender == face]
 
 
+def faces(t: dict, borrowed: dict) -> list[str]:
+    """The faces a take plays in: a sentence's, its delivery's (the plan's),
+    any other's, its mood's and those lent it."""
+    return t.get("faces") or lent(t["mood"], borrowed)
+
+
 def write_table(ver: str, takes: list[dict], borrowed: dict) -> str:
     """takes.tsv, the Mac's table in a character pack
     (characters/CHARACTER.md §8): two comment lines, the pack's version,
@@ -292,7 +317,7 @@ def write_table(ver: str, takes: list[dict], borrowed: dict) -> str:
     start (`Take.all`)."""
     for t in takes:
         assert not any(c in t["text"] for c in '\t\n'), t["id"]
-    rows = ["\t".join([t["id"], t["text"], t["part"], t["meaning"], t["kind"], " ".join(lent(t["mood"], borrowed)), "",
+    rows = ["\t".join([t["id"], t["text"], t["part"], t["meaning"], t["kind"], " ".join(faces(t, borrowed)), "",
                        str(t["ms"])])
             for t in takes]
     return "\n".join([
@@ -305,21 +330,22 @@ def write_table(ver: str, takes: list[dict], borrowed: dict) -> str:
     ])
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--pack", type=Path, default=PACK_DIR, metavar="DIR",
-                    help="the character pack to write it into (default: this one, Boop's)")
-    ap.add_argument("--card", type=Path, help="also copy the pack onto the card mounted here, as boop/voice.bin")
-    ap.add_argument("--wav-dir", type=Path, help="also write every converted take as a WAV here")
-    args = ap.parse_args()
-
-    manifest = json.loads((BANK / "manifest.json").read_text())
-    entries = {e["id"]: e for e in json.loads((BANK / "dictionary.json").read_text())["entries"]}
+def build(bank: Path, pack: Path, borrowed: dict, complete: bool = True) -> tuple[str, list[dict], list[bytes], list[dict]]:
+    """Builds `pack`'s voice file and table from `bank`: its version, every
+    take with its audio, and the table's rows. `complete` checks that every
+    entry REPLY_OF and SKIT_OF name has a recording (a test's small bank
+    has few)."""
+    manifest = json.loads((bank / "manifest.json").read_text())
+    entries = {e["id"]: e for e in json.loads((bank / "dictionary.json").read_text())["entries"]}
+    plan_file = bank / "plans" / SENTENCES.name
+    plan = json.loads(plan_file.read_text()) if plan_file.is_file() else {"sentences": [], "deliveries": {}}
+    entries.update(sentence_entries(plan))
     recs = [r for r in manifest["recordings"] if in_voice(entries[r["entryId"]])]
-    own = args.pack / "tools" / "borrowed.json"
-    borrowed = json.loads((own if own.is_file() else BORROWED).read_text())
+    bare = [r["id"] for r in recs if TEXTURE not in r["files"]]
+    if bare:
+        raise SystemExit(f"voicegen: no {TEXTURE} file yet for {', '.join(bare)}: make it, then run this again")
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as pool:
-        out = list(pool.map(convert, [r["files"][TEXTURE]["path"] for r in recs], chunksize=16))
+        out = list(pool.map(convert, [r["files"][TEXTURE]["path"] for r in recs], [bank] * len(recs), chunksize=16))
     takes, clips, mouths = [], [], []
     for rec, (clip, mo) in zip(recs, out):
         e = entries[rec["entryId"]]
@@ -328,22 +354,40 @@ def main() -> None:
         mouths.append(mo)
     ver = version(takes, clips, mouths)
     # The table's rows, each a recorded take again: a reply's own words,
-    # then the takes that count for a reply, then a skit's.
+    # then the takes that count for a reply, then a skit's, then a
+    # sentence's, in its delivery's faces.
     own = [{**t, "part": "reply", "meaning": reply} for rec, t in zip(recs, takes)
            if (reply := own_reply(entries[rec["entryId"]])) is not None]
     replies = [{**t, "part": "reply", "meaning": reply}
                for rec, t in zip(recs, takes) for reply in REPLY_OF.get(rec["entryId"], [])]
     skits = [{**t, "part": "skit", "meaning": skit}
              for rec, t in zip(recs, takes) for skit in SKIT_OF.get(rec["entryId"], [])]
+    deliveries = plan["deliveries"]
+    sentences = [{**t, "part": "sentence", "meaning": rec["entryId"][len(SENTENCE):],
+                  "faces": deliveries[rec["delivery"]]["faces"]}
+                 for rec, t in zip(recs, takes) if rec["entryId"].startswith(SENTENCE)]
     for name, table_of in (("REPLY_OF", REPLY_OF), ("SKIT_OF", SKIT_OF)):
         missing = set(table_of) - {rec["entryId"] for rec in recs}
-        if missing:
+        if missing and complete:
             raise SystemExit(f"voicegen: {name} names entries with no recording: {', '.join(sorted(missing))}")
-    said = [t for t in own + replies + skits if not (t["part"] == "reply" and t["meaning"] in UNMADE)]
-    table = write_table(ver, said, borrowed)
-    write_pack(args.pack / PACK, ver, takes, clips, mouths)
-    (args.pack / TABLE).parent.mkdir(parents=True, exist_ok=True)
-    (args.pack / TABLE).write_text(table)
+    said = [t for t in own + replies + skits + sentences if not (t["part"] == "reply" and t["meaning"] in UNMADE)]
+    write_pack(pack / PACK, ver, takes, clips, mouths)
+    (pack / TABLE).parent.mkdir(parents=True, exist_ok=True)
+    (pack / TABLE).write_text(write_table(ver, said, borrowed))
+    return ver, takes, clips, said
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--pack", type=Path, default=PACK_DIR, metavar="DIR",
+                    help="the character pack to write it into (default: this one, Boop's)")
+    ap.add_argument("--card", type=Path, help="also copy the pack onto the card mounted here, as boop/voice.bin")
+    ap.add_argument("--wav-dir", type=Path, help="also write every converted take as a WAV here")
+    args = ap.parse_args()
+
+    own = args.pack / "tools" / "borrowed.json"
+    borrowed = json.loads((own if own.is_file() else BORROWED).read_text())
+    ver, takes, clips, said = build(BANK, args.pack, borrowed)
     built = args.pack / PACK
     if args.card:
         # Through voice.tmp, as the board copies one: a copy cut short
@@ -363,7 +407,7 @@ def main() -> None:
                 w.writeframes(c)
     ms = [t["ms"] for t in takes]
     where = f", copied to {args.card / CARD_PATH}" if args.card else ""
-    print(f"voicegen: {len(takes)} takes ({len(said)} rows in the table, as replies and skits), version {ver}, {built.stat().st_size} B pack "
+    print(f"voicegen: {len(takes)} takes ({len(said)} rows in the table, as replies, skits and sentences), version {ver}, {built.stat().st_size} B pack "
           f"({min(ms)}–{max(ms)} ms) → {PACK} and {TABLE} in {args.pack.name}{where}")
     if args.card:
         print("voicegen: put the card back in the board and press its reset button: it mounts the card only at boot")

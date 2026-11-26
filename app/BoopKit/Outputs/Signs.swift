@@ -56,9 +56,16 @@ public enum Signs {
     /// `[remark fast]` lines, `{n}` filled in with `n`, each at most
     /// `maxLength`. A line with `{n}` and no number is left out.
     public static func remark(_ lines: [TaggedLine], _ id: String, n: Int? = nil) -> [String] {
-        lines.filter { $0.tags == ["remark", id] }.compactMap { line -> String? in
+        remarkRows(lines, id, n: n).map(\.text)
+    }
+
+    /// The same, each with the sentence that says it whole, if its row
+    /// names one (`TaggedLine.take`).
+    public static func remarkRows(_ lines: [TaggedLine], _ id: String, n: Int? = nil) -> [(text: String, take: String?)] {
+        lines.filter { $0.tags == ["remark", id] }.compactMap { line -> (text: String, take: String?)? in
             if line.text.contains("{n}"), n == nil { return nil }
-            return drawn(line.text.replacingOccurrences(of: "{n}", with: n.map(String.init) ?? "")).flatMap { $0.count <= maxLength ? $0 : nil }
+            return drawn(line.text.replacingOccurrences(of: "{n}", with: n.map(String.init) ?? ""))
+                .flatMap { $0.count <= maxLength ? ($0, line.take) : nil }
         }
     }
 

@@ -13,10 +13,12 @@ public struct Take: Equatable, Sendable {
 
     /// What a take says: a reply's own words, to what you said on
     /// push-to-talk and at a lock's real wave (the `hello` and `bye`
-    /// replies), its meaning the reply's name; or a skit's (`Skit`), its
-    /// meaning the skit's id.
+    /// replies), its meaning the reply's name; a skit's (`Skit`), its
+    /// meaning the skit's id; or a sentence, one of the pack's lines said
+    /// whole (an aside's or a remark's row that names it, `TaggedLine.take`),
+    /// its meaning the sentence's id.
     public enum Part: String, CaseIterable, Sendable {
-        case reply, skit
+        case reply, skit, sentence
     }
 
     /// The board's id for it, as `say.take` sends it. A take that's the

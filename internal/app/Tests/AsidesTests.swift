@@ -46,7 +46,8 @@ final class AsidesTests: XCTestCase {
         XCTAssertEqual(Asides.moment(skit: skit("upset"), slot: .failed), "upset")
         XCTAssertEqual(Asides.moment(skit: skit("upset"), slot: .checkFailing), "upset")
         XCTAssertEqual(Asides.moment(skit: skit("fix"), slot: .checkFixed), "fix")
-        XCTAssertNil(Asides.moment(skit: skit("back"), slot: .back))
+        XCTAssertEqual(Asides.moment(skit: skit("back"), slot: .back), "back", "a sentence only")
+        XCTAssertEqual(Asides.moment(skit: nil, slot: .other, pushed: true), "ship", "a sentence only")
         XCTAssertEqual(Asides.moment(skit: nil, slot: .checkFailed), "oops")
         XCTAssertEqual(Asides.moment(skit: nil, slot: .checkFailing), "oops", "the 2nd in a row, before the skit")
         XCTAssertNil(Asides.moment(skit: nil, slot: .doneShort), "a short win: none")
@@ -119,7 +120,7 @@ final class AsidesTests: XCTestCase {
         XCTAssertTrue(pool("fix", .checkFixed, check("ok", before: 3)).contains("3 tries. The tests, fixed!"))
         XCTAssertTrue(pool("fix", .checkFixed, check("ok", before: 3)).contains("Took 3 goes. The tests, fixed!"))
         let first = pool("oops", .checkFailed, check("failed", before: 0, topic: "build"))
-        XCTAssertTrue(first.contains("Uh oh, the build failed."), "\(first)")
+        XCTAssertTrue(first.contains("Uh oh. The build failed."), "\(first)")
         XCTAssertFalse(first.contains("The build failed again."))
         XCTAssertTrue(pool("oops", .checkFailing, check("failed", before: 1)).contains("The tests failed again."))
     }
@@ -152,8 +153,8 @@ final class AsidesTests: XCTestCase {
         var rng = SplitMix64(seed: 7)
         var last: String?
         for _ in 0..<40 {
-            let (row, _) = try XCTUnwrap(Asides.pick(rows, moment: "oops", slot: .checkFailed, facts: check("failed", before: 0), mood: "calm",
-                                                    swears: false, quiet: false, avoiding: last, rng: &rng))
+            let row = try XCTUnwrap(Asides.pick(rows, moment: "oops", slot: .checkFailed, facts: check("failed", before: 0), mood: "calm",
+                                                    swears: false, quiet: false, avoiding: last, rng: &rng)).row
             XCTAssertNotEqual(row, last)
             last = row
         }
@@ -169,8 +170,9 @@ final class AsidesTests: XCTestCase {
         XCTAssertEqual(Asides.whatLength, 24)
         let asides = rows.filter { $0.tags.first == "aside" }
         XCTAssertGreaterThan(asides.count, 40)
-        let moments: Set<String> = ["win", "upset", "fix", "oops"]
-        let tags: Set<String> = ["long", "hard", "glum", "check", "stuck", "swear", "again"]
+        let moments: Set<String> = ["win", "upset", "fix", "oops", "back", "ship"]
+        let tags = Set<String>(["long", "hard", "glum", "check", "stuck", "swear", "again", "hour", "days", "night"])
+            .union(TranscriptView.checks)
         for aside in asides {
             XCTAssertTrue(moments.contains(aside.tags[1]), aside.text)
             XCTAssertTrue(Set(aside.tags.dropFirst(2)).isSubset(of: tags), aside.text)
