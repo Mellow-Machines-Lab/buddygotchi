@@ -226,6 +226,7 @@ public final class MomentOutput: Output {
         self.moodID = moodID
         self.moodLevel = moodLevel
         takes = SplitMix64(seed: seed)
+        lineRng = SplitMix64(seed: seed ^ 0x11E5)
         self.pack = pack
         asked = Self.questions(in: pack)
         askedOfTalk = Self.talkQuestions(asked, in: pack)
@@ -460,6 +461,30 @@ public final class MomentOutput: Output {
         }
     }
     public var remarking: Remarking?
+
+    /// How a line is heard (Settings' Voice, `AppSettings.Voice`): with
+    /// `speaks` or `cloud` the Mac says it aloud, and the Moment's board
+    /// plays no take; and whether the Mac keeps quiet now, on a call or
+    /// while you talk.
+    public var voice: () -> AppSettings.Voice = { .sounds }
+    public var hushed: () -> Bool = { false }
+    /// The last of the pack's line rows said, which the next doesn't say
+    /// again while another fits.
+    var lastLineRow: String?
+    /// Picks the pack's lines, apart from `takes`, so a line never moves
+    /// which take or sign comes next.
+    var lineRng = SplitMix64(seed: 0x11E5)
+
+    /// The pack's line for `skit` or a failed check at `slot`, if any
+    /// (`Lines`): none on Quiet; it swears only when the skit does.
+    func packLine(skit: Skits.Play?, slot: RulesBrain.Slot?, facts: [String: JSONValue], log: LogView) -> String? {
+        guard let slot, let moment = Lines.moment(skit: skit, slot: slot),
+              let (row, text) = Lines.pick(signs, moment: moment, slot: slot, facts: facts, mood: moodID(log) ?? pack.defaultMood,
+                                           swears: skit?.swears ?? false, quiet: talk() == .quiet, avoiding: lastLineRow, rng: &lineRng)
+        else { return nil }
+        lastLineRow = row
+        return text
+    }
 
     /// The remark on `skit` at `about`, whose line has `facts`, and its
     /// words, or nil: the rule's pick against your usual before it
@@ -834,7 +859,6 @@ public final class MomentOutput: Output {
            let lead = Voice.lead(before: word, face: choice, avoiding: lastWords, in: pack, rng: &takes) {
             said.insert(lead, at: 0)
         }
-        if !said.isEmpty { recentWords = Array((recentWords + [said.map(\.text)]).suffix(Self.recentSays)) }
         let say = Moment.Say(takes: said)
         var sign: String?
         var show: String?
@@ -948,6 +972,7 @@ public final class MomentOutput: Output {
             spoken = behind(line.says)
             spoken?.reason = reaction.who.map { "\($0.agent) offered it" }
             after["offered_line"] = true
+            after["line"] = .string(line.says)
             afterSaid = "After it, \(pack.name) held up the agent's words"
         }
         // A remark on the skit, as text: a finish names its thread and holds
@@ -972,6 +997,39 @@ public final class MomentOutput: Output {
             }
             lastSign = words
         }
+        // The pack's line, where neither took the place (`Lines`): a
+        // finish's behind it, held low; a check's as the Moment's own low
+        // sign, over a fix's. Its words never go to HISTORY, nor does a
+        // check's: its record has them.
+        var lined: String?
+        if ruled == nil, !talk, finishing ? spoken == nil : (asking == nil && beat == nil && remembering == nil),
+           let line = packLine(skit: skit, slot: slot, facts: lineFacts, log: log) {
+            if finishing {
+                spoken = behind(line)
+                after["line"] = .string(line)
+                after["sign"] = .string(line)
+                afterSaid = "After it, \(pack.name) held up a line about it"
+            } else {
+                reaction.low = true
+                reaction.sign = line
+                reaction.ask = nil
+                sign = line
+                lined = line
+            }
+            lastSign = line
+        }
+        // With Settings' Voice speaking, the Mac says the line aloud, the
+        // agent's or the pack's, and the board plays no take for it; not
+        // on a call or while you talk, and then the take plays as ever.
+        var aloud: AppSettings.Voice?
+        if voice() != .sounds, !hushed(), !silent, let line = after["line"]?.string ?? lined {
+            aloud = voice()
+            if after["line"] != nil { spoken?.aloud = line } else { reaction.aloud = line }
+            after["voice"] = .string(voice().rawValue)
+            said = []
+            reaction.say = Moment.Say(takes: [])
+        }
+        if !said.isEmpty { recentWords = Array((recentWords + [said.map(\.text)]).suffix(Self.recentSays)) }
         // A skit's invite, on the last Moment queued, so the pose comes
         // after the agent's line or the remark; the record of the Moment
         // that carries it says so, and what HISTORY reads.
@@ -1005,9 +1063,10 @@ public final class MomentOutput: Output {
         // The takes' ids in order, and the reply as it played, for the
         // tools to say what it did.
         let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }
+            ?? (lined != nil ? "" : nil)
             ?? sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
             + (show == StatusReply.drawer ? " and showing every agent" : "")
-        let spoke: String = (say.text.map { ", and said \"\($0)\"" } ?? "") + inviting(reaction) + "."
+        let spoke: String = (reaction.say?.text.map { ", and said \"\($0)\"" } ?? "") + inviting(reaction) + "."
         var facts: [String: JSONValue] = ["takes": .array(said.map { .string($0.id) })]
         // A skit that played, whether it spoke or not (`takes` says): what
         // your usual counts the skits since a remark by.
@@ -1025,6 +1084,10 @@ public final class MomentOutput: Output {
         if let remembering { facts["felt"] = .string(remembering.line) }
         // A remark this Moment showed: what your usual counts the skits since by.
         if let remarked { facts[Normals.remarkFact] = .string(remarked) }
+        // A line it held up, and said aloud with Settings' Voice: what the
+        // counts read.
+        if let lined { facts["line"] = .string(lined) }
+        if lined != nil, let aloud { facts["voice"] = .string(aloud.rawValue) }
         // An invite this Moment asked, or skipped for the misses: what the
         // ledger reads.
         if spoken == nil { facts.merge(invitedFacts) { _, new in new } }

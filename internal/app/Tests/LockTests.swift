@@ -185,6 +185,7 @@ final class LockTests: XCTestCase {
         let mind = Runtime.Mind(buddy: rig.pipeline.buddy, steering: RuntimeTests.steering, reactions: Reactions(),
                                 queue: { r, p in queued.append(r); p.finish(.done) }, speaks: { false }, talk: { .normal })
         _ = Runtime.brain(rig.pipeline, mind)
+        Runtime.recordsFollowing(on: rig.pipeline.harness)
         rig.pipeline.brain = false
         let step = rig.pipeline.lock(PresenceDetector.lockEvent(at: rig.now))
         XCTAssertEqual(queued.map(\.reply), ["bye"], "a first lock: a real wave")

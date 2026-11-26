@@ -168,6 +168,10 @@ public struct Moment: Equatable, Sendable {
     /// in the device's queue as long as the finish waits and plays
     /// (`BoopDevice.behindFinishTTL`). Not sent.
     public var behindFinish = false
+    /// The line the Mac says aloud as this Moment is sent, when Settings'
+    /// Voice speaks (`Lines`, `Speaker`), in its `mood`. Not sent: the
+    /// board plays no take with it.
+    public var aloud: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,

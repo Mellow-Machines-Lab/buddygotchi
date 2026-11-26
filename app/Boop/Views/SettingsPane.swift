@@ -108,6 +108,8 @@ struct SettingsPane: View {
                     RowDivider()
                     talkRow
                     RowDivider()
+                    voiceRow
+                    RowDivider()
                     SettingRow(icon: "exclamationmark.bubble", title: "Swearing",
                                detail: "\(model.name) may swear when things break.") {
                         Toggle("Swearing", isOn: Binding(get: { model.status?.swearing ?? false }, set: { model.setSwearing($0) }))
@@ -210,6 +212,16 @@ struct SettingsPane: View {
         SettingRow(icon: "bubble.left", title: "Talk", detail: model.talk.about(model.name), wide: true) {
             Segmented(label: "Talk", options: Talk.allCases.map { ($0, $0.title) },
                       chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
+        }
+    }
+
+    /// How its line is heard: the board's sounds, this Mac's voice, or a
+    /// cloud voice (`AppSettings.Voice`).
+    private var voiceRow: some View {
+        let voice = model.status?.voice ?? .sounds
+        return SettingRow(icon: "speaker.wave.2", title: "Voice", detail: voice.about(model.name), wide: true) {
+            Segmented(label: "Voice", options: AppSettings.Voice.allCases.map { ($0, $0.title) },
+                      chosen: Binding(get: { voice }, set: { model.setVoice($0) }))
         }
     }
 

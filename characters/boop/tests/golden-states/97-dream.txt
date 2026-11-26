@@ -332,6 +332,7 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude finished turn 1 on "api" (landing): done, a long turn, no tool calls.
   Boop's mood changed: calm → happy.
   Boop had a happy moment (medium), playing a success, and said "Finish".
+  After it, Boop held up a line about it.
 Boop has been happy for 3 min.
 
 NOW (15:05)
@@ -504,6 +505,7 @@ HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude finished turn 1 on "api" (landing): done, a long turn, no tool calls.
   Boop's mood changed: calm → happy.
   Boop had a happy moment (medium), playing a success, and said "Finish".
+  After it, Boop held up a line about it.
 7 min ago: You stroked Boop.
   Boop had a focused moment (small).
 2 min ago: claude started turn 2 on "api" (landing).
@@ -541,6 +543,7 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude finished turn 2 on "api" (landing): failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → cross.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
+  After it, Boop held up a line about it.
   Boop's mood settled: cross → calm.
 
 NOW (15:45)
@@ -557,6 +560,7 @@ HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude finished turn 2 on "api" (landing): failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → cross.
   Boop had an annoyed moment (big), playing a failure, and said "Not again".
+  After it, Boop held up a line about it.
   Boop's mood settled: cross → calm.
 5 min ago: You stroked Boop.
   Boop had a focused moment (small).

@@ -447,9 +447,11 @@ final class RemarksTests: XCTestCase {
                 win(minutes: 2)
                 pass()
                 played()
-                XCTAssertEqual(moments(from: before).count, 1, "skit \(n): the finish alone")
+                XCTAssertEqual(moments(from: before).count, 2, "skit \(n): the finish, then its line")
                 XCTAssertNil(record()?[Normals.remarkFact], "skit \(n)")
-                XCTAssertNotNil(record()?["skit"], "skit \(n) played")
+                XCTAssertNotNil(record()?["line"], "skit \(n): its line")
+                let skit = runtime.harness.log.view(now: now).events.last { $0.kind == Event.did && $0[MomentOutput.outputName] == nil && $0["skit"] != nil }
+                XCTAssertNotNil(skit, "skit \(n) played")
             }
             XCTAssertEqual(normals()?.skitsSinceRemark, 2)
             XCTAssertEqual(normals()?.days.last?.wins, 4)

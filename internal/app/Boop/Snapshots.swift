@@ -228,6 +228,12 @@ enum Snapshots {
                 var swearing = status()
                 swearing.swearing = true
                 shot("settings-swearing-on", model(installer, status: swearing), pane: .settings)
+                // Each Voice, with its one line.
+                for voice in AppSettings.Voice.allCases where voice != .sounds {
+                    var voiced = status()
+                    voiced.voice = voice
+                    shot("settings-voice-\(voice.rawValue)", model(installer, status: voiced), pane: .settings)
+                }
                 // Noticing off: where Boop sits can't be shown, and the row says why.
                 var unnoticing = status()
                 unnoticing.noticesYou = false
