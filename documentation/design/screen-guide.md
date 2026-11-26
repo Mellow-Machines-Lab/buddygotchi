@@ -28,15 +28,15 @@ the agent does now.
 | # | Element | Place and size | Its one job | Whose | How it changes |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Band | 0,0 · 502×38 | Something you must act on: needs you, listening | For you | Drops in. Needs you also puts an amber rim on the whole screen |
-| 2 | Boop | 106,32 · 290×250 | Pose: who it works for. Rhythm and gaze: you. Face: Boop | Boop | Moves all the time. Rises 88 for a held picture, 196 for a show |
-| 3 | Monitor | 24,220 · 70×50 | The kind of work: search, edit, run, helpers. Red for a failure | Agent | In place. Frame in the lane colour. Dark when idle |
-| 4 | Keys | 150,270 · 210×20 | Where the hands go when typing, yours or the agent's | Boop | In place |
+| 2 | Boop | 106,36 · 290×250 | Pose: who it works for. Rhythm and gaze: you. Face: Boop | Boop | Moves all the time. Rises 88 for a held picture, 196 for a show |
+| 3 | Monitor | 24,224 · 70×50 | The kind of work: search, edit, run, helpers. Red for a failure | Agent | In place. Frame in the lane colour. Dark when idle |
+| 4 | Keys | 150,274 · 210×20 | Where the hands go when typing, yours or the agent's | Boop | In place |
 | 5 | Line and pips | y 333–364, centred | Every agent, and which one you see. With the strip's row under it, the bar: swipe across it or tap an arrow's third to switch, pull up for the drawer. With several agents, an arrow at each end of the strip's row | Agents | A pip pulses when its agent wants you. The arrows stay dim, brighten as the set of agents changes, and the one switched toward flashes |
 | 6 | Doing now | 24,368 · the whole row, 22 px | This call, as a verb and its object. Clay for a failure. "your turn" after a chat turn | Agent | In place, at every call |
 | 7 | Agent name | In its pip on the line, 32 px high, its name in the sign's font, or the smaller large font when it would be cut | Which agent you see, in its lane colour. As much of the name as fits beside the other pips, cut with "…" | Agent | In place, on a switch |
-| 8 | Held picture | 24,138 · 454×188 | The work as a live picture | Agent | Rises from below. Put down when its data stops |
+| 8 | Held picture | 24,142 · 454×188 | The work as a live picture | Agent | Rises from below. Put down when its data stops |
 | 9 | Pill | Centred, y 306 · 34 high | News from an agent you are not watching | For you | Rises, stays about 4 s, a tap goes there |
-| 10 | Show | 30,40 · 442×288. The agent's picture is 420×190 inside it | A result as a picture | For you | Rises, stays 30 s, folds into the low sign |
+| 10 | Show | 30,44 · 442×288. The agent's picture is 420×190 inside it | A result as a picture | For you | Rises, stays 30 s, folds into the low sign |
 | 11 | Low sign | 70,352 · 362×46 | A finished turn: green for done, clay for failed. A tap opens it. What it earned rides at its right end as a chip, `+5 XP`. Also a ship or a fix with its chip, the ring full (`100 XP today, day 12`, gold, a ring mark) and last week's league place (gold, a medal) | For you | Takes the strip's place |
 
 The drawer and an ask keep their places of today: the drawer comes up from

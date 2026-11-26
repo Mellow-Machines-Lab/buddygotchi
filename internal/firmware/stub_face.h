@@ -137,7 +137,7 @@ class StubFace : public render::Face {
   // nose's spot is on it, the lane and the screen's corners aren't. The
   // bar starts under its desk, at kBarTop, inside the rim's margin, as the
   // gel's does.
-  static constexpr int kBodyX0 = 64, kBodyY0 = 40, kBodyX1 = 256, kBodyY1 = 190, kBarTop = 178;
+  static constexpr int kBodyX0 = 64, kBodyY0 = 40, kBodyX1 = 256, kBodyY1 = 190, kBarTop = 179;
 
   const char* name() const override { return "stub"; }
   const voice::EffectClips& clips() const override { return testface::clips(); }

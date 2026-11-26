@@ -248,7 +248,7 @@ rule the face hasn't.
   whether that was on the body (`body`), what it was and how long it took.
 - **A swipe up doesn't open the agents' drawer (gel):** it must start in
   the bar under the desk (`render::Face::barTop`, the gel's `kDeskRow`,
-  canvas rows from 177 down), and go up `kDrawerPullPx` (22 canvas px)
+  canvas rows from 179 down), and go up `kDrawerPullPx` (22 canvas px)
   before it goes as far across, while the Mac has sessions to list; one
   that goes further across first is a swipe between agents, and one that
   starts on the body is a stroke. `dbg.state`'s

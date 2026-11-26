@@ -61,6 +61,11 @@ std::vector<Scene> scenes() {
         R"({"t":"do","name":"call","args":{"a":1,"w":"task","as":"helper"}})",
         R"({"t":"do","name":"call","args":{"a":0,"w":"done","as":"gather"}})"}},
       {"attention", std::string("{") + kWorking + R"(,"attn":{"id":5000,"agent":"codex","project":"perf"}})", {}, {}},
+      // The rest of perf's scenes (internal/tools/boopctl_lib/cli.py, PERF_SCENES).
+      {"pokes", working, {}, {R"({"t":"dbg.press","ms":100})"}},
+      {"wounded", R"({"t":"state","base":"working","act":"terminal","mood":"wounded","busy":1,"vol":0})", {}, {}},
+      {"asleep", R"({"t":"state","base":"asleep","mood":"happy","vol":0})", {}, {}},
+      {"night", R"({"t":"state","base":"asleep","mood":"happy","vol":0,"when":["night"]})", {}, {}},
       {"idle", R"({"t":"state","base":"idle","mood":"calm","idle":1,"vol":0,"when":["day"]})", {}, {}},
       // Four agents, the one followed switching every 4 s: the strip's
       // row slides, and the name on the line changes.

@@ -63,8 +63,11 @@ void paintPatch(Surface& s, const PaintControls& c, rig::Anchors& at);
 // monitor and keys, the paws on them, a card held up, the pastimes'
 // props, a finish's gold), leaving the room under the desk to the strip's
 // line. Each part laid out in rows of its own takes it off them
-// (sceneLift); what sits on the body's anchors moves with it.
-constexpr int kSceneLift = 20;
+// (sceneLift); what sits on the body's anchors moves with it. One whole
+// band of the push (render/push.h's PushPlan::kRows): the frame's bands
+// then hold what they held before, one band up, so the panel is sent no
+// more pixels a frame. 20 sent about 1% more in working, wounded and pokes.
+constexpr int kSceneLift = 16;
 inline int sceneLift(int height) { return height * kSceneLift / 410; }
 // The canvas row the body stands on (restBodyBottom), and how far above it
 // its eyes are.
