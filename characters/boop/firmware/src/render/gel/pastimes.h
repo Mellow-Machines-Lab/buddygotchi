@@ -119,6 +119,7 @@ struct PastimeShow {
   // or at its desk.
   int keys = 0;
   bool tapping = false;
+  int brisk = 0;      // how far its paws are into tapping, 0 … 1000 (Paws::brisk)
   bool fast = false;  // and fast, with you typing fast
   int pawPhase = 0;   // where its paws are in their beats (briskLift)
 };
@@ -129,10 +130,11 @@ struct Paws {
   int lift[2] = {0, 0}, dx[2] = {0, 0};
   int melted = 0;  // how far it's melted, Q12 (PaintControls::melt): they fade with it, and the keyboard
   // With no desk out: its keyboard alone, this far out (0 … 255), as it
-  // types along with you; and `tapping`, there or at its desk, its paws
-  // typing briskly with you, `phase` where in their beats (briskLift).
+  // types along with you; and `brisk`, there or at its desk, how far its
+  // paws are from the agents' soft typing (0) to typing briskly with you
+  // (1000), `phase` where in their beats (briskLift).
   int keys = 0;
-  bool tapping = false;
+  int brisk = 0;
   int phase = 0;
 };
 Paws pawsFor(const PastimeShow& show);

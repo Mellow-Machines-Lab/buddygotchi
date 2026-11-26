@@ -52,19 +52,20 @@ class Engine {
   // Mac (`speakingSide`, -1 left, 1 right).
   bool speaking = false;
   int speakingSide = 1;
-  // You're typing and it types along (GelFace::showAlong): the layers pop
-  // a key's tick out beside the paw that taps, on its beat, in any pose,
-  // so typing along reads as plainly as speaking does. `typingPhase` is
-  // where the paws are in their beats (briskLift's), `typingFast` quicker.
-  bool typingAlong = false, typingFast = false;
+  // Where the paws are in their beats as it types along (briskLift's), for
+  // the key's ticks (With::ticks); `typingFast` quicker.
+  bool typingFast = false;
   int typingPhase = 0;
-  // What it has on or beside it for you at the Mac (GelFace::showWithYou),
-  // which the layers draw, each at its opacity (0–255), in any pose and at
-  // the light size too: while music plays, a note now and then rising from
-  // behind it (`notesMs` into the music); and a muted mic by its ear on a
-  // call. `side` is the Mac's: -1 left, 1 right, as speaking's.
+  // The one mark beside it for you at the Mac (GelFace::showWithYou, by
+  // render/gel/owners.h), which the layers draw, each at its opacity
+  // (0–255) as one fades out and the next in, in any pose and at the light
+  // size too: a key's tick beside the paw that taps, on its beat, as it
+  // types along; while music plays, a note now and then rising from behind
+  // it (`notesMs` into the music); the ear's sound, rings by its cupped
+  // hand, while you speak; a muted mic by its ear on a call. `side` is the
+  // Mac's: -1 left, 1 right, as speaking's.
   struct With {
-    int notes = 0, muted = 0;
+    int ticks = 0, notes = 0, ear = 0, muted = 0;
     int side = 1;
     uint32_t notesMs = 0;
   } with;

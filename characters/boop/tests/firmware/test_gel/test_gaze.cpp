@@ -53,18 +53,14 @@ struct Board {
 
 }  // namespace
 
-// Pins the rules and their order: nothing while something else has the
-// eyes; needs you is up at you for kNoticeMs, then the Mac's side, and
-// rest with no side told; typing along is down at the keys; at work in an
-// activity's own pose (looking, running, waiting) the pose's clip has the
-// eyes; else rest.
+// Pins its own gaze's rules and their order: nothing while another owner
+// has the eyes; needs you is up at you for kNoticeMs, then the Mac's side,
+// and rest with no side told; typing along is down at the keys; else rest.
 void test_the_eyes_rest_unless_theres_a_reason() {
   static_assert(Gaze::kNoticeMs == 1200, "the look at you this test pins");
   Gaze g;
   GazeFacts f;
-  TEST_ASSERT_FALSE(g.look(f, 0).on);  // not free
-  f.free = true;
-  TEST_ASSERT_FALSE(g.look(f, 16).on);  // free, and nothing to look at
+  TEST_ASSERT_FALSE(g.look(f, 16).on);  // its own, and nothing to look at
   f.needsYou = true, f.lookMs = 0, f.mac = 1;
   GazePoint p = g.look(f, 32);
   TEST_ASSERT_TRUE(p.on && p.x == Gaze::kMidX && p.y < 0);  // up at you
@@ -79,21 +75,14 @@ void test_the_eyes_rest_unless_theres_a_reason() {
   TEST_ASSERT_TRUE(g.look(f, 96).x < 0);
   f.mac = 0;
   TEST_ASSERT_FALSE(g.look(f, 112).on);  // no side told: rest
-  f.free = false, f.mac = 1;
+  f.eyes = EyesBy::kBody, f.mac = 1;
   TEST_ASSERT_FALSE(g.look(f, 128).on);  // a Moment over it has the eyes
   f = GazeFacts{};
-  f.free = f.along = true;
+  f.along = true;
   p = g.look(f, 144);
   TEST_ASSERT_TRUE(p.on && p.x == Gaze::kMidX && p.y > Gaze::kEyesY);  // down at the keys
   f.needsYou = true;
   TEST_ASSERT_TRUE(g.look(f, 160).y < 0);  // needs you first
-  // A pose's clip has the eyes, but needs you comes before it.
-  Gaze posed;
-  f = GazeFacts{};
-  f.free = f.posed = true;
-  TEST_ASSERT_FALSE(posed.look(f, 1016).on);
-  f.posed = f.needsYou = true, f.mac = 1, f.lookMs = Gaze::kNoticeMs;
-  TEST_ASSERT_TRUE(posed.look(f, 2064).x > 502);  // needs you comes before a pose
 }
 
 // The eyes turn to what it looks at more slowly than they follow a finger

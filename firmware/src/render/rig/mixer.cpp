@@ -60,7 +60,7 @@ void Mixer::setLook(const Clip* clip, uint32_t fadeMs) {
   if (clip) start(*clip, true, fadeMs);
 }
 
-void Mixer::play(const Clip& clip, uint32_t fadeMs) { start(clip, false, fadeMs); }
+void Mixer::play(const Clip& clip, uint32_t fadeMs, uint32_t from) { start(clip, false, fadeMs, from); }
 
 void Mixer::stop(const Clip& clip) {
   for (int i = 0; i < playing_; ++i)
@@ -72,7 +72,7 @@ void Mixer::impulse(Channel channel, int velocity) {
   s.v = held(s.v + int64_t(velocity) * 256);
 }
 
-void Mixer::start(const Clip& clip, bool base, uint32_t fadeMs) {
+void Mixer::start(const Clip& clip, bool base, uint32_t fadeMs, uint32_t from) {
   if (playing_ == kPlays) {
     // Room: the oldest goes, but the look's own clip, the one look not
     // fading out (setLook fades out the others).
@@ -81,7 +81,7 @@ void Mixer::start(const Clip& clip, bool base, uint32_t fadeMs) {
     for (int i = gone; i + 1 < playing_; ++i) plays_[i] = plays_[i + 1];
     --playing_;
   }
-  plays_[playing_++] = {&clip, 0, 0, 0, 0, base, false, fadeMs};
+  plays_[playing_++] = {&clip, clip.loop ? from % clip.ms : 0, 0, 0, 0, base, false, fadeMs};
 }
 
 void Mixer::fadeOut(Play& p) {

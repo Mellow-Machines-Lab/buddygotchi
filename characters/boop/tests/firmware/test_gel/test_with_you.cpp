@@ -13,6 +13,7 @@
 #include "app/behaviour.h"
 #include "render/gel/face.h"
 #include "render/gel/gaze.h"
+#include "render/gel/layers.h"
 #include "render/gel/painter.h"
 #include "render/gel/pastimes.h"
 #include "render/tags.h"
@@ -67,17 +68,88 @@ const uint32_t kDay = tagBit("day");
 
 }  // namespace
 
-// Pins the rule list's order (gaze.h): needs you, typing along, thinking
-// with you, a pose's clip, a call, scrolling, the pointer; each only while
-// the eyes are free.
+// Pins who has what (render/gel/owners.h), a row a case: what's true, and
+// each part's owner.
+void test_who_has_what() {
+  struct Row {
+    const char* what;
+    WhatsTrue f;
+    BodyBy body;
+    BeatBy beat;
+    bool beatShows;
+    EyesBy eyes;
+    FaceBy face;
+    MarkBy mark;
+    bool keys;
+  };
+  auto facts = [](std::initializer_list<bool WhatsTrue::*> on) {
+    WhatsTrue f;
+    f.place = true;
+    for (auto m : on) f.*m = true;
+    return f;
+  };
+  using W = WhatsTrue;
+  const Row rows[] = {
+      {"nothing", facts({}), BodyBy::kLook, BeatBy::kBreath, false, EyesBy::kOwn, FaceBy::kMood, MarkBy::kNone, false},
+      {"music", facts({&W::music}), BodyBy::kLook, BeatBy::kMusic, true, EyesBy::kJam, FaceBy::kJam, MarkBy::kNotes, false},
+      {"music, a mood that keeps its face", facts({&W::music, &W::keepsFace}), BodyBy::kLook, BeatBy::kMusic, true,
+       EyesBy::kJam, FaceBy::kMood, MarkBy::kNotes, false},
+      {"music, scrolling", facts({&W::music, &W::scrolling}), BodyBy::kLook, BeatBy::kMusic, true, EyesBy::kScroll,
+       FaceBy::kMood, MarkBy::kNotes, false},
+      {"music, the pointer", facts({&W::music, &W::pointer}), BodyBy::kLook, BeatBy::kMusic, true, EyesBy::kPointer,
+       FaceBy::kMood, MarkBy::kNotes, false},
+      {"music, typing", facts({&W::music, &W::typing}), BodyBy::kLook, BeatBy::kMusic, true, EyesBy::kJam, FaceBy::kJam,
+       MarkBy::kNotes, true},
+      {"typing, speaking", facts({&W::typing, &W::speaking}), BodyBy::kLook, BeatBy::kSpeaking, true, EyesBy::kOwn,
+       FaceBy::kMood, MarkBy::kEar, true},
+      {"typing, a sign up", facts({&W::typing, &W::signUp}), BodyBy::kLook, BeatBy::kTyping, true, EyesBy::kOwn,
+       FaceBy::kMood, MarkBy::kNone, false},
+      {"a call over all", facts({&W::call, &W::speaking, &W::music, &W::typing, &W::scrolling, &W::pointer}), BodyBy::kLook,
+       BeatBy::kCall, true, EyesBy::kCall, FaceBy::kMood, MarkBy::kMuted, true},
+      {"at work, music", facts({&W::music, &W::desk}), BodyBy::kLook, BeatBy::kMusic, true, EyesBy::kOwn, FaceBy::kMood,
+       MarkBy::kNotes, false},
+      {"light: a pose's eyes", facts({&W::light, &W::posed, &W::desk, &W::scrolling, &W::pointer, &W::music}),
+       BodyBy::kLook, BeatBy::kMusic, true, EyesBy::kPose, FaceBy::kMood, MarkBy::kNotes, false},
+      {"a card held: no scroll", facts({&W::light, &W::desk, &W::scrolling}), BodyBy::kLook, BeatBy::kBreath, false,
+       EyesBy::kOwn, FaceBy::kMood, MarkBy::kNone, false},
+      {"a pastime over music", facts({&W::pastime, &W::music, &W::typing}), BodyBy::kPastime, BeatBy::kMusic, false,
+       EyesBy::kBody, FaceBy::kMood, MarkBy::kNotes, false},
+      {"listening", facts({&W::listening, &W::music}), BodyBy::kListening, BeatBy::kMusic, false, EyesBy::kBody,
+       FaceBy::kMood, MarkBy::kNone, false},
+      {"needs you", facts({&W::needsYou, &W::music, &W::pointer}), BodyBy::kNeedsYou, BeatBy::kMusic, false, EyesBy::kOwn,
+       FaceBy::kMood, MarkBy::kNone, false},
+      {"a finger", facts({&W::finger, &W::music}), BodyBy::kFinger, BeatBy::kMusic, false, EyesBy::kFinger, FaceBy::kMood,
+       MarkBy::kNone, false},
+      {"a Moment, a finger", facts({&W::moment, &W::finger}), BodyBy::kMoment, BeatBy::kBreath, false, EyesBy::kFinger,
+       FaceBy::kMoment, MarkBy::kNone, false},
+  };
+  for (const Row& r : rows) {
+    const Owners o = whoHasWhat(r.f);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(int(r.body), int(o.body), r.what);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(int(r.beat), int(o.beat), r.what);
+    TEST_ASSERT_EQUAL_MESSAGE(r.beatShows, o.beatShows, r.what);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(int(r.eyes), int(o.eyes), r.what);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(int(r.face), int(o.face), r.what);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(int(r.mark), int(o.mark), r.what);
+    TEST_ASSERT_EQUAL_MESSAGE(r.keys, o.keys, r.what);
+  }
+  // Asleep, or the Mac gone: nothing with you, whatever's true.
+  WhatsTrue away = facts({&W::music, &W::typing, &W::pointer});
+  away.place = false;
+  const Owners o = whoHasWhat(away);
+  TEST_ASSERT_TRUE(!o.with && !o.beatShows && o.eyes == EyesBy::kOwn && o.mark == MarkBy::kNone && !o.keys);
+}
+
+// Pins where the eyes go for each owner (gaze.h): the pointer's way, as you
+// see the board; its own gaze's list, needs you, typing along, thinking with
+// you; any other owner rests the gaze.
 void test_the_eyes_with_you_in_order() {
   static_assert(Gaze::kThinkAfterMs == 8000 && Gaze::kThinkMs == 2000, "thinking with you, as this test pins");
   Gaze g;
   GazeFacts f;
-  f.free = true;
   TEST_ASSERT_FALSE(g.look(f, 0).on);  // nothing with you: rest
   // The pointer: its way, as you see the board.
-  f.pointer = true, f.pointerX = -10, f.pointerY = 0;
+  f.eyes = EyesBy::kPointer, f.pointerX = -10, f.pointerY = 0;
   GazePoint p = g.look(f, 16);
   TEST_ASSERT_TRUE(p.on && p.x < Gaze::kMidX - 300 && p.y == Gaze::kEyesY);
   f.pointerX = 5, f.pointerY = -10;
@@ -86,13 +158,15 @@ void test_the_eyes_with_you_in_order() {
   f.pointerX = 1, f.pointerY = 0, f.pointerNear = true;
   p = g.look(f, 48);
   TEST_ASSERT_TRUE(p.x == Gaze::kMidX + Gaze::kNearReach && p.y == Gaze::kEyesY);  // right at it, at the edge
-  f.pointerNear = false;
-  // Above it: a call keeps the eyes still; a pose's clip has them; thinking
-  // looks up at you; typing along is down at the keys; needs you first.
-  f.with = WithYou::kCall;
-  TEST_ASSERT_FALSE(g.look(f, 64).on);
-  f.with = WithYou::kNone, f.posed = true;
-  TEST_ASSERT_FALSE(g.look(f, 80).on);
+  // Every other owner but its own gaze rests it, typing along and all.
+  f.along = true;
+  for (EyesBy other : {EyesBy::kJam, EyesBy::kScroll, EyesBy::kCall, EyesBy::kPose, EyesBy::kBody, EyesBy::kFinger}) {
+    f.eyes = other;
+    TEST_ASSERT_FALSE(g.look(f, 64).on);
+  }
+  // Its own: thinking looks up at you; typing along is down at the keys;
+  // needs you first.
+  f.eyes = EyesBy::kOwn, f.along = false;
   f.thinking = true, f.thinkMs = 100;
   TEST_ASSERT_TRUE(g.look(f, 96).y == Gaze::kYouY);
   f.thinkMs = Gaze::kThinkMs;
@@ -101,23 +175,12 @@ void test_the_eyes_with_you_in_order() {
   TEST_ASSERT_TRUE(g.look(f, 128).y == Gaze::kKeysY);
   f.needsYou = true, f.lookMs = 0;
   TEST_ASSERT_TRUE(g.look(f, 144).y == Gaze::kYouY);
-  // Above the pointer: scrolling rests the look, the face's own look has the eyes.
-  Gaze r;
-  f = GazeFacts{};
-  f.free = true, f.mac = 1, f.with = WithYou::kScrolling;
-  TEST_ASSERT_FALSE(r.look(f, 1000).on);
-  f.pointer = true, f.pointerX = -3;
-  TEST_ASSERT_FALSE(r.look(f, 7016).on);  // scrolling comes first
-  f.with = WithYou::kNone;
-  TEST_ASSERT_TRUE(r.look(f, 7032).x < Gaze::kMidX);
   // The screen above it: needs you looks up at you, then up at the screen.
   Gaze up;
   GazeFacts u;
-  u.free = u.needsYou = u.up = true, u.lookMs = Gaze::kNoticeMs;
+  u.needsYou = u.up = true, u.lookMs = Gaze::kNoticeMs;
   p = up.look(u, 100);
   TEST_ASSERT_TRUE(p.on && p.x == Gaze::kMidX && p.y == Gaze::kScreenUpY);
-  f.free = false;
-  TEST_ASSERT_FALSE(r.look(f, 7064).on);  // something else has the eyes
 }
 
 // Pins the pointer: idle, the eyes follow it and the body leans a little its
@@ -232,7 +295,7 @@ void test_it_looks_the_way_you_scroll() {
   // Down: the eyes all the way within a quarter second, and held still.
   board.tags(base | scrolling | tagBit("scrolldown"));
   board.to(board.t + 250);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kScrolling), int(face.withYou()));
+  TEST_ASSERT_EQUAL_INT(int(EyesBy::kScroll), int(face.owners().eyes));
   TEST_ASSERT_EQUAL_STRING("scrolling", face.passing(board.t));
   TEST_ASSERT_TRUE(off(rig::Channel::kGazeY) >= 900 && nod >= GelFace::kLookNod * 9 / 10);
   int low = 1 << 30, high = -(1 << 30);
@@ -258,14 +321,14 @@ void test_it_looks_the_way_you_scroll() {
   board.pointer(false);
   board.tags(base);
   board.to(board.t + 150);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(face.withYou()));
+  TEST_ASSERT_EQUAL_INT(int(EyesBy::kOwn), int(face.owners().eyes));
   TEST_ASSERT_TRUE(off(rig::Channel::kGazeY) <= -500);
   board.to(board.t + 1350);
   TEST_ASSERT_TRUE(std::abs(off(rig::Channel::kGazeY)) <= 10 && std::abs(nod) <= 5);
   // The way not known: nothing rather than a guess.
   board.tags(base | scrolling);
   board.to(board.t + 1000, [&] {
-    TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(face.withYou()));
+    TEST_ASSERT_EQUAL_INT(int(EyesBy::kOwn), int(face.owners().eyes));
     TEST_ASSERT_TRUE(std::abs(off(rig::Channel::kGazeY)) <= 10);
   });
   // At work in a pose of its own: the pose has the eyes.
@@ -273,7 +336,7 @@ void test_it_looks_the_way_you_scroll() {
   work.m.act = SceneState::kTerminal;
   work.state();
   work.to(3000, [&] {
-    TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(work.face().withYou()));
+    TEST_ASSERT_EQUAL_INT(int(EyesBy::kPose), int(work.face().owners().eyes));
     TEST_ASSERT_EQUAL_INT(0, work.face().engine().faceNod);
   });
 }
@@ -298,7 +361,8 @@ void test_it_jams_to_your_music() {
     lifted = std::max(lifted, board.channel(rig::Channel::kLift));
     lids = std::min(lids, board.channel(rig::Channel::kEyeOpenL));
     pastime = pastime || face.pastimes(board.t).playing != Pastime::kNone;
-    if (face.withYou() != WithYou::kMusic) TEST_FAIL_MESSAGE("it stopped jamming while the music played");
+    if (!face.owners().beatShows || face.owners().beat != BeatBy::kMusic)
+      TEST_FAIL_MESSAGE("it stopped jamming while the music played");
   });
   TEST_ASSERT_EQUAL_STRING("music", face.passing(board.t));
   TEST_ASSERT_TRUE(high - low > 350);  // its head bobbing side to side
@@ -322,15 +386,16 @@ void test_it_jams_to_your_music() {
       const int lean = work.channel(rig::Channel::kLean) - rest;
       wlow = std::min(wlow, lean), whigh = std::max(whigh, lean);
     });
-    TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(work.face().withYou()));
+    TEST_ASSERT_TRUE(work.face().owners().small && work.face().owners().eyes != EyesBy::kJam);
     TEST_ASSERT_TRUE(whigh - wlow > 60 && whigh - wlow < 300);  // jamming, smaller
     TEST_ASSERT_EQUAL_INT(255, work.face().engine().with.notes);
   }
 }
 
-// Pins the call: still and a little smaller, its eyes half closed; no
-// typing along, no music, no pastime however long; a stretch as it ends.
-// It comes before a read and music.
+// Pins the call: still and a little smaller, its eyes half closed and
+// still, its muted mic the one mark; no pastime however long; a stretch as
+// it ends. It has the beat over speaking and music, and the eyes over the
+// scroll's look; your typing keeps the keys.
 void test_a_call_keeps_it_still() {
   const uint32_t call = tagBit("oncall"), typing = tagBit("typing"), music = tagBit("music");
   Board board(SceneState::kIdle, kDay | tierBit(3));
@@ -338,11 +403,11 @@ void test_a_call_keeps_it_still() {
   board.to(1000);
   board.tags(kDay | tierBit(3) | call | typing | music | tagBit("scrolling"));
   bool moved = false;
-  board.to(board.t + 300000, [&] {
-    moved = moved || face.pastimes(board.t).tapping || face.pastimes(board.t).playing != Pastime::kNone;
-  });
+  board.to(board.t + 300000, [&] { moved = moved || face.pastimes(board.t).playing != Pastime::kNone; });
   TEST_ASSERT_FALSE(moved);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kCall), int(face.withYou()));
+  const Owners& o = face.owners();
+  TEST_ASSERT_TRUE(o.beatShows && o.beat == BeatBy::kCall && o.eyes == EyesBy::kCall && o.mark == MarkBy::kMuted);
+  TEST_ASSERT_TRUE(face.pastimes(board.t).tapping && face.engine().with.ticks == 0);
   TEST_ASSERT_EQUAL_STRING("oncall", face.passing(board.t));
   TEST_ASSERT_TRUE(board.channel(rig::Channel::kSquash) > 120 && board.channel(rig::Channel::kEyeOpenL) < 650);
   TEST_ASSERT_FALSE(face.engine().motion.attending);  // its eyes still, forward
@@ -397,7 +462,7 @@ void test_nothing_with_you_without_the_facts() {
   Board board(SceneState::kIdle, kDay | tierBit(2));
   GelFace& face = board.face();
   board.to(60000, [&] {
-    TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(face.withYou()));
+    TEST_ASSERT_TRUE(!face.owners().beatShows && face.owners().mark == MarkBy::kNone);
     TEST_ASSERT_EQUAL_INT(face.mixer().channels()[rig::Channel::kLean], board.channel(rig::Channel::kLean));
   });
   const uint32_t all = tagBit("music") | tagBit("scrolling") | tagBit("scrolldown");
@@ -408,42 +473,49 @@ void test_nothing_with_you_without_the_facts() {
       std::strcpy(other.m.agent, "codex");
       other.state();
     }
-    other.to(5000, [&] { TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(other.face().withYou())); });
+    other.to(5000, [&] {
+      TEST_ASSERT_FALSE(other.face().owners().with);
+      if (other.t > rig::kFadeMs) TEST_ASSERT_EQUAL_INT(0, other.face().engine().with.notes);
+    });
   }
   // Asleep, the pointer moves no eye.
   Board asleep(SceneState::kAsleep, kDay);
   asleep.pointer(true, -9, -3);
   asleep.to(3000, [&] { TEST_ASSERT_FALSE(asleep.face().engine().motion.attending); });
-  // Holding an agent's card, its hands are full: no pose.
-  Board card(SceneState::kIdle, kDay | tagBit("scrolling"));
+  // Holding an agent's card, it's light: the eyes stay its own.
+  Board card(SceneState::kIdle, kDay | tagBit("scrolling") | tagBit("scrolldown"));
   CardShow held;
   held.on = true;
   card.face().card(held);
-  card.to(3000, [&] { TEST_ASSERT_EQUAL_INT(int(WithYou::kNone), int(card.face().withYou())); });
+  card.to(3000, [&] { TEST_ASSERT_EQUAL_INT(int(EyesBy::kOwn), int(card.face().owners().eyes)); });
 }
 
 // Pins speaking along: another app recording with no camera (`speaking`)
-// leans it in and nods on the 1.6 s beat, and wins over typing along, one
-// rhythm at a time; the layers draw its cupped hand while it does.
-void test_speaking_wins_over_typing() {
+// leans it in and nods on the 1.6 s beat: it has the beat and the mark over
+// typing along, whose keys go on (one hand's at its ear, render/gel/hands.h);
+// the mark goes over to the key's ticks as you stop, fading.
+void test_speaking_has_the_beat_over_typing() {
   Board board(SceneState::kIdle, kDay | tierBit(1));
   GelFace& face = board.face();
   board.to(1000);
   board.tags(kDay | tierBit(1) | tagBit("typing") | tagBit("speaking"));
   board.to(board.t + 1000);
-  TEST_ASSERT_EQUAL_INT(int(WithYou::kSpeaking), int(face.withYou()));
+  TEST_ASSERT_TRUE(face.owners().beat == BeatBy::kSpeaking && face.owners().mark == MarkBy::kEar);
   TEST_ASSERT_EQUAL_STRING("speaking", face.passing(board.t));
-  TEST_ASSERT_FALSE(face.pastimes(board.t).tapping);
-  TEST_ASSERT_TRUE(face.engine().speaking);
-  board.tags(kDay | tierBit(1) | tagBit("typing"));
-  board.to(board.t + 1000);
-  TEST_ASSERT_FALSE(face.engine().speaking);
   TEST_ASSERT_TRUE(face.pastimes(board.t).tapping);
+  TEST_ASSERT_TRUE(face.engine().speaking && face.engine().with.ear == 255 && !face.engine().with.ticks);
+  board.tags(kDay | tierBit(1) | tagBit("typing"));
+  board.to(board.t + 100);
+  const Engine::With& w = face.engine().with;
+  TEST_ASSERT_TRUE(w.ear > 0 && w.ear < 255 && w.ticks > 0 && w.ticks < 255);  // one fades over the other
+  board.to(board.t + 900);
+  TEST_ASSERT_FALSE(face.engine().speaking);
+  TEST_ASSERT_TRUE(face.pastimes(board.t).tapping && w.ticks == 255 && !w.ear);
 }
 
-// Pins what it has on or beside it (Engine::With), so each reads at a
-// glance: the music's notes while music plays, through its pastimes, while
-// it types along and at work in a pose of its own; a muted mic on a call
+// Pins the one mark beside it (Engine::With), so each reads at a glance:
+// the music's notes while music plays, through its pastimes, over typing
+// along's ticks and at work in a pose of its own; a muted mic on a call
 // and nothing else then; and nothing asleep. Scrolling has no mark.
 void test_what_it_has_on_or_beside_it() {
   const uint32_t music = tagBit("music"), scrolling = tagBit("scrolling");
@@ -456,7 +528,7 @@ void test_what_it_has_on_or_beside_it() {
   TEST_ASSERT_EQUAL_INT(255, w.notes);
   board.tags(kDay | tierBit(1) | music | tagBit("typing"));
   board.to(board.t + 1000);
-  TEST_ASSERT_TRUE(board.face().pastimes(board.t).tapping && w.notes == 255);
+  TEST_ASSERT_TRUE(board.face().pastimes(board.t).tapping && w.notes == 255 && !w.ticks);
   board.tags(kDay | tierBit(1) | scrolling);
   board.to(board.t + 1000);
   TEST_ASSERT_TRUE(!w.notes && !w.muted);
@@ -473,4 +545,247 @@ void test_what_it_has_on_or_beside_it() {
   // Asleep, nothing.
   Board asleep(SceneState::kAsleep, kDay | music);
   asleep.to(3000, [&] { TEST_ASSERT_EQUAL_INT(0, asleep.face().engine().with.notes); });
+}
+
+// The sweep: each part's place as a frame draws it, frame by frame, as the
+// facts of you at the Mac come and go, in pairs, on each base, and as
+// something takes the body in the middle of music and typing. A part that
+// moves further in one frame than today's Moments ever do, or than the
+// quickest designed ease where no Moment moves it, has jumped.
+namespace {
+enum Item { kTicksMark = rig::kChannelCount, kNotesMark, kEarMark, kMutedMark, kNod, kGazeX, kGazeUp, kPawL, kPawR, kLids, kItems };
+const char* itemName(int i) {
+  static const char* rest[] = {"mark.ticks", "mark.notes", "mark.ear", "mark.muted", "nod",
+                               "gazeX",      "gazeUp",     "paw.L",    "paw.R",      "lids"};
+  return i < rig::kChannelCount ? rig::kChannelInfo[i].name : rest[i - rig::kChannelCount];
+}
+struct Probe {
+  int v[kItems];
+};
+// The paws' lift as the desk draws it (render/gel/props.cpp), by its parts.
+Probe probe(Board& b) {
+  Probe p{};
+  GelFace& f = b.face();
+  const Engine& e = f.engine();
+  const rig::Channels c = f.channels();
+  for (int i = 0; i < rig::kChannelCount; ++i) p.v[i] = c.v[i];
+  p.v[kTicksMark] = e.with.ticks, p.v[kNotesMark] = e.with.notes, p.v[kEarMark] = e.with.ear;
+  p.v[kMutedMark] = e.with.muted, p.v[kNod] = e.faceNod;
+  p.v[kGazeX] = (e.motion.gaze * 10000).integer(), p.v[kGazeUp] = (e.motion.gazeUp * 10000).integer();
+  const PastimeShow s = f.pastimes(b.t);
+  const int desk = (e.scenes.desk.x * 255).integer(), along = s.keys;
+  const uint32_t ms = uint32_t(F(e.timeMs()).integer());
+  for (int side : {-1, 1})
+    p.v[side < 0 ? kPawL : kPawR] =
+        std::max(desk, along) > 0
+            ? (briskLift(s.pawPhase, side) * s.brisk + (desk >= along ? typeLift(ms, side) : 0) * (1000 - s.brisk)) / 1000
+            : 0;
+  p.v[kLids] = sleepyLids(e);
+  return p;
+}
+// The most each part moved in a frame, and when.
+struct Steps {
+  int most[kItems]{}, at[kItems]{};
+  Probe last{};
+  bool seen = false;
+  void add(const Probe& p, uint32_t t) {
+    for (int i = 0; seen && i < kItems; ++i)
+      if (std::abs(p.v[i] - last.v[i]) > most[i]) most[i] = std::abs(p.v[i] - last.v[i]), at[i] = int(t);
+    last = p, seen = true;
+  }
+  void merge(const Steps& o) {
+    for (int i = 0; i < kItems; ++i) most[i] = std::max(most[i], o.most[i]);
+  }
+};
+
+enum Fact { kTyping, kFast, kSpeaking, kScrollDown, kScrollUp, kPointerMoving, kPointerNear, kMusic, kCall, kFacts };
+const char* const kFactNames[] = {"typing", "fast", "speaking", "scrolldown", "scrollup", "pointer", "pointer-near", "music", "call"};
+enum Base { kIdleBase, kTypingPose, kOtherPose, kCardHeld, kBases };
+const char* const kBaseNames[] = {"idle", "work, typing", "work, looking", "a card"};
+
+struct Run {
+  Board board;
+  bool on[kFacts]{};
+  uint32_t tags;
+  Steps steps;
+  explicit Run(Base base)
+      : board(base == kIdleBase || base == kCardHeld ? SceneState::kIdle : SceneState::kWorking, kDay),
+        tags(kDay | tierBit(1) | tagBit("macright")) {
+    if (base == kOtherPose) board.m.act = SceneState::kAnalyzing;
+    if (base == kCardHeld) {
+      CardShow held;
+      held.on = true;
+      board.face().card(held);
+    }
+    apply();
+  }
+  void apply() {
+    uint32_t w = tags;
+    if (on[kTyping] || on[kFast]) w |= tagBit("typing");
+    if (on[kFast]) w |= tagBit("typingfast");
+    if (on[kSpeaking]) w |= tagBit("speaking");
+    if (on[kScrollDown] || on[kScrollUp]) w |= tagBit("scrolling") | tagBit(on[kScrollDown] ? "scrolldown" : "scrollup");
+    if (on[kMusic]) w |= tagBit("music");
+    if (on[kCall]) w |= tagBit("oncall");
+    board.m.when = reached(w);
+    // The pointer swept across, a step every 192 ms, or at the near edge.
+    board.m.pointer.on = on[kPointerMoving] || on[kPointerNear];
+    board.m.pointer.near = on[kPointerNear];
+    board.m.pointer.x = on[kPointerNear] ? 1 : int8_t(-8 + int(board.t / 192 % 17));
+    board.m.pointer.y = on[kPointerNear] ? 0 : -3;
+    board.state();
+  }
+  void play(uint32_t ms) {
+    board.to(board.t + ms, [&] {
+      if (on[kPointerMoving] && board.t % 192 == 0) apply();
+      steps.add(probe(board), board.t);
+    });
+  }
+  void set(Fact f, bool value, uint32_t ms = 1500) {
+    on[f] = value;
+    apply();
+    play(ms);
+  }
+};
+
+void moment(Board& b, SceneState a, Outcome o) {
+  app::ReactionIn in;
+  in.anim = a, in.outcome = o;
+  b.b.play(in, b.t);
+}
+void needYou(Board& b, bool on) {
+  b.m.attn = on, b.m.attnId = 9;
+  std::strcpy(b.m.agent, "claude");
+  b.state();
+}
+
+// Today's Moments, which are fine, on each base: the most each part moves
+// in a frame there.
+Steps momentsSteps() {
+  Steps all;
+  for (int base = 0; base < kBases; ++base) {
+    Run r{Base(base)};
+    Board& b = r.board;
+    r.play(1500);
+    r.steps = Steps{};
+    b.b.tap(b.t, b.rng);
+    r.play(3000);
+    moment(b, SceneState::kTaskComplete, Outcome::kSuccess);
+    r.play(4000);
+    moment(b, SceneState::kTaskComplete, Outcome::kFailure);
+    r.play(4000);
+    b.b.talkOn(b.t, b.rng);
+    r.play(3000);
+    b.b.talkOff(b.t);
+    r.play(2000);
+    needYou(b, true);
+    r.play(6000);
+    needYou(b, false);
+    r.play(3000);
+    b.m.base = b.m.base == SceneState::kIdle ? SceneState::kWorking : SceneState::kIdle;
+    b.state();
+    r.play(3000);
+    all.merge(r.steps);
+  }
+  return all;
+}
+
+// Each part's limit a frame: a quarter over the Moments' most, and at least
+// a tenth of a channel's range, a mark's ramp's (rig::Ramp, 200 ms), the
+// scroll's quick look in (GelFace::kLookInMs), the eyes' turn to what
+// they attend (Motion::kAttendRate), and a paw's fast tap with a little of
+// its blend from the soft typing.
+int limitOf(const Steps& moments, int i) {
+  const int floor = i < rig::kChannelCount ? (rig::kChannelInfo[i].hi - rig::kChannelInfo[i].lo) / 10
+                    : i <= kMutedMark      ? 40
+                    : i == kNod            ? 30
+                    : i <= kGazeUp         ? 150
+                    : i <= kPawR           ? 4 * kBriskLift * 16 / kFastTapMs + 4
+                                           : 1;
+  return std::max(moments.most[i] + moments.most[i] / 4, floor);
+}
+
+void judge(const Steps& moments, const char* base, const char* what, const Steps& s, bool hands = true) {
+  for (int i = 0; i < kItems; ++i) {
+    // A move's hands are the Moment's own (render/gel/moves.h).
+    if (!hands && i >= int(rig::Channel::kHandLX) && i <= int(rig::Channel::kHandRGlass)) continue;
+    char message[160];
+    std::snprintf(message, sizeof message, "%s, %s: %s moved %d in a frame at %d ms, over its %d", base, what,
+                  itemName(i), s.most[i], s.at[i], limitOf(moments, i));
+    TEST_ASSERT_TRUE_MESSAGE(s.most[i] <= limitOf(moments, i), message);
+  }
+}
+}  // namespace
+
+// Pins rule 2 of who has what: never a cut. On each base, each pair of
+// facts of you at the Mac on and off in turn (A, then B, A off, B off), and
+// something taking the body in the middle of music and typing: no part of
+// the frame moves further in a frame than a Moment's does.
+void test_no_part_jumps_when_with_you_changes() {
+  const Steps moments = momentsSteps();
+  for (int base = 0; base < kBases; ++base)
+    for (int a = 0; a < kFacts; ++a)
+      for (int b = a + 1; b < kFacts; ++b) {
+        // The Mac sends one way of scrolling, never both.
+        if (a == kScrollDown && b == kScrollUp) continue;
+        Run r{Base(base)};
+        r.play(1500);
+        r.steps = Steps{};
+        r.set(Fact(a), true), r.set(Fact(b), true), r.set(Fact(a), false), r.set(Fact(b), false);
+        char what[48];
+        std::snprintf(what, sizeof what, "%s then %s", kFactNames[a], kFactNames[b]);
+        judge(moments, kBaseNames[base], what, r.steps);
+      }
+  const char* const kOver[] = {"a poke", "a finish", "needs you", "listening", "a pastime", "sleep", "cross", "sad", "tired"};
+  for (int base : {int(kIdleBase), int(kTypingPose)})
+    for (int k = 0; k < 9; ++k) {
+      Run r{Base(base)};
+      r.on[kMusic] = r.on[kTyping] = true;
+      r.apply();
+      r.play(3000);
+      r.steps = Steps{};
+      Board& b = r.board;
+      switch (k) {
+        case 0: b.b.tap(b.t, b.rng); break;
+        case 1: moment(b, SceneState::kTaskComplete, Outcome::kSuccess); break;
+        case 2: needYou(b, true); break;
+        case 3: b.b.talkOn(b.t, b.rng); break;
+        case 4: b.face().playPastime(base == kIdleBase ? Pastime::kLookAround : Pastime::kStretch, b.t); break;
+        case 5: b.m.base = SceneState::kAsleep, b.state(); break;
+        case 6: b.m.mood = Mood::kGrumpy, b.state(); break;
+        case 7: b.m.mood = Mood::kSad, b.state(); break;
+        case 8: b.m.energy = Energy::kTired, b.state(); break;
+      }
+      r.play(4000);
+      if (k == 2) needYou(b, false);
+      if (k == 3) b.b.talkOff(b.t);
+      r.play(4000);
+      judge(moments, kBaseNames[base], kOver[k], r.steps, k != 2);
+    }
+}
+
+// Pins rule 1 of who has what: covered, not stopped. The jam's beat runs on
+// under the scroll's look, the pointer, typing and speaking, so as each
+// leaves the bounce is where it would have been with the music alone; and
+// the eyes, open for the scroll's look and the pointer, shut into the jam
+// again as each goes.
+void test_a_covered_beat_runs_on() {
+  for (Fact over : {kScrollDown, kPointerMoving, kTyping, kSpeaking}) {
+    Run r{kIdleBase};
+    r.set(kMusic, true, 2000);
+    r.set(over, true, 1500);
+    const Owners o = r.board.face().owners();
+    TEST_ASSERT_TRUE(o.beat == (over == kSpeaking ? BeatBy::kSpeaking : BeatBy::kMusic) && o.beatShows);
+    if (over == kScrollDown || over == kPointerMoving)
+      TEST_ASSERT_TRUE(r.board.channel(rig::Channel::kEyeOpenL) > 900);  // its eyes open, on you
+    r.set(over, false, 2000);
+    TEST_ASSERT_TRUE(r.board.channel(rig::Channel::kEyeOpenL) < 650);  // and shut in the jam again
+    // In step with the music alone, at the same time since it began.
+    Run alone{kIdleBase};
+    alone.set(kMusic, true, r.board.t);
+    char message[64];
+    std::snprintf(message, sizeof message, "the jam's lean after %s", kFactNames[over]);
+    TEST_ASSERT_INT_WITHIN_MESSAGE(4, alone.board.face().mixer().channels()[rig::Channel::kLean],
+                                   r.board.face().mixer().channels()[rig::Channel::kLean], message);
+  }
 }

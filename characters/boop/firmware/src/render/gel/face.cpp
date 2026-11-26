@@ -48,12 +48,11 @@ constexpr uint32_t kCallTag = bitOf("oncall"), kScrollingTag = bitOf("scrolling"
 
 const voice::EffectClips& GelFace::clips() const { return gel::clips(); }
 
-// By WithYou's order: none, music, scrolling (the face's own look, no
-// clip), speaking, on a call.
+// By BeatBy's order: its own breath (no clip), typing, music, speaking, on
+// a call.
 const GelFace::Clips GelFace::clips_ = {
-    {nullptr, &clipNamed("jam"), nullptr, &clipNamed("speak-along"), &clipNamed("on-call")},
+    {nullptr, &clipNamed("type-along"), &clipNamed("jam"), &clipNamed("speak-along"), &clipNamed("on-call")},
     &clipNamed("jam-desk"),
-    &clipNamed("type-along"),
     &clipNamed("type-along-fast"),
     &clipNamed("stretch"),
     &clipNamed("look-around")};
@@ -102,9 +101,10 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   actAt_ = 0, actResult_ = ActResult::kRunning;
   along_ = rig::Ramp{};
   tapping_ = typed_ = false, typedAt_ = 0;
-  fast_ = typingTag_ = thought_ = false, typingFrom_ = thinkAt_ = 0;
-  with_ = wanted_ = WithYou::kNone, withClip_ = nullptr;
-  music_ = called_ = deskJam_ = false, musicFrom_ = 0;
+  fast_ = fastOn_ = typingTag_ = thought_ = false, thinkAt_ = 0;
+  owners_ = {}, brisk_ = shut_ = rig::Ramp{}, signUp_ = false;
+  beatClip_ = nullptr, called_ = false;
+  for (int i = 0; i < 5; ++i) beatFrom_[i] = 0, beatOn_[i] = false;
   for (auto& m : marks_) m = rig::Ramp{};
   pawPhaseQ_ = 0, fastSeen_ = 0;
   pointer_ = pointerNear_ = false, pointerX_ = pointerY_ = 0;
@@ -172,7 +172,7 @@ void GelFace::advanceTo(uint32_t t) {
   answerAct(t);
   showAlong(t);
   pawPhase(dt);
-  engine_->typingAlong = tapping_, engine_->typingFast = fast_, engine_->typingPhase = int(pawPhaseQ_ / 1000);
+  engine_->typingFast = fast_, engine_->typingPhase = int(pawPhaseQ_ / 1000);
   showWithYou(t);
   followLean(dt);
   showGaze(t);
@@ -301,11 +301,12 @@ void GelFace::passTime(uint32_t t) {
   if (look != dealtLook_) dealtLook_ = look, restUntil_ = t + kRestMinMs + roll(kRestMaxMs - kRestMinMs);
   // Holding a card, its hands are full: no pastime is dealt over it.
   if (card_.on && playing()) endPastime(t, true);
-  // Nor one over its keyboard, out to type along with you.
-  // Nor while it's on a call with you, holding a copy, reading along,
-  // watching or in a groove (showWithYou).
-  const bool busy = finger_ || card_.on || along_.target() || wanted_ != WithYou::kNone ||
-                    (stream_ && stream_->drawn(t) && stream_->call.live);
+  // Nor one over its keyboard, out to type along with you, nor while it's
+  // with you (a call, speaking, music, the scroll's look): only typing at
+  // work leaves room for one.
+  const Owners& o = owners_;
+  const bool busy = finger_ || card_.on || along_.target() || (o.beatShows && o.beat >= BeatBy::kMusic) ||
+                    o.eyes == EyesBy::kScroll || (stream_ && stream_->drawn(t) && stream_->call.live);
   if (!shows || pastime_ != Pastime::kNone || busy || after(restUntil_, t)) return;
   deal(look, t);
 }
@@ -416,57 +417,71 @@ bool GelFace::typingPose() const {
   return !(l && l->acted(engine_->router.facts.look()));
 }
 
-// Whether it's free for you at the Mac (typing along, and the poses of
-// showWithYou): it shows its own look, idle or at work in any pose, a card
-// in its hands or not (going with you is a layer over the pose, the
-// engine's documentation/design/theory.md, "One body, three channels"),
-// and nothing else has it: no finger, no Mac gone, no transition and no
-// pastime. `look` is the look.
-bool GelFace::freeForYou(uint32_t t, SceneState& look) const {
+// What's true now for who has what (owners.h): what has the body over its
+// own look, whether that look is idle or work's with the Mac here (going
+// with you rides only on it, the engine's documentation/design/theory.md,
+// "One body, three channels"), and you at the Mac.
+WhatsTrue GelFace::truths(uint32_t t, SceneState* lookOut) const {
+  const Engine& e = *engine_;
+  const uint32_t when = e.scenes.when;
+  SceneState look;
   const bool shows = showsLook(source_.anim, look);
-  const bool place = look == SceneState::kIdle || look == SceneState::kWorking;
-  return shows && place && !finger_ && !alone_ && !transition(t) && !playing();
+  if (lookOut) *lookOut = look;
+  WhatsTrue f;
+  f.moment = source_.anim != SceneState::kNone || e.scenes.route.reaction || invite_.shows() ||
+             (stream_ && stream_->drawn(t) && stream_->call.live);
+  f.finger = finger_;
+  f.needsYou = shows && look == SceneState::kNeedsYou;
+  f.listening = e.router.listening;
+  f.pastime = playing() || transition(t) || e.acting.current();
+  f.place = shows && (look == SceneState::kIdle || look == SceneState::kWorking) && !alone_;
+  f.light = light(look);
+  f.posed = look == SceneState::kWorking && !typingPose();
+  f.desk = f.light || look == SceneState::kWorking;
+  f.signUp = signUp_;
+  f.keepsFace = slime::kKeepsFaceThroughGestures[e.emotion];
+  f.call = when & kCallTag, f.speaking = when & kSpeakingTag, f.music = when & kMusicTag;
+  f.typing = when & kTypingTag, f.pointer = pointer_;
+  // Only the way known: with none, nothing rather than a guess.
+  f.scrolling = (when & kScrollingTag) && (when & (kScrollDownTag | kScrollUpTag));
+  return f;
 }
 
-// Whether going with you is at its light size: at work, or holding a card.
-// The pose is the work's then, so only the rhythm and the gaze ride on it:
-// the paws stay where the pose puts them, and the poses that move the whole
-// body (the scroll's look, music) give way to the eyes alone.
+// Whether going with you is at its light size: at work in a pose of its
+// own, or holding a card. The body is the work's then: the beat rides on
+// it small, the eyes and the paws stay the pose's, and the mark shows.
 bool GelFace::light(SceneState look) const {
   return card_.on || (look == SceneState::kWorking && !typingPose());
 }
 
-// Typing along with you (face.h): while your hands are busy and it's free
-// for you, its paws type briskly with you. Idle, its keyboard comes out
-// for it, and stays a little longer after you stop, its paws at rest, so a
-// pause in your typing doesn't put the keyboard away and bring it back; at
-// work the desk is out already, and its paws go back to the agents' soft
-// typing. Not while it holds a card: its hands are full. Not on a call.
+// Who has what this frame (owners.h), and typing along with you (face.h):
+// while the keys have its hands, its paws type briskly with you. Idle, its
+// keyboard comes out for it, and stays a little longer after you stop, its
+// paws at rest, so a pause in your typing doesn't put the keyboard away and
+// bring it back; at work the desk is out already, and its paws go back to
+// the agents' soft typing.
 void GelFace::showAlong(uint32_t t) {
   const Engine& e = *engine_;
   SceneState look;
-  const bool free = freeForYou(t, look);
-  const bool idle = free && look == SceneState::kIdle, working = free && look == SceneState::kWorking;
+  const WhatsTrue now = truths(t, &look);
+  owners_ = whoHasWhat(now);
   const uint32_t when = e.scenes.when;
-  const bool typing = when & kTypingTag;
+  const bool typing = now.typing;
   const bool was = tapping_;
-  // Speaking wins over typing: one rhythm at a time.
-  tapping_ = (idle || working) && typing && !(when & kCallTag) && !(when & kSpeakingTag);
-  // Its body keeps time with you: a small sway over the keys (the rig's
-  // `type-along`); the paws carry the typing.
-  if (tapping_ != was) tapping_ ? mixer_.play(*clips_.along) : mixer_.stop(*clips_.along);
-  // Fast, its eyes open wider and it hunches in, and its paws tap quicker
-  // (pawPhase). A flicker off shorter than kFastLingerMs doesn't stop it.
+  tapping_ = owners_.keys;
+  brisk_.retarget(tapping_ && !now.light ? 1000 : 0, t);
+  // Fast, its paws tap quicker (pawPhase), and its eyes open wider and it
+  // hunches in (showWithYou). A flicker off shorter than kFastLingerMs
+  // doesn't stop it.
   const bool fastNow = tapping_ && (when & kFastTag);
   if (fastNow) fastSeen_ = t;
-  const bool fast = fastNow || (fast_ && tapping_ && within(t, fastSeen_, kFastLingerMs));
-  if (fast != fast_) fast ? mixer_.play(*clips_.fast) : mixer_.stop(*clips_.fast);
-  fast_ = fast;
+  fast_ = fastNow || (fast_ && tapping_ && within(t, fastSeen_, kFastLingerMs));
   // A long stretch of typing along that you stop: it looks up at you, as
   // if thinking it over with you (render/gel/gaze.h).
-  if (typing && !typingTag_) typingFrom_ = t;
-  if (!typing && typingTag_ && was && t - typingFrom_ >= Gaze::kThinkAfterMs) thought_ = true, thinkAt_ = t;
+  const uint32_t typingFrom = beatFrom_[int(BeatBy::kTyping)];
+  if (!typing && typingTag_ && was && t - typingFrom >= Gaze::kThinkAfterMs) thought_ = true, thinkAt_ = t;
   typingTag_ = typing;
+  const bool idle = now.place && look == SceneState::kIdle;
   const bool alone = tapping_ && idle;  // with its keyboard alone
   if (alone) typed_ = true, typedAt_ = t;
   const bool out = idle && typed_ && (alone || within(t, typedAt_, kAlongLingerMs));
@@ -486,82 +501,60 @@ void GelFace::pawPhase(uint32_t dt) {
   pawPhaseQ_ = (pawPhaseQ_ + uint64_t(dt) * uint64_t(pace_) * kBeat * 1000 / beat) % (2 * kBeat * 1000);
 }
 
-// With you at the Mac besides typing along (face.h): the one that fits now,
-// its pose's clip on the mixer, the lean it follows, and a move once as a
-// call or the music ends.
+// With you at the Mac (face.h), as who has what says: the beat's clip, the
+// eyes' look or follow, the jam's shut eyes, the one mark, and a move once
+// as a call or the music ends.
 void GelFace::showWithYou(uint32_t t) {
-  const Engine& e = *engine_;
-  const uint32_t when = e.scenes.when;
-  SceneState look;
-  const bool free = freeForYou(t, look) && !tapping_ && !e.acting.current() && !e.router.listening;
-  const bool call = when & kCallTag;
-  // Only the way known: with none, nothing rather than a guess.
-  const bool scrolling = (when & kScrollingTag) && (when & (kScrollDownTag | kScrollUpTag)) && !light(look);
-  const bool music = when & kMusicTag;
-  // At work, in any pose, or with a card held: the jam's smaller, at the desk.
-  const bool desk = light(look) || look == SceneState::kWorking;
-  if (music && !music_) musicFrom_ = t;
-  const bool musicStopped = music_ && !music;
-  music_ = music;
-  wanted_ = call                    ? WithYou::kCall
-            : (when & kSpeakingTag) ? WithYou::kSpeaking
-            : scrolling             ? WithYou::kScrolling
-            : music && !desk        ? WithYou::kMusic
-                                    : WithYou::kNone;
-  const WithYou now = free ? wanted_ : WithYou::kNone;
+  const uint32_t when = engine_->scenes.when;
+  const Owners& o = owners_;
+  // When each beat's fact came: a beat covered runs on from there, unseen.
+  const bool on[5] = {false, bool(when & kTypingTag), bool(when & kMusicTag), bool(when & kSpeakingTag),
+                      bool(when & kCallTag)};
+  const bool call = on[int(BeatBy::kCall)], musicStopped = beatOn_[int(BeatBy::kMusic)] && !on[int(BeatBy::kMusic)];
+  for (int i = 0; i < 5; ++i) {
+    if (on[i] && !beatOn_[i]) beatFrom_[i] = t;
+    beatOn_[i] = on[i];
+  }
   // As each ends: a stretch back up after a call, a look round as the
   // music stops. Not over anything else.
   if (called_ && !call) once(*clips_.stretch, t);
   else if (musicStopped && !call) once(*clips_.lookAround, t);
   called_ = call;
-  const rig::Clip* clip = clips_.with[int(now)];
-  // The scroll's look: straight the way you scroll (followLean eases it).
-  lookTo_ = now != WithYou::kScrolling ? 0 : (when & kScrollDownTag) ? 1000 : -1000;
-  if (clip != withClip_) {
-    if (withClip_) mixer_.stop(*withClip_);
-    if (clip) mixer_.play(*clip, kWithFadeMs);
-    withClip_ = clip;
+  // The beat's clip, the jam at the desk's size there, fading in over the
+  // last from where its own beat has got to.
+  const rig::Clip* clip = !o.beatShows                             ? nullptr
+                          : o.beat == BeatBy::kMusic && o.small ? clips_.deskJam
+                                                                   : clips_.beat[int(o.beat)];
+  if (clip != beatClip_) {
+    if (beatClip_) mixer_.stop(*beatClip_);
+    if (clip) mixer_.play(*clip, kWithFadeMs, t - beatFrom_[int(o.beat)]);
+    beatClip_ = clip;
   }
-  const bool deskJam = free && music && desk && !call && !(when & kSpeakingTag);
-  if (deskJam != deskJam_) deskJam ? mixer_.play(*clips_.deskJam, kWithFadeMs) : mixer_.stop(*clips_.deskJam);
-  deskJam_ = deskJam;
+  const bool fast = o.beatShows && o.beat == BeatBy::kTyping && fast_;
+  if (fast != fastOn_) fast ? mixer_.play(*clips_.fast) : mixer_.stop(*clips_.fast);
+  fastOn_ = fast;
   // The engine's own idle gestures wait while it's with you.
-  if (clip) holdGestures(clip->ms);
-  else if (now != WithYou::kNone) holdGestures(0);
-  with_ = now;
-  engine_->speaking = now == WithYou::kSpeaking;
+  if (o.beatShows || o.eyes == EyesBy::kScroll) holdGestures(0);
+  engine_->speaking = o.beatShows && o.beat == BeatBy::kSpeaking;
   engine_->speakingSide = when & kMacLeftTag ? -1 : 1;
   const int mac = (when & kMacLeftTag) ? -1 : (when & kMacRightTag) ? 1 : 0;
-  // What it has on or beside it (Engine::With), so each reads at a glance
-  // where a pose alone is too small to see: at the light size too, and the
-  // music's notes while it types along. Not over a Moment, a finger or
-  // listening, nor a pastime but the notes; a call has only its muted mic,
-  // and speaking's hand is at its ear, so no notes then.
-  {
-    SceneState place;
-    const bool open = freeForYou(t, place) && !e.acting.current() && !e.router.listening;
-    const bool speaks = when & kSpeakingTag;
-    // The notes keep rising through a pastime (a bit or a take of the
-    // engine's too) or a transition, so they don't come and go.
-    SceneState shown;
-    const bool shows = showsLook(source_.anim, shown) && (shown == SceneState::kIdle || shown == SceneState::kWorking) &&
-                       !finger_ && !alone_ && !e.router.listening;
-    const bool notes = shows && music && !call && !speaks;
-    const bool on[kMarks] = {notes, open && call};
-    for (int i = 0; i < kMarks; ++i) marks_[i].retarget(on[i] ? 1000 : 0, t);
-    Engine::With& w = engine_->with;
-    auto opacity = [&](Mark m) { return (marks_[m].value(t) * 255 + 500) / 1000; };
-    w.notes = opacity(kNotes), w.muted = opacity(kMuted);
-    w.side = mac ? mac : 1;
-    w.notesMs = t - musicFrom_;
-  }
-  // To the pointer while it moves, a little more toward its reach, and
-  // further at the edge nearest the board, reaching toward it. Never on a
-  // call, nor while it looks the way you scroll.
+  // The scroll's look: straight the way you scroll (followLean eases it).
+  lookTo_ = o.eyes != EyesBy::kScroll ? 0 : (when & kScrollDownTag) ? 1000 : -1000;
+  shut_.retarget(o.eyes == EyesBy::kJam ? 1000 : 0, t);
+  // The one mark beside it, each fading in and out.
+  for (int i = 0; i < kMarks; ++i) marks_[i].retarget(int(o.mark) == i + 1 ? 1000 : 0, t);
+  Engine::With& w = engine_->with;
+  auto opacity = [&](MarkBy m) { return (marks_[int(m) - 1].value(t) * 255 + 500) / 1000; };
+  w.ticks = opacity(MarkBy::kTicks), w.notes = opacity(MarkBy::kNotes), w.ear = opacity(MarkBy::kEar),
+  w.muted = opacity(MarkBy::kMuted);
+  w.side = mac ? mac : 1;
+  w.notesMs = t - beatFrom_[int(BeatBy::kMusic)];
+  // To the pointer while it has the eyes, a little more toward its reach,
+  // and further at the edge nearest the board, reaching toward it.
   const bool up = !mac && (when & kMacUpTag);
   int* to = followTo_;
   for (int i = 0; i < kFollows; ++i) to[i] = 0;
-  if (free && now != WithYou::kCall && now != WithYou::kScrolling && pointer_) {
+  if (o.eyes == EyesBy::kPointer) {
     const int side = pointerX_ > 0 ? 1 : pointerX_ < 0 ? -1 : mac;
     if (pointerNear_) {
       to[kFollowLean] = side * kNearLean, to[kFollowSquash] = -kNearStretch;
@@ -588,9 +581,7 @@ void GelFace::showWithYou(uint32_t t) {
 }
 
 void GelFace::once(const rig::Clip& clip, uint32_t t) {
-  SceneState look;
-  const Engine& e = *engine_;
-  if (!freeForYou(t, look) || tapping_ || e.acting.current() || e.router.listening) return;
+  if (!owners_.with || tapping_) return;
   play(clip);
   holdGestures(clip.ms);
   // No pastime straight after it.
@@ -638,6 +629,10 @@ rig::Channels GelFace::clipChannels() const {
   add(rig::Channel::kGazeX, followBy_[kFollowGazeX] / 256);
   add(rig::Channel::kGazeY, followBy_[kFollowGazeY] / 256);
   add(rig::Channel::kTurn, followBy_[kFollowTurn] / 256);
+  // The jam's eyes, shut while it has them.
+  const int shut = kJamShut * shut_.value(lastTick_) / 1000;
+  add(rig::Channel::kEyeOpenL, -shut);
+  add(rig::Channel::kEyeOpenR, -shut);
   // The scroll's look: the eyes all the way, the body flatter looking down,
   // taller and up a little looking up.
   const int look = lookBy_ / 256;
@@ -682,22 +677,16 @@ void GelFace::showGaze(uint32_t t) {
   Engine& e = *engine_;
   SceneState look;
   GazeFacts f;
-  const bool shows = showsLook(source_.anim, look);
+  showsLook(source_.anim, look);
   const uint32_t when = e.scenes.when;
-  f.free = shows && !finger_ && !alone_ && !playing() && !transition(t) && !e.acting.current() && !e.router.listening &&
-           !(stream_ && stream_->call.live);
+  f.eyes = owners_.eyes;
   f.needsYou = look == SceneState::kNeedsYou;
   f.lookMs = e.scenes.lookMs;
   f.mac = (when & kMacLeftTag) ? -1 : (when & kMacRightTag) ? 1 : 0;
   f.up = !f.mac && (when & kMacUpTag);
   f.along = tapping_ && !light(look);
-  f.posed = look == SceneState::kWorking && !typingPose();
   f.thinking = thought_ && within(t, thinkAt_, Gaze::kThinkMs), f.thinkMs = t - thinkAt_;
   if (!f.thinking) thought_ = false;
-  f.with = with_;
-  // The pointer only where it's free for you: never asleep or dozing.
-  SceneState place;
-  f.pointer = pointer_ && freeForYou(t, place) && !tapping_;
   f.pointerNear = pointerNear_, f.pointerX = pointerX_, f.pointerY = pointerY_;
   const GazePoint p = gaze_.look(f, t);
   if (!p.on) return e.unattend();
@@ -712,6 +701,7 @@ PastimeShow GelFace::pastimes(uint32_t t) const {
   SceneState look;
   const bool lit = showsLook(source_.anim, look) && light(look);
   s.keys = (along_.value(t) * 255 + 500) / 1000, s.tapping = tapping_ && !lit, s.fast = fast_ && !lit;
+  s.brisk = brisk_.value(t);
   s.pawPhase = int(pawPhaseQ_ / 1000);
   if (pastime_ != Pastime::kNone) {
     s.playing = pastime_;
@@ -839,15 +829,13 @@ void GelFace::lean(Lean level, uint32_t t) {
 
 const char* GelFace::passing(uint32_t t) const {
   if (const rig::Clip* clip = transition(t)) return clip->id;
-  if (tapping_) return "along";
   if (playing()) return info(pastime_).name;
-  switch (with_) {
-    case WithYou::kCall: return "oncall";
-    case WithYou::kSpeaking: return "speaking";
-    case WithYou::kScrolling: return "scrolling";
-    case WithYou::kMusic: return "music";
-    case WithYou::kNone: break;
-  }
+  const Owners& o = owners_;
+  if (o.beatShows && o.beat == BeatBy::kCall) return "oncall";
+  if (o.beatShows && o.beat == BeatBy::kSpeaking) return "speaking";
+  if (o.eyes == EyesBy::kScroll) return "scrolling";
+  if (o.beatShows && o.beat == BeatBy::kMusic) return "music";
+  if (tapping_) return "along";
   return nullptr;
 }
 
@@ -1001,9 +989,6 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
     borrowed = slime::kGestureFaces[std::min<int>(source.animVariant, slime::kGestureCount - 1)];
   if (borrowed < 0 && source.anim == SceneState::kNotice)
     borrowed = slime::kNoticeFaces[std::min<int>(source.animVariant, slime::kNoticeCount - 1)];
-  // In a groove with your music, a content face, unless its mood keeps its own.
-  if (borrowed < 0 && with_ == WithYou::kMusic && !slime::kKeepsFaceThroughGestures[profileFor(context.mood)])
-    borrowed = expressionFromName("pleased");
   // Leaning in, it wears a stroke's shut eyes, unless its mood keeps its own.
   if (borrowed < 0 && lean_ != Lean::kNone && !slime::kKeepsFaceThroughGestures[profileFor(context.mood)])
     borrowed = slime::kGestureFaces[int(Gesture::kStroke)];
@@ -1013,6 +998,9 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
   if (borrowed < 0 && context.invite.shows() &&
       (sideEye || !slime::kKeepsFaceThroughGestures[profileFor(context.mood)]))
     borrowed = expressionFromName(inviteFace(context.invite));
+  // Last, jamming to your music: a content face, unless its mood keeps its own.
+  if (borrowed < 0 && source.anim == SceneState::kNone && whoHasWhat(truths(t)).face == FaceBy::kJam)
+    borrowed = expressionFromName("pleased");
   bool next = source.anim != SceneState::kNone && (source.anim != source_.anim || source.at != source_.at);
   if (next) {
     // Behaviour times the reaction (its loops, its line), so the engine
@@ -1119,8 +1107,8 @@ bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t t, 
   const PastimeShow passing = pastimes(lastTick_);
   size_ = {native->width, native->height, native->corner};
   signHop_ = signHop(sign);
-  // A sign held up fills its hands: no key's ticks under it.
-  if (sign.text && !sign.low) engine_->typingAlong = false;
+  // A sign held up fills its hands: from the next frame, no keys (owners.h).
+  signUp_ = sign.text && !sign.low;
   cardDrawn_ = paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, done, channels(), &layers_,
              lastTick_, stream_, t, &passing, drawer_, caption, &wish_, &card_);
   return true;
