@@ -17,13 +17,11 @@ GazePoint Gaze::look(const GazeFacts& f, uint32_t) {
     if (f.pointerNear) {
       // Right at it, to the Mac's side: where the pointer points from.
       const int side = f.pointerX > 0 ? 1 : f.pointerX < 0 ? -1 : f.mac;
-      if (side) return {true, kMidX + side * kMacReach, kEyesY};
+      if (side) return {true, kMidX + side * kNearReach, kEyesY};
       if (f.up) return {true, kMidX, kScreenUpY};
     }
     return {true, kMidX + f.pointerX * kPointerX, kEyesY + f.pointerY * kPointerY};
   }
-  if (f.with == WithYou::kReading) return {true, kMidX + f.mac * kPageReach, f.up ? kPageUpY : kPageY};
-  if (f.with == WithYou::kVideo) return {true, kMidX + f.mac * kPageReach, f.up ? kYouY : kEyesY};
   return {};
 }
 

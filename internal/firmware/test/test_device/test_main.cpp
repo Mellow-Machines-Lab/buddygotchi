@@ -2713,9 +2713,9 @@ static void test_the_pointer_and_the_newest_tags_are_read() {
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"ptr\":[3]}");
   TEST_ASSERT_TRUE(has(stateOf(r), "\"ptr\":null"));
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"when\":[\"day\",\"macright\",\"scrolling\",\"typingfast\",\"music\","
-            "\"video\",\"oncall\",\"copied\",\"macup\",\"speaking\"]}");
+            "\"scrollup\",\"oncall\",\"scrolldown\",\"macup\",\"speaking\"]}");
   TEST_ASSERT_TRUE(has(stateOf(r),
-                       "\"when\":[\"day\",\"macright\",\"scrolling\",\"typingfast\",\"music\",\"video\",\"oncall\",\"copied\",\"macup\","
+                       "\"when\":[\"day\",\"macright\",\"scrolling\",\"typingfast\",\"music\",\"scrollup\",\"oncall\",\"scrolldown\",\"macup\","
                        "\"speaking\"]"));
   static_assert(render::tagIndex("macright") == 23 && render::tagIndex("speaking") == render::kTagCount - 1,
                 "the newest tags after the Mac's side, so no pack's numbering of the others moves");

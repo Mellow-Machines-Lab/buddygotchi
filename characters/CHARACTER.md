@@ -1000,9 +1000,10 @@ Some clips' ids mean something to a face:
 - A clip named for a Moment's state (Boop's `notice`): the gel plays it once
   as the Moment starts. The gel's recipe for that state times it.
 - You at the Mac: the gel loops `type-along` while it types with you, and
-  `type-along-fast` over it while you type fast; `read-along` (then
-  `read-along-settled`), `video`, `groove`, `speak-along` and `on-call`
-  while it's with you so (its `GelFace::showWithYou`); and once, `stretch` as a call ends, `look-around` as the
+  `type-along-fast` over it while you type fast; `scroll-down`,
+  `scroll-up` or `scroll`, `jam` (at work `jam-desk`, over the pose),
+  `speak-along` and `on-call` while it's with you so (its
+  `GelFace::showWithYou`); and once, `stretch` as a call ends, `look-around` as the
   music stops.
 
 **`looks.json`**: for each look (§9), keys `clip`, `tiers` and `acts`:

@@ -60,15 +60,12 @@ class Engine {
   int typingPhase = 0;
   // What it has on or beside it for you at the Mac (GelFace::showWithYou),
   // which the layers draw, each at its opacity (0–255), in any pose and at
-  // the light size too: headphones while music plays, and notes rising from
-  // them while it grooves (`notesMs` into the groove); a page beside it
-  // while it reads along, its lines scrolled up `scroll` px; a small screen
-  // beside it while it watches, its light on the body; and a muted mic by
-  // its ear on a call. `side` is the Mac's: -1 left, 1 right, as speaking's.
+  // the light size too: while music plays, a note now and then rising from
+  // behind it (`notesMs` into the music); and a muted mic by its ear on a
+  // call. `side` is the Mac's: -1 left, 1 right, as speaking's.
   struct With {
-    int headphones = 0, page = 0, screen = 0, muted = 0;
-    bool notes = false;
-    int side = 1, scroll = 0;
+    int notes = 0, muted = 0;
+    int side = 1;
     uint32_t notesMs = 0;
   } with;
   // The invite showing (render/gel/invite.h), its time the board's as of the

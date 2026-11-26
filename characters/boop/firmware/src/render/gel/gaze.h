@@ -22,11 +22,9 @@
 //    screen: further the further it is, up to kPointerReach. At the edge of
 //    the screen nearest the board, it looks right at it, to the Mac's side.
 //    Let go once the Mac stops sending it (still 3 s): rest.
-// 7. Reading along while you scroll (the `scrolling` tag, showWithYou):
-//    at the page, to the Mac's side, or up at it, or forward with none told;
-//    the line-by-line travel down and back is its clip's (`read-along`).
-// 8. A video with you (the `video` tag): to the Mac's side at the eyes'
-//    height, or up at it, and still.
+// 7. Scrolling with you (the `scrolling` tag, showWithYou): forward; the
+//    quick darts up and down, the one time they dart, are its clip's
+//    (`scroll-down`, `scroll-up`, `scroll`).
 //
 // At work, typing, with none of these: forward, at rest.
 //
@@ -42,7 +40,7 @@ namespace render::gel {
 
 // What it does with you at the Mac besides typing along, the one the face
 // shows (GelFace::showWithYou), lowest first.
-enum class WithYou : uint8_t { kNone, kMusic, kVideo, kReading, kSpeaking, kCall };
+enum class WithYou : uint8_t { kNone, kMusic, kScrolling, kSpeaking, kCall };
 
 // What there is to look at now.
 struct GazeFacts {
@@ -73,12 +71,12 @@ class Gaze {
   // Thinking with you: after typing along this long, it looks up this long.
   static constexpr uint32_t kThinkAfterMs = 8000, kThinkMs = 2000;
   // Where the points are: up at you, off to the Mac's side at the eyes'
-  // height, down at the keys, and up at the screen above it; the reading's
-  // page to the Mac's side, or up; how far across and up or down the
-  // pointer at its furthest (state.ptr's 10) takes the eyes.
+  // height, down at the keys, and up at the screen above it; how far across
+  // and up or down the pointer takes the eyes each of its steps (state.ptr's
+  // 10 at the furthest), and how far to the side the pointer at the edge
+  // nearest the board does.
   static constexpr int kYouY = -160, kMacReach = 420, kEyesY = 205, kKeysY = 400, kMidX = 251, kScreenUpY = -320;
-  static constexpr int kPageReach = 300, kPageY = 300, kPageUpY = -60;
-  static constexpr int kPointerReach = 10, kPointerX = 42, kPointerY = 36;
+  static constexpr int kPointerReach = 10, kPointerX = 57, kPointerY = 48, kNearReach = 560;
   GazePoint look(const GazeFacts& f, uint32_t t);
   void reset() { *this = Gaze{}; }
 };

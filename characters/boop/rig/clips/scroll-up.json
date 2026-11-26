@@ -1,0 +1,69 @@
+{
+  "about": "Scrolling up with you: as `scroll-down`, the other way: its eyes dart up fast and snap back down.",
+  "group": "with_you",
+  "ms": 520,
+  "loop": true,
+  "tracks": {
+    "gazeY": [
+      [
+        0,
+        900
+      ],
+      [
+        150,
+        -1000,
+        "out"
+      ],
+      [
+        210,
+        -900
+      ],
+      [
+        300,
+        -900
+      ],
+      [
+        360,
+        1000,
+        "out"
+      ],
+      [
+        410,
+        900
+      ],
+      [
+        520,
+        900
+      ]
+    ],
+    "eyeSize": [
+      [
+        0,
+        200
+      ],
+      [
+        520,
+        200
+      ]
+    ],
+    "squash": [
+      [
+        0,
+        0
+      ],
+      [
+        150,
+        -25,
+        "out"
+      ],
+      [
+        360,
+        0
+      ],
+      [
+        520,
+        0
+      ]
+    ]
+  }
+}

@@ -12,7 +12,7 @@ struct BoopPane: View {
         VStack(alignment: .leading, spacing: Theme.gapSection) {
             if let status = model.status {
                 if let growth = status.growth { who(growth, daysInARow: status.daysInARow, medals: status.world?.link.medals) }
-                ReasonLines(feed: model.slime, name: model.name, mood: status.snapshot.mood, wish: status.wishing,
+                ReasonLines(feed: model.slime, name: model.name, music: status.snapshot.music, mood: status.snapshot.mood, wish: status.wishing,
                             why: status.moodReason?.cause, doing: status.doingReason?.cause,
                             energy: Narration.energy(status.snapshot.energy, name: model.name))
                 if let growth = status.growth {

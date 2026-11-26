@@ -1,14 +1,11 @@
 // With you at the Mac (render/gel/face.h, showWithYou; render/gel/gaze.h), each on a frozen clock after a
 // reset. Nothing told: it rests. Your pointer, while it moves: its eyes follow it and it leans and slides
 // its way (to your left, your right, up), and at the screen's edge nearest it, it looks right at it and
-// leans in. Scrolling: it reads along, a page beside it on the Mac's side, its lines scrolling up,
-// turned and slid that way, lower, its eyes down on the page, travelling down a line and snapping back
-// up with a nod; two minutes on, settled in, lids half down; with the screen above it, up at it. Typing
-// fast: hunched in, eyes wide, paws quicker; a long stretch of typing stopped, a look up at you. Music:
-// headphones on, half-closed eyes, a sway and notes rising, then a rest with the headphones still on,
-// then a look round as it stops. A video: a small screen beside it, its light on the body, turned to it,
-// taller, eyes wide, and a small start now and then. A call: still, smaller, eyes half, a muted mic by
-// its ear; a stretch as it ends.
+// leans in. Scrolling: its eyes dart, anime style, the way you scroll: down and snapping back up, up and
+// snapping back down, or both by turns with the way not known. Typing fast: hunched in, eyes wide, paws
+// quicker; a long stretch of typing stopped, a look up at you. Music: it jams along, eyes closed, a bounce
+// on the beat and its head bobbing, a note rising from behind it now and then; a look round as it stops.
+// A call: still, smaller, eyes half, a muted mic by its ear; a stretch as it ends.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day"]}
@@ -37,37 +34,22 @@
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright"]}
 {"clock": 500}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling","scrolldown"]}
+{"clock": 1720}
+{"shot": "scroll-down-eyes-down", "pin": true}
+{"clock": 1940}
+{"shot": "scroll-down-eyes-snapped-up"}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling","scrollup"]}
+{"clock": 3180}
+{"shot": "scroll-up-eyes-up"}
+{"clock": 3400}
+{"shot": "scroll-up-eyes-snapped-down"}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
-{"clock": 1500}
-{"shot": "reading-start"}
-{"clock": 3220}
-{"shot": "reading-down-a-line"}
-{"clock": 3340}
-{"shot": "reading-next-line"}
+{"clock": 4100}
+{"shot": "scroll-either-way"}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","reading"]}
-{"clock": 4600}
-{"shot": "reading-after-you-stop"}
-{"clock": 24600}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
-{"clock": 44600}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
-{"clock": 64600}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
-{"clock": 84600}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
-{"clock": 104600}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
-{"clock": 124600}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macright","scrolling"]}
-{"clock": 126000}
-{"shot": "reading-settled", "pin": true}
-{"t":"dbg.reset"}
-{"clock":0}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macup"]}
-{"clock": 500}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macup","scrolling"]}
-{"clock": 2500}
-{"shot": "reading-up"}
+{"clock": 5000}
+{"shot": "scroll-stopped"}
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","typing"]}
@@ -88,26 +70,29 @@
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music"]}
-{"clock": 3000}
-{"shot": "music-groove", "pin": true}
-{"clock": 4500}
-{"shot": "music-groove-sway"}
-{"clock": 14500}
+{"clock": 2250}
+{"shot": "music-jam-on-the-beat"}
+{"clock": 2430}
+{"shot": "music-jam-up", "pin": true}
+{"clock": 4930}
+{"shot": "music-jam-big-bop"}
+{"clock": 5110}
+{"shot": "music-jam-big-bop-up"}
+{"clock": 17000}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music"]}
-{"clock": 24500}
+{"clock": 27000}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music"]}
-{"clock": 30000}
-{"shot": "music-rest"}
+{"clock": 37000}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music"]}
+{"clock": 47000}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music"]}
+{"clock": 57000}
+{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","music"]}
+{"clock": 61000}
+{"shot": "music-a-minute-on"}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day"]}
-{"clock": 31200}
+{"clock": 62200}
 {"shot": "music-stopped-looks-round"}
-{"t":"dbg.reset"}
-{"clock":0}
-{"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","macleft","video"]}
-{"clock": 2500}
-{"shot": "video"}
-{"clock": 12500}
-{"shot": "video-a-start"}
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0,"idle":1,"when":["day","oncall","typing"]}
@@ -119,21 +104,16 @@
 {"t":"dbg.reset"}
 {"clock":0}
 {"clock":0}
-{"t":"state","base":"working","mood":"calm","vol":0,"act":"analyzing","busy":1,"calls":[[0,1,"grep"]],"when":["day","scrolling","macright"]}
+{"t":"state","base":"working","mood":"calm","vol":0,"act":"analyzing","busy":1,"calls":[[0,1,"grep"]],"when":["day","scrolling","scrolldown","macright"]}
 {"clock": 2500}
-{"shot": "reading-at-work"}
-// At work, at the light size (a pose of its own, here looking): music,
-// a video, and a call at its desk; and music while you type, idle.
+{"shot": "scrolling-at-work"}
+// At work (a pose of its own, here looking): music jams smaller at its
+// desk, and a call; and music while you type, idle.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"calm","vol":0,"act":"analyzing","busy":1,"calls":[[0,1,"grep"]],"when":["day","music","macright"]}
 {"clock": 2500}
 {"shot": "music-at-work"}
-{"t":"dbg.reset"}
-{"clock":0}
-{"t":"state","base":"working","mood":"calm","vol":0,"act":"analyzing","busy":1,"calls":[[0,1,"grep"]],"when":["day","video","macright"]}
-{"clock": 2500}
-{"shot": "video-at-work"}
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"calm","vol":0,"busy":1,"calls":[[0,2,"editing Core.swift +12"]],"when":["day","oncall","macright"]}

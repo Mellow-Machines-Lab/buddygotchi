@@ -130,29 +130,17 @@ class GelFace final : public Face {
   // How long its keyboard stays out after you stop typing (showAlong).
   static constexpr uint32_t kAlongLingerMs = 4000;
   // With you at the Mac (showWithYou): a pose's clip comes and goes over
-  // kWithFadeMs; it reads along kReadLingerMs after your last scroll, and
-  // settles in for a long read once it has read along kSettleMs, a gap of
-  // kReadGapMs or more without a scroll starting the read again; with music
-  // it gets into it kGrooveMs, then rests kGrooveRestMs, and again. A lean
-  // toward the screen or the pointer is at most kLeanReach (the rig's lean,
-  // thousandths), kPointerLean a step of the pointer's way across; up its
-  // way, it stretches up kPointerStretch a step; and the body follows both
-  // over about kLeanMs.
-  static constexpr uint32_t kWithFadeMs = 600, kReadLingerMs = 6000, kSettleMs = 120000, kReadGapMs = 60000;
-  static constexpr uint32_t kGrooveMs = 24000, kGrooveRestMs = 180000, kLeanMs = 350;
-  static constexpr int kLeanReach = 160, kPointerLean = 14, kPointerStretch = 6, kNearStretch = 50;
-  // The pointer also slides the body its way, kPointerSlide px a step at
-  // most, and turns the eyes further than a look alone, kPointerGaze a step
-  // across and kPointerGazeUp up or down (the rig's gaze, thousandths).
-  static constexpr int kPointerSlide = 1, kPointerGaze = 55, kPointerGazeUp = 45;
-  // Turned to the screen, watching: slid its way kScreenSlide px, its eyes
-  // kScreenGaze across. Reading: further, kReadLean and kReadSlide, its eyes
-  // lowered kPageGaze to the page. With the screen up (`macup`): its eyes
-  // kScreenGazeUp up, and stretched up kUpStretch.
-  static constexpr int kScreenSlide = 10, kScreenGaze = 450, kPageGaze = 350, kReadLean = 220, kReadSlide = 14;
-  static constexpr int kScreenGazeUp = 600, kUpStretch = 150;
-  // The page beside it scrolls this many px a second while you scroll.
-  static constexpr int kPageScroll = 14;
+  // kWithFadeMs. The pointer leans the body its way kPointerLean a step of
+  // its way across (the rig's lean, thousandths), kNearLean at the edge
+  // nearest the board; up its way, it stretches up kPointerStretch a step,
+  // kNearStretch at the edge; and the body follows both over about kLeanMs.
+  static constexpr uint32_t kWithFadeMs = 600, kLeanMs = 350;
+  static constexpr int kNearLean = 215, kPointerLean = 19, kPointerStretch = 8, kNearStretch = 68;
+  // The pointer also slides the body its way, kPointerSlide tenths of a px
+  // a step, and turns the eyes further than a look alone, kPointerGaze a
+  // step across and kPointerGazeUp up or down (the rig's gaze, thousandths).
+  // With the screen up (`macup`), at the edge its eyes go kScreenGazeUp up.
+  static constexpr int kPointerSlide = 14, kPointerGaze = 75, kPointerGazeUp = 60, kScreenGazeUp = 600;
   // Typing fast stays fast through a flicker off this long (showAlong).
   static constexpr uint32_t kFastLingerMs = 800;
   // What it does with you now besides typing along, and the rig's channels
@@ -260,58 +248,49 @@ class GelFace final : public Face {
   bool fast_ = false, typingTag_ = false, thought_ = false;
   uint32_t typingFrom_ = 0, thinkAt_ = 0;
   // With you at the Mac besides typing along: each is the body, the eyes and
-  // the paws, and one mark on or beside it that reads at arm's length, as
-  // typing along's ticks and speaking's rings do (Engine::With, drawn in
-  // render/gel/layers.cpp). Lowest of all, below typing along: it waits for
+  // the paws, and for music and a call one mark on or beside it that reads
+  // at arm's length, as typing along's ticks and speaking's rings do
+  // (Engine::With, drawn in render/gel/layers.cpp). Lowest of all, below typing along: it waits for
   // a pastime or a transition, gives way at once to a finger, a Moment, a
   // word forward, needs you or sleep. At work in a pose of its own, or with
   // a card held, it's light (GelFace::light): a call and speaking show, and
-  // the poses that move the whole body (reading, a video, music) give way to
-  // the eyes, the marks staying. The one shown, first that fits:
+  // the scroll's eyes give way to the pose's. At work in any pose, or with a
+  // card held, music jams smaller at the desk (`jam-desk`), over the pose,
+  // the notes staying. The one shown, first that fits:
   //
   // - on a call (`oncall`): still and a little smaller, its eyes half
   //   closed (`on-call`), a muted mic held still by its ear on the Mac's
   //   side and nothing else; no typing along, music or pastime, and its
   //   board silent (the Mac sends no volume). As the call ends, it stretches
   //   up (`stretch`);
-  // - reading along while you scroll (`scrolling`), and kReadLingerMs after:
-  //   a page beside it on the Mac's side, its lines scrolling up while you
-  //   scroll; turned and slid that way (or up at it), lower, its eyes down
-  //   on the page, travelling down a line and back up with a small nod
-  //   (`read-along`); after kSettleMs, settled in lower, its lids half down
-  //   (`read-along-settled`);
-  // - a video (`video`): a small screen beside it on the Mac's side, a play
-  //   mark on it, its light on the body, a new colour every few seconds;
-  //   turned to it, taller and still, eyes wide, a slow blink, and now and
-  //   then a small start (`video`);
-  // - music (`music`): headphones on for as long as it plays, typing along
-  //   too; it gets into it kGrooveMs, eyes half closed, a content face,
-  //   swaying with a nod at each end (`groove`), notes rising from the
-  //   headphones, then rests; as the music stops it opens its eyes and
-  //   looks around (`look-around`).
+  // - scrolling (`scrolling`): its eyes dart, anime style, a little wide,
+  //   the way you scroll: down and snapping back up (`scroll-down`, with
+  //   `scrolldown`), up and snapping back down (`scroll-up`), or both by
+  //   turns when the Mac doesn't know the way (`scroll`);
+  // - music (`music`): it jams along for as long as it plays, its eyes
+  //   closed in a content face, a bounce on the beat and its head bobbing
+  //   side to side (`jam`), a note now and then rising from behind it,
+  //   typing along too; as the music stops it opens its eyes and looks
+  //   around (`look-around`).
   //
-  // While a call, a read, a video or a groove is on, no pastime
-  // is dealt. The pointer (state.ptr) moves the eyes (gaze.h) and leans the
+  // While a call, the scroll's eyes or a jam is on, no pastime is dealt. The pointer (state.ptr) moves the eyes (gaze.h) and leans the
   // body a little its way, more at the edge nearest the board.
   WithYou with_ = WithYou::kNone, wanted_ = WithYou::kNone;
   const rig::Clip* withClip_ = nullptr;
-  bool scrolled_ = false, music_ = false, called_ = false, settled_ = false;
+  bool music_ = false, called_ = false, deskJam_ = false;
   // The clips it plays for you, found once (none for a pose: none plays):
-  // a pose's by what it is, the long read's, typing along's and its fast
-  // one, and the moves once.
+  // a pose's by what it is, the scroll's either way, the jam at the desk,
+  // typing along's and its fast one, and the moves once.
   struct Clips {
-    const rig::Clip* with[6];
-    const rig::Clip *settled, *along, *fast, *stretch, *lookAround;
+    const rig::Clip* with[5];
+    const rig::Clip *scrollDown, *scrollUp, *deskJam, *along, *fast, *stretch, *lookAround;
   };
   static const Clips clips_;
-  uint32_t scrolledAt_ = 0, readFrom_ = 0, musicFrom_ = 0;
+  uint32_t musicFrom_ = 0;
   // What it has on or beside it (Engine::With), each fading in and out over
-  // the rig's fade: headphones, the page, the screen, the muted mic. The
-  // page's lines scroll kPageScroll px a second while you scroll, from
-  // where they were (scrolledMs_ of scrolling, to withAt_), kPageScroll.
-  enum Mark { kHeadphones, kPage, kScreen, kMuted, kMarks };
+  // the rig's fade: the music's notes, the muted mic.
+  enum Mark { kNotes, kMuted, kMarks };
   rig::Ramp marks_[kMarks];
-  uint32_t scrolledMs_ = 0, withAt_ = 0;
   bool pointer_ = false, pointerNear_ = false;
   int pointerX_ = 0, pointerY_ = 0;
   // What it follows on the rig's channels, over the mixer's: the lean, the

@@ -404,11 +404,11 @@ final class ReasonsTests: XCTestCase {
         let body = String(face[face.range(of: "const char* GelFace::passing")!.lowerBound...].prefix(800))
         let said = try NSRegularExpression(pattern: #"return "([a-z-]+)";"#)
         let others = said.matches(in: body, range: NSRange(body.startIndex..., in: body)).map { String(body[Range($0.range(at: 1), in: body)!]) }
-        XCTAssertEqual(Set(others), ["along", "oncall", "speaking", "reading", "video", "music"], "passing()'s own names")
+        XCTAssertEqual(Set(others), ["along", "oncall", "speaking", "scrolling", "music"], "passing()'s own names")
         for n in names + others + ["to-work", "to-rest", "to-sleep"] {
             XCTAssertNotNil(pack.passing[n], "\(n) has no words in mac/passing.tsv")
         }
-        XCTAssertEqual(Narration.passing("reading", in: pack.named("Mochi")), "Mochi's reading along with you.")
+        XCTAssertEqual(Narration.passing("scrolling", in: pack.named("Mochi")), "Mochi's watching you scroll.")
         XCTAssertEqual(Narration.passing("hop", in: pack.named("Boop")), "Boop's hopping to pass the time.")
         XCTAssertEqual(Narration.passing("to-work", in: pack.named("Boop")), "Boop's getting to work.")
     }

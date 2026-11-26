@@ -38,7 +38,8 @@ const rig::Clip& clipNamed(const char* name) {
 // read every tick.
 constexpr uint32_t bitOf(const char* name) { return 1u << tagIndex(name); }
 constexpr uint32_t kCallTag = bitOf("oncall"), kScrollingTag = bitOf("scrolling"),
-                   kMusicTag = bitOf("music"), kVideoTag = bitOf("video"), kFastTag = bitOf("typingfast"),
+                   kMusicTag = bitOf("music"), kScrollUpTag = bitOf("scrollup"),
+                   kScrollDownTag = bitOf("scrolldown"), kFastTag = bitOf("typingfast"),
                    kTypingTag = bitOf("typing"), kMacLeftTag = bitOf("macleft"),
                    kMacRightTag = bitOf("macright"), kMacUpTag = bitOf("macup"),
                    kSpeakingTag = bitOf("speaking");
@@ -47,11 +48,13 @@ constexpr uint32_t kCallTag = bitOf("oncall"), kScrollingTag = bitOf("scrolling"
 
 const voice::EffectClips& GelFace::clips() const { return gel::clips(); }
 
-// By WithYou's order: none, music, video, reading, speaking, on a call.
+// By WithYou's order: none, music, scrolling (the way not known), speaking,
+// on a call.
 const GelFace::Clips GelFace::clips_ = {
-    {nullptr, &clipNamed("groove"), &clipNamed("video"), &clipNamed("read-along"), &clipNamed("speak-along"),
-     &clipNamed("on-call")},
-    &clipNamed("read-along-settled"),
+    {nullptr, &clipNamed("jam"), &clipNamed("scroll"), &clipNamed("speak-along"), &clipNamed("on-call")},
+    &clipNamed("scroll-down"),
+    &clipNamed("scroll-up"),
+    &clipNamed("jam-desk"),
     &clipNamed("type-along"),
     &clipNamed("type-along-fast"),
     &clipNamed("stretch"),
@@ -102,9 +105,8 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   tapping_ = typed_ = false, typedAt_ = 0;
   fast_ = typingTag_ = thought_ = false, typingFrom_ = thinkAt_ = 0;
   with_ = wanted_ = WithYou::kNone, withClip_ = nullptr;
-  scrolled_ = music_ = called_ = settled_ = false, scrolledAt_ = readFrom_ = musicFrom_ = 0;
+  music_ = called_ = deskJam_ = false, musicFrom_ = 0;
   for (auto& m : marks_) m = rig::Ramp{};
-  scrolledMs_ = 0, withAt_ = t;
   pawPhaseQ_ = 0, fastSeen_ = 0;
   pointer_ = pointerNear_ = false, pointerX_ = pointerY_ = 0;
   for (int i = 0; i < kFollows; ++i) followTo_[i] = followBy_[i] = 0;
@@ -493,35 +495,37 @@ void GelFace::showWithYou(uint32_t t) {
   SceneState look;
   const bool free = freeForYou(t, look) && !tapping_ && !e.acting.current() && !e.router.listening;
   const bool call = when & kCallTag;
-  if (when & kScrollingTag) {
-    if (!scrolled_ || t - scrolledAt_ >= kReadGapMs) readFrom_ = t;
-    scrolled_ = true, scrolledAt_ = t;
-  }
-  const bool reading = scrolled_ && within(t, scrolledAt_, kReadLingerMs) && !light(look);
+  const bool scrolling = (when & kScrollingTag) && !light(look);
   const bool music = when & kMusicTag;
+  // At work, in any pose, or with a card held: the jam's smaller, at the desk.
+  const bool desk = light(look) || look == SceneState::kWorking;
   if (music && !music_) musicFrom_ = t;
   const bool musicStopped = music_ && !music;
   music_ = music;
-  const bool grooving = music && (t - musicFrom_) % (kGrooveMs + kGrooveRestMs) < kGrooveMs && !light(look);
-  wanted_ = call       ? WithYou::kCall
+  wanted_ = call                    ? WithYou::kCall
             : (when & kSpeakingTag) ? WithYou::kSpeaking
-            : reading  ? WithYou::kReading
-            : (when & kVideoTag) && !light(look) ? WithYou::kVideo
-            : grooving ? WithYou::kMusic
-                       : WithYou::kNone;
+            : scrolling             ? WithYou::kScrolling
+            : music && !desk        ? WithYou::kMusic
+                                    : WithYou::kNone;
   const WithYou now = free ? wanted_ : WithYou::kNone;
   // As each ends: a stretch back up after a call, a look round as the
   // music stops. Not over anything else.
   if (called_ && !call) once(*clips_.stretch, t);
   else if (musicStopped && !call) once(*clips_.lookAround, t);
   called_ = call;
-  settled_ = now == WithYou::kReading && t - readFrom_ >= kSettleMs;
-  const rig::Clip* clip = now == WithYou::kReading && settled_ ? clips_.settled : clips_.with[int(now)];
+  // The scroll's eyes go the way you scroll, when the Mac knows it.
+  const rig::Clip* clip = now != WithYou::kScrolling ? clips_.with[int(now)]
+                          : (when & kScrollDownTag)  ? clips_.scrollDown
+                          : (when & kScrollUpTag)    ? clips_.scrollUp
+                                                     : clips_.with[int(now)];
   if (clip != withClip_) {
     if (withClip_) mixer_.stop(*withClip_);
     if (clip) mixer_.play(*clip, kWithFadeMs);
     withClip_ = clip;
   }
+  const bool deskJam = free && music && desk && !call && !(when & kSpeakingTag);
+  if (deskJam != deskJam_) deskJam ? mixer_.play(*clips_.deskJam, kWithFadeMs) : mixer_.stop(*clips_.deskJam);
+  deskJam_ = deskJam;
   // The engine's own idle gestures wait while it's with you.
   if (clip) holdGestures(*clip);
   with_ = now;
@@ -529,59 +533,43 @@ void GelFace::showWithYou(uint32_t t) {
   engine_->speakingSide = when & kMacLeftTag ? -1 : 1;
   const int mac = (when & kMacLeftTag) ? -1 : (when & kMacRightTag) ? 1 : 0;
   // What it has on or beside it (Engine::With), so each reads at a glance
-  // where a pose alone is too small to see: at the light size too, and
-  // the headphones while it types along. Not over a Moment, a finger or
-  // listening, nor a pastime but the headphones; a call has only its muted
-  // mic, and speaking's hand is at its ear, so no headphones then. The page
-  // and the screen stand beside it, so neither while its paws are busy or a
-  // card is held.
+  // where a pose alone is too small to see: at the light size too, and the
+  // music's notes while it types along. Not over a Moment, a finger or
+  // listening, nor a pastime but the notes; a call has only its muted mic,
+  // and speaking's hand is at its ear, so no notes then.
   {
     SceneState place;
     const bool open = freeForYou(t, place) && !e.acting.current() && !e.router.listening;
-    const bool speaks = when & kSpeakingTag, read = scrolled_ && within(t, scrolledAt_, kReadLingerMs);
-    const bool beside = open && !call && !speaks && !tapping_ && !card_.on;
-    const bool page = beside && read, screen = beside && !read && (when & kVideoTag);
-    // Headphones stay on through a pastime (a bit or a take of the engine's
-    // too) or a transition, so they don't come and go between grooves.
+    const bool speaks = when & kSpeakingTag;
+    // The notes keep rising through a pastime (a bit or a take of the
+    // engine's too) or a transition, so they don't come and go.
     SceneState shown;
-    const bool worn = showsLook(source_.anim, shown) && (shown == SceneState::kIdle || shown == SceneState::kWorking) &&
-                      !finger_ && !alone_ && !e.router.listening;
-    const bool phones = worn && music && !call && !speaks;
-    const bool on[kMarks] = {phones, page, screen, open && call};
+    const bool shows = showsLook(source_.anim, shown) && (shown == SceneState::kIdle || shown == SceneState::kWorking) &&
+                       !finger_ && !alone_ && !e.router.listening;
+    const bool notes = shows && music && !call && !speaks;
+    const bool on[kMarks] = {notes, open && call};
     for (int i = 0; i < kMarks; ++i) marks_[i].retarget(on[i] ? 1000 : 0, t);
-    if (page && (when & kScrollingTag)) scrolledMs_ += std::min<uint32_t>(t - withAt_, 100);
-    withAt_ = t;
     Engine::With& w = engine_->with;
     auto opacity = [&](Mark m) { return (marks_[m].value(t) * 255 + 500) / 1000; };
-    w.headphones = opacity(kHeadphones), w.page = opacity(kPage), w.screen = opacity(kScreen), w.muted = opacity(kMuted);
+    w.notes = opacity(kNotes), w.muted = opacity(kMuted);
     w.side = mac ? mac : 1;
-    w.scroll = int(scrolledMs_ * kPageScroll / 1000);
-    w.notes = phones && !page && !screen && !tapping_ && (t - musicFrom_) % (kGrooveMs + kGrooveRestMs) < kGrooveMs;
     w.notesMs = t - musicFrom_;
   }
-  // Turned to the screen, reading or watching: to the Mac's side, or up at
-  // it; to the pointer while it moves, and further at the edge nearest the
+  // To the pointer while it moves, and further at the edge nearest the
   // board, reaching toward it. Never on a call.
   const bool up = !mac && (when & kMacUpTag);
   int* to = followTo_;
   for (int i = 0; i < kFollows; ++i) to[i] = 0;
-  if (now == WithYou::kReading) {
-    to[kFollowLean] = mac * kReadLean, to[kFollowX] = mac * kReadSlide, to[kFollowGazeX] = mac * kScreenGaze;
-    to[kFollowGazeY] = up ? -kScreenGazeUp : kPageGaze;
-    if (up) to[kFollowSquash] = -kUpStretch;
-  } else if (now == WithYou::kVideo) {
-    to[kFollowLean] = mac * kLeanReach, to[kFollowX] = mac * kScreenSlide, to[kFollowGazeX] = mac * kScreenGaze;
-    if (up) to[kFollowGazeY] = -kScreenGazeUp, to[kFollowSquash] = -kUpStretch;
-  }
   if (free && now != WithYou::kCall && pointer_) {
     const int side = pointerX_ > 0 ? 1 : pointerX_ < 0 ? -1 : mac;
     if (pointerNear_) {
-      to[kFollowLean] = side * kLeanReach, to[kFollowSquash] = -kNearStretch;
-      to[kFollowX] = side * Gaze::kPointerReach * kPointerSlide, to[kFollowGazeX] = side * Gaze::kPointerReach * kPointerGaze;
+      to[kFollowLean] = side * kNearLean, to[kFollowSquash] = -kNearStretch;
+      to[kFollowX] = side * Gaze::kPointerReach * kPointerSlide / 10;
+      to[kFollowGazeX] = side * Gaze::kPointerReach * kPointerGaze;
       if (!side && up) to[kFollowGazeY] = -kScreenGazeUp;
     } else {
       to[kFollowLean] = pointerX_ * kPointerLean, to[kFollowSquash] = pointerY_ < 0 ? pointerY_ * kPointerStretch : 0;
-      to[kFollowX] = pointerX_ * kPointerSlide;
+      to[kFollowX] = pointerX_ * kPointerSlide / 10;
       to[kFollowGazeX] = pointerX_ * kPointerGaze, to[kFollowGazeY] = pointerY_ * kPointerGazeUp;
     }
   }
@@ -820,8 +808,7 @@ const char* GelFace::passing(uint32_t t) const {
   switch (with_) {
     case WithYou::kCall: return "oncall";
     case WithYou::kSpeaking: return "speaking";
-    case WithYou::kReading: return "reading";
-    case WithYou::kVideo: return "video";
+    case WithYou::kScrolling: return "scrolling";
     case WithYou::kMusic: return "music";
     case WithYou::kNone: break;
   }

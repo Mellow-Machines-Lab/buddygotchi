@@ -160,147 +160,30 @@ Sides sides(const rig::Anchors& at) {
   return s;
 }
 
-constexpr uint16_t kPhones = rgb565(236, 232, 244), kCushion = rgb565(70, 74, 104), kPageInk = rgb565(132, 140, 160);
+constexpr uint16_t kNoteInk = rgb565(236, 232, 244);
 
-// Headphones: a band over the top of its head from ear to ear, hugging the
-// dome a little above it, and a cup over each ear.
-void headphones(Raster& r, const rig::Anchors& at, int alpha) {
-  const Ears e = ears(at);
-  const int cx = (e.left + e.right) * 8, cy = e.y * 16;  // sixteenths
-  const int rx = (e.right - e.left) * 8 + 2 * 16, ry = cy - at.crown.y + 6 * 16;
-  Point band[17];
-  for (int k = 0; k <= 16; ++k) {
-    const Point p = turn(16 + k);  // from its left, over the top, to its right
-    band[k] = {cx + rx * p.x / 4096, cy - 8 * 16 + ry * p.y / 4096};
-  }
-  r.alpha = alpha;
-  r.stroke16(band, 17, 10 * 16, kCardInk);
-  r.stroke16(band, 17, 6 * 16, kPhones);
-  for (int side = -1; side <= 1; side += 2) {
-    const int x = (side > 0 ? e.right : e.left) + side * 3, y = e.y;
-    r.round(x - 10, y - 17, 20, 34, 9, kCardInk);
-    r.round(x - 8, y - 15, 16, 30, 7, kPhones);
-    r.round(x - 5 + side * 2, y - 11, 6, 22, 3, kCushion);
-  }
-  r.alpha = 255;
-}
-
-// Notes rising from the headphones while it grooves: one every 1.5 s from
-// each cup in turn, drifting up and out over 2.4 s and fading on the way.
+// While music plays: a note rising from behind it, one at a time, every
+// 3.2 s, from behind its shoulder on one side and then the other, drifting
+// up over 3 s with a small sway and fading in and out, rimmed dark.
 void notes(Raster& r, const rig::Anchors& at, uint32_t ms, int alpha) {
-  constexpr int kEvery = 1500, kLife = 2400;
-  const Ears e = ears(at);
-  for (int i = 0; i < 2; ++i) {
-    const int n = int(ms / kEvery) - i;
-    if (n < 0) continue;
-    const int age = int(ms - uint32_t(n) * kEvery);
-    if (age >= kLife) continue;
-    const int side = n % 2 ? 1 : -1;
-    const int x = (side > 0 ? e.right : e.left) + side * (18 + age * 14 / kLife) + (age / 300 % 2 ? 2 : -2);
-    const int y = e.y - 28 - age * 46 / kLife;
-    r.alpha = alpha * std::min(255, std::min(age * 255 / 200, (kLife - age) * 255 / 900)) / 255;
-    const bool two = n % 3 == 1;  // now and then a pair, beamed
-    for (int pass = 0; pass < 2; ++pass) {
-      const uint16_t ink = pass ? kPhones : kCardInk;
-      const int grow = pass ? 0 : 2;
-      r.disk(x - 4, y + 6, 5 + grow, ink);
-      r.line({x, y + 6}, {x, y - 12}, 2 + 2 * grow, ink);
-      if (two) {
-        r.disk(x + 10, y + 3, 5 + grow, ink);
-        r.line({x + 14, y + 3}, {x + 14, y - 15}, 2 + 2 * grow, ink);
-        r.line({x, y - 12}, {x + 14, y - 15}, 4 + 2 * grow, ink);
-      } else {
-        r.line({x, y - 12}, {x + 7, y - 5}, 3 + 2 * grow, ink);
-      }
-    }
-  }
-  r.alpha = 255;
-}
-
-// A page beside it on the Mac's side, a little below its eyes, where it
-// reads: lines of words scrolling up as you scroll, and the scroll bar's
-// thumb going down with them.
-void page(Raster& r, const Surface& s, const rig::Anchors& at, int side, int scroll, int alpha) {
-  constexpr int kW = 58, kH = 74, kGap = 10, kLine = 10;
-  const Ears e = ears(at);
-  const Sides b = sides(at);
-  const int y = e.y - 8, edge = s.inset(y, y + kH) + 4;
-  const int x = std::clamp(side > 0 ? b.right + kGap : b.left - kGap - kW, edge, s.width - edge - kW);
-  r.alpha = alpha;
-  r.round(x - 2, y - 2, kW + 4, kH + 4, 7, kCardInk);
-  r.round(x, y, kW, kH, 5, kCream);
-  // The lines, cut to the page's inside.
-  static constexpr int kLengths[] = {40, 32, 42, 24, 36, 42, 30, 18, 34, 41};
-  r.bounds = {x + 4, y + 5, x + kW - 4, y + kH - 5};
-  const int first = scroll / kLine, off = scroll % kLine;
-  for (int i = 0; i < 8; ++i) {
-    const int len = kLengths[(first + i) % 10];
-    r.round(x + 6, y + 6 + i * kLine - off, len, 4, 2, kPageInk);
+  constexpr int kEvery = 3200, kLife = 3000, kRise = 60, kSize = 6;
+  const int n = int(ms / kEvery), age = int(ms % kEvery);
+  if (age >= kLife) return;
+  const int side = n % 2 ? 1 : -1;
+  const Point sway = turn(age * 32 / 1500 % 32);
+  const int x = at.crown.x / 16 + side * (48 + age * 12 / kLife) + 2 * sway.x / 4096;
+  const int y = at.crown.y / 16 + 22 - age * kRise / kLife;
+  r.alpha = alpha * std::min(255, std::min(age * 255 / 500, (kLife - age) * 255 / 1000)) / 255;
+  // Behind the body: only what has come up over its shoulder shows.
+  r.bounds = {0, 0, 1 << 30, at.crown.y / 16 + 12};
+  for (int pass = 0; pass < 2; ++pass) {
+    const uint16_t ink = pass ? kNoteInk : kCardInk;
+    const int grow = pass ? 0 : 2;
+    r.disk(x - kSize + 1, y + kSize + 2, kSize + grow, ink);
+    r.line({x, y + kSize + 2}, {x, y - kSize * 2 - 2}, 2 + 2 * grow, ink);
+    r.line({x, y - kSize * 2 - 2}, {x + kSize + 3, y - kSize}, 3 + 2 * grow, ink);
   }
   r.bounds = Raster::kEverywhere;
-  const int thumb = scroll / 2 % (kH - 24);
-  r.round(x + kW - 7, y + 4 + thumb, 4, 18, 2, kGel);
-  r.alpha = 255;
-}
-
-// A video's light: the colour its screen shows now, a new scene every
-// 2.6 s, crossing over 0.5 s.
-uint16_t sceneLight(uint32_t ms) {
-  static constexpr uint16_t kScenes[] = {rgb565(255, 168, 92), rgb565(214, 120, 236), rgb565(120, 232, 168),
-                                         rgb565(255, 236, 200)};
-  constexpr uint32_t kHold = 2600, kCross = 500;
-  const uint32_t n = ms / kHold, into = ms % kHold;
-  const uint16_t now = kScenes[n % 4];
-  if (into >= kCross || !n) return now;
-  return mix565(kScenes[(n + 3) % 4], now, int(into * 255 / kCross));
-}
-
-// The screen's light on its body: the light added to each pixel of the
-// body by how bright it is, so the dark eyes and mouth keep their shape,
-// strongest on the side the screen is on. Only what's drawn (not the
-// black round it) and above the lane.
-void screenLight(Surface& s, const rig::Anchors& at, int side, uint16_t light, int alpha) {
-  int x0 = at.crown.x / 16, x1 = x0, y1 = at.crown.y / 16;
-  for (const Point& p : at.hem) x0 = std::min(x0, p.x / 16), x1 = std::max(x1, p.x / 16), y1 = std::max(y1, p.y / 16);
-  for (const Point& p : at.lap) x0 = std::min(x0, p.x / 16), x1 = std::max(x1, p.x / 16);
-  x0 = std::max(0, x0 - 24), x1 = std::min(s.width, x1 + 24);
-  const int y0 = std::max(0, at.crown.y / 16 - 4);
-  y1 = std::min({s.height * 4 / 5, y1 + 4, Surface::kTrackedRows});
-  if (x1 <= x0) return;
-  for (int y = y0; y < y1; ++y) {
-    uint16_t* row = s.pixels + y * s.width;
-    for (int x = x0; x < x1; ++x) {
-      const uint16_t p = row[x];
-      if (!p) continue;
-      const int luma = ((p >> 11) * 2 * 77 + ((p >> 5) & 63) * 150 + (p & 31) * 2 * 29) >> 6;  // 0–255
-      const int across = side > 0 ? (x - x0) * 255 / (x1 - x0) : (x1 - x) * 255 / (x1 - x0);
-      const int a = alpha * across / 255 * luma / 255 * 230 / 255;
-      if (a <= 0) continue;
-      // Added, as light is: the gel brighter and warmer or cooler for it.
-      const int r5 = std::min(31, (p >> 11) + (light >> 11) * a / 255);
-      const int g6 = std::min(63, ((p >> 5) & 63) + ((light >> 5) & 63) * a / 255);
-      const int b5 = std::min(31, (p & 31) + (light & 31) * a / 255);
-      row[x] = uint16_t(r5 << 11 | g6 << 5 | b5);
-    }
-  }
-}
-
-// The screen it watches, beside it on the Mac's side at its eyes' height:
-// lit in the scene's colour, a play mark on it.
-void screen(Raster& r, const Surface& s, const rig::Anchors& at, int side, uint16_t light, int alpha) {
-  constexpr int kW = 66, kH = 44, kGap = 10;
-  const Sides b = sides(at);
-  const int y = at.eyeL.y / 16 - kH / 2 - 10, edge = s.inset(y, y + kH) + 4;
-  const int x = std::clamp(side > 0 ? b.right + kGap : b.left - kGap - kW, edge, s.width - edge - kW);
-  r.alpha = alpha;
-  r.round(x - 3, y - 3, kW + 6, kH + 6, 7, kCardInk);
-  r.round(x, y, kW, kH, 4, mix565(light, kCardInk, 50));
-  const int cx = x + kW / 2, cy = y + kH / 2;
-  const Point play[] = {{cx - 8, cy - 12}, {cx + 13, cy}, {cx - 8, cy + 12}};
-  r.polygon(play, 3, rgb565(255, 255, 255));
-  // Its stand.
-  r.round(cx - 3, y + kH + 3, 6, 5, 1, kCardInk);
-  r.round(cx - 12, y + kH + 7, 24, 4, 2, kCardRim);
   r.alpha = 255;
 }
 
@@ -329,18 +212,9 @@ void mutedMic(Raster& r, const rig::Anchors& at, int side, int alpha) {
   r.alpha = 255;
 }
 
-void paintWith(Surface& s, Raster& r, const Engine& e, const rig::Anchors& at, int ms) {
+void paintWith(Raster& r, const Engine& e, const rig::Anchors& at) {
   const Engine::With& w = e.with;
-  if (w.screen) {
-    const uint16_t light = sceneLight(uint32_t(ms));
-    screenLight(s, at, w.side, light, w.screen);
-    screen(r, s, at, w.side, light, w.screen);
-  }
-  if (w.page) page(r, s, at, w.side, w.scroll, w.page);
-  if (w.headphones) {
-    headphones(r, at, w.headphones);
-    if (w.notes) notes(r, at, w.notesMs, w.headphones);
-  }
+  if (w.notes) notes(r, at, w.notesMs, w.notes);
   if (w.muted) mutedMic(r, at, w.side, w.muted);
 }
 
@@ -369,7 +243,7 @@ void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at, const rig:
   const Contents now = layerContents(e);
   auto content = [&](Layer l, uint32_t whole) { return layers ? layers->content(l, t) : whole; };
   auto fade = [&](Layer l) { return layers ? (layers->opacity(l, t) * 255 + 500) / 1000 : 255; };
-  paintWith(s, r, e, at, ms);
+  paintWith(r, e, at);
   if (e.speaking) speakingHand(r, at, e.speakingSide, ms);
   else if (e.typingAlong) typingTicks(r, at, e.typingPhase, e.typingFast);
   r.fade = fade(Layer::kBeside);

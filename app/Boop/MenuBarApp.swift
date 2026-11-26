@@ -445,6 +445,7 @@ final class AppModel: ObservableObject {
         if s.waiting > 0 { return s.waiting == 1 ? "Needs you" : "\(s.waiting) sessions need you" }
         switch s.doing {
         case "working": return "Working"
+        case "idle" where s.music: return "Likes your music"
         case "idle": return "Resting"
         default: return "Napping"
         }

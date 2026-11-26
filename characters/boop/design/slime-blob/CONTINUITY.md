@@ -1092,9 +1092,8 @@ quick as they follow a finger, so a look is a turn and never a dart.
 | A stretch of typing along of 8 s or more stops (thinking with you) | Up at you | 2 s (`kThinkAfterMs`, `kThinkMs`) |
 | At work in a pose of its own: looking, running, waiting | Where the pose's clip has its eyes (down a page, on the monitor, out at you: the rig's `gazeX` and `gazeY`); the rule itself rests | While the pose lasts |
 | On a call (`oncall`) | Forward, still | While the call lasts |
-| Your pointer moves (`state.ptr`), where it's free for you (never asleep) | Its way, as you see the board: across `ptr`'s x × 42 px and up or down y × 36 (`kPointerX`, `kPointerY`); at the edge of the screen nearest the board, right at it on the Mac's side, or up | Until the Mac stops sending it, 3 s after it stops |
-| Reading along (`scrolling`) | At its page, to the Mac's side (`kPageReach`, `kPageY`) or up at the screen (`kPageUpY`); the line-by-line travel is the `read-along` clip's | While it reads along |
-| A video (`video`) | The Mac's side, at its eyes' height, or up at the screen, still | While it watches |
+| Your pointer moves (`state.ptr`), where it's free for you (never asleep) | Its way, as you see the board: across `ptr`'s x × 57 px and up or down y × 48 (`kPointerX`, `kPointerY`); at the edge of the screen nearest the board, right at it on the Mac's side, 560 px out (`kNearReach`), or up | Until the Mac stops sending it, 3 s after it stops |
+| Scrolling (`scrolling`) | Forward; the darts up and down are its clip's (`scroll-down`, `scroll-up`, `scroll`) | While you scroll |
 | Otherwise | Forward, with the engine's own small wander | |
 
 Nothing of it applies while anything else has the eyes: a finger, a
@@ -1139,42 +1138,45 @@ typing along, music or pastime, and stretches up as the call ends; while
 you speak (`speaking`, another app recording with no camera) it leans in,
 nods on a slow 1.6 s beat (`speak-along`) and holds a hand cupped at its
 ear on the Mac's side with rings pulsing by it (`gel/layers.cpp`), winning
-over typing along; while you scroll (`scrolling`) and 6 s after, it reads
-along, leaned 220 and slid 14 px to the Mac's side (or stretched up 150 at
-it, `macup`), lower, its eyes down on the page, travelling down a line in
-1.15 s and snapping back up with a small nod (`read-along`, a 1.4 s loop),
-and settles in after 2 minutes of reading, lower still, its lids half down
-(`read-along-settled`); a video (`video`) turns and slides it 10 px to the
-screen, a little taller, its eyes wide and fixed, with a slow blink and
-once every 20 s a small start, a lift and back (`video`); music (`music`)
-gets it into a groove 24 s, its eyes half closed, a content face (the
-`pleased` one, unless its mood keeps its own), a slow sway and a nod at
-each end (`groove`), then 3 minutes' rest, and again; as it stops, a look
-round (`look-around`). Each pose comes and goes over 600 ms
-(`kWithFadeMs`). The pointer leans it its way, 14 a step of `ptr`, slides
-it 1 px a step and turns the eyes further (the rig's gaze, 55 a step
-across, 45 up or down), and up its way it stretches up; at the edge nearest
-the board it leans in 160 toward the Mac's side, reaching up 50. The lean,
-slide and gaze follow over about 350 ms (`kLeanMs`), so a pointer that
-jumps is followed, never jumped to. While any of them is on, no pastime is
-dealt. The Mac never says what you scroll, hear, watch, say or copy.
+over typing along; while you scroll (`scrolling`, which the Mac holds
+1.5 s after the last scroll) its eyes dart, anime style, a little wide
+(200): scrolling down (`scrolldown`) they sweep down in 150 ms past the
+mark, settle, and snap back up in 60 ms, a 520 ms loop (`scroll-down`, its
+gaze ±900, 1000 at the overshoot), with a small tick of the body each
+sweep; scrolling up (`scrollup`) the other way (`scroll-up`); with the
+way not known, both by turns (`scroll`, 1.04 s); at work in a pose of its
+own the pose keeps its eyes. Music (`music`) has it jam along the whole
+time it plays, idle: its eyes closed, a content face (the `pleased` one,
+unless its mood keeps its own), a bounce on every beat at 540 ms (about 111
+a minute: a squash on the hit, then up taller with a lift of 9 px), its
+head bobbing side to side every other beat, in three bars that differ so
+minutes of it never look mechanical: the bounce and the swing, then
+quicker small bobs, then a wider swing with a big bop (`jam`, 6.48 s); at
+work, in any pose, or with a card held, the same at 0.4 over the pose, at
+its desk (`jam-desk`); as it stops, a look round (`look-around`). A video
+gets nothing. Each pose comes and goes over 600 ms (`kWithFadeMs`). The
+pointer leans it its way, 19 a step of `ptr`, slides it 1.4 px a step and
+turns the eyes further (the rig's gaze, 75 a step across, 60 up or down),
+and up its way it stretches up 8 a step; at the edge nearest the board it
+leans in 215 toward the Mac's side, reaching up 68. The lean, slide and
+gaze follow over about 350 ms (`kLeanMs`), so a pointer that jumps is
+followed, never jumped to. While any of them is on, no pastime is dealt.
+The Mac never says what you scroll, hear, watch, say or copy: of a scroll,
+only its way.
 
-A pose alone is too small to tell apart from across a desk, so each has a
-mark drawn at the body's anchors, rimmed dark to read over anything
+A pose alone is too small to tell apart from across a desk, so music and a
+call each have a mark drawn at the body's anchors, rimmed dark to read over anything
 (`Engine::With`, drawn by `paintWith` in `gel/layers.cpp`), each fading in
 and out over the rig's fade, in any pose and at the light size too, so at
 work it still shows what you're doing while the pose has the body:
 
 | You | The mark |
 | --- | --- |
-| Music | Headphones: a pale band over its head from ear to ear and a cup on each ear, on for as long as the music plays, through the groove's rest, its pastimes and typing along; in the groove, a note (now and then a beamed pair) rising from each cup in turn every 1.5 s, drifting out and fading over 2.4 s |
-| Reading along | A page beside it on the Mac's side (the right with none told), clear of its widest, a little below its eyes, where they look: lines of words scrolling up 14 px a second while you scroll (`kPageScroll`), still while it reads on after, and a scroll bar's thumb going down with them |
-| A video | A small screen beside it on the Mac's side at its eyes' height, a play mark on it, lit in the scene's colour, a new one every 2.6 s crossing over 0.5 s (warm, violet, green, pale); that light added to the body, by how bright each pixel is, so the eyes and mouth stay dark, strongest on the screen's side |
-| On a call | A muted mic, a dark disc with a mic and a slash, held still by its ear on the Mac's side, and nothing else: no headphones, page or screen |
+| Music | A note, one at a time, every 3.2 s, rising from behind its shoulder on one side and then the other: it comes up over the shoulder (only what's above it shows), drifts up 60 px over 3 s with a small sway and fades in and out; for as long as the music plays, through its pastimes and typing along. No headphones: it wears nothing |
+| On a call | A muted mic, a dark disc with a mic and a slash, held still by its ear on the Mac's side, and nothing else |
 
-The page and the screen stand beside it, so neither shows while its hands
-type along or a card is held; speaking's hand is at its ear, so no
-headphones while you speak.
+Speaking's hand is at its ear, so no notes while you speak. Scrolling has
+no mark: its eyes are quick enough to see.
 
 Typing fast (`typingfast`) moves the hands' phase on quicker, a beat every
 210 ms in place of 300 (`kFastMs`), the tap the same share of its beat, so
@@ -1187,8 +1189,8 @@ them 140, and stays through a flicker off of 800 ms (`kFastLingerMs`).
 The engine draws no costume, but the board draws layers over the body by
 the same tags, after the face art and before the props
 (`gel/layers.h`): Zs beside it asleep at night, the marks of what you do
-at the Mac (with you, above: the headphones are the one thing it ever
-wears, and only while music plays), and last the sign a
+at the Mac (with you, above: a rising note while music plays, a muted mic
+on a call), and last the sign a
 Moment holds up. It wears nothing at night: the night shows on its lids
 (below). That's
 all: the face comes first, and nothing is put on the screen for a season

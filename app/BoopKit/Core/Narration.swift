@@ -364,6 +364,10 @@ public struct Narration: Equatable, Sendable {
 }
 
 extension Narration {
+    /// While music plays (`StateSnapshot.music`), for the popover and the
+    /// menu bar: what the board's jam shows.
+    public static func music(name: String) -> String { "\(name) likes your music." }
+
     /// Boop's energy in a few warm words for the popover, under its mood,
     /// when it isn't normal (`Energy`, the `state`'s `energy`): what the
     /// board's lids and tempo show.

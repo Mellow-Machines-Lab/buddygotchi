@@ -57,7 +57,7 @@ struct OverviewPane: View {
                 }
                 // In words, so a face never needs decoding; after the
                 // sessions, since what needs you outranks how it feels.
-                ReasonLines(feed: model.slime, name: model.name, mood: status.snapshot.mood, wish: status.wishing,
+                ReasonLines(feed: model.slime, name: model.name, music: status.snapshot.music, mood: status.snapshot.mood, wish: status.wishing,
                             why: moodWhy, doing: status.doingReason?.cause,
                             energy: Narration.energy(status.snapshot.energy, name: model.name))
                 if !status.celebrating.isEmpty {
@@ -843,6 +843,9 @@ struct SessionRow: View {
 struct ReasonLines: View {
     @ObservedObject var feed: SlimeFeed
     let name: String
+    /// Music plays: its line stands for the jam's, before the rest of what
+    /// it's up to.
+    var music = false
     let mood: String
     let wish: String?
     let why: String?
@@ -850,7 +853,9 @@ struct ReasonLines: View {
     let energy: String?
 
     private var lines: [String] {
-        [why, energy, wish, feed.passing.flatMap { Narration.passing($0, in: CharacterPack.active.named(name)) } ?? doing].compactMap { $0 }
+        let passing = music && feed.passing == "music" ? nil : feed.passing
+        return [why, energy, wish, music ? Narration.music(name: name) : nil,
+                passing.flatMap { Narration.passing($0, in: CharacterPack.active.named(name)) } ?? doing].compactMap { $0 }
     }
 
     var body: some View {

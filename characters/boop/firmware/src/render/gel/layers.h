@@ -12,11 +12,9 @@
 //
 // - beside it: Zs rising while it sleeps at night;
 // - with you at the Mac (GelFace::showWithYou, Engine::With): typing
-//   along's ticks; speaking's cupped hand and rings; headphones while music
-//   plays, and notes rising from them in the groove; a page beside it while
-//   it reads along; a small screen beside it while it watches, its light on
-//   the body; a muted mic by its ear on a call. Each is for what you do at
-//   the Mac, never for a day;
+//   along's ticks; speaking's cupped hand and rings; a note now and then
+//   rising from behind it while music plays; a muted mic by its ear on a
+//   call. Each is for what you do at the Mac, never for a day;
 // - the sign a reaction holds up (its `sign`): a dark card held at its
 //   front, under its mouth, with a little gel hand at either side, the words
 //   on it, sliding up as the reaction starts and bobbing while it's held. It
