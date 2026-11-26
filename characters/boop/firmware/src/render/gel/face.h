@@ -124,6 +124,9 @@ class GelFace final : public Face {
   // A rule of the motion layer (render/gel/lively.h) on or off by name, or
   // "all": dbg.motion's. A reset puts every one back as kRules has it.
   bool motionRule(const char* rule, bool on) override { return lively_.set(rule, on); }
+  // The strip's layout (render/gel/lane.h's StripLayout) by name:
+  // dbg.strip's. A reset puts today's back.
+  bool stripLayout(const char* name) override { return setStripLayout(name); }
   const Lively& lively() const { return lively_; }
   // What it shows of the pastimes at t: the one playing.
   PastimeShow pastimes(uint32_t t) const;

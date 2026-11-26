@@ -119,6 +119,13 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
                             : "{\"t\":\"dbg.motion\",\"ok\":false}";
     dirty_ = true;
     kit().reply(from, reply, std::strlen(reply));
+  } else if (!std::strcmp(type, "dbg.strip")) {
+    // The strip's layout by name ("layout"), to choose between: until the
+    // next reset.
+    const char* reply = b_.face().stripLayout(doc["layout"] | "") ? "{\"t\":\"dbg.strip\",\"ok\":true}"
+                                                                   : "{\"t\":\"dbg.strip\",\"ok\":false}";
+    dirty_ = true;
+    kit().reply(from, reply, std::strlen(reply));
   } else if (!std::strcmp(type, "dbg.press")) {
     live_.injPress = true;
     live_.injPressUntil = kit().now() + (doc["ms"] | kDefaultPressMs);

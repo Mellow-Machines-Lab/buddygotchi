@@ -291,6 +291,13 @@ class Face {
     (void)rule, (void)on;
     return false;
   }
+  // Sets the strip's layout by name, for the owner to choose between:
+  // dbg.strip's, until the next reset. False for one the face hasn't, or
+  // a face with one layout.
+  virtual bool stripLayout(const char* name) {
+    (void)name;
+    return false;
+  }
   // The work stream to draw (render/stream.h), the device's, set before
   // each frame: a face that has no stream ignores it.
   virtual void watch(const Stream* stream) { (void)stream; }

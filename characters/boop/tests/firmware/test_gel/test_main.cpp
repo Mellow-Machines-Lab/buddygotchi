@@ -2071,6 +2071,11 @@ void test_listening_nods();
 void test_a_touch_says_why_itself();
 void test_the_macs_reason_doesnt_double_a_touchs();
 void test_a_reason_alone();
+// test_strip.cpp
+void test_the_strips_layout_switches_by_name();
+void test_the_doing_first_split();
+void test_the_name_folds_away_after_it_shows();
+void test_the_doings_room_by_layout();
 // test_drawer.cpp
 void test_a_pull_up_the_strip_opens_the_drawer();
 void test_a_swipe_up_the_face_isnt_the_drawers();
@@ -3701,5 +3706,9 @@ int main() {
   RUN_TEST(test_a_finger_or_a_request_first_keeps_it_shut);
   RUN_TEST(test_holding_boot_to_talk_shuts_it);
   RUN_TEST(test_drawer_frames_allocate_nothing);
+  RUN_TEST(test_the_strips_layout_switches_by_name);
+  RUN_TEST(test_the_doing_first_split);
+  RUN_TEST(test_the_name_folds_away_after_it_shows);
+  RUN_TEST(test_the_doings_room_by_layout);
   return UNITY_END();
 }

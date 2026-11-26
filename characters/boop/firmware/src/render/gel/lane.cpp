@@ -107,12 +107,15 @@ Term gTerm;
 // strength (noteSwitch); paintFrame sets them, the strip and its key read
 // them.
 int gSwitchDx = 0, gArrows = 0, gWatchSlot = -1;
+// The strip's layout (dbg.strip), and kFold's chip this frame (nameFold).
+StripLayout gLayout = StripLayout::kToday;
+int gFold = 0;
 // What the last frame showed, and when the watched one and the set of
-// agents last changed.
+// agents last changed, and when either did (kFold's name).
 struct Switching {
   int watch = -1, pips = 0, dir = 1;
-  uint32_t slidAt = 0, arrowsAt = 0;
-  bool slid = false, arrowed = false;
+  uint32_t slidAt = 0, arrowsAt = 0, namedAt = 0;
+  bool slid = false, arrowed = false, named = false;
 } gSwitch;
 Term termFor(const Stream& st, uint32_t now, int watchSlot) {
   static char text[Stream::kWordBytes + 16];
@@ -335,8 +338,7 @@ int marks(Raster* r, const Strip& s, int x, int cy, int spin, unsigned shown) {
 // as the room gets tighter. The to-do list isn't
 // in it: it stands at the strip's right end. Drawn when r is given; either
 // way, the x after them.
-int words(Raster* r, const Strip& s, int x, int cy, int helpers) {
-  const Font& f = kSign;
+int words(Raster* r, const Strip& s, int x, int cy, int helpers, const Font& f = kSign) {
   const int ty = cy - f.h / 2;
   const uint16_t white = rgb565(kEyeRgb), grey = rgb565(kNarrationRgb);
   auto put = [&](const char* v, uint16_t ink) { x = r ? text(*r, f, x, ty, v, ink) : x + glyphCount(v) * f.w; };
@@ -360,12 +362,12 @@ int words(Raster* r, const Strip& s, int x, int cy, int helpers) {
 
 // The to-do list's "3/7", in warm white, its right end at `right`; the x
 // it starts at, or `right` with none.
-int todo(Raster* r, const Strip& s, int right, int cy) {
+int todo(Raster* r, const Strip& s, int right, int cy, const Font& f = kSign) {
   if (s.todoTotal <= 0) return right;
   char n[16];
   std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
-  const int x = right - glyphCount(n) * kSign.w;
-  if (r) text(*r, kSign, x, cy - kSign.h / 2, n, rgb565(kEyeRgb));
+  const int x = right - glyphCount(n) * f.w;
+  if (r) text(*r, f, x, cy - f.h / 2, n, rgb565(kEyeRgb));
   return x;
 }
 
@@ -413,8 +415,12 @@ static void splitRule(Raster& r, int x0, int x1, int y, int gap, uint16_t rule) 
 void paintPips(Raster& r, const Strip& s, int x0, int x1, int y, int spin) {
   constexpr int kDot = 5, kLong = 26, kGap = 8;
   const uint16_t rule = rgb565(kRuleRgb), grey = rgb565(kNarrationRgb);
+  // The strip's kOnLine: the long pip holds the watched one's name, as its
+  // chip in the strip's row would.
+  const bool named = gLayout == StripLayout::kOnLine && s.who && *s.who;
+  const int along = named ? glyphCount(s.who) * kLarge.w + kNamePad : kLong, tall = named ? 26 : 2 * kDot;
   int width = 0;
-  for (int i = 0; i < s.pipCount; ++i) width += (i == s.watch ? kLong : 2 * kDot) + (i ? kGap : 0);
+  for (int i = 0; i < s.pipCount; ++i) width += (i == s.watch ? along : 2 * kDot) + (i ? kGap : 0);
   const int cx = (x0 + x1) / 2, left = cx - width / 2;
   splitRule(r, x0, x1, y, width / 2 + 12, rule);
   const int cy = y + 1;
@@ -422,8 +428,9 @@ void paintPips(Raster& r, const Strip& s, int x0, int x1, int y, int spin) {
     const int slot = s.pipSlot[i];
     const uint16_t ink = laneInkOr(slot, grey);
     if (i == s.watch) {
-      r.round(x, cy - kDot, kLong, 2 * kDot, kDot, ink);
-      x += kLong + kGap;
+      r.round(x, cy - tall / 2, along, tall, tall / 2, ink);
+      if (named) text(r, kLarge, x + kNamePad / 2, cy - kLarge.h / 2, s.who, rgb565(0x06, 0x20, 0x1f));
+      x += along + kGap;
       continue;
     }
     switch (s.pipKind[i]) {
@@ -459,10 +466,34 @@ int stripMargin(const Surface& panel, int cy) {
   return std::max(kMargin, panel.inset(cy - kSign.h / 2, cy + kSign.h / 2) + kCornerGap);
 }
 
+// The strip's kRows: its rule moved up kRowsUp, the doing's row's middle
+// kRowsTop under it and who's kRowsBottom, both clear of the body above
+// the lane and of the panel's bottom; and the one row, when there's no
+// doing, in the middle of what's under the rule.
+constexpr int kRowsUp = 12, kRowsTop = 22, kRowsBottom = 52;
+int stripRule(int height) { return ruleRow(height) - (gLayout == StripLayout::kRows ? kRowsUp : 0); }
+int stripMiddle(int height) {
+  return gLayout == StripLayout::kRows ? (stripRule(height) + height) / 2 : rowMiddle(height);
+}
+
+// Two arrows at the strip's ends, a moment after the set of agents
+// changes: there are others to swipe to.
+void arrows(Raster& r, int margin, int right, int cy) {
+  if (gArrows <= 0) return;
+  r.alpha = gArrows;
+  for (int side : {-1, 1}) {
+    const int x = side < 0 ? margin - 14 : right + 14;
+    Point v[3] = {
+        {(x - side * 5) * 16, (cy - 8) * 16}, {(x + side * 3) * 16, cy * 16}, {(x - side * 5) * 16, (cy + 8) * 16}};
+    r.stroke16(v, 3, 3 * 16, rgb565(kNarrationRgb));
+  }
+  r.alpha = 255;
+}
+
 // The rule along the lane's top, the drawer's grabber in its middle while
 // the drawer has rows to show: there whatever the lane's row holds.
 void rule(Lane& l, const Strip& s, int spin) {
-  const int y = ruleRow(l.h), margin = std::max(kMargin, l.r.s.inset(y, y + 2) + kCornerGap);
+  const int y = stripRule(l.h), margin = std::max(kMargin, l.r.s.inset(y, y + 2) + kCornerGap);
   if (s.pipCount > 1) return paintPips(l.r, s, margin, l.w - margin, y, spin);
   paintRule(l.r, margin, l.w - margin, y, s.agent || s.busy > 0 || s.idle > 0);
 }
@@ -498,14 +529,55 @@ const char* fitTerm(const char* term, const Font& f, int room, char (&fitted)[St
   return fitted;
 }
 
+// The strip's kRows, while there's a doing: it has the top row's whole
+// width, and under it, in the large font, who (with several agents, the
+// watched one's chip) or the counts in words, the to-do list at the right
+// end. False with no doing, for the one row.
+bool rows(Lane& l, const Strip& s) {
+  const bool several = s.pipCount > 1;
+  if (several && s.pillAt >= 0 && s.pill && *s.pill) return false;
+  const bool rests = several && s.watch >= 0 && s.pipKind[s.watch] == 'i';
+  if (!rests && !(s.busy > 0 && gTerm.text && *gTerm.text)) return false;
+  Raster& r = l.r;
+  const uint16_t grey = rgb565(kNarrationRgb);
+  const int top = stripRule(l.h) + kRowsTop, bottom = stripRule(l.h) + kRowsBottom;
+  const int margin = stripMargin(r.s, top), right = l.w - margin, room = doingRoom(r.s);
+  const int dx = several ? gSwitchDx : 0;
+  if (several) arrows(r, margin, right, top);
+  r.alpha = 255 - 255 * std::min(std::abs(dx), kSwitchPx) / (2 * kSwitchPx);
+  char fitted[Stream::kDoingBytes];
+  const char* doing = rests ? "resting" : fitTerm(gTerm.text, kSign, room, fitted);
+  text(r, kSign, margin + dx, top - kSign.h / 2, doing, rests ? grey : gTerm.ink, room);
+  const Font& f = kLarge;
+  const int low = std::max(kMargin, r.s.inset(bottom - f.h / 2, bottom + f.h / 2) + kCornerGap), end = l.w - low;
+  if (several) {
+    if (s.who && *s.who) {
+      const int w = std::min(end - low, glyphCount(s.who) * f.w + kNamePad);
+      r.round(low + dx, bottom - 13, w, 26, 4, laneInkOr(s.watch >= 0 ? s.pipSlot[s.watch] : -1, grey));
+      text(r, f, low + dx + kNamePad / 2, bottom - f.h / 2, s.who, rgb565(0x06, 0x20, 0x1f), w - kNamePad);
+    }
+  } else {
+    const int list = todo(nullptr, s, end, bottom, f), most = list - (s.todoTotal > 0 ? kMarkAfter : 0) - low;
+    for (int helpers : {2, 1, 0})
+      if (helpers == 0 || words(nullptr, s, 0, bottom, helpers, f) <= most) {
+        words(&r, s, low, bottom, helpers, f);
+        break;
+      }
+    todo(&r, s, end, bottom, f);
+  }
+  r.alpha = 255;
+  return true;
+}
+
 // The status strip's row: who needs you, or whose turn the finish was,
 // then how many sessions work; with no app, the plug and "no Mac" in the
 // middle (render/screens.h's Strip).
 void strip(Lane& l, const Strip& s, int spin) {
   if (!s.shows()) return;
+  if (gLayout == StripLayout::kRows && rows(l, s)) return;
   Raster& r = l.r;
   const Font& f = kSign;
-  const int cy = rowMiddle(l.h), ty = cy - f.h / 2;
+  const int cy = stripMiddle(l.h), ty = cy - f.h / 2;
   const int margin = stripMargin(r.s, cy), right = l.w - margin, names = margin + 2 * kIcon;
   const uint16_t grey = rgb565(kNarrationRgb);
   if (s.noApp) {
@@ -604,35 +676,58 @@ void strip(Lane& l, const Strip& s, int spin) {
       text(r, kLarge, x + 18, cy - kLarge.h / 2, s.pill, ink, w - 36);
       return;
     }
-    // Two arrows at the ends, a moment after the set of agents changes:
-    // there are others to swipe to.
-    if (gArrows > 0) {
-      r.alpha = gArrows;
-      for (int side : {-1, 1}) {
-        const int x = side < 0 ? margin - 14 : right + 14;
-        Point v[3] = {{(x - side * 5) * 16, (cy - 8) * 16}, {(x + side * 3) * 16, cy * 16}, {(x - side * 5) * 16, (cy + 8) * 16}};
-        r.stroke16(v, 3, 3 * 16, grey);
-      }
-      r.alpha = 255;
-    }
+    arrows(r, margin, right, cy);
     // Sliding in as you switch agents: the row starts gSwitchDx off and
     // comes to rest, faded by how far it still has to go.
-    const int dx = gSwitchDx, left = margin + dx;
-    r.alpha = 255 - 255 * std::min(std::abs(dx), kSwitchPx) / (2 * kSwitchPx);
-    int chip = right + dx;
-    if (s.who && *s.who) {
-      const int w = glyphCount(s.who) * kLarge.w + 16, h = kLarge.h;
-      chip = right + dx - w;
-      const uint16_t ink = inkOf(s.watch);
-      r.round(chip, cy - h / 2, w, h, 4, ink);
-      text(r, kLarge, chip + 8, cy - kLarge.h / 2, s.who, rgb565(0x06, 0x20, 0x1f), w - 16);
-    }
+    const int dx = gSwitchDx, left = margin + dx,
+              alpha = 255 - 255 * std::min(std::abs(dx), kSwitchPx) / (2 * kSwitchPx);
+    r.alpha = alpha;
     const bool rests = s.watch >= 0 && s.pipKind[s.watch] == 'i';
+    const bool working = !rests && s.busy > 0 && gTerm.text && *gTerm.text;
+    const bool named = s.who && *s.who;
     char fitted[Stream::kDoingBytes];
-    if (!rests && s.busy > 0 && gTerm.text && *gTerm.text)
-      text(r, f, left, ty, fitTerm(gTerm.text, f, chip - kIcon - left, fitted), gTerm.ink, chip - kIcon - left);
+    const uint16_t dark = rgb565(0x06, 0x20, 0x1f);
+    // The doing's room: today, what the name's whole chip leaves, as kFold's
+    // while the name shows; kOnLine's name is on the line, so the whole row.
+    int room = right - margin;
+    if (gLayout == StripLayout::kToday || (gLayout == StripLayout::kFold && gFold > 0)) {
+      int chip = right + dx;
+      if (named) {
+        const int w = glyphCount(s.who) * kLarge.w + kNamePad;
+        chip = right + dx - w;
+        // kFold's folds away to its right end, fading, once the name has
+        // shown; the doing stays where it was until it's gone.
+        const int shown = gLayout == StripLayout::kFold ? gFold : 255;
+        if (shown < 255) r.alpha = alpha * shown / 255, r.bounds = {right + dx - w * shown / 255, 0, right + dx, l.h};
+        r.round(chip, cy - kLarge.h / 2, w, kLarge.h, 4, inkOf(s.watch));
+        text(r, kLarge, chip + kNamePad / 2, cy - kLarge.h / 2, s.who, dark, w - kNamePad);
+        r.bounds = Raster::kEverywhere, r.alpha = alpha;
+      }
+      room = chip - kIcon - left;
+    } else if (gLayout == StripLayout::kDoingFirst && named) {
+      // The doing whole, as much of it as the row holds beside the least
+      // chip, and the chip what it leaves.
+      const int least = room - kIcon - (kLarge.w + kNamePad);
+      const int want = working ? glyphCount(fitTerm(gTerm.text, f, least, fitted)) : rests ? glyphCount("resting") : 0;
+      const RowSplit split = splitRow(want, glyphCount(s.who), room);
+      const int chip = right + dx - split.chip, x = chip + kNamePad / 2;
+      r.round(chip, cy - kLarge.h / 2, split.chip, kLarge.h, 4, inkOf(s.watch));
+      if (split.glyphs > 1 || !split.cut) {
+        text(r, kLarge, x, cy - kLarge.h / 2, s.who, dark, split.glyphs * kLarge.w);
+      } else {
+        // Its initial alone, with no "…".
+        const char* p = s.who;
+        nextGlyph(p);
+        char initial[8] = {};
+        std::memcpy(initial, s.who, std::min<size_t>(size_t(p - s.who), sizeof initial - 1));
+        text(r, kLarge, x, cy - kLarge.h / 2, initial, dark);
+      }
+      room = split.doing;
+    }
+    if (working)
+      text(r, f, left, ty, fitTerm(gTerm.text, f, room, fitted), gTerm.ink, room);
     else if (rests)
-      text(r, f, left, ty, "resting", grey, chip - kIcon - left);  // the one followed rests
+      text(r, f, left, ty, "resting", grey, room);  // the one followed rests
     r.alpha = 255;
     return;
   }
@@ -688,6 +783,7 @@ uint32_t laneKey(const char* line, const Strip& s, int spin, const char* caption
     add(&s.pipCount, sizeof s.pipCount), add(s.pipKind, sizeof s.pipKind), add(s.pipSlot, sizeof s.pipSlot);
     add(&s.watch, sizeof s.watch), add(&s.pillAt, sizeof s.pillAt), str(s.who), str(s.pill);
     add(&gSwitchDx, sizeof gSwitchDx), add(&gArrows, sizeof gArrows);
+    if (gLayout != StripLayout::kToday) add(&gLayout, sizeof gLayout), add(&gFold, sizeof gFold);
     // The spinner's step only while a pip pulses: one that wants you, not watched.
     bool pulses = false;
     for (int i = 0; i < s.pipCount; ++i) pulses |= i != s.watch && s.pipKind[i] == 'a';
@@ -717,7 +813,7 @@ void paintLane(Surface& surface, const char* line, const Strip& s, int spin, con
     caption(l, note);
   } else {
     strip(l, s, spin);
-    fade(surface, ruleRow(l.h) + kGrabberH, rowAlpha);
+    fade(surface, stripRule(l.h) + kGrabberH, rowAlpha);
     fade(surface, l.y(kLaneTop), (s.opacity * 255 + 500) / 1000);
   }
   surface.laneKey = laneKey(line, s, spin, note, rowAlpha);
@@ -771,6 +867,7 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   gTerm = stream ? termFor(*stream, now, s.watch >= 0 ? s.pipSlot[s.watch] : -1) : Term{};
   noteSwitch(s, now);
   gSwitchDx = switchDx(now), gArrows = switchArrows(now);
+  gFold = gLayout == StripLayout::kFold && gSwitch.named ? nameFold(now - gSwitch.namedAt) : 0;
   gWatchSlot = s.pipCount > 1 && s.watch >= 0 ? s.pipSlot[s.watch] : -1;
   if (low.shows()) line = note = nullptr;
   // At rest it covers what's under it, so the strip's changes change nothing;
@@ -863,6 +960,7 @@ void noteSwitch(const Strip& s, uint32_t now) {
     w.slidAt = now, w.slid = true;
   }
   if (s.pipCount != w.pips) w.arrowsAt = now, w.arrowed = true;
+  if (s.pipCount != w.pips || s.watch != w.watch) w.namedAt = now, w.named = true;
   w.watch = s.watch, w.pips = s.pipCount;
 }
 
@@ -882,5 +980,43 @@ int switchArrows(uint32_t now) {
 }
 
 int watchedSlot() { return gWatchSlot; }
+
+bool setStripLayout(const char* name) {
+  static constexpr struct {
+    const char* name;
+    StripLayout layout;
+  } kNames[] = {{"today", StripLayout::kToday},
+                {"a", StripLayout::kDoingFirst},
+                {"b", StripLayout::kFold},
+                {"c", StripLayout::kRows},
+                {"e", StripLayout::kOnLine}};
+  for (const auto& n : kNames)
+    if (name && !std::strcmp(name, n.name)) return gLayout = n.layout, true;
+  return false;
+}
+
+StripLayout stripLayout() { return gLayout; }
+
+RowSplit splitRow(int doingGlyphs, int nameGlyphs, int room) {
+  const int gap = kIcon, doing = doingGlyphs * kSign.w;
+  auto chip = [](int glyphs) { return glyphs * kLarge.w + kNamePad; };
+  if (nameGlyphs <= 0) return {room, 0, 0, false};
+  if (doing + gap + chip(nameGlyphs) <= room) return {room - gap - chip(nameGlyphs), chip(nameGlyphs), nameGlyphs, false};
+  // The glyphs the doing leaves, the "…" one of them; too few, the initial.
+  const int glyphs = std::min(nameGlyphs, (room - gap - doing - kNamePad) / kLarge.w);
+  const int shown = glyphs > kNameLeast ? glyphs : 1;
+  return {room - gap - chip(shown), chip(shown), shown, true};
+}
+
+int doingRoom(const Surface& panel) {
+  const int cy = gLayout == StripLayout::kRows ? stripRule(panel.height) + kRowsTop : stripMiddle(panel.height);
+  return panel.width - 2 * stripMargin(panel, cy);
+}
+
+int nameFold(uint32_t age) {
+  if (age < kNameMs) return 255;
+  if (age >= kNameMs + kFoldMs) return 0;
+  return 255 - int((age - kNameMs) * 255 / kFoldMs);
+}
 
 }  // namespace render::gel
