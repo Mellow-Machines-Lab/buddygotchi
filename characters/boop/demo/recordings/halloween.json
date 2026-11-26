@@ -10,85 +10,89 @@
       "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"halloween\"]}"
     },
     {
-      "at": 0.817,
+      "at": 0.847,
       "cause": {
         "kind": "back",
         "text": "You come back to the Mac after 10 hours away"
       }
     },
     {
-      "at": 0.821,
+      "at": 0.849,
       "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"evening\",\"halloween\",\"tier3\"]}"
     },
     {
-      "at": 0.821,
+      "at": 0.849,
       "effect": "Boop reacts",
-      "line": "{\"t\":\"do\",\"id\":780897525,\"name\":\"react\",\"play\":\"if_free\",\"args\":{\"reason\":\"quiet for 1 h\"}}"
+      "line": "{\"t\":\"do\",\"id\":793616409,\"name\":\"react\",\"play\":\"if_free\",\"args\":{\"reason\":\"quiet for 1 h\"}}"
     },
     {
-      "at": 1.003,
+      "at": 1.008,
       "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"evening\",\"halloween\",\"tier3\"],\"energy\":\"bright\"}"
     },
     {
-      "at": 1.143,
+      "at": 1.173,
       "effect": "Boop stretches and yawns and says “Salut”",
-      "line": "{\"t\":\"do\",\"id\":780897526,\"name\":\"wake_up\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"happy halloween!\",\"reason\":\"you were away 10 h\",\"invite\":{\"skit\":\"back\",\"pose\":\"lean\",\"touch\":\"stroke\",\"payoff\":\"purr\",\"label\":\"pet\",\"ms\":12000},\"greeting\":true,\"say\":{\"take\":\"phase1.borrowed.salut__proud__contained\"},\"mood\":\"mischievous\",\"loops\":2}}"
+      "line": "{\"t\":\"do\",\"id\":793616410,\"name\":\"wake_up\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"happy halloween!\",\"reason\":\"you were away 10 h\",\"invite\":{\"skit\":\"back\",\"pose\":\"lean\",\"touch\":\"stroke\",\"payoff\":\"purr\",\"label\":\"pet\",\"ms\":12000},\"greeting\":true,\"say\":{\"take\":\"phase1.borrowed.salut__proud__contained\"},\"mood\":\"mischievous\",\"loops\":2}}"
     },
     {
-      "at": 1.146,
+      "at": 1.177,
       "effect": "Boop's mood is now happy",
       "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"happy\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"evening\",\"halloween\",\"tier3\"],\"energy\":\"bright\"}"
     },
     {
-      "at": 7.238,
+      "at": 7.25,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\",\"busy\":1,\"vol\":6,\"when\":[\"evening\",\"halloween\"],\"energy\":\"bright\"}"
     },
     {
-      "at": 7.238,
+      "at": 7.251,
       "effect": "Boop reacts",
-      "line": "{\"t\":\"do\",\"id\":780897527,\"name\":\"react\",\"play\":\"if_free\",\"args\":{\"reason\":\"claude woke Boop\"}}"
+      "line": "{\"t\":\"do\",\"id\":793616411,\"name\":\"react\",\"play\":\"if_free\",\"args\":{\"reason\":\"claude woke Boop\"}}"
     },
     {
-      "at": 7.239,
+      "at": 7.253,
       "cause": {
         "kind": "prompt",
         "text": "You ask Claude: “Add a spooky theme for today”"
       }
     },
     {
-      "at": 8.243,
+      "at": 8.316,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"happy\",\"busy\":1,\"vol\":6,\"when\":[\"evening\",\"halloween\"],\"energy\":\"bright\",\"calls\":[[0,1,\"editing +1\"]]}"
     },
     {
-      "at": 10.25,
+      "at": 10.448,
       "cause": {
         "kind": "tool",
         "text": "Claude edits src/theme.css"
       }
     },
     {
-      "at": 11.87,
+      "at": 12,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\",\"busy\":1,\"vol\":6,\"when\":[\"evening\",\"halloween\"],\"energy\":\"bright\",\"calls\":[[0,1,\"editing +1\"]]}"
+    },
+    {
+      "at": 12.102,
       "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"evening\",\"halloween\"],\"energy\":\"bright\"}"
     },
     {
-      "at": 11.87,
-      "line": "{\"t\":\"do\",\"id\":780897528,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+      "at": 12.102,
+      "line": "{\"t\":\"do\",\"id\":793616412,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
     },
     {
-      "at": 11.873,
+      "at": 12.105,
       "cause": {
         "kind": "done",
         "text": "Claude finishes"
       }
     },
     {
-      "at": 12.189,
+      "at": 12.417,
       "effect": "Boop celebrates",
-      "line": "{\"t\":\"do\",\"id\":780897529,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":18354,\"args\":{\"outcome\":\"success\",\"turn\":0,\"xp\":5,\"who\":{\"agent\":\"claude\",\"thread\":\"halloween\"},\"say\":{},\"mood\":\"mischievous\",\"loops\":1}}"
+      "line": "{\"t\":\"do\",\"id\":793616413,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":18157,\"args\":{\"outcome\":\"success\",\"turn\":0,\"xp\":5,\"who\":{\"agent\":\"claude\",\"thread\":\"halloween\"},\"say\":{},\"mood\":\"mischievous\",\"loops\":1}}"
     }
   ],
   "face": "gel",
-  "length": 18.23,
+  "length": 18.46,
   "name": "Boop",
   "script": "f01aef2ec07ee75363b8090855981e1ea1bf43271828ccf2bc8703d449547899",
   "takes": [
