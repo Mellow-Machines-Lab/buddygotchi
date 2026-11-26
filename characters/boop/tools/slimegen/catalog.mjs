@@ -17,7 +17,7 @@ const onChannel=([at,c,v])=>'{'+t(at)+','+channels.indexOf(c)+','+q(v)+'}';
 const enumName=name=>name.split(/[^a-z0-9]/i).map(part=>part[0].toUpperCase()+part.slice(1)).join('');
 // pack is the slime's character pack, and character the pack's
 // character.json, whose `moods` are the faces the wire names, and its
-// `board_faces` those the board draws that the Mac doesn't pick yet.
+// `board_faces` the meme faces, which the Mac shows at a rare moment.
 export function firmwareCatalog(pack,character){
  const faces=[...character.moods,...(character.board_faces||[])];
  const base=path.join(pack,'design/slime-blob');

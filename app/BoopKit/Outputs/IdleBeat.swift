@@ -9,6 +9,11 @@ import MellowHarness
 /// hold it up, or nothing (`MomentOutput.questions`). What each kind does
 /// once it shows is its own: a wish opens, an ask takes two answers, a
 /// remembered line goes on the low sign.
+///
+/// In a long working stretch a working check-in may deal one too, under
+/// the same cap and in the same order, but no musing (`atWork`): the
+/// rules hold it up on their own Moment, with no pass
+/// (`MomentOutput.ruled`).
 public enum IdleBeat {
     /// The kinds, in the order they're dealt.
     ///
@@ -26,6 +31,9 @@ public enum IdleBeat {
         /// Whether it comes on Quiet, and while a wish is open: only an
         /// agent waiting on you, which is of use to you.
         var always: Bool { self == .waiting }
+        /// Whether it comes at a working check-in: all but a musing, an
+        /// idle thought ("quiet day...") that's wrong over work.
+        var atWork: Bool { self != .musing }
     }
 
     /// What's due: its kind, the signs for it (a musing's are a few to
@@ -73,13 +81,30 @@ public enum IdleBeat {
 
     /// The one candidate due: the first kind in order that `offer`s
     /// something, if the cap has `room`. On `quiet`, and while a wish is
-    /// open (`wishOpen`), only an agent waiting on you.
-    public static func due(room: Bool, quiet: Bool, wishOpen: Bool, offer: (Kind) -> Candidate?) -> Candidate? {
+    /// open (`wishOpen`), only an agent waiting on you; `atWork`, no musing.
+    public static func due(room: Bool, quiet: Bool, wishOpen: Bool, atWork: Bool = false,
+                           offer: (Kind) -> Candidate?) -> Candidate? {
         guard room else { return nil }
-        for kind in Kind.allCases where kind.always || !(quiet || wishOpen) {
+        for kind in Kind.allCases where (kind.always || !(quiet || wishOpen)) && (kind.atWork || !atWork) {
             if let c = offer(kind), !c.signs.isEmpty { return c }
         }
         return nil
+    }
+
+    /// A working stretch at least this long (`tier2`) may have a beat at
+    /// its check-in, and none within this long of a Moment.
+    public static let workStretchMs: Int64 = 5 * 60_000
+    public static let afterMomentMs: Int64 = 60_000
+
+    /// Whether a working check-in may deal a beat: the agents have worked
+    /// `stretchMs` (from the working stretch's start), at least
+    /// `workStretchMs`; Boop may start something of its own (you're at
+    /// the Mac, nothing needs you, not listening: `Core.mayBeOwnBeat`);
+    /// not Quiet, not on a call; and no Moment started or ended in the
+    /// last `afterMomentMs` (`momentAgoMs`, nil for none).
+    public static func atWork(stretchMs: Int64?, mayStart: Bool, quiet: Bool, onCall: Bool, momentAgoMs: Int64?) -> Bool {
+        guard let stretchMs, stretchMs >= workStretchMs, mayStart, !quiet, !onCall else { return false }
+        return (momentAgoMs ?? .max) >= afterMomentMs
     }
 
     /// Every candidate `offer` has, whatever the order and the cap: for a

@@ -19,6 +19,9 @@ namespace render::gel {
 
 const PastimeInfo kPastimes[kPastimeCount] = {
     {Pastime::kStretch, Body::kClip, "stretch", SceneState::kWorking, 2, 0},
+    {Pastime::kDeskLook, Body::kClip, "hopeful", SceneState::kWorking, 1, 0},
+    {Pastime::kDeskYawn, Body::kBit, "yawn-and-settle", SceneState::kWorking, 2, 0},
+    {Pastime::kDeskSneeze, Body::kBit, "sneeze-and-shake", SceneState::kWorking, 2, 0},
     {Pastime::kLookAround, Body::kClip, "look-around", SceneState::kIdle, 1, 0},
     {Pastime::kHopeful, Body::kClip, "hopeful", SceneState::kIdle, 1, 0},
     {Pastime::kHop, Body::kClip, "hop", SceneState::kIdle, 1, 0},

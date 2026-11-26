@@ -1,6 +1,7 @@
 import Foundation
 import MellowHarness
 import XCTest
+@testable import BoopDevKit
 @testable import BoopKit
 
 /// The mood map as rules (`MoodMap`): each move one of the pack's mood
@@ -254,5 +255,75 @@ final class RulesBrainTests: XCTestCase {
         XCTAssertEqual(calm[Signs.questionKey]?.choice, "fav snack?")
         let cross = try await answers(brain(mood: "cross", facts: [:]), checkIn, [beat])
         XCTAssertEqual(cross[Signs.questionKey]?.choice, "none")
+    }
+
+    /// The meme faces, each at its one rare moment (`RulesBrain.meme`), and
+    /// none at the moments beside them: the 1st failed check, the 4th, a
+    /// plain finish, a failed turn after one failed check.
+    func testTheMemeFacesHaveTheirMoments() {
+        func meme(_ e: Event, _ f: Facts, mood: String? = nil) -> String? { RulesBrain.meme(read(e, f), facts: f, mood: mood) }
+        let tool = event(.tool, .end, "PostToolUse"), end = event(.turn, .end, "Stop")
+        func check(_ result: String, before: Int64) -> Facts { ["topic": "tests", "result": .string(result), "failed_before": .int(before)] }
+        func after(_ f: Facts, checks: Int64) -> Facts { f.merging(["checks_failed": .int(checks)]) { _, new in new } }
+        XCTAssertNil(meme(tool, check("failed", before: 0)))
+        XCTAssertEqual(meme(tool, check("failed", before: 1)), "deadpan", "the 2nd failed check in a row")
+        XCTAssertEqual(meme(tool, check("failed", before: 2)), "silent_scream", "the 3rd, as the upset skit swears")
+        XCTAssertNil(meme(tool, check("failed", before: 3)))
+        XCTAssertEqual(meme(tool, ["tool": "shell", "result": "failed", "failing": 3]), "side_eye", "calls failing in a row")
+        XCTAssertEqual(read(tool, ["tool": "shell", "result": "failed", "failing": 3]).slot, .failing)
+        XCTAssertEqual(meme(tool, check("ok", before: 2)), "smug", "a check passing after it failed")
+        XCTAssertEqual(meme(end, after(finish(length: "long"), checks: 1)), "smug", "a hard-won win")
+        XCTAssertNil(meme(end, finish(length: "long")))
+        XCTAssertNil(meme(end, after(finish("failed"), checks: 1)))
+        XCTAssertEqual(meme(end, after(finish("failed"), checks: 2)), "silent_scream", "failures piled up")
+        XCTAssertEqual(meme(end, finish("failed", length: "very long")), "faint")
+        XCTAssertEqual(meme(end, after(finish("failed", length: "very long"), checks: 3)), "faint", "a very long turn faints first")
+        XCTAssertEqual(meme(end, finish(kind: "stuck")), "faint", "the agent gave up")
+        XCTAssertNil(meme(tool, check("ok", before: 1), mood: "sad"), "sad is never smug")
+        XCTAssertEqual(meme(tool, check("ok", before: 1), mood: "cross"), "smug", "cross may be: it knew it")
+        XCTAssertEqual(Set(CharacterPack.active.boardFaces.map(\.id)).subtracting(["squint"]),
+                       ["deadpan", "side_eye", "smug", "silent_scream", "faint"], "every meme face but squint has a moment")
+    }
+
+    /// The rules show the meme face where it's offered, never twice
+    /// running; offered nothing past the 18, they keep to the slot's faces.
+    func testTheRulesShowAMemeFace() async throws {
+        let tool = event(.tool, .end, "PostToolUse")
+        let second: Facts = ["topic": "tests", "result": "failed", "failed_before": 1]
+        let b = brain(facts: second)
+        let offered = question(MomentOutput.emotionKey, faces + ["deadpan"])
+        let first = try await answers(b, tool, [offered])
+        XCTAssertEqual(first[MomentOutput.emotionKey]?.choice, "deadpan")
+        let again = try await answers(b, tool, [offered])
+        XCTAssertNotEqual(again[MomentOutput.emotionKey]?.choice, "deadpan", "not twice running")
+        let plain = try await answers(brain(facts: second), tool, [question(MomentOutput.emotionKey, faces)])
+        XCTAssertTrue(["determined", "grumpy"].contains(plain[MomentOutput.emotionKey]?.choice ?? ""), "\(String(describing: plain[MomentOutput.emotionKey]))")
+    }
+
+    /// Through the pipeline, with the rules brain: the emotion question
+    /// offers a meme face at its moment alone, and the Moment shows it, as
+    /// the board draws it. A failed check, then a 2nd (deadpan), a 3rd
+    /// (the upset skit, a silent scream), the fix (smug) and the turn done
+    /// after it, the fix's echo.
+    func testAMemeFaceReachesTheMoment() async throws {
+        try requireVoice()
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("memes-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let file = folder.appendingPathComponent("memes.json")
+        try Data(#"""
+            {"name": "memes", "case": "the meme faces", "why": "each at its moment",
+             "steps": [{"event": "turn started", "at": "0s", "workspace": "memes"},
+              {"event": "command", "at": "1m", "topic": "tests", "failed": true},
+              {"event": "command", "at": "2m", "topic": "tests", "failed": true},
+              {"event": "command", "at": "3m", "topic": "tests", "failed": true, "expect": {"said": "some"}},
+              {"event": "command", "at": "4m", "topic": "tests", "failed": false}]}
+            """#.utf8).write(to: file)
+        let records = try await SkitTests.records(try Scenario(file: file), swears: true, steering: RuntimeTests.steering)
+        let faces = records.map { $0.components(separatedBy: " | ")[1] }.map { m in
+            ["deadpan", "silent scream", "smug"].first { m.contains("a \($0) moment") || m.contains("an \($0) moment") } ?? "-"
+        }
+        XCTAssertEqual(faces, ["-", "deadpan", "silent scream", "smug"], records.joined(separator: "\n"))
+        XCTAssertFalse(records[2].components(separatedBy: " | ")[3].isEmpty, "the upset skit still speaks: \(records[2])")
     }
 }

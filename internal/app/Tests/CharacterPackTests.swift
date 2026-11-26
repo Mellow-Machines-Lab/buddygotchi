@@ -66,9 +66,9 @@ final class CharacterPackTests: XCTestCase {
                                               "curious", "determined", "surprised", "annoyed", "grumpy", "angry", "sad", "wounded", "lonely"])
         typealias Fade = CharacterPack.Fade
         XCTAssertEqual(Dictionary(uniqueKeysWithValues: pack.lasting.map { ($0.id, $0.fade) }), [
-            "calm": nil, "happy": Fade(minutes: 10, to: nil, holds: nil), "focused": Fade(minutes: 3, to: nil, holds: .working),
-            "proud": Fade(minutes: 5, to: "happy", holds: nil), "cross": Fade(minutes: 3, to: nil, holds: nil),
-            "sad": Fade(minutes: 10, to: nil, holds: nil), "lonely": Fade(minutes: 20, to: nil, holds: .away),
+            "calm": nil, "happy": Fade(minutes: 30, to: nil, holds: nil), "focused": Fade(minutes: 3, to: nil, holds: .working),
+            "proud": Fade(minutes: 15, to: "happy", holds: nil), "cross": Fade(minutes: 6, to: nil, holds: nil),
+            "sad": Fade(minutes: 20, to: nil, holds: nil), "lonely": Fade(minutes: 20, to: nil, holds: .away),
         ])
         for l in pack.lasting where l.id != "cross" {
             XCTAssertEqual(l.faces, [l.id], "\(l.id) rests in its own face")

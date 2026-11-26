@@ -945,8 +945,9 @@ Six faces past the Mac's 18, each with one body move that sells it. They
 keep the gel's face language: solid dark eyes with no whites, one small
 mouth; the lids and where the eyes look do the acting. They're the pack's
 `board_faces` (character.json): the board draws each by its name on the
-wire, and the Mac doesn't read them, so no rule or brain picks one yet; a
-Moment, `state`, the invite's back or a scenario may name one.
+wire. The Mac shows one only at the rare moment a rule names it for
+(`RulesBrain.meme`), as a Moment's emotion; `state`, the invite's back or
+a scenario may name one too.
 
 | Face | Its art | Its move (`face-<face>`) |
 | --- | --- | --- |
@@ -1016,7 +1017,9 @@ typing, searching as looking, testing and delegating as running).
   recipes, `key_contact` none) (`Scenes::advance`). The states never
   shown (planning, tool_use, searching, testing, delegating) have no
   recipe row of their own: each plays its activity's.
-- **Pastimes.** At work only the stretch is dealt, in any pose.
+- **Pastimes.** At work, typing: a look up at you from tier1, a stretch,
+  a sneeze and, tired, a yawn from tier2, the paws on the keys through
+  each. In the other poses only the stretch.
 - **The Mac holds them** so the body doesn't rock: running and looking
   show at least 3 s (`Core.poseHoldMs`), typing and waiting 1.5 s.
 - A work act (`wact`) runs under the running pose; its result's hop or

@@ -108,8 +108,8 @@ def camel(mood: str) -> str:
 
 def board_moods(character: dict) -> list[str]:
     """Every face the board draws by name, the firmware's Mood order: the
-    pack's `moods`, then its `board_faces`, which the Mac doesn't read, so
-    no rule or brain picks one yet (§4)."""
+    pack's `moods`, then its `board_faces`, the meme faces, which only a
+    rule names, at its rare moment (§4)."""
     return [m.get("id") for m in character.get("moods", []) + character.get("board_faces", [])]
 
 

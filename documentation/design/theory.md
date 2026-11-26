@@ -47,12 +47,14 @@ top of that, and it never hides or pauses the work.
 
 ## Who starts what
 
-You can start anything at any time. Boop starts things only when idle.
+You can start anything at any time. Boop starts things mostly when idle.
 
 A touch, a word to Boop, a swipe: these work the same in every state. During
-work Boop answers in a small way and goes back to its pose. Boop's own ideas
-(gags, pastimes, a wish, an ask) wait until no turn runs. During work it does
-not start things, but it still feels them: a hop when tests pass, a flinch
+work Boop answers in a small way and goes back to its pose. Its gags wait
+until no turn runs. In a long working stretch it may hold up one thing of
+its own now and then (a wish, an ask), as when idle. During work its body
+still passes the time at its desk (a stretch, a look up at you, a sneeze, a
+yawn when tired), and it feels the work: a hop when tests pass, a flinch
 when something fails.
 
 Only three things limit you: needs you, listening and sleep.

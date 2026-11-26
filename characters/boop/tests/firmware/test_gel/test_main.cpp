@@ -2030,6 +2030,7 @@ void test_each_pastime_draws_and_ends();
 void test_pastimes_are_dealt_by_tier_after_a_rest();
 void test_transitions_play_between_doings_and_anything_urgent_cuts_through();
 void test_a_tagged_pastime_plays_only_while_its_tag_is_on();
+void test_life_at_the_desk();
 void test_the_eyes_rest_unless_theres_a_reason();
 void test_a_look_is_a_turn_not_a_dart();
 void test_it_types_along_with_you();
@@ -3593,6 +3594,7 @@ int main() {
   RUN_TEST(test_pastimes_are_dealt_by_tier_after_a_rest);
   RUN_TEST(test_transitions_play_between_doings_and_anything_urgent_cuts_through);
   RUN_TEST(test_a_tagged_pastime_plays_only_while_its_tag_is_on);
+  RUN_TEST(test_life_at_the_desk);
   RUN_TEST(test_the_eyes_rest_unless_theres_a_reason);
   RUN_TEST(test_a_look_is_a_turn_not_a_dart);
   RUN_TEST(test_it_types_along_with_you);

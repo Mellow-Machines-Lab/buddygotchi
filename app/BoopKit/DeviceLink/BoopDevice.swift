@@ -28,6 +28,15 @@ public enum BoopDevice {
     public static func play(_ reaction: Moment) -> Wire.Play {
         reaction.name == listening ? .now : reaction.sign != nil || reaction.gold != nil ? .next : .ifFree
     }
+    /// When a brain reaction plays: one that answers a touch at once
+    /// (`now`), cutting a Moment that plays, so a poke never goes
+    /// unanswered behind a long one; but behind a finish in flight (or
+    /// what's queued after it, or an invite) it waits its turn, as every
+    /// other does (`next`). The board's own instant answer to the touch
+    /// is its own, and plays before either.
+    public static func play(brain reaction: Moment, finishing: Bool) -> Wire.Play {
+        reaction.answersTouch && !finishing ? .now : .next
+    }
     /// Why the device drops the reactions waiting when push-to-talk starts:
     /// a reaction would end `listening`.
     public static let micOn = "mic_on"

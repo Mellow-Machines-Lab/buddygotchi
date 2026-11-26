@@ -106,15 +106,16 @@ void test_transitions_play_between_doings_and_anything_urgent_cuts_through() {
 }
 
 // Pins the table: every row's body is in the pack, a clip of its rig that
-// plays once, a few seconds (a move up to 11), a bit of its engine (idle's
-// only) or a take (at work or asleep); working's and idle's each need a
+// plays once, a few seconds (a move up to 11), a bit of its engine (idle
+// or at work) or a take (at work or asleep); working's and idle's each need a
 // tier or a tag, never both, and asleep's a wait or a tag; none is for
-// while something needs you. At work: only a stretch, from tier2. Idle: a look around,
+// while something needs you. At work: a look up at you from tier1; a
+// stretch, a yawn (tired only) and a sneeze from tier2. Idle: a look around,
 // a hopeful look, a hop, a yawn and a sneeze from tier1, a snooze from
 // tier3. Asleep it rolls over from a minute, blows a snore bubble from 4,
 // snores deeper at night and dreams after half an hour.
 void test_every_pastime_has_its_clip_and_its_turn() {
-  static_assert(kTiers == 3 && kPastimeCount == 11, "the table this test pins");
+  static_assert(kTiers == 3 && kPastimeCount == 14, "the table this test pins");
   for (int i = 0; i < kPastimeCount; ++i) {
     const PastimeInfo& p = kPastimes[i];
     TEST_ASSERT_EQUAL_INT(i + 1, int(p.id));
@@ -125,7 +126,7 @@ void test_every_pastime_has_its_clip_and_its_turn() {
     if (tiered && !p.tag) TEST_ASSERT_TRUE(p.tier >= 1 && p.tier <= kTiers);
     if (p.body == Body::kBit) {
       TEST_ASSERT_TRUE_MESSAGE(bitOf(p) >= 0, p.name);
-      TEST_ASSERT_TRUE(p.look == SceneState::kIdle);
+      TEST_ASSERT_TRUE(p.look == SceneState::kIdle || p.look == SceneState::kWorking);
       continue;
     }
     if (p.body == Body::kTake) {
@@ -148,10 +149,15 @@ void test_every_pastime_has_its_clip_and_its_turn() {
   }
   for (const PastimeInfo& p : kPastimes) TEST_ASSERT_FALSE(p.move);  // no move is left
   TEST_ASSERT_EQUAL_INT(2, info(Pastime::kStretch).tier);
-  // At work there is only the stretch: the tempo at work is yours.
+  // At work, the body's own at the desk: the tempo at work is yours.
   int atWork = 0;
   for (const PastimeInfo& p : kPastimes) atWork += p.look == SceneState::kWorking;
-  TEST_ASSERT_EQUAL_INT(1, atWork);
+  TEST_ASSERT_EQUAL_INT(4, atWork);
+  TEST_ASSERT_EQUAL_PTR(rig::kRig.clip("hopeful"), clipOf(info(Pastime::kDeskLook)));
+  TEST_ASSERT_EQUAL_INT(1, info(Pastime::kDeskLook).tier);
+  TEST_ASSERT_EQUAL_INT(bitOf(info(Pastime::kYawn)), bitOf(info(Pastime::kDeskYawn)));
+  TEST_ASSERT_EQUAL_INT(bitOf(info(Pastime::kSneeze)), bitOf(info(Pastime::kDeskSneeze)));
+  for (Pastime p : {Pastime::kDeskYawn, Pastime::kDeskSneeze}) TEST_ASSERT_EQUAL_INT(2, info(p).tier);
   for (Pastime p : {Pastime::kLookAround, Pastime::kHopeful, Pastime::kHop, Pastime::kYawn, Pastime::kSneeze})
     TEST_ASSERT_EQUAL_INT(1, info(p).tier);
   TEST_ASSERT_EQUAL_INT(3, info(Pastime::kSnooze).tier);
@@ -435,7 +441,8 @@ void test_each_activity_is_a_pose() {
   board.b.onState(board.m, board.t);
   board.to(board.t + 2 * kPoseMs);
   TEST_ASSERT_TRUE(s.posed(Activity::kRunning) > q(.95) && s.posed(Activity::kTyping) < q(.05));
-  // Two hours of running at tier3: nothing but the stretch is dealt.
+  // Two hours of running at tier3: nothing but the stretch is dealt (the
+  // pose has the eyes and the paws).
   Board long_(SceneState::kWorking, tagBit("day") | tiers(3));
   long_.m.act = SceneState::kTerminal;
   long_.b.onState(long_.m, 0);
@@ -452,3 +459,49 @@ void test_each_activity_is_a_pose() {
   TEST_ASSERT_TRUE(stretches > 10);
 }
 
+
+// Life at the desk: typing at tier3 for an hour, it deals the look up at
+// you, the stretch and the sneeze, and the yawn only tired (at night, or
+// deep in a long stretch), each with its paws on the keys; and each gives
+// way at once, as the stretch does, to a poke's reaction: a bit's lids and
+// body go with it.
+void test_life_at_the_desk() {
+  auto hour = [](render::Energy energy) {
+    Board board(SceneState::kWorking, tagBit("day") | tiers(3));
+    board.m.energy = energy;
+    board.b.onState(board.m, 0);
+    std::set<Pastime> dealt;
+    board.to(60 * 60 * 1000, [&] {
+      const Pastime now = board.face().pastimes(board.t).playing;
+      if (now == Pastime::kNone) return;
+      TEST_ASSERT_EQUAL_INT(int(SceneState::kWorking), int(info(now).look));
+      dealt.insert(now);
+      const Paws paws = pawsFor(board.face().pastimes(board.t));
+      TEST_ASSERT_TRUE(!paws.lift[0] && !paws.lift[1] && !paws.dx[0] && !paws.dx[1]);
+    });
+    return dealt;
+  };
+  const std::set<Pastime> normal = hour(render::Energy::kNormal), tired = hour(render::Energy::kTired);
+  TEST_ASSERT_TRUE(normal == (std::set<Pastime>{Pastime::kStretch, Pastime::kDeskLook, Pastime::kDeskSneeze}));
+  TEST_ASSERT_TRUE(tired.count(Pastime::kDeskYawn) && tired.size() == 4);
+  // A poke while each plays: the pastime ends with the reaction's start,
+  // and a bit's acting with it.
+  for (Pastime p : {Pastime::kDeskLook, Pastime::kDeskYawn, Pastime::kDeskSneeze}) {
+    Board board(SceneState::kWorking, tagBit("day") | tiers(3));
+    board.to(3008);
+    GelFace& face = board.face();
+    face.playPastime(p, board.t);
+    board.to(board.t + 400);
+    TEST_ASSERT_EQUAL_INT(int(p), int(face.pastimes(board.t).playing));
+    if (info(p).body == Body::kBit) TEST_ASSERT_EQUAL_INT(bitOf(info(p)), face.engine().acting.playing);
+    app::ReactionIn in;
+    in.anim = SceneState::kPoked;
+    in.id = 9;
+    in.variant = board.b.pick(in.anim, board.m.mood, 255, in.outcome, board.rng);
+    board.b.play(in, board.t);
+    board.to(board.t + 32);
+    TEST_ASSERT_EQUAL_INT(-1, face.engine().acting.playing);
+    board.to(board.t + rig::kFadeMs + 32);
+    TEST_ASSERT_EQUAL_INT(int(Pastime::kNone), int(face.pastimes(board.t).playing));
+  }
+}

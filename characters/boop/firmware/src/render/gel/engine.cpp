@@ -31,9 +31,12 @@ void Engine::sync() {
   }
   face.setSleeping(route.quiet || leaning == kLeanDoze);
   scenes.setRoute(route, timeMs(), expression, random);
-  // Acting plays in idle, and wherever the scene's recipe carries a bit.
+  // Acting plays in idle, wherever the scene's recipe carries a bit, and a
+  // pastime's bit at the desk while it plays.
   const int gag = scenes.gag();
-  acting.setSuppressed((route.state != SceneState::kIdle && gag < 0) || grab, motion.time);
+  if (acting.playing < 0) deskBit_ = false;
+  const bool desk = deskBit_ && route.state == SceneState::kWorking;
+  acting.setSuppressed((route.state != SceneState::kIdle && gag < 0 && !desk) || grab, motion.time);
   acting.hold(gag, scenes.generation, scenes.iteration, motion.time);
 }
 void Engine::step(uint32_t ms) {

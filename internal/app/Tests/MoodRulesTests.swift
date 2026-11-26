@@ -22,9 +22,10 @@ final class MoodRulesTests: XCTestCase {
         harness.log.events.filter { $0.kind == Event.did && $0.action == MoodOutput.outputName }
     }
 
-    /// character.json's fades: happy settles into calm after 10 minutes,
-    /// sad after 10, proud into happy after 5; calm never fades. The fade is
-    /// the mood's change in the transcript, by `rule`, for no event.
+    /// character.json's fades, long enough to be seen when you look up:
+    /// happy settles into calm after 30 minutes, sad after 20, proud into
+    /// happy after 15; calm never fades. The fade is the mood's change in
+    /// the transcript, by `rule`, for no event.
     func testAMoodFadesByTheClock() throws {
         let (rig, harness, mood) = try rig()
         func now() -> String { MoodOutput.value(mood, harness.log.view(now: rig.now)) }
@@ -32,8 +33,8 @@ final class MoodRulesTests: XCTestCase {
         rig.wait(3 * 60 * minute, every: minute)
         XCTAssertEqual(changes(harness).count, 0, "calm never fades")
         set("happy")
-        rig.wait(10 * minute - 1000)
-        XCTAssertEqual(now(), "happy", "not before its 10 minutes")
+        rig.wait(30 * minute - 1000)
+        XCTAssertEqual(now(), "happy", "not before its 30 minutes")
         rig.wait(1000)
         XCTAssertEqual(now(), "calm")
         let fade = try XCTUnwrap(changes(harness).last)
@@ -44,13 +45,13 @@ final class MoodRulesTests: XCTestCase {
         XCTAssertEqual(MoodOutput.reason(mood, harness.log.view(now: rig.now), line: { _ in nil })?.cause, "It settled by itself after a while.")
 
         set("proud")
-        rig.wait(5 * minute)
-        XCTAssertEqual(now(), "happy", "proud is short: into happy after 5 minutes")
-        rig.wait(10 * minute)
-        XCTAssertEqual(now(), "calm", "and happy into calm after its own 10")
+        rig.wait(15 * minute)
+        XCTAssertEqual(now(), "happy", "proud is shorter: into happy after 15 minutes")
+        rig.wait(30 * minute)
+        XCTAssertEqual(now(), "calm", "and happy into calm after its own 30")
 
         set("sad")
-        rig.wait(10 * minute - 1000)
+        rig.wait(20 * minute - 1000)
         XCTAssertEqual(now(), "sad")
         rig.wait(1000)
         XCTAssertEqual(now(), "calm")
@@ -87,7 +88,7 @@ final class MoodRulesTests: XCTestCase {
     /// Cross has three levels, which code counts and Jev never picks: its
     /// face is annoyed, then grumpy, then angry. In it, a poke in a row, a
     /// shake, a failed check or a failed turn takes it a level up; a stroke
-    /// takes it one down; and it cools a level every 3 minutes, then to calm.
+    /// takes it one down; and it cools a level every 6 minutes, then to calm.
     func testCrossIsCountedALevelAtATime() throws {
         let (rig, harness, mood) = try rig()
         func log() -> LogView { harness.log.view(now: rig.now) }
@@ -122,16 +123,16 @@ final class MoodRulesTests: XCTestCase {
         rig.gesture("shake")
         XCTAssertEqual(face(), "angry", "a shake provokes it")
 
-        // It cools a level every 3 minutes since its last change, then to calm.
-        rig.wait(3 * minute - 1000)
+        // It cools a level every 6 minutes since its last change, then to calm.
+        rig.wait(6 * minute - 1000)
         XCTAssertEqual(face(), "angry")
         rig.wait(1000)
         XCTAssertEqual(face(), "grumpy")
         XCTAssertEqual(changes(harness).last?[MoodOutput.fadeFact], true)
-        XCTAssertEqual(MoodOutput.sinceLine(mood, log(), at: rig.now), "\(creature) has been cross for 3 min.", "since it turned cross, whatever its level")
-        rig.wait(3 * minute)
+        XCTAssertEqual(MoodOutput.sinceLine(mood, log(), at: rig.now), "\(creature) has been cross for 6 min.", "since it turned cross, whatever its level")
+        rig.wait(6 * minute)
         XCTAssertEqual(face(), "annoyed")
-        rig.wait(3 * minute)
+        rig.wait(6 * minute)
         XCTAssertEqual(MoodOutput.value(mood, log()), "calm")
         XCTAssertEqual(changes(harness).last?["message"]?.string, "\(creature)'s mood settled: cross → calm.")
 

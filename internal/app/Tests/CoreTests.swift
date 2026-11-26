@@ -2288,6 +2288,39 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertNotEqual(waiting.state.doing, "asleep")
     }
 
+    /// Music keeps Boop awake: with it on, being still its doze time
+    /// doesn't send it to sleep, agents open and resting or none, and a nap
+    /// ends as it starts. Away or locked, it still sleeps. The fact only
+    /// moves Doing: no event, no line, no Moment (`Core.along`).
+    func testMusicKeepsItAwake() {
+        var music = Along.Now()
+        music.music = true
+        let night = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
+        night.send(.turnStart)
+        night.send(.turnEnd)
+        night.core.along = music
+        let fx = night.wait(Core.dozeOffNightMs * 3, every: 60_000)
+        XCTAssertEqual(night.state.doing, "idle", "sessions resting, music on")
+        XCTAssertTrue(fx.views.isEmpty && !fx.effects.contains { if case .record = $0 { true } else { false } }, "nothing in the transcript")
+        night.core.along = Along.Now()
+        night.wait(60_000)
+        XCTAssertEqual(night.state.doing, "asleep", "music off: it dozes")
+        night.core.nap(at: night.now)
+        night.core.along = music
+        XCTAssertEqual(night.state.doing, "idle", "music ends the nap")
+
+        let alone = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)
+        alone.core.lastInputAt = alone.now
+        alone.core.along = music
+        alone.wait(Core.dozeOffNightMs * 2, every: 60_000)
+        XCTAssertEqual(alone.state.doing, "idle", "no agent open, still at the Mac, music on")
+        alone.core.lock(true, at: alone.now)
+        XCTAssertEqual(alone.state.doing, "asleep", "locked, it sleeps")
+        alone.core.lock(false, at: alone.now)
+        alone.core.awayFromMac = true
+        XCTAssertEqual(alone.state.doing, "asleep", "away, it sleeps")
+    }
+
     func testNoSessionsIsAsleep() {
         XCTAssertEqual(CoreRig().state.doing, "asleep")
     }

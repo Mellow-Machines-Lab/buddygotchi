@@ -168,6 +168,9 @@ public struct Moment: Equatable, Sendable {
     /// in the device's queue as long as the finish waits and plays
     /// (`BoopDevice.behindFinishTTL`). Not sent.
     public var behindFinish = false
+    /// It answers a touch, a poke or a gesture: it plays at once
+    /// (`BoopDevice.play(brain:finishing:)`). Not sent.
+    public var answersTouch = false
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,

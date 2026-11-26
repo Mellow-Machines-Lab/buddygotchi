@@ -43,9 +43,22 @@ public final class Reactions {
         invite = (id, now + Int64(ttl + BoopDevice.inviteHoldsMs(ms)))
     }
 
-    /// The `do` sent as `id` ended: an invite it asked holds the queue no more.
+    /// The finishes in flight, and the Moments queued behind them
+    /// (`Moment.behindFinish`), by `do` id, until each ends: a touch's
+    /// answer waits for them (`BoopDevice.play(brain:finishing:)`).
+    public private(set) var finishing: Set<Int> = []
+
+    /// The `do` sent as `id`, a finish or a Moment behind one.
+    public func sent(finishing id: Int) { finishing.insert(id) }
+
+    /// Whether a touch's answer would cut what mustn't be: a finish, or an invite.
+    public var holdsTouch: Bool { !finishing.isEmpty || invite != nil }
+
+    /// The `do` sent as `id` ended: an invite it asked holds the queue no
+    /// more, nor a finish.
     public func ended(_ id: Int) {
         if invite?.id == id { invite = nil }
+        finishing.remove(id)
     }
 
     /// How long a `do` sent at `now` may wait in the queue, `ttl` its own:

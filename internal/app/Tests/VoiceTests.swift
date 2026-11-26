@@ -23,7 +23,10 @@ extension Moment.Say {
 final class VoiceTests: XCTestCase {
     override func setUpWithError() throws { try requireVoice() }
 
-    let moods = CharacterPack.active.moods.map(\.id)
+    /// The faces that speak: the pack's, and the meme faces a skit may
+    /// show (`RulesBrain.meme`), which borrow a voice (voicegen's
+    /// borrowed.json). Deadpan and side-eye come where nothing speaks.
+    let moods = CharacterPack.active.moods.map(\.id) + ["smug", "silent_scream", "faint"]
 
     /// Every take plays in moods the pack has, is a reply's or a skit's
     /// the pack has, and has a length and text the bubble can show; a take

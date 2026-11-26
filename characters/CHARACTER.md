@@ -174,7 +174,7 @@ Boop's, cut to two of its 7 lasting moods and two of its 18 faces:
       "id": "cross",
       "meaning": "Cross: a failure, pokes or shakes that keep coming, an interruption, or being hushed.",
       "levels": ["annoyed", "grumpy", "angry"],
-      "fade": {"minutes": 3}
+      "fade": {"minutes": 6}
     }
   ],
   "moods": [
@@ -194,7 +194,7 @@ Boop's, cut to two of its 7 lasting moods and two of its 18 faces:
 | `claims_a_fix` | no | The words of its voice that say something was fixed. Boop says one only on a turn that got past a failed check, or at the check passing again |
 | `skits` | no | The few moments that always speak, each from takes of its own, by the slots they play at (§8). Without it, its Moments say nothing but your replies' and its waves' words |
 | `moods` | yes | Every face the Mac may ask for, once (§5). Its order is the firmware's `Mood` order |
-| `board_faces` | no | Faces only the board draws so far, after `moods` in the firmware's `Mood` order, each with `id`, `face`, `settles` and `family` as in `moods` (§5). The Mac doesn't read it, so no rule or brain picks one; a `do`, a `state` or a scenario may name one, and the board draws it |
+| `board_faces` | no | The meme faces, after `moods` in the firmware's `Mood` order, each with `id`, `face`, `settles` and `family` as in `moods` (§5). A Moment shows one only at the rare moment a rule names it for (`RulesBrain.meme`), where alone the brain is offered it too; never a lasting mood's. A `do`, a `state` or a scenario may name one, and the board draws it |
 | `lasting` | yes | The moods the buddy settles into, with their fades (§5). A pack without it doesn't load |
 | `acts` | no | What the pack draws for each work act, as Jev reads it: by kind (`push`, `tests`, `build`), then by `start`, `pass` and `fail`, a sentence with `{name}` for the creature's name. The engine says what the agent did and adds this. Without it, Jev reads the agent's clause alone |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
@@ -207,9 +207,10 @@ Unknown keys are ignored, so a newer pack still loads in an older engine.
 A pack names its own faces and its own moods; the engine names none. Boop
 has 18 faces the Mac picks from, six more only its board draws (its meme
 faces, `board_faces`: deadpan, side_eye, squint, smug, silent_scream,
-faint), and 7 lasting moods, and `character.json` is the one place that
-says which: read it there. For a rule or the brain to pick a board face,
-move it into `moods`; the Mac's tests pin Boop's 18.
+faint), which a Moment shows only at the rare moment a rule names one
+for, and 7 lasting moods, and `character.json` is the one place that
+says which: read it there. The Mac's tests pin Boop's 18 and the meme
+faces' moments.
 
 **A face** (`moods`) is what the board draws under one name: the emotion a
 Moment can show, and the name the wire's `mood` carries. **A lasting mood**

@@ -43,7 +43,7 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
     public enum Slot: String, Sendable, CaseIterable {
         case doneVeryShort, doneShort, doneLong, doneVeryLong, chat, echo
         case failed, failedVeryLong, gaveUp
-        case checkFailed, checkFailing, checkFixed
+        case checkFailed, checkFailing, checkFixed, failing
         case prompt, promptFrustrated, promptPlayful, promptPolite, promptNamed
         case poke, pokes, pokesMany, stroke, hold, shake, pickup, otherTouch
         case words, wordsKind, wordsRude, wordsSad, wordsSorry, wordsThanks, wordsHello, wordsBye, wordsQuestion
@@ -94,7 +94,9 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
         case .turn? where e.phase == .start:
             return Read(slot: .other, cues: [.agentStarts])
         case .tool? where e.phase == .end:
-            guard let topic = f["topic"]?.string, TranscriptView.checks.contains(topic) else { return Read(slot: .other) }
+            guard let topic = f["topic"]?.string, TranscriptView.checks.contains(topic) else {
+                return Read(slot: f["failing"] != nil ? .failing : .other)
+            }
             if f["result"]?.string == "failed" {
                 return Read(slot: (f["failed_before"]?.int ?? 0) > 0 ? .checkFailing : .checkFailed, cues: [.checkFailed])
             }
@@ -155,8 +157,11 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
         // An agent starting work ends lonely only when one really works.
         if read.cues == [.agentStarts], !working(log) { moodTo = [] }
         let shown = moodTo.first { $0 != MoodOutput.missing } ?? current
-        let face = pickFace(read, mood: shown, level: level)
-        return Call(read: read, mood: current, moodTo: moodTo, face: face, roll: lock.withLock { rng.next() })
+        let meme = Self.meme(read, facts: f, mood: shown)
+        let face = pickFace(read, mood: shown, level: level, meme: meme)
+        // A meme face not offered gives way to the slot's likeliest.
+        let instead = meme != nil && face == meme ? Self.colour(Self.faces[read.slot] ?? [], mood: shown, level: level).first : nil
+        return Call(read: read, mood: current, moodTo: moodTo, face: face, instead: instead, roll: lock.withLock { rng.next() })
     }
 
     /// Asked with no reading, as a forced pass from outside is: the mood
@@ -185,6 +190,7 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
         .checkFailed: ["annoyed", "curious", "determined"],
         .checkFailing: ["determined", "grumpy"],
         .checkFixed: ["proud", "pleased"],
+        .failing: [],
         .prompt: [],
         .promptFrustrated: ["determined"],
         .promptPlayful: ["mischievous", "amused"],
@@ -226,18 +232,56 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
             let kept = faces.map { cheer.contains($0) ? "pleased" : $0 }
             return kept.contains("pleased") || kept.contains("proud") ? kept : kept.map { $0 == "curious" ? ["annoyed", "grumpy", "angry"][min(2, level - 1)] : $0 }
         case "sad":
-            let cheeky: Set = ["mischievous", "amused", "excited"]
+            let cheeky: Set = ["mischievous", "amused", "excited", "smug"]
             return faces.map { cheeky.contains($0) ? "sad" : $0 }
         default:
             return faces
         }
     }
 
-    func pickFace(_ read: Read, mood: String, level: Int) -> String? {
+    /// The meme face (the pack's `board_faces`) a moment calls for, by its
+    /// slot and its line's facts, or nil at every other: the rules show it
+    /// there over the slot's own faces, unless it was the last face, and
+    /// the brain is offered it there alone (`MomentOutput.questions`). A
+    /// Moment's emotion only: the mood never moves to one. A `mood` that
+    /// wouldn't show it (sad isn't smug) keeps the slot's faces; with none,
+    /// the face the moment calls for in any mood.
+    ///
+    /// | The moment | The face |
+    /// | --- | --- |
+    /// | The 2nd failed check in a row, before the upset skit's drama | deadpan |
+    /// | Calls failing in a row (`failing`) | side_eye |
+    /// | A check passing after it failed, a turn done after failed checks | smug |
+    /// | The upset skit's swear: the 3rd failed check in a row, a failed turn after 2 failed checks | silent_scream |
+    /// | A very long turn failing, the agent giving up | faint |
+    public static func meme(_ read: Read, facts f: [String: JSONValue], mood: String? = nil) -> String? {
+        let failedBefore = f["failed_before"]?.int ?? 0, checksFailed = f["checks_failed"]?.int ?? 0
+        let face: String?
+        switch read.slot {
+        case .checkFailing where failedBefore == 1: face = "deadpan"
+        case .checkFailing where failedBefore == Int64(Skits.checkFailingFrom - 1): face = "silent_scream"
+        case .failing: face = "side_eye"
+        case .checkFixed: face = "smug"
+        case .doneVeryShort, .doneShort, .doneLong, .doneVeryLong: face = checksFailed > 0 ? "smug" : nil
+        case .failed where checksFailed >= Int64(Skits.swearsAtChecksFailed): face = "silent_scream"
+        case .failedVeryLong, .gaveUp: face = "faint"
+        default: face = nil
+        }
+        guard let mood else { return face }
+        return face.flatMap { colour([$0], mood: mood, level: 1) == [$0] ? $0 : nil }
+    }
+
+    func pickFace(_ read: Read, mood: String, level: Int, meme: String? = nil) -> String? {
         let options = Self.colour(Self.faces[read.slot] ?? [], mood: mood, level: level).reduce(into: [String]()) {
             if !$0.contains($1) { $0.append($1) }
         }
         if read.slot == .echo { return lock.withLock { lastAny ?? "pleased" } }
+        if let meme, let picked = lock.withLock({ () -> String? in
+            guard meme != lastFace[read.slot], meme != lastAny else { return nil }
+            lastFace[read.slot] = meme
+            lastAny = meme
+            return meme
+        }) { return picked }
         guard !options.isEmpty else { return nil }
         return lock.withLock {
             // Never the face this slot showed last, nor the last face at
@@ -262,6 +306,8 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
         var mood: String
         var moodTo: [String]
         var face: String?
+        /// The face in its place when it isn't offered: a meme face's.
+        var instead: String?
         var roll: UInt64
 
         func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
@@ -271,7 +317,8 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
                 let pick: String?
                 switch q.key {
                 case MoodOutput.outputName: pick = moodTo.first { names.contains($0) } ?? (names.contains(mood) ? mood : names.first)
-                case MomentOutput.emotionKey: pick = face.flatMap { names.contains($0) ? $0 : nil } ?? (names.contains("none") ? "none" : names.first)
+                case MomentOutput.emotionKey:
+                    pick = [face, instead].compactMap { $0 }.first(where: names.contains) ?? (names.contains("none") ? "none" : names.first)
                 case MomentOutput.replyKey: pick = read.reply.flatMap { names.contains($0) ? $0 : nil } ?? (names.contains("huh") ? "huh" : names.first)
                 case Signs.questionKey: pick = sign(q)
                 // Left to Voice, as with no key: only Jev answers it.

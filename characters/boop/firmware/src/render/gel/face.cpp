@@ -212,6 +212,8 @@ uint32_t GelFace::roll(uint32_t n) {
 
 void GelFace::endPastime(uint32_t t, bool early) {
   if (early && clip_) mixer_.stop(*clip_);
+  // A bit at the desk gives way as a clip does; idle, the engine stops it.
+  if (early && pastimeLook_ == SceneState::kWorking) engine_->stopBit();
   // One stopped early fades out what it draws; a bit's or a take's draws
   // nothing, and the engine stops it itself as the look gives way.
   stopped_ = early && clip_;
@@ -321,18 +323,20 @@ void GelFace::deal(SceneState look, uint32_t t) {
   int n = 0;
   // A move waits its gap.
   const bool moveWaits = moved_ && within(t, movedAt_, kMoveGapMs);
-  // At work, only a stretch but while it types: a take is typing, the done
-  // beat is a paw on Enter, and a melt from another pose would leave the
-  // screen.
+  // At work, off typing only a stretch: the other poses have the eyes and
+  // the paws (looking, running, waiting), and a melt from one would leave
+  // the screen. Typing, its paws stay on the keys through each.
   const SceneState desk = e.scenes.route.state;
   const bool types = isDesk(desk) && activityOf(desk) == Activity::kTyping;
-  // Tired, idle: a yawn now and then, whatever the tier, and the newest.
-  const bool tired = e.energy == Energy::kTired && look == SceneState::kIdle;
+  const bool tired = e.energy == Energy::kTired;
   for (const auto& p : kPastimes) {
-    const bool yawn = tired && p.id == Pastime::kYawn;
+    // Tired, idle: a yawn now and then, whatever the tier, and the newest.
+    const bool yawn = tired && look == SceneState::kIdle && p.id == Pastime::kYawn;
     if (p.look != look || !(fits(p, when, lookMs) || yawn) || (p.move && moveWaits) || !hasBody(p)) continue;
     if ((look == SceneState::kWorking && !types && p.id != Pastime::kStretch))
       continue;
+    // At the desk it yawns only tired: at night, or deep in a long stretch.
+    if (p.id == Pastime::kDeskYawn && !tired) continue;
     // The highest tier, then the longest wait, is the newest; one that
     // needs a tag is newer than any while it fits.
     options[n++] = {&p, yawn ? 2000000 : (p.tag ? 1000000 : p.tier * 100000) + p.afterS};
@@ -401,13 +405,16 @@ void GelFace::reply(const char* name) {
 }
 
 bool GelFace::playPastime(const char* name, uint32_t t) {
+  // The row for the look showing, else the first by that name.
+  SceneState look;
+  showsLook(source_.anim, look);
+  const PastimeInfo* row = nullptr;
   for (const PastimeInfo& p : kPastimes)
-    if (!std::strcmp(p.name, name)) {
-      advanceTo(t);
-      playPastime(p.id, t);
-      return true;
-    }
-  return false;
+    if (!std::strcmp(p.name, name) && (!row || p.look == look)) row = &p;
+  if (!row) return false;
+  advanceTo(t);
+  playPastime(row->id, t);
+  return true;
 }
 
 // Whether the working look's pose is typing's: no activity's own clip
