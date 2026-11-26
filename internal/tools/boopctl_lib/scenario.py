@@ -16,6 +16,9 @@ GOLDEN = REPO / "characters" / "boop" / "tests" / "golden-gel"
 
 TAP_MS = 100  # a tap's press or touch, unless the line gives "ms"
 CLOCK_STRIDE_MS = 30_000  # the longest jump of the frozen clock at once: 30 s passes a board's watchdog, 60 s does not, and 20 s moves a picture
+# A board steps the face through a stride in one frame, about 3 s, after it
+# answers the clock: the request after it waits that long for its reply.
+STRIDE_WAIT_S = 10.0
 
 
 def resolve(name: str) -> Path:
@@ -67,7 +70,9 @@ def play(link: Link, path: Path, out_dir: Path, log=print) -> list[str]:
     failures: list[str] = []
     out_dir.mkdir(parents=True, exist_ok=True)
     link.request({"t": "dbg.reset"})  # same start on the board and in the simulator
+    link.timeout = max(link.timeout, STRIDE_WAIT_S)
     clock = 0
+    sent = False  # a message sent since the last request
     for number, raw in enumerate(path.read_text().splitlines(), 1):
         if not raw.strip() or raw.lstrip().startswith("//"):
             continue
@@ -80,7 +85,15 @@ def play(link: Link, path: Path, out_dir: Path, log=print) -> list[str]:
                 link.request(step)
             else:
                 link.send(step)
+            sent = not step["t"].startswith("dbg.")
         elif "clock" in step:
+            # A message and the clock step after it must not share a batch,
+            # or a board that read both at once draws its first frame at
+            # the new clock, where the simulator drew one between: a request
+            # ends the batch, and a frame always follows one.
+            if sent:
+                link.request({"t": "dbg.ping"})
+                sent = False
             # A long jump in strides: the face steps through all of it in one
             # frame, and on a board minutes of that outlast the loop's watchdog.
             while step["clock"] - clock > CLOCK_STRIDE_MS:
