@@ -138,4 +138,4 @@ These were open and are now settled. Change them here if they change.
 | Does typing stir a sleeping Boop? | No |
 | How does Boop show the time of day? | Energy: eyelids and tempo. No nightcap |
 | What happens to the tiers, the busy and frantic typing, the copied pose? | The tiers fold into energy. The other two go |
-| Where do the agent counts go? | The pips say them. The strip's right end names the agent you watch |
+| Where do the agent counts go? | The pips say them. The watched one's pip holds its name, on the line |

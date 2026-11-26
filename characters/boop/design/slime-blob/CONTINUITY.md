@@ -305,7 +305,8 @@ The strip's working and idle counts each sit in a chip outlined as the
 drawer's rows' chips are, so the drawer says what they mean: the working
 count's bright, by a spinner that turns once a second, and the idle
 count's dim, by a sleeper's z. The lane is drawn again for the spinner
-only while sessions work. The counts never run past the strip's
+only while one shows: with several agents the strip has none, so their
+lane is drawn again only when what it says changes. The counts never run past the strip's
 margin: the names before them are cut to what they leave. While
 something needs you, the strip is the only place that says who's
 asking (the needs-you card says only to continue on your Mac), so the
@@ -1277,7 +1278,10 @@ agent is doing in a verb and its object, is the work's term, first in
 the strip in its own font, grey: `searching TODO`, with the counts as
 marks at the right end (a spinner and its number, a sleeper and its,
 the to-do list last), cut to the room they leave (`termFor` in
-`gel/lane.cpp`). The counts in full are the drawer's, pulled up from
+`gel/lane.cpp`). With several agents the watched one's doing has the
+whole row, and its name rides in its pip on the strip's line, a pill in
+its lane's colour holding as much of it as fits beside the other pips,
+cut with "…" (`fitPips`). The counts in full are the drawer's, pulled up from
 the strip; with no term, the strip says them in words. It changes in place, with no card and no rise: cards
 are for you, the desk and the strip are for the work. A failure or a
 timeout landing turns it to its word and what happened, in clay or

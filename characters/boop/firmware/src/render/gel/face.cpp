@@ -86,7 +86,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   revision_ = cueRevision_ = 0;
   mixer_.reset(0, 0, nullptr);
   lively_.reset();
-  setStripLayout("today");
+  setCountsOnLine(false);
   layers_ = {};
   clip_ = cueing_ = base_ = idleMove_ = nullptr;
   idleMoveEnds_ = 0;

@@ -98,7 +98,7 @@ struct Model {
   char pipKind[render::Strip::kPips] = {};
   int8_t pipSlot[render::Strip::kPips] = {};
   int watch = -1;
-  char who[16] = "";
+  char who[32] = "";  // Core.maxWatchNameBytes, its end and a little room
   int pillAt = -1;
   char pill[28] = "";
   // 0–10; silent until the Mac's first state says otherwise, so a board

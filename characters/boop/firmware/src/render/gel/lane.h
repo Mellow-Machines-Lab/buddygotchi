@@ -103,36 +103,27 @@ int switchArrows(uint32_t now);
 // the desk's monitor is lit in its colour.
 int watchedSlot();
 
-// The strip's layouts, for the owner to choose between (dbg.strip, until
-// the next reset); today's is the default. With several agents, a long
-// doing and the name's chip share one row: today the chip is whole and the
-// doing takes what's left. kDoingFirst ("a"): the doing whole, the chip
-// what's left (splitRow). kFold ("b"): a's, while the name shows after the
-// agent followed changes, then the chip folds away and the doing has the
-// row (nameFold). kRows ("c"): two rows under a rule moved up, the doing
-// across the whole width, and who and the counts under it. kOnLine ("e"):
-// the name in the long pip on the line, the doing the whole row.
-enum class StripLayout : uint8_t { kToday, kDoingFirst, kFold, kRows, kOnLine };
-// Sets it by its name ("today", "a", "b", "c", "e"); false for another.
-bool setStripLayout(const char* name);
-StripLayout stripLayout();
-// kDoingFirst's row of `room` px, between the doing (in the strip's font)
-// and the name's chip (the large font, padded): both whole when they fit,
-// else the name cut to what the doing leaves, kNameLeast glyphs and a "…"
-// at the least, else its initial alone, and the doing cut to the rest.
-// `glyphs` is the chip's, the "…" included.
-struct RowSplit {
-  int doing = 0, chip = 0, glyphs = 0;
+// The pips on the strip's line with several agents (`pips`), from one end
+// of the line to the other `line` px: the others dots kPipDot in radius,
+// kPipGap apart, the line's rule stopping kPipRuleGap short of them; the
+// watched one a pill kPillTall high in its lane's colour holding its name
+// in the large font, as much as fits with kLineLeast of the line at each
+// end, cut as text() cuts it, with "…" (`glyphs` its cells, "…" included,
+// `room` the px text() is given), or with no name the long pip, kPipLong.
+// `width` is all of them, gaps and all.
+constexpr int kPipDot = 5, kPipGap = 8, kPipLong = 26, kPipRuleGap = 12;
+constexpr int kPillTall = 26, kPillPad = 8, kLineLeast = 24;
+struct PipsFit {
+  int width = 0, pill = 0, glyphs = 0, room = 0;
   bool cut = false;
 };
-constexpr int kNameLeast = 3, kNamePad = 16;
-RowSplit splitRow(int doingGlyphs, int nameGlyphs, int room);
-// kFold's chip, `age` ms after the agent followed (or the set of agents)
-// changed: whole (255) for kNameMs, then gone over kFoldMs.
-constexpr uint32_t kNameMs = 2500, kFoldMs = 300;
-int nameFold(uint32_t age);
-// The doing's room on `panel` under the layout now, with nothing beside
-// it: kRows' top row, else the strip's one row.
-int doingRoom(const Surface& panel);
+PipsFit fitPips(int pips, bool watched, const char* name, int line);
+
+// The counts on the line, for the owner to see (dbg.counts): with one
+// agent at work, its marks (the spinner and its number, the to-do list's
+// "3/4") stand at the line's right end and the doing has the whole row.
+// Off by default; a reset turns it off.
+void setCountsOnLine(bool on);
+bool countsOnLine();
 
 }  // namespace render::gel

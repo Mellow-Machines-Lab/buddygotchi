@@ -63,7 +63,7 @@ std::vector<Scene> scenes() {
       {"attention", std::string("{") + kWorking + R"(,"attn":{"id":5000,"agent":"codex","project":"perf"}})", {}, {}},
       {"idle", R"({"t":"state","base":"idle","mood":"calm","idle":1,"vol":0,"when":["day"]})", {}, {}},
       // Four agents, the one followed switching every 4 s: the strip's
-      // row slides, and its name shows (BENCH_STRIP picks its layout).
+      // row slides, and the name on the line changes.
       {"agents", agents(1), {}, {agents(1), agents(1), agents(2), agents(2)}},
       {"invite",
        R"({"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]})",
@@ -141,8 +141,7 @@ uint32_t written(const render::Surface& s) {
 int main(int argc, char** argv) {
   // gel_bench [SECONDS [FRAME_MS [SCENE...]]]: BENCH_RUNS runs of each (3),
   // the quickest run's medians kept; BENCH_FROM (ms) where measuring starts
-  // (1000); BENCH_SECONDS=1 each second's too; BENCH_SHOTS=DIR a PPM every 5 s;
-  // BENCH_STRIP=NAME the strip's layout.
+  // (1000); BENCH_SECONDS=1 each second's too; BENCH_SHOTS=DIR a PPM every 5 s.
   const int seconds = argc > 1 ? std::atoi(argv[1]) : 30;
   const int frameMs = argc > 2 ? std::atoi(argv[2]) : 33;
   const int runs = std::getenv("BENCH_RUNS") ? std::max(1, std::atoi(std::getenv("BENCH_RUNS"))) : 3;
@@ -168,11 +167,6 @@ int main(int argc, char** argv) {
       };
       send(R"({"t":"dbg.reset"})");
       board.hosted().tick();
-      // BENCH_STRIP: the strip's layout (dbg.strip), today's by default.
-      if (const char* layout = std::getenv("BENCH_STRIP")) {
-        send(std::string(R"({"t":"dbg.strip","layout":")") + layout + "\"}");
-        board.hosted().tick();
-      }
       std::vector<Sample> samples;
       uint32_t nextState = 0, nextRepeat = 0;
       int repeats = 0;

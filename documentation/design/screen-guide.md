@@ -31,9 +31,9 @@ the agent does now.
 | 2 | Boop | 106,52 · 290×250 | Pose: who it works for. Rhythm and gaze: you. Face: Boop | Boop | Moves all the time. Rises 88 for a held picture, 196 for a show |
 | 3 | Monitor | 24,240 · 70×50 | The kind of work: search, edit, run, helpers. Red for a failure | Agent | In place. Frame in the lane colour. Dark when idle |
 | 4 | Keys | 150,290 · 210×20 | Where the hands go when typing, yours or the agent's | Boop | In place |
-| 5 | Line and pips | y 352–366, centred | Every agent, and which one you see. The swipe hint. Pull up for the drawer | Agents | The long pip slides. A pip pulses when its agent wants you |
-| 6 | Doing now | 24,368 · left, 22 px | This call, as a verb and its object. Clay for a failure. "your turn" after a chat turn | Agent | In place, at every call |
-| 7 | Agent name | Right end of the strip, 14 px chip | Which agent you see, in its lane colour | Agent | In place, on a switch |
+| 5 | Line and pips | y 336–362, centred | Every agent, and which one you see. The swipe hint. Pull up for the drawer | Agents | A pip pulses when its agent wants you |
+| 6 | Doing now | 24,368 · the whole row, 22 px | This call, as a verb and its object. Clay for a failure. "your turn" after a chat turn | Agent | In place, at every call |
+| 7 | Agent name | In its pip on the line, 26 px high, its name in 14 px or more | Which agent you see, in its lane colour. As much of the name as fits beside the other pips, cut with "…" | Agent | In place, on a switch |
 | 8 | Held picture | 24,158 · 454×188 | The work as a live picture | Agent | Rises from below. Put down when its data stops |
 | 9 | Pill | Centred, y 306 · 34 high | News from an agent you are not watching | For you | Rises, stays about 4 s, a tap goes there |
 | 10 | Show | 30,60 · 442×288. The agent's picture is 420×190 inside it | A result as a picture | For you | Rises, stays 30 s, folds into the low sign |
@@ -112,7 +112,7 @@ tap, a light passing across asks for a stroke.
    arrows at the strip's ends say there are others to swipe to.
 
 Every agent has its own colour from when Boop first sees it, a resting one
-too, and keeps it across turns: its pip, its chip, the monitor's frame, its
+too, and keeps it across turns: its pip, which holds its name while you watch it, the monitor's frame, its
 card and its row in the drawer and the popover all wear it.
 7. **A held picture.** An agent with a picture beats an agent with plain
    work.
@@ -216,12 +216,12 @@ One mono face. Nothing under 14 px.
 | Strip, doing now | 22 px | Medium | 24 characters |
 | Picture rows, low sign, band | 18–19 px | Bold | Low sign: 26 characters |
 | Picture small line, pill | 16–17 px | Regular; the pill bold | |
-| Title bars, name chip, text in a show's picture | 14–15 px | Bold | A show's picture: 16 words |
+| Title bars, the name in its pip, text in a show's picture | 14–15 px | Bold | A show's picture: 16 words |
 
 ## Colour
 
 - A lane colour belongs to one agent everywhere: its pip, its monitor frame,
-  its picture, its name chip, its pill.
+  its picture, the pip that holds its name, its pill.
 - Good, bad and not checked are for outcomes. They never mark an agent.
 - Amber means needs you. Keep lane colours away from it.
 

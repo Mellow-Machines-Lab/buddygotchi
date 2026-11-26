@@ -616,4 +616,4 @@ sure the finger lifted.
 | An `ended` | The link gives up on it at the `do`'s `ttl` plus 60 s | [linkkit/SPEC.md](../linkkit/SPEC.md) §5 |
 | An output's `run` | Logged if it takes over 300 ms | `outputSlowMs` in `mellowharness/Sources/MellowHarness/Harness.swift` |
 | `state` keepalive | Every 10 s; the device gives up on the app after 30 s | [linkkit/SPEC.md](../linkkit/SPEC.md) §9, `kNoAppMs` in `firmware/src/app/behaviour.h` |
-| Protocol message | At most 512 bytes; Boop caps each text field (`attn.project` 47 bytes, `who.thread` 50, …), so every `state` fits | [linkkit/SPEC.md](../linkkit/SPEC.md) §9 for the 512; Boop's caps in `app/BoopKit/Core/StateSnapshot.swift` (`maxSignBytes`, `maxThreadBytes`) |
+| Protocol message | At most 512 bytes; Boop caps each text field (`attn.project` 47 bytes, `who.thread` 50, the watched agent's `who` 28, …), so every `state` fits | [linkkit/SPEC.md](../linkkit/SPEC.md) §9 for the 512; Boop's caps in `app/BoopKit/Core/StateSnapshot.swift` (`maxSignBytes`, `maxThreadBytes`) |
