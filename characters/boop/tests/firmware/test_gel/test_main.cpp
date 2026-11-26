@@ -2059,6 +2059,9 @@ void test_a_needs_you_under_a_lean_ends_it();
 void test_a_finish_keeps_its_touches();
 void test_listening_takes_the_face_from_a_lean();
 void test_a_hold_on_the_strip_is_the_drawers();
+void test_the_body_is_where_it_was_drawn();
+void test_only_a_tap_on_the_body_pokes_the_gel();
+void test_a_stroke_on_the_body_never_switches_agent();
 void test_an_asks_lane_keeps_its_held_tap();
 void test_a_moment_cuts_a_lean();
 void test_a_drag_starts_where_the_finger_is_on_the_dome();
@@ -2073,7 +2076,7 @@ void test_the_macs_reason_doesnt_double_a_touchs();
 void test_a_reason_alone();
 // test_drawer.cpp
 void test_a_pull_up_the_strip_opens_the_drawer();
-void test_a_swipe_up_the_face_isnt_the_drawers();
+void test_a_quick_move_up_the_body_isnt_the_drawers();
 void test_a_short_pull_springs_back_shut();
 void test_a_tap_on_a_row_picks_it();
 void test_it_shuts_itself_and_says_its_open_till_then();
@@ -3674,6 +3677,9 @@ int main() {
   RUN_TEST(test_a_finish_keeps_its_touches);
   RUN_TEST(test_listening_takes_the_face_from_a_lean);
   RUN_TEST(test_a_hold_on_the_strip_is_the_drawers);
+  RUN_TEST(test_the_body_is_where_it_was_drawn);
+  RUN_TEST(test_only_a_tap_on_the_body_pokes_the_gel);
+  RUN_TEST(test_a_stroke_on_the_body_never_switches_agent);
   RUN_TEST(test_an_asks_lane_keeps_its_held_tap);
   RUN_TEST(test_a_moment_cuts_a_lean);
   RUN_TEST(test_a_drag_starts_where_the_finger_is_on_the_dome);
@@ -3688,7 +3694,7 @@ int main() {
   RUN_TEST(test_a_reason_alone);
   // test_drawer.cpp
   RUN_TEST(test_a_pull_up_the_strip_opens_the_drawer);
-  RUN_TEST(test_a_swipe_up_the_face_isnt_the_drawers);
+  RUN_TEST(test_a_quick_move_up_the_body_isnt_the_drawers);
   RUN_TEST(test_a_short_pull_springs_back_shut);
   RUN_TEST(test_a_tap_on_a_row_picks_it);
   RUN_TEST(test_it_shuts_itself_and_says_its_open_till_then);

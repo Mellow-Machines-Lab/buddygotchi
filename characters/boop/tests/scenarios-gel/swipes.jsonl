@@ -1,11 +1,14 @@
 // A finger in idle (CONTINUITY.md, A finger on the body): the dome goes its
-// way and a quick swipe plays nothing of its own, a gesture the Mac hears
-// all the same. A swipe down part way
-// (squashed under it, the base on the floor) and just after it let go
-// (carried on down), a swipe up (stretched), across each way (leaning that
-// way), the second of two quick swipes down (from the first's rebound),
-// then a slow stroke down (pressed under it) that ends in the stroke's own
-// reaction (affectionate, melted, eyes shut).
+// way, and a quick stroke that starts on the body is the stroke it is,
+// however fast it lets go: the dome carried on by it, then the stroke's own
+// reaction. A quick stroke down part way (squashed under it, the base on
+// the floor) and just after it let go (carried on down), one up (stretched,
+// a ruffle), across each way (leaning that way), one beside the body, on
+// the empty screen (nothing: the dome stays, the Mac hears nothing), the
+// second of two quick strokes down (from the first's rebound, so it starts
+// lower, where the body is: above it, it would be the screen's), then a slow
+// stroke down (pressed under it) that ends in the stroke's own reaction
+// (affectionate, melted, eyes shut).
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0}
@@ -19,16 +22,16 @@
 {"clock":4160}
 {"clock":4200}
 {"shot":"swipe-down-let-go"}
-{"expect":{"moment":null,"last_input":{"k":"gesture"},"touch":{"last":{"from":[160,60],"was":"swipe"}}}}
+{"expect":{"moment":{"anim":"gesture","variant":2},"last_input":{"k":"gesture"},"touch":{"last":{"from":[160,60],"body":true,"was":"stroke"}}}}
 {"clock":7000}
-{"t":"dbg.touch","x":160,"y":200,"to_x":160,"to_y":60,"ms":160}
+{"t":"dbg.touch","x":160,"y":180,"to_x":160,"to_y":40,"ms":160}
 {"clock":7040}
 {"clock":7080}
 {"clock":7120}
 {"shot":"swipe-up-held"}
 {"clock":7160}
 {"clock":7200}
-{"expect":{"moment":null}}
+{"expect":{"moment":{"anim":"gesture"},"touch":{"last":{"body":true,"was":"ruffle"}}}}
 {"clock":10000}
 {"t":"dbg.touch","x":70,"y":130,"to_x":250,"to_y":130,"ms":160}
 {"clock":10040}
@@ -37,7 +40,7 @@
 {"shot":"swipe-right-held"}
 {"clock":10160}
 {"clock":10200}
-{"expect":{"moment":null}}
+{"expect":{"moment":{"anim":"gesture","variant":2},"touch":{"last":{"body":true,"was":"stroke"}}}}
 {"clock":13000}
 {"t":"dbg.touch","x":250,"y":130,"to_x":70,"to_y":130,"ms":160}
 {"clock":13040}
@@ -46,7 +49,16 @@
 {"shot":"swipe-left-held"}
 {"clock":13160}
 {"clock":13200}
-{"expect":{"moment":null}}
+{"expect":{"moment":{"anim":"gesture","variant":2},"touch":{"last":{"body":true,"was":"stroke"}}}}
+{"clock":15000}
+{"t":"dbg.touch","x":15,"y":40,"to_x":15,"to_y":180,"ms":160}
+{"clock":15040}
+{"clock":15080}
+{"clock":15120}
+{"shot":"swipe-beside-held"}
+{"clock":15160}
+{"clock":15200}
+{"expect":{"last_input":{"k":"touch"},"touch":{"last":{"body":false,"was":"swipe"}}}}
 {"clock":16000}
 {"t":"dbg.touch","x":160,"y":60,"to_x":160,"to_y":200,"ms":160}
 {"clock":16040}
@@ -57,14 +69,14 @@
 {"clock":16240}
 {"clock":16280}
 {"clock":16320}
-{"t":"dbg.touch","x":160,"y":60,"to_x":160,"to_y":200,"ms":160}
+{"t":"dbg.touch","x":160,"y":95,"to_x":160,"to_y":200,"ms":160}
 {"clock":16360}
 {"clock":16400}
 {"clock":16440}
 {"shot":"double-swipe"}
 {"clock":16480}
 {"clock":16520}
-{"expect":{"moment":null}}
+{"expect":{"moment":{"anim":"gesture","variant":2},"touch":{"last":{"body":true,"was":"stroke"}}}}
 {"clock":19000}
 {"t":"dbg.touch","x":160,"y":60,"to_x":160,"to_y":200,"ms":900}
 {"clock":19100}

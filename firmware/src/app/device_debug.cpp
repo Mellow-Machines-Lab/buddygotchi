@@ -364,6 +364,7 @@ void Device::state(JsonObject d, uint32_t t) {
     JsonArray from = last["from"].to<JsonArray>(), to = last["to"].to<JsonArray>();
     from.add(p.x0), from.add(p.y0), to.add(p.x), to.add(p.y);
     last["ms"] = p.ms;
+    last["body"] = live_.lastTouchOnBody;
     last["was"] = live_.lastTouchWas;
   } else {
     touch["last"] = nullptr;

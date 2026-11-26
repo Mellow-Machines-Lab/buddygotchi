@@ -650,8 +650,8 @@ mood too.
 | Gesture | What the body does | Face it borrows | Bit |
 | --- | --- | --- | --- |
 | handoff (BOOT hands you an agent) | Lifts and leans in, offering | pleased | 2.4 s |
-| stroke (a slow one; a quick swipe is none: A finger on the body) | Melts under the hand, eyes shut | affectionate | 3 s |
-| ruffle (stroked slowly the wrong way, upward) | Bristles in ripples, then huffs | annoyed | 2.2 s |
+| stroke (on the body, however quick: A finger on the body) | Melts under the hand, eyes shut | affectionate | 3 s |
+| ruffle (stroked the wrong way, upward) | Bristles in ripples, then huffs | annoyed | 2.2 s |
 | nose | Squished in at the nose, pops back | surprised | 1.8 s |
 | tickle | Giggles, jiggling side to side, eyes squeezed | excited | 2.4 s |
 | dizzy (shaken) | Wobbles round, sliding and rolling side to side | surprised | 3.2 s |
@@ -685,13 +685,15 @@ wherever the last left it instead of piling up.
 
 The board feeds it (`gel/face.cpp`): the canvas's pixels are 85 to a body
 unit at the dome (128 of the panel's, which draws the canvas half as large
-again), its middle at (160, 129), y flipped. It tells a touch that travels
-40 px or more by its speed (`app/touch_gesture.h`): faster than 600 px a
-second on average, from going down to its last reading, it's a swipe, the
-face's alone, with no poke or other touch and nothing to the Mac; slower, a
-stroke (upward, a ruffle), and the gesture above plays as it lets go. The
-finger's velocity as it lets go is over its last 80 ms. The board's
-`tests/scenarios-gel/swipes.jsonl` swipes on the board itself.
+again), its middle at (160, 129), y flipped. Only a finger that starts on
+the body is one (`GelFace::bodyAt`: the last frame's mesh and the rig's
+hands, 12 canvas px round them): one that starts beside it never moves it.
+On the body a touch that travels 40 px or more is a stroke (upward, a
+ruffle) however fast it lets go (`app/touch_gesture.h`), flung on by its
+speed and then the gesture above as it lets go; off it, it's a swipe
+between agents. The finger's velocity as it lets go is over its last 80 ms.
+The board's `tests/scenarios-gel/swipes.jsonl` strokes it quickly on the
+board itself.
 
 A finger that starts on the strip is no finger on the body: going up, it
 pulls out the agents' drawer (`render/gel/drawer.h`), and the body is

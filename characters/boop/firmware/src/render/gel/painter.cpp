@@ -244,6 +244,7 @@ GEL_HOT void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned outline
 // 1.6 KB of triangles.
 constexpr int kRings = slime::kMeshRings, kSectors = slime::kMeshSectors;
 int16_t px[kRings + 1][kSectors + 1], py[kRings + 1][kSectors + 1];
+bool projected = false;  // once a frame has: bodyAt asks the last
 uint8_t tris[kRings + 1][kSectors][2];
 constexpr uint8_t kToward = 8;
 // Each outline vertex's bend (Vertex's bx, by). A pole is one point, but
@@ -538,7 +539,7 @@ void eraseShared(Surface& s, const Surface::Erasing& e, int from, int to) {
   helper.join();
 }
 void project(const Surface& s, const PaintControls& c) {
-  projecting = &s, projectingControls = &c;
+  projecting = &s, projectingControls = &c, projected = true;
   shared(projectRings, 0, kRings + 1);
 }
 // `smaller`, from the dome at rest on the first surface drawn on (the
@@ -836,5 +837,36 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
     paws.melted = c.melt;
     paintProps(surface, e, &paws, stream, now, held);
   }
+}
+
+bool bodyAt(int x16, int y16, int margin16) {
+  if (!projected) return true;
+  const int64_t reach = int64_t(margin16) * margin16;
+  // Within the margin of the edge from a to b: from its nearest point, a
+  // fraction `u` (Q12) of the way along.
+  const auto near = [&](const Vertex& a, const Vertex& b) {
+    const int64_t ux = b.x - a.x, uy = b.y - a.y, vx = x16 - a.x, vy = y16 - a.y, len = ux * ux + uy * uy;
+    const int64_t u = len ? std::clamp<int64_t>((ux * vx + uy * vy) * 4096 / len, 0, 4096) : 0;
+    const int64_t ex = vx - ux * u / 4096, ey = vy - uy * u / 4096;
+    return ex * ex + ey * ey <= reach;
+  };
+  const auto side = [&](const Vertex& a, const Vertex& b) {
+    return int64_t(b.x - a.x) * (y16 - a.y) - int64_t(b.y - a.y) * (x16 - a.x);
+  };
+  // Every triangle, toward the camera or not: together they're the body's
+  // shape on the surface, whichever way it's turned.
+  for (int ring = 1; ring <= kRings; ++ring)
+    for (int col = 0; col < kSectors; ++col)
+      for (int which = 0; which < 2; ++which) {
+        const Tri t{ring, col, which};
+        const Vertex a = corner(t, 0), b = corner(t, 1), c = corner(t, 2);
+        if (x16 < std::min({a.x, b.x, c.x}) - margin16 || x16 > std::max({a.x, b.x, c.x}) + margin16 ||
+            y16 < std::min({a.y, b.y, c.y}) - margin16 || y16 > std::max({a.y, b.y, c.y}) + margin16)
+          continue;
+        const int64_t ab = side(a, b), bc = side(b, c), ca = side(c, a);
+        if ((ab || bc || ca) && ((ab >= 0 && bc >= 0 && ca >= 0) || (ab <= 0 && bc <= 0 && ca <= 0))) return true;
+        if (near(a, b) || near(b, c) || near(c, a)) return true;
+      }
+  return false;
 }
 }  // namespace render::gel

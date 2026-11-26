@@ -727,6 +727,20 @@ bool GelFace::cardAt(int x, int y) const {
   return sx >= b.x0 - 16 && sx < b.x1 + 16 && sy >= b.y0 - 12 && sy < b.y1 + CardLayout::kDotsRow + 8;
 }
 
+// The canvas's (x, y) on the surface, in its sixteenths, and the margin
+// with it, as wide across as the canvas's.
+bool GelFace::bodyAt(int x, int y) const {
+  const int x16 = x * size_.width * 16 / 320, y16 = y * size_.height * 16 / 240;
+  const int margin16 = kBodyMarginPx * size_.width * 16 / 320;
+  if (gel::bodyAt(x16, y16, margin16)) return true;
+  for (const Hand& h : handsPlan().moved) {
+    if (!h.shown()) continue;
+    const int64_t dx = x16 - h.x16, dy = y16 - h.y16, r = h.drawn16() + margin16;
+    if (dx * dx + dy * dy <= r * r) return true;
+  }
+  return false;
+}
+
 void GelFace::wish(const WishShow& show) {
   // A wish left: a silent sigh and slump as its bubble fades.
   if (show.pop == WishShow::kGone && wish_.pop != WishShow::kGone)

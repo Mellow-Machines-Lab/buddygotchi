@@ -135,8 +135,9 @@ class Device : public linkkit::App {
   // (`data.attn`, the state's `attn.id`): the Mac stops showing that
   // request if it still shows, and the board plays nothing.
   static constexpr const char* kDismissGesture = "dismiss";
-  // A quick stroke (TouchGesture::kSwipe), sent as the gesture it is
-  // whatever the face plays for it (Face::playsSwipe).
+  // A touch off the body that travelled (TouchGesture::travelled), by its
+  // name in dbg.state's touch.last: with several agents it switches to the
+  // next, and with one it does nothing.
   static constexpr const char* kSwipeGesture = "swipe";
   // The gesture a finger the face leaned into sends as it lets go: care, like
   // a stroke, and it opens or dismisses nothing.
@@ -241,6 +242,9 @@ class Device : public linkkit::App {
   const char* name() const override { return kAppName; }
   int does(const char* const*& names) const override;
   void hello(JsonObject extra) override;
+  // A host greeted anew (a new link, or the Mac relaunched): lying face
+  // down, the board tells it so again (tellWayUp).
+  void greeted(linkkit::Link link) override;
   void begin() override;
   void onState(JsonObjectConst state, uint32_t t) override;
   const char* refuse(const linkkit::Do& c, uint32_t t) override;
@@ -313,11 +317,21 @@ class Device : public linkkit::App {
     bool touchSpent = false;
     uint32_t touchSeenReal = 0;
     bool touchLeant = false;  // this touch's finger had the face lean into it
+    // It began on the body (Face::bodyAt): Boop's to feel. One that began off
+    // it is the screen's, and the face neither follows nor dips for it.
+    bool touchOnBody = false;
+    // It's the last touch's press, bounced (TouchGesture::bounce): it lets go
+    // saying nothing, as the first said what it was. Only the drawer, which
+    // the finger holds, still answers it.
+    bool touchBounce = false;
     render::Face::Lean lean = render::Face::Lean::kNone;  // how far, this pass (dbg.state)
-    // The last touch to let go: its path on the canvas and what it was
-    // (`dbg.state`'s touch.last, to check the panel's axes and speeds by).
+    // The last touch to let go: its path on the canvas, whether it began on
+    // the body and what it was (`dbg.state`'s touch.last, to check the
+    // panel's axes and speeds by).
     TouchGesture::Path lastTouch;
     const char* lastTouchWas = nullptr;
+    bool lastTouchOnBody = false;
+    uint32_t lastTouchUp = 0;  // when it let go, on the device's clock
     // The agents' drawer: springing from drawerFrom to drawerTo (0 or
     // 1000) since drawerAt, or else under a finger (drawerPulling) at
     // drawerPulled, pulled from drawerGrabbed where it was as the touch
@@ -364,9 +378,8 @@ class Device : public linkkit::App {
   void tellWayUp(uint32_t t);
   void tapped(uint32_t t, bool injected, bool button, const char* was = nullptr);
   // A gesture the board reacts to itself, then tells the Mac (`ev gesture`,
-  // `did` its name); `facedown` plays nothing. A quick swipe goes as
-  // kSwipeGesture, and plays the stroke g if the face plays one for it.
-  void gestured(render::Gesture g, uint32_t t, bool injected, bool swipe = false);
+  // `did` its name); `facedown` plays nothing.
+  void gestured(render::Gesture g, uint32_t t, bool injected);
   // A finger at rest: how far the face leans into it this pass, and the touch
   // it leaned into, let go.
   void followLean(bool touching, uint32_t t);

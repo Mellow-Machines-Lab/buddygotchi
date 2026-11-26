@@ -14,6 +14,7 @@
 #include "app/device.h"
 #include "linkkit/kit.h"
 #include "render/gel/face.h"
+#include "render/gel/hands.h"
 #include "render/gel/painter.h"
 #include "render/tags.h"
 
@@ -274,12 +275,13 @@ void test_a_stroke_and_a_tickle_stay_theirs() {
   b.run(2400);
   TEST_ASSERT_EQUAL_INT(0, b.count(kLean));
   TEST_ASSERT_EQUAL_INT(1, b.count("\"did\":\"stroke\""));
-  // A swipe is still a swipe.
+  // A quick one is a stroke too: it starts on the body.
   b.run(3000);
   b.usb.text.clear();
   b.stroke(60, 120, 260, 120, 150);
   b.run(300);
-  TEST_ASSERT_EQUAL_INT(1, b.count("\"did\":\"swipe\""));
+  TEST_ASSERT_EQUAL_INT(1, b.count("\"did\":\"stroke\""));
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"did\":\"swipe\""));
   // A tickle wiggles past a second without ever coming to rest.
   b.run(3000);
   b.usb.text.clear();
@@ -310,7 +312,7 @@ void test_a_hold_on_the_needs_you_screen_only_dismisses() {
 // isn't dismissed, and it isn't opened: the lift says `lean`, not a tap.
 void test_a_needs_you_under_a_lean_ends_it() {
   Board b;
-  b.touch(60, 60, 3000);
+  b.touch(110, 100, 3000);
   b.run(1500);
   TEST_ASSERT_EQUAL_INT(1, b.lean());
   b.line(kAttn);
@@ -380,6 +382,110 @@ void test_a_hold_on_the_strip_is_the_drawers() {
   TEST_ASSERT_EQUAL_INT(0, b.lean());
   b.run(800);
   TEST_ASSERT_EQUAL_INT(0, b.count(kLean));
+}
+
+static std::string captionOf(Board& b);
+
+// The body's hit test (GelFace::bodyAt) is the body as the last frame drew
+// it, a finger's width round its rim, and the rig's hands out of it: its
+// middle and its nose are on it, the screen's corner and the strip aren't.
+// A point just inside its side is off it once it has slid away, and one
+// just past it on it once it has slid there; squashed down, a point under
+// its crown is off it, and stretched up, one over it is on it.
+void test_the_body_is_where_it_was_drawn() {
+  static uint16_t px[502 * 410];
+  Surface s{502, 410, px, 110};
+  GelFace face;
+  handsPlan() = HandsPlan{};
+  paint(s, PaintControls{});
+  TEST_ASSERT_TRUE(face.bodyAt(160, 120));
+  TEST_ASSERT_TRUE(face.bodyAt(160, 134));
+  TEST_ASSERT_FALSE(face.bodyAt(10, 10));
+  TEST_ASSERT_FALSE(face.bodyAt(160, 225));
+  // Its rim across the middle and over its crown, at rest, the margin in.
+  int side = 160, crown = 120;
+  while (face.bodyAt(side + 1, 120)) ++side;
+  while (face.bodyAt(160, crown - 1)) --crown;
+  TEST_ASSERT_TRUE(side > 240 && side < 300);
+  TEST_ASSERT_TRUE(crown > 20 && crown < 70);
+  PaintControls slid;
+  slid.slide = -40 * 4096 / kPxPerUnit;  // 40 canvas px to its left
+  paint(s, slid);
+  TEST_ASSERT_FALSE(face.bodyAt(side - 10, 120));
+  slid.slide = -slid.slide;
+  paint(s, slid);
+  TEST_ASSERT_TRUE(face.bodyAt(side + 10, 120));
+  PaintControls squashed;
+  squashed.squash = -3000;
+  paint(s, squashed);
+  TEST_ASSERT_FALSE(face.bodyAt(160, crown + 10));
+  squashed.squash = 3000;
+  paint(s, squashed);
+  TEST_ASSERT_TRUE(face.bodyAt(160, crown - 10));
+  // A hand out beside it is on it.
+  paint(s, PaintControls{});
+  TEST_ASSERT_FALSE(face.bodyAt(300, 120));
+  Hand& hand = handsPlan().moved[1];
+  hand.x16 = 300 * 502 * 16 / 320, hand.y16 = 120 * 410 * 16 / 240, hand.radius16 = kHandPx * 16;
+  TEST_ASSERT_TRUE(face.bodyAt(300, 120));
+  handsPlan() = HandsPlan{};
+}
+
+// Only a tap on the body pokes: one on the empty screen beside it, or on the
+// desk's monitor at work, does nothing at all, no poke, no caption and
+// nothing to the Mac.
+void test_only_a_tap_on_the_body_pokes_the_gel() {
+  Board b;
+  b.run(500);
+  b.usb.text.clear();
+  b.touch(160, 100, 60);
+  b.run(200);
+  TEST_ASSERT_EQUAL_INT(1, b.count("{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\""));
+  TEST_ASSERT_EQUAL_STRING("you poked Boop", captionOf(b).c_str());
+  const struct {
+    const char* state;
+    int x, y;
+  } off[] = {{"{\"t\":\"state\",\"base\":\"idle\",\"idle\":1,\"vol\":0}", 20, 30},
+             {"{\"t\":\"state\",\"base\":\"idle\",\"idle\":1,\"vol\":0}", 305, 120},
+             {"{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"vol\":0}", 40, 158}};
+  for (const auto& o : off) {
+    Board q(o.state);
+    q.run(500);
+    q.usb.text.clear();
+    q.touch(o.x, o.y, 60);
+    q.run(200);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, q.count("\"t\":\"ev\""), q.usb.text.c_str());
+    TEST_ASSERT_EQUAL_STRING("", captionOf(q).c_str());
+  }
+}
+
+// With three agents a quick stroke that starts on the body is a stroke and
+// asks for no agent; the same move along the strip asks for the next one;
+// with one agent it does nothing.
+void test_a_stroke_on_the_body_never_switches_agent() {
+  const char* three = "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":1,\"pips\":\"w0w1i2\",\"watch\":0,"
+                      "\"vol\":0}";
+  Board b(three);
+  b.run(500);
+  b.usb.text.clear();
+  b.stroke(90, 110, 250, 110, 120);
+  b.run(300);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(1, b.count("{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}"), b.usb.text.c_str());
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"kind\":\"agent\""));
+  Board strip(three);
+  strip.run(500);
+  strip.usb.text.clear();
+  strip.stroke(250, 222, 90, 222, 120);
+  strip.run(300);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(1, strip.count("{\"t\":\"ev\",\"kind\":\"agent\",\"did\":\"next\"}"),
+                                strip.usb.text.c_str());
+  TEST_ASSERT_EQUAL_INT(0, strip.count("\"kind\":\"gesture\""));
+  Board one("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"vol\":0}");
+  one.run(500);
+  one.usb.text.clear();
+  one.stroke(250, 222, 90, 222, 120);
+  one.run(300);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, one.count("\"t\":\"ev\""), one.usb.text.c_str());
 }
 
 // A held tap in an ask's lane is its answer, not a lean.
@@ -462,7 +568,7 @@ void test_a_touch_says_why_itself() {
   b.run(500);
   TEST_ASSERT_EQUAL_STRING("", captionOf(b).c_str());
   b.touch(160, 70, 40);
-  b.run(120);
+  b.run(400);  // past a bounce
   TEST_ASSERT_EQUAL_STRING("you poked Boop", captionOf(b).c_str());
   b.touch(160, 70, 40);
   b.run(120);

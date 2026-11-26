@@ -125,7 +125,12 @@ ramps and springs can, and no jolt at an event. By file:
   `test_lifting_a_doze_wakes_it_with_a_start`), which allocates nothing. What
   a hold leaves alone: a short one stays a tap, a stroke and a tickle stay
   theirs, the needs-you screen's only dismisses, the strip's is the drawer's,
-  a finish's and an ask's keep their touches. What ends a lean: a needs-you,
+  a finish's and an ask's keep their touches. Where a touch is Boop's: the
+  body as last drawn, following a slide and a squash, a hand out beside it
+  too (`test_the_body_is_where_it_was_drawn`); only a tap there pokes, and
+  one beside it or on the desk's monitor does nothing; a quick stroke on it
+  is a stroke and switches no agent, where the same move along the strip
+  does. What ends a lean: a needs-you,
   listening, a Moment. Its breath minding the volume, and a touch saying why
   itself, with the Mac's reason not doubling it. Tilt: the slosh and how it
   settles, giving way to whatever else moves the body, with no allocation.
@@ -203,7 +208,7 @@ ramps and springs can, and no jolt at an event. By file:
   the heap), a hit's daze ending and forgotten across the engine clock's
   wrap (`test_a_daze_ends_across_the_clock_wrap`), and the agents' drawer
   (`test_drawer.cpp`: a pull up the strip opening it and what the Mac
-  hears, a swipe up the face staying the face's, a short pull springing
+  hears, a quick move up the body staying the body's, a short pull springing
   back, a tap on a row picking it, shutting itself after 15 s and saying
   it's open till then, BOOT shutting it, its rows inside the panel's
   rounded corners, a long list's rows scrolling under a finger, gliding,

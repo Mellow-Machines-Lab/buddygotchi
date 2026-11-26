@@ -129,6 +129,29 @@ static void test_a_hosts_hello_asks_for_one() {
   TEST_ASSERT_EQUAL(2, count(r.usb.text, "\"hello\""));
 }
 
+// Each greeting is the app's to hear (App::greeted), once, on its link: a
+// host's first message on a link, and a host's own hello on one still live;
+// not the hello every 60 s, nor a tool's.
+static void test_the_app_hears_each_greeting() {
+  Rig r;
+  r.usbLine("{\"t\":\"dbg.ping\"}");
+  TEST_ASSERT_EQUAL(0, int(r.app.greetings.size()));
+  r.usbLine("{\"t\":\"hello\"}");
+  r.usbLine("{\"t\":\"state\"}");
+  TEST_ASSERT_EQUAL(1, int(r.app.greetings.size()));
+  r.platform.real = 5000;
+  r.usbLine("{\"t\":\"hello\"}");  // relaunched within 30 s
+  TEST_ASSERT_EQUAL(2, int(r.app.greetings.size()));
+  r.platform.real = 5000 + 60000;
+  r.kit.tick();  // hello's repeat
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"hello\""));
+  TEST_ASSERT_EQUAL(2, int(r.app.greetings.size()));
+  r.kit.connected();
+  r.bleLine("{\"t\":\"state\"}");
+  TEST_ASSERT_EQUAL(3, int(r.app.greetings.size()));
+  TEST_ASSERT_TRUE(r.app.greetings[0] == Link::kUsb && r.app.greetings[2] == Link::kBle);
+}
+
 // §3, §2: a hello longer than 512 bytes would be dropped whole on the
 // way, so the host would never hear it. The app's fields are left out,
 // or, when even the kit's don't fit, none goes; dbg.ping says how long
@@ -502,6 +525,7 @@ int main() {
   RUN_TEST(test_hello_says_its_boot);
   RUN_TEST(test_usb_hello_again_after_30_s_of_silence);
   RUN_TEST(test_a_hosts_hello_asks_for_one);
+  RUN_TEST(test_the_app_hears_each_greeting);
   RUN_TEST(test_a_hello_too_long_goes_short_or_not_at_all);
   RUN_TEST(test_hello_every_60_s_on_the_hosts_link);
   RUN_TEST(test_does_is_capped_at_32);

@@ -82,6 +82,8 @@ class App : public linkkit::App {
     return int(names.size());
   }
   void hello(JsonObject extra) override { extra["x"] = 1; }
+  std::vector<linkkit::Link> greetings;  // greeted's links, in order
+  void greeted(linkkit::Link link) override { greetings.push_back(link); }
   void begin() override { ++begun; }
   void onState(JsonObjectConst s, uint32_t) override {
     ++states;

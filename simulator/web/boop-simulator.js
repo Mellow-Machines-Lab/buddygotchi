@@ -15,8 +15,10 @@ const PANEL = [502, 410];  // the AMOLED's panel, until the first frame says
 /// A shake, as the motion sensor reads it: each reading in mg, held so many
 /// ms, in the shapes the board knows (firmware/src/app/motion_gesture.h).
 export const SHAKE = [[1700, 60], [300, 60], [1700, 60], [300, 60], [1700, 60], [300, 60], [1000, 0]];
-/// A tap, in the canvas's pixels: beside the nose, since a boop on it is a gesture.
-export const TAP = [CANVAS[0] / 4, CANVAS[1] / 2];
+/// A tap, in the canvas's pixels: on the dome above the nose, since only a
+/// tap on the body pokes, the body sits lower at work, and a boop on the
+/// nose is a gesture.
+export const TAP = [CANVAS[0] / 2, 100];
 /// A stroke, a finger's path across the face, a point every 60 ms: far
 /// enough and slow enough to be one (firmware/src/app/touch_gesture.h).
 export const STROKE = [[90, 160], ...Array.from({ length: 10 }, (_, i) => [104 + 14 * i, 160])];
@@ -251,7 +253,7 @@ export class DemoPlayer extends EventTarget {
 
   #happen(event) {
     if (event.cause) this.dispatchEvent(new CustomEvent('cause', { detail: event.cause }));
-    // A finger on the screen, beside the nose (a boop there is a gesture),
+    // A finger on the body, above the nose (a boop there is a gesture),
     // or kept there as long as the recording's hold says, past the board's
     // hold on the needs-you screen (a recording made before it said, 1.2 s),
     // or BOOT pressed, which is the board's own to react to (a press long
@@ -261,7 +263,7 @@ export class DemoPlayer extends EventTarget {
       this.#board.release();
     }
     if (event.input === 'hold') {
-      this.#board.touch(CANVAS[0] / 4, CANVAS[1] / 2);
+      this.#board.touch(...TAP);
       setTimeout(() => this.#board.release(), (event.hold ?? 1.2) * 1000);
     }
     if (event.input === 'press') {

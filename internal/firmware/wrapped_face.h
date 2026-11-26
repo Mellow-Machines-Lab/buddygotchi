@@ -44,6 +44,7 @@ struct WrappedFace : render::Face {
   bool playClip(const char* name, uint32_t t) override { return f->playClip(name, t); }
   bool motionRule(const char* rule, bool on) override { return f->motionRule(rule, on); }
   void watch(const render::Stream* stream) override { f->watch(stream); }
+  bool bodyAt(int x, int y) const override { return f->bodyAt(x, y); }
   void finger(bool down, int x, int y) override { f->finger(down, x, y); }
   void letGo(int vx, int vy) override { f->letGo(vx, vy); }
   bool playsSwipe() const override { return f->playsSwipe(); }

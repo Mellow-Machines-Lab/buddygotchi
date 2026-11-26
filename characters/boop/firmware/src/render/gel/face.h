@@ -106,6 +106,9 @@ class GelFace final : public Face {
   void color(int index) override;
   void card(const CardShow& show) override { card_ = show; }
   bool cardAt(int x, int y) const override;
+  // The body as the last frame drew it (render/gel/painter.h, bodyAt), and
+  // the rig's hands out of it.
+  bool bodyAt(int x, int y) const override;
   int cues(uint32_t, bool, voice::FxEvent*, bool&) override;
   int profile(char* out, size_t n, uint32_t frames) override;
   const Engine& engine() const { return *engine_; }

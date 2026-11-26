@@ -42,6 +42,10 @@ bool TouchGesture::held(uint32_t t) const {
 
 int TouchGesture::spread() const { return std::max(maxX_ - minX_, maxY_ - minY_); }
 
+bool TouchGesture::travelled() const {
+  return std::max(std::abs(last().x - x0_), std::abs(last().y - y0_)) >= kStrokePx;
+}
+
 TouchGesture::Path TouchGesture::path() const { return {x0_, y0_, last().x, last().y, last().t - t0_}; }
 
 TouchGesture::Kind TouchGesture::up(render::Gesture& g, int noseDrop, bool leant) const {

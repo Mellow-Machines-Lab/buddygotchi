@@ -17,10 +17,10 @@
 {"clock":1200}
 {"clock":1300}
 {"shot":"poke","pin":true}
-{"t":"dbg.touch","x":160,"y":70,"ms":40}
+{"t":"dbg.touch","x":110,"y":110,"ms":40}
 {"clock":1400}
 {"clock":1500}
-{"t":"dbg.touch","x":160,"y":70,"ms":40}
+{"t":"dbg.touch","x":210,"y":110,"ms":40}
 {"clock":1600}
 {"clock":1700}
 {"clock":1800}

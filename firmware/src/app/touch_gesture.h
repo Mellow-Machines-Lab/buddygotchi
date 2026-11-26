@@ -7,6 +7,7 @@
 // 320 × 240 on both boards (the AMOLED's panel is mapped onto it).
 #pragma once
 #include <cstdint>
+#include <cstdlib>
 
 #include "render/types.h"
 
@@ -18,8 +19,10 @@ class TouchGesture {
   // that goes up more than sideways is a ruffle.
   static constexpr int kStrokePx = 40;
   // A touch that travels a stroke's way and lets go faster than this (its
-  // velocity, which the face carries on) is a swipe; a slower one is the
-  // deliberate stroke.
+  // velocity, which the face carries on) is a swipe by its path; a slower
+  // one is the deliberate stroke. Where it began decides past that
+  // (app::Device): on the body a stroke however fast, off it a swipe
+  // however slow; only an invite's touch off the body goes by its path.
   static constexpr int kSwipePxPerS = 600;
   // A tickle wiggles this far in all, inside a spot this wide; a wiggle
   // as long that strays wider is a rub, a stroke, even one that ends
@@ -44,6 +47,15 @@ class TouchGesture {
   // The finger's velocity as it lets go is over its last readings this
   // long (at least the last two).
   static constexpr uint32_t kFlingMs = 80;
+  // A firm finger bounces: the AMOLED's chip reports it lifted, and then a
+  // new touch, while it's still down. On the owner's board one press gave 2
+  // to 4 taps 150 to 400 ms apart, release to release. A touch that goes
+  // down within kBounceMs of the last one's lift, and within kBouncePx of
+  // where that one was last (a hold's spot, as a finger drifts), is the same
+  // press (bounce): the first said what it was. Two taps half a second
+  // apart are two.
+  static constexpr uint32_t kBounceMs = 300;
+  static constexpr int kBouncePx = 40;
 
   // What a touch was, on release.
   enum Kind : uint8_t { kTap, kSwipe, kGesture, kLean };
@@ -70,10 +82,17 @@ class TouchGesture {
   // How fast the finger moved over its last kFlingMs, in px a second; none
   // for a finger that was still.
   void velocity(int& vx, int& vy) const;
+  // Whether it is a stroke's way (kStrokePx) from where it went down.
+  bool travelled() const;
   Path path() const;
   // How far it has strayed from where it went down, the wider of its
   // box's width and height.
   int spread() const;
+  // Whether a touch down at (x, y), `gapMs` after the one that went `last`
+  // let go, is that one's press bounced.
+  static bool bounce(const Path& last, uint32_t gapMs, int x, int y) {
+    return gapMs < kBounceMs && std::abs(x - last.x) <= kBouncePx && std::abs(y - last.y) <= kBouncePx;
+  }
 
  private:
   static constexpr int kSamples = 8;  // the latest readings, for the velocity

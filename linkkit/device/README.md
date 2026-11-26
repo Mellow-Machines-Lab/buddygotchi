@@ -37,6 +37,7 @@ time their input and clock steps against ticks.
 | Your app's hook | When the kit calls it |
 | --- | --- |
 | `name()`, `does(names)`, `hello(extra)` | For `hello`: `app`, the `do` names you play, your own fields |
+| `greeted(link)` | The kit answered a host's hello, or its first message on a link that wasn't live (not hello's 60 s repeat): say again what that host can't know |
 | `begin()` | Once, attached, with the clock at 0 |
 | `onState(state, t)` | Every `state`: your whole map |
 | `refuse(d, t)` | A `do` is about to start playing: return a short reason to skip it, or null |

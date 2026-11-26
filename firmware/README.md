@@ -152,7 +152,8 @@ board's env doesn't build:
    pixel for pixel.
 3. **The rest:** `internal/tools/boopctl state` reports BOOT, raw touch
    (and the last touch on the canvas: where it went down and was last,
-   how long it took and what the board made of it, `touch.last`, and how far
+   how long it took, whether it began on the body and what the board made of
+   it, `touch.last`, and how far
    the face leans into a finger at rest, `touch.lean`),
    and the amp, and `ping` shows Bluetooth advertising and
    whether the voice is on the card. Presses and the speaker need a
@@ -175,7 +176,9 @@ whose face draws invites gets one: its `hello` says `"invites":1`
    kind answers it: a `tap` is a tap, a boop on the nose or a tickle (BOOT
    too, when it would poke); a `stroke` is a stroke, a ruffle or a finger
    the face leaned into. That touch is the invite's: no `ev tap` or
-   `ev gesture` and no poke. Any other touch is what it always is.
+   `ev gesture` and no poke. It may land beside the body, where the glow is:
+   there a quick stroke is a swipe, which is the invite's with one agent and a
+   switch with several. Any other touch is what it always is.
 4. The payoff at once, or with no touch a shrug, and only then the `do`'s
    `ended`. It never rests, so nothing queued replaces it.
 5. For 30 s after a miss (`Behaviour::kLateWindowMs`), a touch of its kind
@@ -235,18 +238,32 @@ rule the face hasn't.
   Check inversion, colour order and the SPI pins first.
 - **Touch does nothing:** wrong pins, no calibration, or touch sharing the
   screen's bus.
-- **A stroke plays nothing on the gel:** it let go too quickly, a swipe,
-  which the dome only flings on (`app/touch_gesture.h`'s `kSwipePxPerS`,
-  of its speed as it lets go); stroke slower. `touch.last` in `internal/tools/boopctl state` says what the
-  last touch was and how long it took.
+- **A tap or a stroke does nothing:** it started off the body, on the
+  screen beside it (`render::Face::bodyAt`, a finger's width round the
+  body as drawn). Off the body a tap is nothing, and a move a swipe, which
+  switches agent with several and does nothing with one. `touch.last` in
+  `internal/tools/boopctl state` says where the last touch went down,
+  whether that was on the body (`body`), what it was and how long it took.
 - **A swipe up doesn't open the agents' drawer (gel):** it must start on
   the strip, the bottom rows of the screen (`app/device.h`'s
   `kDrawerFromY`, canvas rows from 205 down), and go up `kDrawerPullPx`
   (22 canvas px), while the Mac has sessions to list;
-  one that starts on the face is the face's swipe. `dbg.state`'s
+  one that starts on the body is a stroke. `dbg.state`'s
   `drawer.open` says how far open it is, 0 to 1000, and `drawer.scroll`
   and `drawer.skip` how far its rows are scrolled (canvas px) and where
   the Mac's window of them starts.
+- **One press, several pokes:** a firm finger bounces on the AMOLED's
+  panel, the chip reporting a lift and a new touch while it stays down.
+  The board takes a touch that goes down within 300 ms of the last lift,
+  and within 40 canvas px of where that one was, as the same press, and it
+  sends nothing more (`app/touch_gesture.h`'s `kBounceMs` and `kBouncePx`:
+  the device, not the chip's driver, decides, since holding a lift that
+  long there would hold back every tap). `touch.last.was` says `bounce`.
+  Two taps at one spot closer than that are one poke.
+- **The Mac thinks Boop is face down:** lying face down, the board says
+  so (`gesture facedown`) after its `hello` to every Mac that greets it
+  anew (`Device::greeted`); face up, it says it's back up (`peekaboo`) to a
+  Mac it last told face down. Turn it over and back to tell it again.
 - **A hold doesn't dismiss the needs-you screen:** the finger must stay
   down a second inside a spot 40 px wide each way
   (`app/touch_gesture.h`'s `kHoldMs` and `kHoldSpotPx`). Let go sooner,
@@ -258,7 +275,8 @@ rule the face hasn't.
   pack's `voice/voice.bin` onto the card as `boop/voice.bin`. Press the
   board's reset button once the card is back in.
 - **A touch doesn't answer the invite:** it was the other kind (a tap on
-  one that wants a stroke), or a swipe, which is too quick to be a stroke;
+  one that wants a stroke), or, with several agents, a quick stroke that
+  started off the body, which is a swipe between them;
   `dbg.state`'s `invite.stage` says whether it was still waiting.
 - **Download mode:** hold BOOT while pressing RESET. Normal flashing
   doesn't need it.

@@ -33,7 +33,7 @@ window"), and Settings' Simulator row switches to it and back, with your
 real hooks and brain (`DeviceChooser`, in `app/BoopKit/DeviceLink/`).
 The choice is kept from launch to launch, and on the simulator the app
 never uses Bluetooth. Onboarding's lessons are done in the window: a
-click is a poke, BOOT (or Space) is the button, held while you talk to the
+click on Boop is a poke, BOOT (or Space) is the button, held while you talk to the
 Mac's mic, and a drag up from the strip opens the agents' drawer. The
 browser's page and its USB socket are for the tools (`boopctl sim`, the
 studio, `Boop --headless --link usb:…`), not the app.
@@ -92,7 +92,7 @@ The AMOLED board, the one board Boop runs on:
 | Part | In the simulator |
 | --- | --- |
 | Screen | The face's panel: 502×410, the AMOLED's, its corners rounded as the AMOLED's are and transparent, since the panel shows nothing there. Every pixel is the firmware's; the page draws nothing on it |
-| Touch | The pointer on the screen: a touch is a poke, as on the boards, and letting go is a lift, which ends the touch at once, as the AMOLED's touch chip reports one, and a drag or a wiggle another touch (a stroke, a quick one a swipe, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it; held on the gel's face, it leans in, and dozes past 5 s. A click or a drag answers an invite as a tap or a stroke does on the board (firmware/README.md, The invite). On the gel, dragged up from the strip, it pulls out the agents' drawer, a drag on its rows scrolls them, and a click on a row picks it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
+| Touch | The pointer on the screen: a touch on Boop's body is a poke, as on the boards, and letting go is a lift, which ends the touch at once, as the AMOLED's touch chip reports one, and a drag or a wiggle another touch (a stroke however quick, a tickle, a boop on the nose). One off the body is the screen's: a drag there is a swipe between agents, and a click nothing. Held still a second on the needs-you screen, it dismisses it; held on the gel's face, it leans in, and dozes past 5 s. A click or a drag answers an invite as a tap or a stroke does on the board (firmware/README.md, The invite). On the gel, dragged up from the strip, it pulls out the agents' drawer, a drag on its rows scrolls them, and a click on a row picks it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
 | Motion | The AMOLED's motion sensor, lying flat on the desk from power-on; with `motion`, buttons that move the board as it feels it: Shake, Pick up and Put down, Thump, Face down and Face up |
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click, so the first touch of the board, its screen or BOOT, turns it on, as Sound on does; once Sound on or off is clicked, that's the choice |
@@ -141,8 +141,8 @@ board says, `frame`, `parts` (`{"backlight":255,"amp":false,"card":"ok"}`,
 whenever one changes) and `power`. The script knows nothing of what the
 board's messages mean: they pass through it. The script exports the
 rest of a page's hand: `SHAKE`, a shake as the motion sensor reads it,
-for `board.motion`; `TAP`, where a poke lands, beside the nose (on it is
-a nose boop), for `board.touch`; `STROKE`, a finger's path across the
+for `board.motion`; `TAP`, where a poke lands, on the dome above the nose
+(on it is a nose boop), for `board.touch`; `STROKE`, a finger's path across the
 face, and `TICKLE`, a finger wiggling in one spot, each point for
 `board.touch` 60 ms apart; `LANE_Y`, the lane's middle, where an
 ask's answers are tapped; and `HEARTBEAT_MS`, how often a page that

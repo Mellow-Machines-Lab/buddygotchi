@@ -132,8 +132,14 @@ class StubFace : public render::Face {
   // pictures 3 ms apart, as a busy design's are, but few in a second.
   static constexpr uint32_t kStepMs = 200, kAsleepStepMs = 1500, kSparkMs = 3;
 
+  // Its body, a box about where the gel's stands at rest, from (kBodyX0,
+  // kBodyY0) to (kBodyX1, kBodyY1) on the canvas, its rim's margin in: the
+  // nose's spot is on it, the lane and the screen's corners aren't.
+  static constexpr int kBodyX0 = 64, kBodyY0 = 40, kBodyX1 = 256, kBodyY1 = 190;
+
   const char* name() const override { return "stub"; }
   const voice::EffectClips& clips() const override { return testface::clips(); }
+  bool bodyAt(int x, int y) const override { return x >= kBodyX0 && x < kBodyX1 && y >= kBodyY0 && y < kBodyY1; }
   void reset(uint32_t t, linkkit::Rng&) override { *this = StubFace{}, lookAt_ = t; }
   void sync(const render::FaceSource& next, const render::FaceContext& context, uint32_t t) override {
     context_ = context;

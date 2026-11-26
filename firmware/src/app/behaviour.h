@@ -369,7 +369,7 @@ class Behaviour {
   // Inputs, already recognised as gestures.
   void pressDown(uint32_t t);  // visible feedback at once
   void pressUp();
-  // BOOT, or a touch anywhere: what it did, "poked" or "tap_spam", or
+  // BOOT, or a tap on the body: what it did, "poked" or "tap_spam", or
   // "dip" when it only dipped the face.
   const char* tap(uint32_t t, Rng& rng);
   // BOOT: while something needs you or an agent sits idle, it hands you

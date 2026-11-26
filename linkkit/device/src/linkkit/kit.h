@@ -108,6 +108,10 @@ class App {
   // The app's own hello fields. The whole hello must fit in kMaxLine
   // bytes.
   virtual void hello(JsonObject extra) { (void)extra; }
+  // The kit greeted a host on `link` (§5): it answered the host's hello, or
+  // its first message on a link it wasn't live on; not hello's 60 s repeat.
+  // That host may know nothing the device told the last one.
+  virtual void greeted(Link link) { (void)link; }
   // The kit is attached (kit() works) and its clock is at 0.
   virtual void begin() {}
 

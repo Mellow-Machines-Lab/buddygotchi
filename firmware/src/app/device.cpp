@@ -590,7 +590,14 @@ void Device::tell(const char* event, const char* did, const char* data, uint32_t
 // Face down and back up are the one touch the Mac keeps as a state (it
 // holds every event while Boop lies face down), so one it didn't hear, with
 // the Mac away or the link down, is told once it's back: the board says
-// which way up it lies now.
+// which way up it lies now. A host greeted anew forgets face down, or may
+// have missed it on the way, so lying face down the board says it again
+// after its hello; face up, the end of face down goes only to one last
+// told face down, as before.
+void Device::greeted(linkkit::Link) {
+  if (b_.faceDown()) toldFaceDown_ = false;
+}
+
 void Device::tellWayUp(uint32_t t) {
   if (toldFaceDown_ == b_.faceDown() || b_.noApp(t)) return;
   if (!kit().live(linkkit::Link::kBle) && !kit().live(linkkit::Link::kUsb)) return;
@@ -668,8 +675,10 @@ void Device::readInputs(uint32_t t) {
       break;
   }
 
-  // A touch anywhere is a tap, sent on release however long it was held,
-  // unless the face leaned into it (followLean), but on the needs-you screen, where only a quick one is (kNeedsYouTapMs)
+  // A touch on the body is a tap, sent on release however long it was held,
+  // unless the face leaned into it (followLean); one off it is the screen's,
+  // a swipe or nothing (Face::bodyAt). On the needs-you screen a touch
+  // anywhere is the screen's: only a quick one is a tap (kNeedsYouTapMs),
   // and a finger held still (TouchGesture::held)
   // is the gesture `dismiss`, sent as the hold completes with the
   // number of the request the screen showed as the finger went down, so the
@@ -694,6 +703,7 @@ void Device::readInputs(uint32_t t) {
                               real - live_.touchSeenReal < kTouchReleaseMs);
   bool faced = !live_.pattern;
   if (touching && !live_.touchDown) {
+    live_.touchBounce = live_.lastTouchWas && TouchGesture::bounce(live_.lastTouch, t - live_.lastTouchUp, x, y);
     input("touch", t, x, y);
     live_.showDrawer = false;  // a finger first: the drawer a reaction asked for stays shut
     live_.touchPath.down(x, y, t);
@@ -729,9 +739,12 @@ void Device::readInputs(uint32_t t) {
     live_.touchOnNeedsYou = faced && needsYouShows(t) && open <= 0;
     live_.touchAttnId = live_.touchOnNeedsYou ? b_.model().attnId : 0;
     live_.touchDismissed = live_.touchLeant = false;
+    live_.touchOnBody = faced && !live_.drawerTouch && !live_.cardTouch && open <= 0 && b_.face().bodyAt(x, y);
     if (faced) {
-      b_.pressDown(t);
-      if (!live_.drawerTouch && !live_.cardTouch) b_.face().finger(true, x, y);
+      // The face dips for a touch on it, and for one anywhere while a tap
+      // anywhere is a tap: needs you, the face held, a finish up.
+      if (live_.touchOnBody || live_.touchOnNeedsYou || b_.held(t) || b_.finishShown(t)) b_.pressDown(t);
+      if (live_.touchOnBody) b_.face().finger(true, x, y);
       latency_.mark(Latency::kPress, real);
     }
   } else if (touching && contact) {
@@ -763,7 +776,7 @@ void Device::readInputs(uint32_t t) {
         if (open < 0) open /= 4;
         live_.drawerPulled = open;
       }
-    } else if (faced && !live_.cardTouch) {
+    } else if (live_.touchOnBody) {
       b_.face().finger(true, x, y);
     }
   }
@@ -781,14 +794,25 @@ void Device::readInputs(uint32_t t) {
     // The face may carry on the finger's motion as it lets go.
     int vx, vy;
     live_.touchPath.velocity(vx, vy);
-    if (!live_.drawerTouch && !live_.cardTouch) b_.face().letGo(vx, vy);
+    if (live_.touchOnBody) b_.face().letGo(vx, vy);
     render::Gesture g = render::Gesture::kHandoff;
-    const TouchGesture::Kind kind = live_.touchPath.up(g, b_.face().noseDrop(), live_.touchLeant);
+    TouchGesture::Kind kind = live_.touchPath.up(g, b_.face().noseDrop(), live_.touchLeant);
+    // Where it began decides, not how fast it let go: on the body a touch
+    // that travelled is a stroke (or a ruffle), never a swipe. Off it, it's
+    // the screen's (`was`): a swipe however slow, else a tap, which only a
+    // screen that a tap anywhere answers hears. An invite's touch off the
+    // body goes by its path, as `kind`: its glow may sit beside it.
+    if (live_.touchOnBody && kind == TouchGesture::kSwipe) kind = TouchGesture::kGesture;
+    const TouchGesture::Kind was = live_.touchOnBody             ? kind
+                                   : live_.touchPath.travelled() ? TouchGesture::kSwipe
+                                                                 : TouchGesture::kTap;
     live_.lastTouch = live_.touchPath.path();
-    live_.lastTouchWas = kind == TouchGesture::kGesture ? render::gestureName(g)
-                         : kind == TouchGesture::kSwipe ? kSwipeGesture
-                         : kind == TouchGesture::kLean  ? kLeanGesture
-                                                        : "tap";
+    live_.lastTouchOnBody = live_.touchOnBody;
+    live_.lastTouchUp = t;
+    live_.lastTouchWas = was == TouchGesture::kGesture ? render::gestureName(g)
+                         : was == TouchGesture::kSwipe ? kSwipeGesture
+                         : was == TouchGesture::kLean  ? kLeanGesture
+                                                       : "tap";
     if (faced) {
       // The panel's touch let go when it was last in contact, so its tap
       // counts the kTouchReleaseMs the device waits to be sure. Its path
@@ -808,9 +832,16 @@ void Device::readInputs(uint32_t t) {
       // touch is a tap, opening the thread: one held kNeedsYouTapMs or
       // more, or that strayed past kHoldSpotPx, was a hold let go early.
       // A touch the face leaned into is only that: it says so, and a finish
-      // or a needs-you that came up under it hears no tap.
+      // or a needs-you that came up under it hears no tap. Off the body a
+      // tap is one only while a tap anywhere is (needs you, the face held, a
+      // finish up, an ask's answers in the lane); anywhere else it does
+      // nothing at all.
+      // A press bounced (touchBounce) gives nothing more: no second tap, boop
+      // or gesture, nor a card opened twice.
       const bool brief = live_.lastTouch.ms < kNeedsYouTapMs && live_.touchPath.spread() <= TouchGesture::kHoldSpotPx;
-      if (live_.cardTouch) {
+      if (live_.touchBounce && !live_.drawerTouch) {
+        live_.lastTouchWas = "bounce";
+      } else if (live_.cardTouch) {
         // The card's: across it, the next card or the one before, which the
         // Mac picks; else a tap, which the Mac opens. Nothing plays here, and
         // a card gone from under the finger hears nothing.
@@ -837,31 +868,32 @@ void Device::readInputs(uint32_t t) {
           live_.drawerTouchedAt = t;  // a drag across it: it lets go, picking nothing
       } else if (!live_.touchOnNeedsYou && invited(kind, g, t, live_.touchInjected)) {
         live_.lastTouchWas = "invite";
-      } else if (kind == TouchGesture::kLean) {
+      } else if (was == TouchGesture::kLean) {
         leaned(t, live_.touchInjected);
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t) || !brief))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
-        const bool nose = kind == TouchGesture::kGesture && g == render::Gesture::kNose;
+        const bool nose = was == TouchGesture::kGesture && g == render::Gesture::kNose;
         const bool tapOnFinish =
-            kind != TouchGesture::kTap && b_.finishShown(t) && (nose || live_.lastTouch.ms < kBriefOnFinishMs);
+            was != TouchGesture::kTap && b_.finishShown(t) && (nose || live_.lastTouch.ms < kBriefOnFinishMs);
         // While an ask is up, a tap in the lane is only its answer: the
         // left half picks `a`, the right `b`.
-        const bool onAnswer = kind == TouchGesture::kTap && b_.asking(t) && live_.lastTouch.y0 >= render::kLaneTop;
+        const bool onAnswer = was == TouchGesture::kTap && b_.asking(t) && live_.lastTouch.y0 >= render::kLaneTop;
+        const bool anywhere = live_.touchOnNeedsYou || b_.held(t) || b_.finishShown(t);
         if (onAnswer) {
           input("tap", t);
           b_.answer(live_.lastTouch.x0 < render::kWidth / 2 ? "a" : "b", t, live_.touchInjected);
           drain();
-        } else if (kind == TouchGesture::kTap || b_.held(t) || tapOnFinish) {
-          tapped(t, live_.touchInjected, false, kind == TouchGesture::kTap ? nullptr : live_.lastTouchWas);
-        } else if (kind == TouchGesture::kSwipe && b_.model().pipCount > 1 && !b_.model().attn) {
-          // Several agents: a swipe across the desk asks the Mac for the
-          // next one, or the one before, which the screen follows.
+        } else if ((was == TouchGesture::kTap && (live_.touchOnBody || anywhere)) || b_.held(t) || tapOnFinish) {
+          tapped(t, live_.touchInjected, false, was == TouchGesture::kTap ? nullptr : live_.lastTouchWas);
+        } else if (was == TouchGesture::kSwipe && b_.model().pipCount > 1 && !b_.model().attn) {
+          // Several agents: a swipe off the body asks the Mac for the next
+          // one, or the one before, which the screen follows.
           live_.lastTouchWas = "agent";
           input("agent", t);
           const int dx = live_.lastTouch.x - live_.lastTouch.x0;
           kit().emit("agent", dx < 0 ? "next" : "prev", nullptr, live_.touchInjected);
-        } else {
-          gestured(g, t, live_.touchInjected, kind == TouchGesture::kSwipe);
+        } else if (was == TouchGesture::kGesture) {
+          gestured(g, t, live_.touchInjected);
         }
       }
     }
@@ -875,7 +907,7 @@ void Device::readInputs(uint32_t t) {
   if (touching || live_.boot.down()) live_.motion.hands(t);
 }
 
-// A finger at rest on the face: it leans in, then dozes, wherever nothing else
+// A finger at rest on the body: it leans in, then dozes, wherever nothing else
 // has this touch or the screen. Never on the needs-you screen, whose hold
 // dismisses; never on the drawer's, a finish's or an ask's lane, whose touches
 // mean something else; never with BOOT's listening or a Moment. Whatever comes
@@ -884,10 +916,10 @@ void Device::followLean(bool touching, uint32_t t) {
   using Lean = render::Face::Lean;
   Lean lean = Lean::kNone;
   const uint32_t rest = live_.touchPath.restMs(t);
-  const bool free = touching && rest >= TouchGesture::kLeanMs && !live_.pattern && !live_.drawerTouch && !live_.cardTouch &&
-                    !live_.touchOnNeedsYou &&
-                    !b_.held(t) && !b_.finishShown(t) && !b_.faceDown() && drawerOpen(t) <= 0 &&
-                    !(b_.asking(t) && live_.touchPath.path().y0 >= render::kLaneTop) && b_.face().leans(t);
+  const bool free = touching && rest >= TouchGesture::kLeanMs && !live_.pattern && live_.touchOnBody &&
+                    !live_.touchOnNeedsYou && !b_.held(t) && !b_.finishShown(t) && !b_.faceDown() &&
+                    drawerOpen(t) <= 0 && !(b_.asking(t) && live_.touchPath.path().y0 >= render::kLaneTop) &&
+                    b_.face().leans(t);
   if (free) {
     lean = rest >= TouchGesture::kDozeMs ? Lean::kDoze : Lean::kIn;
     live_.touchLeant = true;
@@ -1084,10 +1116,10 @@ bool Device::invited(TouchGesture::Kind kind, render::Gesture g, uint32_t t, boo
   return true;
 }
 
-void Device::gestured(render::Gesture g, uint32_t t, bool injected, bool swipe) {
-  if (!swipe || b_.face().playsSwipe()) b_.gesture(g, t);
+void Device::gestured(render::Gesture g, uint32_t t, bool injected) {
+  b_.gesture(g, t);
   input("gesture", t);
-  tell("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, t, injected);
+  tell("gesture", render::gestureName(g), nullptr, t, injected);
   drain();  // the gesture cuts an animation, as a poke does
 }
 

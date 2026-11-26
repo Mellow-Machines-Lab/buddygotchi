@@ -248,7 +248,7 @@ each is a change of the mood in the transcript, by `rule`:
 - **The level.** A levelled mood starts as cross as what caused it and
   goes a level up at each thing that provokes it: a poke that's the second
   or more in a row, a shake, a failed check, a failed turn, rude words (a
-  reply of `ouch`). A stroke, a swipe or a finger at rest takes it a level
+  reply of `ouch`). A stroke or a finger at rest takes it a level
   down, never below the first. The MOOD section ends with the level's
   face, so Jev knows it without picking it.
 
@@ -604,10 +604,22 @@ then go.
 A state a face doesn't know draws `idle`. A Moment whose design has no
 length (`loopMs` of 0) plays nothing.
 
-Some touches are no animation of the face's. A quick swipe plays the stroke
-or ruffle it would be, unless the face only feels it go by (`playsSwipe`),
-and goes to the Mac as `swipe`. A finger that starts on the strip and goes
-up pulls out the drawer, if the face has one. A finger held still a second
+Where a touch starts decides what it is. One that starts on the body (as the
+face last drew it, a finger's width round its rim: `Face::bodyAt`) is Boop's:
+a tap a poke, or a boop on the nose; a move a stroke, a ruffle, a rub or a
+tickle, however fast it lets go. One that starts anywhere else is the
+screen's, and the face neither follows nor dips for it: a move a stroke's
+length is a swipe, which with several agents asks the Mac for the next one or
+the one before (`agent`, `next` or `prev`) and with one does nothing; a tap
+does nothing at all, unless a tap anywhere means something: on the needs-you
+screen, while the face is held, on a finish that names whose turn it was, or
+on an ask's answers in the lane. An invite's touch off the body still answers
+it, as its glow may sit beside the body. BOOT's press is still a poke. A firm
+press that bounces, the panel saying it lifted and touched again while the
+finger stays (within `app/touch_gesture.h`'s `kBounceMs`, 300 ms, and
+`kBouncePx` of where it was), is one press: the bounce gives nothing more.
+A finger that starts on the strip and goes up pulls out the
+drawer, if the face has one. A finger held still a second
 on the needs-you screen dismisses it: the board tells the Mac (`dismiss`,
 with the request's number, `data.attn`) and plays nothing. Anywhere else, on a
 face that can (`leans`, `lean`), a finger at rest for a second leans the face
@@ -706,6 +718,13 @@ Besides drawing each mood and state, a face:
 - **Moves with the engine.** It blinks, opens its mouth while the voice
   speaks (`mouthOpen`), presses down under a finger (`dy`), and may follow
   one (`finger`, and `letGo` with how fast it was moving).
+- **Says where its body is** (`Face::bodyAt`): whether a point of the canvas
+  is on the body as it last drew it, hands and all, or within
+  `Face::kBodyMarginPx` (12 px) of its rim. A touch that starts there is
+  Boop's, and one anywhere else the screen's (above). A face that doesn't
+  say is all body. The gel asks its last frame's mesh and the rig's hands, so
+  a squash, a lean, a slide or a finish moves where you can touch it; the
+  desk, the monitor and the keyboard aren't the body.
 - **Leaves room for the lane.** On the face's 320 × 240 canvas, the bottom
   48 px are the lane: the strip and the bubble, their text cut by
   `render::cutAt`. The device hands both to the face (`Face::draw`), and
@@ -727,7 +746,8 @@ Besides drawing each mood and state, a face:
   a session the Mac lists (`state`'s `list`, in a window, `skip` before and
   `unlisted` after): its thread's name, its agent and project, and whether
   it needs you, works or rests. A Moment can ask for it (the `do`'s
-  `"show": "drawer"`). A face with none: a swipe up its strip is a swipe.
+  `"show": "drawer"`). A face with none: a swipe up its strip is a swipe,
+  the screen's.
 - **Holds an agent's card, if it can** (`Face::card`, `Face::cardAt`,
   `render::CardShow`). Before each frame, and as a finger goes down, the
   device hands the face the card the Mac's `state` carries: a status or a

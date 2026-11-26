@@ -594,7 +594,7 @@ table only gathers them.
 **How latency is measured.** The device times each input and message
 from when it knew of it to the end of sending the first frame drawn
 after it (`app::Latency`, read with `dbg.latency`): a press going down
-(BOOT or a touch), a poke's release, a `state` that changes the picture,
+(BOOT or a touch, which `boopctl latency` puts on the body), a poke's release, a `state` that changes the picture,
 and a `do` as it starts to play, so not its wait in the queue. A frame
 counts as sent when the AMOLED's push task has finished it, and in the
 simulator when it's taken. Each kind keeps its

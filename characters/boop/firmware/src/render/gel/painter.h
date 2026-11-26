@@ -119,6 +119,10 @@ void paint(Surface&, const Engine&, bool mouthOpen = false, int dy = 0, uint32_t
            uint32_t t = 0, const PastimeShow* pastimes = nullptr, const DrawerPose* squeeze = nullptr,
            int duck = 0, const Stream* stream = nullptr, uint32_t now = 0, const CardShow* held = nullptr);
 void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig::Anchors* anchors = nullptr);
+// Whether (x16, y16), in sixteenths of a pixel on the surface the body was
+// last drawn on, is on it as drawn (squashed, leant, slid, turned, scaled)
+// or within margin16 of its outline. True before any frame has drawn it.
+bool bodyAt(int x16, int y16, int margin16);
 // Turned, a path of the art is drawn whole while its outline faces the
 // camera at least kFacingShown on average (Q12 of straight at it,
 // Projector::face), fading to none at kFacingGone, round at the dome's rim.

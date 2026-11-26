@@ -612,12 +612,13 @@ def clock_offset(dev: "Device", rng: random.Random, pings: int) -> tuple[float, 
 
 def latency_stimulus(kind: str, i: int, rng: random.Random) -> dict:
     """One input or message whose way to the panel the board times: a BOOT
-    tap or a touch (each a press and then its tap, 100 ms later), the i-th
+    tap or a touch on the body (each a press and then its tap, 100 ms later;
+    one off the body neither dips nor pokes), the i-th
     `state`, each changing the mood from the last, or a reaction played `now`."""
     if kind == "boot":
         return {"t": "dbg.press", "ms": 100}
     if kind == "touch":
-        return {"t": "dbg.touch", "x": rng.randint(40, 280), "y": rng.randint(30, 180), "ms": 100}
+        return {"t": "dbg.touch", "x": rng.randint(100, 220), "y": rng.randint(70, 170), "ms": 100}
     if kind == "state":
         return {"t": "state", "base": "working", "busy": 1, "mood": MOODS[i % 2], "vol": 0}
     return do("notice")

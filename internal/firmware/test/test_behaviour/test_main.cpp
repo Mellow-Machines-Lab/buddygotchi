@@ -2458,8 +2458,8 @@ const char* const kTalkOn = "{\"t\":\"ev\",\"kind\":\"talk_on\",\"did\":\"listen
 const char* const kTalkOff = "{\"t\":\"ev\",\"kind\":\"talk_off\"}";
 
 // A BOOT press under 400 ms is a tap and a hold is
-// push-to-talk; a touch anywhere, the strip included, is a tap sent on
-// release, however long it was held.
+// push-to-talk; a touch on the body is a tap sent on release, however long
+// it was held, and one on the strip, off the body, sends nothing.
 static void test_gestures_send_the_right_inputs() {
   DevRig r;
   r.line("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":100}");  // tap the face
@@ -2468,7 +2468,7 @@ static void test_gestures_send_the_right_inputs() {
   r.line("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(r.has("\"anim\":\"poked\""));
 
-  r.line("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":2000}");  // a long touch on the face
+  r.line("{\"t\":\"dbg.touch\",\"x\":100,\"y\":150,\"ms\":2000}");  // a long touch elsewhere on the face
   r.clock(1500);
   TEST_ASSERT_EQUAL(1, r.count(kTap));  // nothing yet
   r.clock(2100);
@@ -2476,12 +2476,12 @@ static void test_gestures_send_the_right_inputs() {
 
   r.line("{\"t\":\"dbg.touch\",\"x\":160,\"y\":222,\"ms\":800}");  // hold the strip
   r.clock(3000);
-  TEST_ASSERT_EQUAL(3, r.count(kTap));
+  TEST_ASSERT_EQUAL(2, r.count(kTap));
   TEST_ASSERT_EQUAL_STRING("face", r.screen().c_str());
 
   r.line("{\"t\":\"dbg.press\",\"ms\":100}");  // BOOT tap
   r.clock(3200);
-  TEST_ASSERT_EQUAL(4, r.count(kTap));
+  TEST_ASSERT_EQUAL(3, r.count(kTap));
   r.clock(3300);
   r.line("{\"t\":\"dbg.press\",\"ms\":800}");  // BOOT held
   r.clock(3699);
@@ -2490,7 +2490,7 @@ static void test_gestures_send_the_right_inputs() {
   TEST_ASSERT_EQUAL(1, r.count(kTalkOn));
   r.clock(4100);
   TEST_ASSERT_EQUAL(1, r.count(kTalkOff));
-  TEST_ASSERT_EQUAL(4, r.count(kTap));  // no tap on release
+  TEST_ASSERT_EQUAL(3, r.count(kTap));  // no tap on release
   // Only these three inputs exist.
   TEST_ASSERT_EQUAL(r.count("\"t\":\"ev\""), r.count(kTap) + r.count(kTalkOn) + r.count(kTalkOff));
 }

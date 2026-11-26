@@ -168,7 +168,7 @@ bool Kit::handleLine(const char* line, size_t n, Link from) {
   } else if (!std::strcmp(t, "blob")) {
     onBlobLine(msg, from, at);
   } else if (!std::strcmp(t, "hello")) {
-    if (!greeted) sendHello(from);  // §3: the host asks who the device is
+    if (!greeted) sendHello(from), app_.greeted(from);  // §3: the host asks who the device is
   } else if (!std::strcmp(t, "dbg.ping")) {
     sendPing(from);
   } else if (!std::strcmp(t, "dbg.state")) {
@@ -234,7 +234,7 @@ bool Kit::heard(Link from, uint32_t real) {
   l.heard = true;
   l.heardReal = l.quietReal = real;
   lastLink_ = from;
-  if (!wasLive) sendHello(from);
+  if (!wasLive) sendHello(from), app_.greeted(from);
   return !wasLive;
 }
 

@@ -105,7 +105,9 @@ tap, a light passing across asks for a stroke.
    2 is up.
 4. **A low sign.** It takes the strip's place, for the agent you watch.
 5. **A pill.** For any other agent. Never more than one; a second one waits.
-6. **Your swipe.** Boop keeps your agent until it goes idle or you swipe
+6. **Your swipe.** A finger that starts off Boop's body (on the strip or
+   the empty screen) and travels is a swipe; one that starts on the body is
+   always a stroke. Boop keeps your agent until it goes idle or you swipe
    again. On a switch the strip's row and the card slide in from the side
    you swiped toward (0.32 s) while Boop stays, and the monitor's frame
    takes the new agent's colour. When the set of agents changes, two faint

@@ -499,8 +499,9 @@ static void test_the_nose_on_a_named_finish_is_a_tap() {
 }
 
 // While a finish shows, a touch under 400 ms opens
-// its thread, whatever the classifier calls it; a slow stroke stays a stroke;
-// away from a finish every one stays a gesture.
+// its thread, whatever the classifier calls it, a quick stroke on the body
+// too; a slow stroke stays a stroke; away from a finish every one stays a
+// gesture.
 static void test_a_brief_touch_on_a_finish_is_a_tap() {
   TEST_ASSERT_EQUAL_UINT32(400, app::Device::kBriefOnFinishMs);
   const char* finish = "{\"t\":\"do\",\"id\":42,\"name\":\"reply_ready\",\"play\":\"now\",\"args\":{"
@@ -536,10 +537,10 @@ static void test_a_brief_touch_on_a_finish_is_a_tap() {
       r.kit.tick();
     }
   };
-  {  // A quick swipe.
+  {  // A quick stroke.
     Rig r;
     stroke(r, finish, 160, 40, 1400);
-    TEST_ASSERT_TRUE(has(r.usb.text, tapWas("swipe").c_str()));
+    TEST_ASSERT_TRUE(has(r.usb.text, tapWas("stroke").c_str()));
     TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
     TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ended\""));  // the finish plays on
   }
@@ -558,7 +559,7 @@ static void test_a_brief_touch_on_a_finish_is_a_tap() {
   {  // Away from a finish, they're gestures.
     Rig swipe, wiggle;
     stroke(swipe, nullptr, 160, 40, 1400);
-    TEST_ASSERT_TRUE(has(swipe.usb.text, "\"kind\":\"gesture\",\"did\":\"swipe\""));
+    TEST_ASSERT_TRUE(has(swipe.usb.text, "\"kind\":\"gesture\",\"did\":\"stroke\""));
     TEST_ASSERT_FALSE(has(swipe.usb.text, "\"kind\":\"tap\""));
     tickle(wiggle, nullptr);
     TEST_ASSERT_TRUE(has(wiggle.usb.text, "\"kind\":\"gesture\",\"did\":\"tickle\""));
@@ -568,7 +569,8 @@ static void test_a_brief_touch_on_a_finish_is_a_tap() {
 
 // The resistive panel misses readings under a light press, so a
 // panel touch ends only after 50 ms without contact. A press that flickers
-// is one tap; a new press after a real lift is another.
+// is one tap; a new press after a real lift, past a bounce's
+// TouchGesture::kBounceMs, is another.
 static void test_a_flickering_touch_is_one_tap() {
   TEST_ASSERT_EQUAL_UINT32(50, app::Device::kTouchReleaseMs);
   Rig r;
@@ -587,13 +589,13 @@ static void test_a_flickering_touch_is_one_tap() {
   r.hal.real = 338;
   r.kit.tick();
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, tap));
-  r.hal.real = 400;
+  r.hal.real = 700;
   r.hal.touching = true;
   r.kit.tick();
-  r.hal.real = 450;
+  r.hal.real = 750;
   r.hal.touching = false;
   r.kit.tick();
-  r.hal.real = 500;
+  r.hal.real = 800;
   r.kit.tick();
   TEST_ASSERT_EQUAL_INT(2, count(r.usb.text, tap));
 }
@@ -615,6 +617,84 @@ static void test_a_lift_the_panel_reports_taps_at_once() {
   r.hal.real = 81;
   r.kit.tick();
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, tap));
+}
+
+// One firm press is one poke. On the owner's board a firm finger bounced:
+// the panel said it lifted, then touched again, while it was still down, and
+// one press gave 2 to 4 taps 150 to 400 ms apart. A touch that goes down
+// within TouchGesture::kBounceMs of the last one's lift, near where that one
+// was, is the same press: it gives no tap, no boop on the nose and no
+// gesture (dbg.state's touch.last says `bounce`). Two taps half a second
+// apart are two, and a stroke that lifts for 100 ms on its way is one stroke.
+static void test_a_press_that_bounces_is_one_poke() {
+  TEST_ASSERT_EQUAL_UINT32(300, app::TouchGesture::kBounceMs);
+  TEST_ASSERT_EQUAL_INT(40, app::TouchGesture::kBouncePx);
+  const char* tap = "{\"t\":\"ev\",\"kind\":\"tap\",";
+  // The panel in contact at (x, y) from `from` to `to` ms, then saying it
+  // lifted, a pass every 10 ms.
+  const auto press = [](Rig& r, int x, int y, uint32_t from, uint32_t to) {
+    r.hal.touchX = x, r.hal.touchY = y;
+    for (uint32_t ms = from; ms <= to; ms += 10) {
+      r.hal.real = ms;
+      r.hal.touching = true;
+      r.kit.tick();
+    }
+    r.hal.touching = false;
+    r.hal.lifted = true;
+    r.hal.real = to + 1;
+    r.kit.tick();
+  };
+  const auto rig = [](Rig& r) {
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+    r.usbLine("{\"t\":\"dbg.clock\",\"run\":true}");
+    r.usb.text.clear();
+  };
+  {  // As the log had it: four taps' worth, 150 to 400 ms apart, the finger drifting.
+    Rig r;
+    rig(r);
+    press(r, 160, 100, 0, 60);
+    press(r, 163, 102, 150, 230);
+    press(r, 158, 104, 400, 440);
+    press(r, 161, 101, 700, 800);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(1, count(r.usb.text, tap), r.usb.text.c_str());
+    TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
+    r.usbLine("{\"t\":\"dbg.state\"}");
+    TEST_ASSERT_TRUE(has(r.usb.text, "\"was\":\"bounce\""));
+  }
+  {  // On the nose: one boop, and nothing of the bounces.
+    Rig r;
+    rig(r);
+    press(r, 160, 134, 0, 60);
+    press(r, 160, 134, 200, 260);
+    TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, "\"did\":\"nose\""));
+    TEST_ASSERT_FALSE(has(r.usb.text, tap));
+  }
+  {  // Two taps half a second apart, and two the bounce's window apart in place but far apart.
+    Rig r;
+    rig(r);
+    press(r, 160, 100, 0, 80);
+    press(r, 160, 100, 500, 580);
+    TEST_ASSERT_EQUAL_INT(2, count(r.usb.text, tap));
+    press(r, 100, 150, 700, 760);
+    TEST_ASSERT_EQUAL_INT(3, count(r.usb.text, tap));
+  }
+  {  // A stroke across the body that lifts for 100 ms on its way.
+    Rig r;
+    rig(r);
+    uint32_t ms = 0;
+    for (int x = 90; x <= 230; x += 4, ms += 20) {
+      if (x == 170) {  // the lift, and 100 ms later the finger again
+        r.hal.touching = false, r.hal.lifted = true, r.hal.real = ms, r.kit.tick();
+        ms += 100;
+      }
+      r.hal.touchX = x, r.hal.touchY = 120, r.hal.touching = true, r.hal.real = ms;
+      r.kit.tick();
+    }
+    r.hal.touching = false, r.hal.lifted = true, r.hal.real = ms, r.kit.tick();
+    r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(1, count(r.usb.text, "\"kind\":\"gesture\",\"did\":\"stroke\""), r.usb.text.c_str());
+    TEST_ASSERT_FALSE(has(r.usb.text, tap));
+  }
 }
 
 // The 50 ms runs on real time, so a panel touch still ends, and
@@ -1170,18 +1250,6 @@ static void test_a_reaction_with_nothing_to_play_is_ignored() {
   TEST_ASSERT_TRUE(has(r.usb.text, "\"moment\":{\"anim\":\"task_complete\""));
   TEST_ASSERT_TRUE(has(r.usb.text, "\"rx\":{\"state\":1,\"do\":3}"));
   TEST_ASSERT_EQUAL(0, r.hal.hushes);
-}
-
-// The strip is part of the screen; a touch on it is a tap.
-static void test_a_strip_touch_is_a_tap() {
-  Rig r;
-  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":222,\"ms\":100}");
-  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":200}");
-  TEST_ASSERT_EQUAL_STRING("face", r.screen().c_str());
-  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"screen\"}}\n"));
-  r.usbLine("{\"t\":\"dbg.state\"}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"anim\":\"poked\""));
 }
 
 static void test_reset_forgets_the_mac_and_freezes_at_0() {
@@ -2356,12 +2424,12 @@ static void test_an_unanswered_ask_ends_ignored() {
 static void test_a_stroke_is_a_gesture() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":100,\"y\":120,\"to_x\":220,\"to_y\":120,\"ms\":400}");
   for (int i = 0; i < 8; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":60}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
   r.usbLine("{\"t\":\"dbg.state\"}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"from\":[60,120]"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"from\":[100,120]"));
   TEST_ASSERT_TRUE(has(r.usb.text, "\"was\":\"stroke\"}"));
 }
 
@@ -2389,7 +2457,7 @@ static void test_a_stroke_keeps_its_answer_when_it_meets_a_wish() {
   Rig s;
   clockAt(s, 1000);
   s.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"wish\":\"pet\"}");
-  s.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+  s.usbLine("{\"t\":\"dbg.touch\",\"x\":100,\"y\":120,\"to_x\":220,\"to_y\":120,\"ms\":400}");
   for (int i = 0; i < 8; ++i) s.usbLine("{\"t\":\"dbg.clock\",\"step\":60}");
   TEST_ASSERT_TRUE(has(s.usb.text, "\"did\":\"stroke\""));
   TEST_ASSERT_TRUE(has(momentOf(s), "gesture"));
@@ -2431,23 +2499,25 @@ static void strokeDown(Rig& r, uint32_t ms, uint32_t stepMs, uint32_t until) {
   }
 }
 
-// A quick touch that travels is a swipe, which the Mac hears as one
-// (`ev gesture`, did `swipe`), and no tap. A face that doesn't follow the
-// finger plays the stroke it would be, slower: its stroke's design, as for
-// a slow one. dbg.state's
-// touch.last says where the last touch went down and was last, how long
-// that took and what it was, to check a panel's axes and speeds by; there
-// is none before the first.
-static void test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac() {
+// A quick stroke on the body, one that lets go still moving fast, is the
+// stroke it is, however fast: the Mac hears a stroke (`ev gesture`, did
+// `stroke`), no swipe and no tap, and the face plays its stroke's design, as
+// for a slow one. dbg.state's touch.last says where the last touch went
+// down and was last, how long that took, whether it began on the body and
+// what it was, to check a panel's axes and speeds by; there is none before
+// the first.
+static void test_a_fast_stroke_on_the_body_is_a_stroke() {
   Rig r;
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"last\":null"));
   strokeDown(r, 160, 40, 1400);
-  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"swipe\"}\n"));
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"did\":\"swipe\""));
   const std::string swiped = momentOf(r);
   // Let go at 1160: its last reading was at 1120, three quarters of the way.
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"last\":{\"from\":[160,60],\"to\":[160,165],\"ms\":120,\"was\":\"swipe\"}"));
+  TEST_ASSERT_TRUE(has(r.usb.text,
+                       "\"last\":{\"from\":[160,60],\"to\":[160,165],\"ms\":120,\"body\":true,\"was\":\"stroke\"}"));
   TEST_ASSERT_TRUE(has(r.usb.text, "\"k\":\"gesture\""));
   TEST_ASSERT_EQUAL_STRING("gesture 2", swiped.c_str());  // gesture's second variation, the stroke
   // The same stroke, slowly: the same design.
@@ -2455,6 +2525,100 @@ static void test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac() {
   strokeDown(slow, 900, 100, 2000);
   TEST_ASSERT_TRUE(has(slow.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
   TEST_ASSERT_EQUAL_STRING(swiped.c_str(), momentOf(slow).c_str());
+}
+
+// Only a tap on the body pokes (Face::bodyAt). One off it, on the strip or
+// on the empty screen, does nothing at all: no poke, no dip, nothing to the
+// Mac. dbg.state's touch.last says it wasn't on the body.
+static void test_only_a_tap_on_the_body_pokes() {
+  // The face at 1050 with no touch, and under a finger down since 1000.
+  const auto settled = [](Rig& r) {
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+    r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
+    r.usb.text.clear();
+  };
+  Rig still;
+  settled(still);
+  still.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1050}");
+  still.dev.takeFrame();
+  Rig r;
+  settled(r);
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":100}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1050}");
+  r.dev.takeFrame();
+  TEST_ASSERT_TRUE(r.px != still.px);  // the dip under the finger
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1200}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"screen\"}}\n"));
+  TEST_ASSERT_TRUE(has(momentOf(r), "poked"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"body\":true,\"was\":\"tap\""));
+  for (const char* off : {"{\"t\":\"dbg.touch\",\"x\":160,\"y\":222,\"ms\":100}",   // the strip
+                          "{\"t\":\"dbg.touch\",\"x\":20,\"y\":30,\"ms\":100}",     // the corner
+                          "{\"t\":\"dbg.touch\",\"x\":300,\"y\":120,\"ms\":100}"}) {  // beside it
+    Rig q;
+    settled(q);
+    q.usbLine(off);
+    q.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1050}");
+    q.dev.takeFrame();
+    TEST_ASSERT_TRUE_MESSAGE(q.px == still.px, off);  // no dip
+    q.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1200}");
+    TEST_ASSERT_FALSE_MESSAGE(has(q.usb.text, "\"t\":\"ev\""), q.usb.text.c_str());
+    TEST_ASSERT_EQUAL_STRING("none", momentOf(q).c_str());
+    TEST_ASSERT_TRUE_MESSAGE(has(q.usb.text, "\"body\":false,\"was\":\"tap\""), off);
+  }
+}
+
+// Where a move starts decides, not how fast it lets go. With three agents a
+// quick stroke that starts on the body is a stroke, and asks for no agent;
+// the same move along the strip is a swipe, asking the Mac for the next
+// agent (toward the left) or the one before, and a slow one there too. With
+// one agent a swipe does nothing at all.
+static void test_where_a_move_starts_decides_stroke_or_swipe() {
+  const char* three = "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":1,\"pips\":\"w0w1i2\",\"watch\":0}";
+  const char* one = "{\"t\":\"state\",\"base\":\"working\",\"busy\":1}";
+  const char* next = "{\"t\":\"ev\",\"kind\":\"agent\",\"did\":\"next\"}\n";
+  const char* prev = "{\"t\":\"ev\",\"kind\":\"agent\",\"did\":\"prev\"}\n";
+  // A move along row y from x to toX over `ms`, let go, on a frozen clock
+  // from 1000: what the board sent.
+  const auto move = [](const char* state, int x, int y, int toX, int ms) {
+    Rig r;
+    r.usbLine(state);
+    r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
+    r.usb.text.clear();
+    char line[112];
+    std::snprintf(line, sizeof(line), "{\"t\":\"dbg.touch\",\"x\":%d,\"y\":%d,\"to_x\":%d,\"to_y\":%d,\"ms\":%d}", x,
+                  y, toX, y, ms);
+    r.usbLine(line);
+    for (int t = 1020; t <= 1000 + ms + 100; t += 20) {
+      std::snprintf(line, sizeof(line), "{\"t\":\"dbg.clock\",\"freeze\":%d}", t);
+      r.usbLine(line);
+    }
+    return r.usb.text;
+  };
+  std::string sent = move(three, 80, 120, 240, 120);  // across the body, quickly
+  TEST_ASSERT_TRUE_MESSAGE(has(sent, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"), sent.c_str());
+  TEST_ASSERT_FALSE(has(sent, "\"kind\":\"agent\""));
+  sent = move(three, 240, 222, 80, 120);  // along the strip, leftward
+  TEST_ASSERT_TRUE_MESSAGE(has(sent, next), sent.c_str());
+  TEST_ASSERT_FALSE(has(sent, "\"kind\":\"gesture\""));
+  TEST_ASSERT_FALSE(has(sent, "\"kind\":\"tap\""));
+  TEST_ASSERT_TRUE(has(move(three, 80, 222, 240, 120), prev));
+  TEST_ASSERT_TRUE(has(move(three, 240, 222, 80, 800), next));  // slowly
+  sent = move(one, 240, 222, 80, 120);
+  TEST_ASSERT_FALSE_MESSAGE(has(sent, "\"t\":\"ev\""), sent.c_str());
+}
+
+// A tap anywhere still opens the finish that names whose turn it was, off
+// the body too: it's the finish's, not a poke.
+static void test_a_tap_off_the_body_opens_a_finish() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
+  r.usbLine("{\"t\":\"do\",\"id\":42,\"name\":\"reply_ready\",\"play\":\"now\",\"args\":{"
+            "\"who\":{\"agent\":\"claude\",\"thread\":\"fix-nav\"}}}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":20,\"y\":30,\"ms\":100}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1200}");
+  TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\",\"data\":{\"src\":\"screen\",\"on\":42}}\n"),
+                           r.usb.text.c_str());
 }
 
 // A finger held still on the needs-you screen for TouchGesture::kHoldMs
@@ -2506,7 +2670,7 @@ static void test_a_hold_names_the_request_it_began_on() {
   TEST_ASSERT_EQUAL_INT(1, count(none.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"dismiss\"}\n"));
 }
 
-// Outside needs-you a hold is a tap on release, however long; a request
+// Outside needs-you a hold on the body is a tap on release, however long; a request
 // that comes up under a finger already down isn't dismissed by it; and a
 // touch on a needs-you screen that goes before it lifts (answered on the Mac) is
 // nothing.
@@ -2523,7 +2687,7 @@ static void test_a_hold_off_the_needs_you_screen_is_a_tap() {
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, tap));
   Rig idle;
   idle.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  idle.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":2000}");
+  idle.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":2000}");
   for (int i = 0; i < 25; ++i) idle.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
   TEST_ASSERT_EQUAL_INT(0, count(idle.usb.text, dismiss));
   TEST_ASSERT_EQUAL_INT(1, count(idle.usb.text, tap));
@@ -2605,6 +2769,52 @@ static void test_the_mac_hears_which_way_up_once_its_back() {
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"facedown\"}\n"));
+}
+
+// A host greeted anew forgets face down (the Mac, on a new link), or may
+// have lost it on the way: lying face down, the board says so again right
+// after its hello, when the Mac relaunches and when it comes back after its
+// 30 s of silence, once each, and not with hello's 60 s repeat. Face up, a
+// greeting brings nothing.
+static void test_face_down_is_said_again_to_a_host_greeted_anew() {
+  const char* faceDown = "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"facedown\"}\n";
+  Rig up;
+  up.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  up.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  up.usb.text.clear();
+  up.usbLine("{\"t\":\"hello\"}");
+  up.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  up.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_FALSE(has(up.usb.text, "\"kind\":\"gesture\""));
+
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":-1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, faceDown));
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"hello\"}");  // the Mac relaunched, within 30 s
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, faceDown));
+  const size_t hello = r.usb.text.find("{\"t\":\"hello\"");
+  TEST_ASSERT_TRUE(hello != std::string::npos && hello < r.usb.text.find(faceDown));
+  // Hello's repeat, a minute on, the Mac's state every 10 s: nothing more.
+  for (int i = 0; i < 7; ++i) {
+    r.usbLine("{\"t\":\"dbg.clock\",\"step\":10000}");
+    r.hal.real += 10000;
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  }
+  TEST_ASSERT_TRUE(count(r.usb.text, "{\"t\":\"hello\"") >= 2);
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, faceDown));
+  // The Mac quiet past 30 s, then back on the same link: said again.
+  r.usb.text.clear();
+  for (int i = 0; i < 31; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":1000}"), r.hal.real += 1000;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, faceDown));
 }
 
 // dbg.reset starts the motion sensor's readings again with the clock: a
@@ -2740,12 +2950,14 @@ struct InviteRig {
   app::Device dev;
   linkkit::Kit kit{hal, dev, true};
   uint32_t t = 0;
-  explicit InviteRig(bool draws = true) : dev(hal, px.data(), invitingFace(draws)) {
+  explicit InviteRig(bool draws = true, const char* mac = kIdle) : dev(hal, px.data(), invitingFace(draws)), state(mac) {
     kit.setOut(linkkit::Link::kUsb, &usb);
     line("{\"t\":\"dbg.clock\",\"freeze\":0}");
-    line(kIdle);
+    line(state);
   }
   static constexpr const char* kIdle = "{\"t\":\"state\",\"base\":\"idle\",\"vol\":0}";
+  static constexpr const char* kThree = "{\"t\":\"state\",\"base\":\"idle\",\"vol\":0,\"idle\":3,\"pips\":\"i0i1i2\",\"watch\":0}";
+  const char* state;  // what the Mac says every second
   void line(const char* s) {
     kit.handleLine(s, std::strlen(s), linkkit::Link::kUsb);
     kit.tick();
@@ -2757,7 +2969,7 @@ struct InviteRig {
     while (t < to) {
       t = std::min(to, t + 20);
       line("{\"t\":\"dbg.clock\",\"freeze\":" + std::to_string(t) + "}");
-      if (t % 1000 == 0) line(kIdle);
+      if (t % 1000 == 0) line(state);
     }
   }
   void run(uint32_t ms) { runTo(t + ms); }
@@ -2771,12 +2983,14 @@ struct InviteRig {
     run(200);
   }
   void stroke() {
-    line("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+    line("{\"t\":\"dbg.touch\",\"x\":100,\"y\":120,\"to_x\":220,\"to_y\":120,\"ms\":400}");
     run(500);
   }
-  // A stroke that lets go still moving fast, as a finger petting does.
-  void swipe() {
-    line("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":220,\"to_y\":120,\"ms\":120}");
+  // A stroke that lets go still moving fast, as a finger petting does: from
+  // `x` across, on the body or (x 20) beside it.
+  void swipe(int x = 80) {
+    line("{\"t\":\"dbg.touch\",\"x\":" + std::to_string(x) + ",\"y\":120,\"to_x\":" + std::to_string(x + 160) +
+         ",\"to_y\":120,\"ms\":120}");
     run(220);
   }
   // dbg.state's invite: its stage, "null" for none.
@@ -3015,8 +3229,8 @@ static void test_a_touch_of_the_other_kind_passes_through() {
   TEST_ASSERT_FALSE(has(q.usb.text, "\"kind\":\"gesture\""));
 }
 
-// A stroke let go fast, a swipe, answers a stroke's invite, in its wait
-// and late: a real finger on Boop's back lifts still moving.
+// A stroke let go fast answers a stroke's invite, in its wait and late: a
+// real finger on Boop's back lifts still moving.
 static void test_a_fast_stroke_answers_a_stroke() {
   InviteRig r;
   r.runTo(1000);
@@ -3035,6 +3249,28 @@ static void test_a_fast_stroke_answers_a_stroke() {
   q.usb.text.clear();
   q.swipe();
   TEST_ASSERT_TRUE_MESSAGE(has(q.usb.text, inviteLine("late", "stroke")), q.usb.text.c_str());
+
+  // With three agents a quick stroke that starts on the body is still the
+  // stroke it answers; one that starts beside it, off the body, is a swipe
+  // between them, as it was, and a slow one there is still its stroke.
+  for (int start : {80, 20}) {
+    InviteRig p(true, InviteRig::kThree);
+    p.runTo(1000);
+    p.doLine(1, "next", skitWith("back", "stroke", "sigh"));
+    p.run(kSaid + 200);
+    p.usb.text.clear();
+    p.swipe(start);
+    TEST_ASSERT_EQUAL_MESSAGE(start == 80, has(p.usb.text, inviteLine("answered", "stroke")), p.usb.text.c_str());
+    TEST_ASSERT_EQUAL(start == 20, has(p.usb.text, "{\"t\":\"ev\",\"kind\":\"agent\",\"did\":\"prev\"}"));
+  }
+  InviteRig slow(true, InviteRig::kThree);
+  slow.runTo(1000);
+  slow.doLine(1, "next", skitWith("back", "stroke", "sigh"));
+  slow.run(kSaid + 200);
+  slow.usb.text.clear();
+  slow.line("{\"t\":\"dbg.touch\",\"x\":20,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+  slow.run(500);
+  TEST_ASSERT_TRUE_MESSAGE(has(slow.usb.text, inviteLine("answered", "stroke")), slow.usb.text.c_str());
 }
 
 // A tap on a back turned is a pat: it pets it as a stroke does, in its
@@ -3188,19 +3424,22 @@ static void test_boot_only_shuts_the_open_drawer() {
 
 // Pins the drawer's pick and pull distances: a finger must go
 // kDrawerPullPx (22) up the strip to pull it, so a tap that rolls a little
-// up is the tap it was; on the open drawer a touch that travels as far
-// either way is a drag, which lets go picking nothing, where a tap picks.
+// up is the tap it was, which on the strip, off the body, does nothing; on
+// the open drawer a touch that travels as far either way is a drag, which
+// lets go picking nothing, where a tap picks.
 static void test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px() {
   TEST_ASSERT_EQUAL_INT(22, app::Device::kDrawerPullPx);
   DrawerRig b;
   b.touch(160, 232, 160, 211, 100);  // 21 px up the strip
   b.run(200);
   TEST_ASSERT_EQUAL_INT(0, b.count(kOpened));
-  TEST_ASSERT_EQUAL_INT(1, b.count(kTapped));
+  b.line("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_EQUAL_INT(1, b.count("\"body\":false,\"was\":\"tap\""));
+  TEST_ASSERT_EQUAL_INT(0, b.count(kTapped));
   b.touch(160, 232, 160, 200, 100);  // 32 px: a pull
   b.run(200 + app::Device::kDrawerMs);
   TEST_ASSERT_EQUAL_INT(1, b.count(kOpened));
-  TEST_ASSERT_EQUAL_INT(1, b.count(kTapped));
+  TEST_ASSERT_EQUAL_INT(0, b.count(kTapped));
 
   DrawerRig d;
   d.pullOpen();
@@ -3235,7 +3474,7 @@ static void test_a_swipe_across_the_card_asks_for_the_next_and_a_tap_opens_it() 
   b.run(300);
   TEST_ASSERT_EQUAL_INT(1, b.count(ev("next").c_str()));
   b.touch(100, 175, 200, 180, 150);
-  b.run(300);
+  b.run(500);  // past a bounce
   TEST_ASSERT_EQUAL_INT(1, b.count(ev("prev").c_str()));
   b.touch(160, 175, 180, 175, 100);  // a tap, a little rolled
   b.run(300);
@@ -3482,9 +3721,12 @@ int main() {
   RUN_TEST(test_a_stroke_is_a_gesture);
   RUN_TEST(test_a_tap_in_the_lane_answers_an_ask);
   RUN_TEST(test_an_unanswered_ask_ends_ignored);
-  RUN_TEST(test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac);
+  RUN_TEST(test_a_fast_stroke_on_the_body_is_a_stroke);
+  RUN_TEST(test_where_a_move_starts_decides_stroke_or_swipe);
+  RUN_TEST(test_a_tap_off_the_body_opens_a_finish);
   RUN_TEST(test_face_down_is_do_not_disturb);
   RUN_TEST(test_the_mac_hears_which_way_up_once_its_back);
+  RUN_TEST(test_face_down_is_said_again_to_a_host_greeted_anew);
   RUN_TEST(test_reset_reads_motion_from_0);
   RUN_TEST(test_reactions_read_their_facts);
   RUN_TEST(test_only_the_reply_ends_the_macs_listening);
@@ -3511,6 +3753,7 @@ int main() {
   RUN_TEST(test_a_physical_hold_is_push_to_talk);
   RUN_TEST(test_the_macs_listening_and_the_empty_reaction);
   RUN_TEST(test_a_flickering_touch_is_one_tap);
+  RUN_TEST(test_a_press_that_bounces_is_one_poke);
   RUN_TEST(test_a_lift_the_panel_reports_taps_at_once);
   RUN_TEST(test_a_tap_on_a_named_finish_carries_its_id);
   RUN_TEST(test_the_nose_on_a_named_finish_is_a_tap);
@@ -3531,7 +3774,7 @@ int main() {
   RUN_TEST(test_reaction_plays_then_ends_and_a_new_one_replaces_it);
   RUN_TEST(test_alone_nothing_is_emitted_as_if_the_mac_heard);
   RUN_TEST(test_a_reaction_with_nothing_to_play_is_ignored);
-  RUN_TEST(test_a_strip_touch_is_a_tap);
+  RUN_TEST(test_only_a_tap_on_the_body_pokes);
   RUN_TEST(test_reset_forgets_the_mac_and_freezes_at_0);
   RUN_TEST(test_say_reaches_the_player);
   RUN_TEST(test_a_say_on_its_own_plays);

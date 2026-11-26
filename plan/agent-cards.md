@@ -96,8 +96,10 @@ its row in the drawer.
   browser; a file shown in the Finder, never run or opened in an app), or
   with no link the session's thread, as a row picked in the drawer does.
 - A swipe across it changes card.
-- A touch anywhere else is Boop's, as ever. A card that isn't drawn can't be
-  touched: under the needs-you screen, a sign or a work act, a tap is Boop's.
+- A touch anywhere else is Boop's if it starts on the body, and the
+  screen's if not. A card that isn't drawn can't be touched: under the
+  needs-you screen, a sign or a work act, a tap there is what it would be
+  with no card.
 
 ## How an agent sends one
 

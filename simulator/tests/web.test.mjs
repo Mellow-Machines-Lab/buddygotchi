@@ -106,9 +106,9 @@ test('a touch is a tap however soon it lifts, and power-on is a new boot', { ski
   const first = (await b.request({ t: 'hello' })).boot;
   b.send(WORKING);
   await b.run(200);
-  // A click, off the nose (a boop there is a gesture): down and up before
-  // the board has looked once.
-  b.input('touch 60 120');
+  // A click on the body, off the nose (a boop there is a gesture): down and
+  // up before the board has looked once.
+  b.input('touch 160 100');
   b.input('release');
   await b.run(400);
   assert.ok(b.lines.some(m => m.t === 'ev' && m.kind === 'tap'));
@@ -450,7 +450,7 @@ test('a recording plays into the board in order, and knows nothing of what its l
   player.play();
   await ended;
   player.stop();
-  assert.deepEqual(did, [['line', 'state'], ['line', 'do'], ['touch', 80, 120], ['release'], ['line', 'anything']]);
+  assert.deepEqual(did, [['line', 'state'], ['line', 'do'], ['touch', 160, 100], ['release'], ['line', 'anything']]);
   assert.deepEqual(told, ['You ask Claude: “Fix it”', 'Pip makes an excited face and says “Go”', 'You poke Pip']);
   assert.ok(player.ended && !player.playing);
   assert.throws(() => new DemoPlayer(fake, { ...recording, version: 2 }), /version 2/);

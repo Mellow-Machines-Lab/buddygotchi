@@ -306,6 +306,13 @@ class Face {
   // card draws none and has none to touch.
   virtual void card(const CardShow& show) { (void)show; }
   virtual bool cardAt(int x, int y) const { return (void)x, (void)y, false; }
+  // Whether the canvas's (x, y) is on the body as last drawn, hands and all,
+  // or within kBodyMarginPx of its rim, a finger's width: a touch that starts
+  // there is Boop's (a poke, a stroke), and one that starts anywhere else
+  // the screen's (a swipe between agents, or nothing). A face that doesn't
+  // say is all body.
+  static constexpr int kBodyMarginPx = 12;
+  virtual bool bodyAt(int x, int y) const { return (void)x, (void)y, true; }
   // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
   // let go: a face may follow it, as the gel's dome leans into a stroke.
   virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }
@@ -330,9 +337,8 @@ class Face {
   // The board's steady tilt, in milli-g across the screen (app::Tilt), on
   // every reading of a board with a motion sensor: a face may slosh that way.
   virtual void tilt(int mg, uint32_t t) { (void)mg, (void)t; }
-  // Whether a quick swipe plays the stroke (or the ruffle) it would be,
-  // slower, as it does on a face that doesn't follow the finger; one that
-  // carries it on as it lets go may only feel it go by.
+  // No longer asked: a quick stroke on the body plays its stroke on every
+  // face (bodyAt). It goes once the gel's override of it goes with it.
   virtual bool playsSwipe() const { return true; }
   // Whether it holds up the finished turn's name itself (DoneShow::signMs):
   // from then on the strip doesn't repeat it.

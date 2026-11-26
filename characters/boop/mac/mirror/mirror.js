@@ -20,9 +20,10 @@
   // A new board shows its first `state` this long on a frozen clock, as a
   // scenario's shot waits, so it starts settled in it; then it runs.
   const SETTLE_MS = 1504;
-  // A finger in the canvas's 320×240, beside the nose (a boop on it is a
-  // gesture), and BOOT, each held as long as a tap.
-  const TAP = '{"t":"dbg.touch","x":80,"y":120,"ms":100}', PRESS = '{"t":"dbg.press","ms":100}';
+  // A finger in the canvas's 320×240, on the dome above the nose (a boop on
+  // it is a gesture; only a tap on the body pokes, and the body sits lower
+  // at work), and BOOT, each held as long as a tap.
+  const TAP = '{"t":"dbg.touch","x":160,"y":100,"ms":100}', PRESS = '{"t":"dbg.press","ms":100}';
   // The slime on the board's 502×410 screen, in its pixels: a square
   // around it as it rests (x 105–398, y 95–320), with most of the props
   // beside it and the sign above it, and the lane under it (y 348) left
