@@ -123,15 +123,17 @@ public final class MomentOutput: Output {
     /// to be quiet for a while.
     static let rudeReply = "ouch", hushReply = "hush"
 
-    /// Whether `e` is an idle check-in.
+    /// Whether `e` is an idle check-in, or a working one.
     static func isCheckIn(_ e: Event) -> Bool { e.type == .checkIn && e.specificType == "check_in" }
+    static func isWorkingCheckIn(_ e: Event) -> Bool { e.type == .checkIn && e.specificType == "working" }
 
     /// The idle beat at `about` as it's offered: the one dealt, with the
     /// signs the question shows: one, or for a musing a few, never the
     /// last sign held up while another fits. A pass `forced` from outside
-    /// is offered every beat there is, with all its signs, to name one.
+    /// is offered every beat there is, with all its signs, to name one. At
+    /// a working check-in, the one the rules hold up (`ruled`).
     func beats(_ about: Event?, _ log: LogView, forced: Bool = false) -> [IdleBeat.Candidate] {
-        guard let about, Self.isCheckIn(about) else { return [] }
+        guard let about, Self.isCheckIn(about) || Self.isWorkingCheckIn(about) else { return [] }
         let all = idleBeat(about, log, forced)
         if forced { return all }
         recall(log)
@@ -709,12 +711,15 @@ public final class MomentOutput: Output {
         /// Words held low in gold, and what's before them (`Moment.mark`).
         var gold: String?
         var mark: String?
+        /// The idle beat it holds up, `sign` its sign (a working check-in's).
+        var beat: IdleBeat.Candidate?
     }
 
     /// The Moment the rules make at `e`, whose line has `facts`, or nil
     /// where they make none: at your lock its bye and at your unlock its
     /// hello (`MomentRule.bye`, `hello`), at a working check-in its face in
-    /// silence (`MomentRule.checkIn`), and at another buddy's gesture a
+    /// silence (`MomentRule.checkIn`), or in its mood's face the beat due
+    /// there, held up (`IdleBeat.atWork`), and at another buddy's gesture a
     /// warm face and a sign that answers it (`MomentRule.world`).
     public func ruled(_ e: Event, facts: [String: JSONValue], log: LogView) -> Ruled? {
         recall(log)
@@ -738,6 +743,9 @@ public final class MomentOutput: Output {
                                          naps: wave == .nap), saysWave: true)
             }
         case .checkIn? where e.specificType == "working":
+            if let beat = beats(e, log).first, let sign = beat.signs.first {
+                return Ruled(face: face, size: MomentRule.small, sign: sign, beat: beat)
+            }
             let rung = EventLine.rung(Int(facts["check_in"]?.int ?? 1), of: EventLine.round)
             return Ruled(face: MomentRule.checkIn(rung: rung, mood: mood, face: face), size: MomentRule.small)
         case .world? where e.specificType == World.leagueKind:
@@ -813,8 +821,9 @@ public final class MomentOutput: Output {
         // What the brain held up at an idle check-in: the beat that was
         // dealt, if it's still the one due.
         let holding = talk || ruled != nil ? nil : (answers[Signs.questionKey]?.choice).flatMap { $0 == "none" ? nil : $0 }
-        // A pass forced from outside names what it holds up itself.
-        let beat = holding.flatMap { held in beats(about, log, forced: now == nil).first { $0.signs.contains(held) } }
+        // A pass forced from outside names what it holds up itself; a
+        // rule's Moment brings its own.
+        let beat = ruled?.beat ?? holding.flatMap { held in beats(about, log, forced: now == nil).first { $0.signs.contains(held) } }
         let noticing = beat?.notice, wishing = beat?.wish, remembering = beat?.remembered
         // At a notice it looks up at you first, so it's no quiet face; a
         // rough hour's lean is its own look.

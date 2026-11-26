@@ -90,4 +90,86 @@ final class IdleBeatTests: XCTestCase {
         XCTAssertEqual(sent?.sign, "fav snack?")
         XCTAssertEqual(asked?.facts["ask"], "snack")
     }
+
+    /// Pins the gate at a working check-in (`IdleBeat.atWork`): a working
+    /// stretch of 5 minutes or more (tier2), Boop free to start something
+    /// of its own, not Quiet, not on a call, and no Moment in the last
+    /// minute.
+    func testTheGateAtWork() {
+        let minute: Int64 = 60_000
+        XCTAssertEqual(IdleBeat.workStretchMs, 5 * minute)
+        XCTAssertEqual(IdleBeat.afterMomentMs, minute)
+        func gate(_ stretch: Int64? = 5 * 60_000, mayStart: Bool = true, quiet: Bool = false, onCall: Bool = false,
+                  momentAgo: Int64? = nil) -> Bool {
+            IdleBeat.atWork(stretchMs: stretch, mayStart: mayStart, quiet: quiet, onCall: onCall, momentAgoMs: momentAgo)
+        }
+        XCTAssertTrue(gate())
+        XCTAssertTrue(gate(momentAgo: minute))
+        XCTAssertFalse(gate(5 * minute - 1), "under 5 minutes of work")
+        XCTAssertFalse(gate(nil), "no working stretch")
+        XCTAssertFalse(gate(mayStart: false), "away, something needs you, or listening")
+        XCTAssertFalse(gate(quiet: true))
+        XCTAssertFalse(gate(onCall: true))
+        XCTAssertFalse(gate(momentAgo: minute - 1), "a Moment in the last minute")
+    }
+
+    /// At work the same order, under the same cap, but no musing: an idle
+    /// thought is wrong over work. Quiet never gets that far.
+    func testAtWorkNoMusing() {
+        func due(_ has: Set<IdleBeat.Kind>) -> IdleBeat.Kind? {
+            IdleBeat.due(room: true, quiet: false, wishOpen: false, atWork: true) { has.contains($0) ? self.candidate($0) : nil }?.kind
+        }
+        XCTAssertEqual(IdleBeat.Kind.allCases.filter(\.atWork), [.waiting, .wish, .notice, .ask, .remembered])
+        XCTAssertEqual(due(Set(IdleBeat.Kind.allCases)), .waiting)
+        XCTAssertEqual(due([.ask, .remembered, .musing]), .ask)
+        XCTAssertNil(due([.musing]))
+        XCTAssertNil(IdleBeat.due(room: false, quiet: false, wishOpen: false, atWork: true) { self.candidate($0) }, "the one cap")
+    }
+
+    /// At a working check-in the rules hold up the beat due on their own
+    /// Moment, in the mood's face, with no pass: a wish opens, and the
+    /// Moment's record counts against the cap. With none due, the check-in
+    /// is its face in silence, as ever.
+    func testAWorkingCheckInHoldsUpTheBeat() throws {
+        var beats = [IdleBeat.Candidate(.wish, signs: ["pet me?"], wish: .pet)]
+        var made: [Core.WishKind] = []
+        var sent: Moment?
+        let react = MomentOutput(queue: { m, _ in sent = m }, blocked: { nil }, speaks: { false },
+                                 idleBeat: { _, _, _ in beats }, makeWish: { kind, _ in made.append(kind) }, moodFace: { _ in "calm" })
+        let checkIn = Event(at: 1000, source: .clock, type: .checkIn, specificType: "working")
+        let log = Transcript.log().view(now: 1000)
+        let ruled = try XCTUnwrap(react.ruled(checkIn, facts: ["check_in": 1], log: log))
+        XCTAssertEqual(ruled.sign, "pet me?")
+        let result = react.play(ruled, about: checkIn, log: log)
+        XCTAssertEqual(made, [.pet])
+        XCTAssertEqual(sent?.sign, "pet me?")
+        XCTAssertEqual(result?.facts[IdleBeat.fact], "wish")
+        beats = []
+        let plain = try XCTUnwrap(react.ruled(checkIn, facts: ["check_in": 1], log: log))
+        XCTAssertNil(plain.sign)
+        XCTAssertNil(plain.beat)
+        XCTAssertEqual(plain.face, "focused")
+    }
+
+    /// Through the pipeline: a turn working on for three hours, you at the
+    /// Mac. No beat before the stretch's 5 minutes; then at most one an
+    /// hour, each on a working check-in's Moment, by the rule.
+    func testALongWorkingStretchDealsBeatsUnderTheCap() throws {
+        try requirePack("boop")
+        let rig = CoreRig()
+        let (harness, _) = Runtime.harness(pipeline: rig.pipeline, steering: RuntimeTests.steering, queue: { _, _ in })
+        rig.send(.turnStart)
+        let start = rig.now
+        for _ in 0..<(3 * 60) {
+            rig.send(.activity, tool: "Edit")
+            rig.wait(60_000, every: 5000)
+        }
+        let shown = harness.log.events.filter {
+            $0.kind == Event.did && $0.action == MomentOutput.outputName && $0[IdleBeat.fact] != nil
+        }
+        XCTAssertFalse(shown.isEmpty, "a beat in three hours of work")
+        XCTAssertTrue(shown.allSatisfy { $0.at - start >= IdleBeat.workStretchMs && $0["by"]?.string == "rule" })
+        for (a, b) in zip(shown, shown.dropFirst()) { XCTAssertGreaterThanOrEqual(b.at - a.at, IdleBeat.everyMs) }
+        XCTAssertLessThanOrEqual(shown.count, 3)
+    }
 }

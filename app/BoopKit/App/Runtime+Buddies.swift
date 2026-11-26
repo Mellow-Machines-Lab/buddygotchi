@@ -179,11 +179,21 @@ extension Runtime {
         // Talk as it stands: quiet for a while, else the setting.
         let talk = { [weak h] in core.talk(m.talk(), at: h?.clock.now() ?? 0) }
         // The idle beat: the one thing Boop may hold up at an idle
-        // check-in, dealt in `IdleBeat.Kind`'s order under its one cap.
-        // None when it couldn't start anything of its own.
+        // check-in, dealt in `IdleBeat.Kind`'s order under its one cap,
+        // and in a long working stretch at a working check-in
+        // (`IdleBeat.atWork`). None when it couldn't start anything of its own.
         let idleBeat = { (about: Event, log: LogView, forced: Bool) -> [IdleBeat.Candidate] in
             let now = about.at, wall = core.wall(about.at), time = core.config.time
-            guard MomentOutput.isCheckIn(about), core.mayBeOwnBeat(at: now) else { return [] }
+            let atWork = MomentOutput.isWorkingCheckIn(about)
+            guard MomentOutput.isCheckIn(about) || atWork, core.mayBeOwnBeat(at: now) else { return [] }
+            if atWork {
+                let moment = log.recent(within: IdleBeat.afterMomentMs).last {
+                    ($0.kind == Event.did || $0.kind == Event.ended) && $0.action == MomentOutput.outputName
+                }
+                guard IdleBeat.atWork(stretchMs: core.stretchSince(at: now).map { now - $0 }, mayStart: true,
+                                      quiet: talk() == .quiet, onCall: core.along.onCall,
+                                      momentAgoMs: moment.map { now - $0.at }) else { return [] }
+            }
             let room = IdleBeat.room(IdleBeat.shownAt(log), now: now, sameDay: { time.boopDay(core.wall($0)) == time.boopDay(wall) })
             // Dozed off, it wants and asks nothing: only the notice that
             // it's late comes then (`Notices.dueOther`).
@@ -225,7 +235,7 @@ extension Runtime {
                 }
             }
             if forced { return IdleBeat.every(offer: offer) }
-            return IdleBeat.due(room: room, quiet: talk() == .quiet, wishOpen: core.wish != nil, offer: offer).map { [$0] } ?? []
+            return IdleBeat.due(room: room, quiet: talk() == .quiet, wishOpen: core.wish != nil, atWork: atWork, offer: offer).map { [$0] } ?? []
         }
         // What's noticed at NOW's own moment: your coming back's, in its
         // line; your first prompt today on a thread you'd left.

@@ -727,6 +727,7 @@ Boop did nothing on its own.
 CONTEXT (how things stand. Background, not news: react to NOW.)
 When: 14:19, Wednesday, day.
 Boop: level 1; today's ring 0 of 100.
+You: Boop's wish: a pet, waiting 3 min while you were here.
 Agents: claude idle on "landing" for 1 min.
 Today: 4 turns.
 
@@ -734,7 +735,8 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude is still working on "landing", a long turn.
   Boop had a focused moment (small).
 3 min ago: claude is still working on "landing", a very long turn.
-  Boop had a focused moment (small).
+3 min ago: Boop wished for a pet.
+  Boop had a happy moment (small), holding up a sign: "scritches?".
 Boop has been happy for 15 min.
 
 NOW (14:19)
@@ -744,6 +746,7 @@ Boop did nothing on its own.
 CONTEXT (how things stand. Background, not news: react to NOW.)
 When: 14:20, Wednesday, day.
 Boop: level 1; today's ring 0 of 100.
+You: Boop's wish: a pet, waiting 4 min while you were here.
 Agents: claude idle on "landing" for 1 min.
 Today: 5 turns.
 
@@ -751,7 +754,8 @@ HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude is still working on "landing", a long turn.
   Boop had a focused moment (small).
 4 min ago: claude is still working on "landing", a very long turn.
-  Boop had a focused moment (small).
+4 min ago: Boop wished for a pet.
+  Boop had a happy moment (small), holding up a sign: "scritches?".
 1 min ago: claude finished turn 4 on "landing": done, a very long turn, no tool calls.
   Boop had a happy moment (big), playing a success, and said "Job done".
 just now: claude started turn 5 on "landing".
@@ -764,12 +768,14 @@ Boop did nothing on its own.
 CONTEXT (how things stand. Background, not news: react to NOW.)
 When: 14:22, Wednesday, day.
 Boop: level 1; today's ring 0 of 100.
+You: Boop's wish: a pet, waiting 6 min while you were here.
 Agents: claude idle on "landing" for 1 min.
 Today: 6 turns.
 
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude is still working on "landing", a very long turn.
-  Boop had a focused moment (small).
+6 min ago: Boop wished for a pet.
+  Boop had a happy moment (small), holding up a sign: "scritches?".
 3 min ago: claude finished turn 4 on "landing": done, a very long turn, no tool calls.
   Boop had a happy moment (big), playing a success, and said "Job done".
 2 min ago: claude started turn 5 on "landing".
@@ -785,6 +791,7 @@ Boop did nothing on its own.
 CONTEXT (how things stand. Background, not news: react to NOW.)
 When: 14:26, Wednesday, day.
 Boop: level 1; today's ring 0 of 100.
+You: Boop's wish: a pet, waiting 10 min while you were here.
 Agents: claude idle on "landing" for 1 min.
 Today: 7 turns.
 
