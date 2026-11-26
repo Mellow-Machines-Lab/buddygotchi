@@ -85,10 +85,13 @@ bool Ble::begin(const char* namePrefix, const char* idPrefix) {
   rx->setCallbacks(&rxEvents);
 
   // Starting to advertise starts the server, and with it the service.
+  // The service's 128-bit UUID and the flags fill most of the advert's 31
+  // bytes, so the name goes in the scan response: scan response first, as
+  // setName only puts it there when that's already on.
   NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
+  adv->enableScanResponse(true);
   adv->setName(name_);
   adv->addServiceUUID(kService);
-  adv->enableScanResponse(true);
   started_ = adv->start();
   return started_;
 }
