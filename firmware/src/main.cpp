@@ -69,7 +69,9 @@ void setup() {
   // allocates them); the 8-bit canvas comes only if dbg.pattern asks.
   auto face = render::makeFace();
 
-  Serial.setRxBufferSize(2048);
+  // Room for a burst: a picture's blob parts with the state and a request
+  // behind them (about 2.2 KB) overflowed 2 KB and lost the last lines.
+  Serial.setRxBufferSize(8192);
 #ifdef BOOP_GEL_PROFILE
   Serial.setTxBufferSize(kProfileTxBytes);
 #endif
@@ -104,7 +106,7 @@ void setup() {
 
 void loop() {
   // Every message waiting, then one frame. Drawing between messages (up to 31 ms a
-  // frame) let a burst overflow the 2 KB receive buffers and lose messages. A
+  // frame) let a burst overflow the receive buffers and lose messages. A
   // debug message ends the batch, since tests order it against ticks; each
   // reply still reflects every message before it.
   bool busy = false, debug = false;
