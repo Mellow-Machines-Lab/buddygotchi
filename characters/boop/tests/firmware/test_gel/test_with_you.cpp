@@ -483,7 +483,7 @@ void noPop(Board& board, uint32_t until, int side, int size = 200, int place = 3
 // keyboard out it goes from its keys and back to them. Holding a card,
 // the card keeps its hands: the sound comes in, no hand.
 void test_speakings_hand_buds_out_at_the_macs_side() {
-  static_assert(GelFace::kEarSize >= 1150 && GelFace::kEarSize <= 1400, "about 20 to 24 px, as a hand at an ear");
+  static_assert(GelFace::kEarSize >= 1350 && GelFace::kEarSize <= 1550, "about 23 to 26 px, as a hand at an ear");
   for (int side = 0; side < 2; ++side) {
     const uint32_t mac = tagBit(side ? "macright" : "macleft");
     Board board(SceneState::kIdle, kDay | tierBit(1) | mac);

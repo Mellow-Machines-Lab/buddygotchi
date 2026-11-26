@@ -168,7 +168,7 @@ class GelFace final : public Face {
   // kEarFrom px further in, and back, over the rig's fade, the motion
   // layer's springs over that. The body leans kEarLean that way (the rig's
   // lean), but at the light size, where the pose is the work's.
-  static constexpr int kEarX = 94, kEarY = 66, kEarSize = 1300, kEarFrom = 30, kEarLean = 340;
+  static constexpr int kEarX = 94, kEarY = 66, kEarSize = 1470, kEarFrom = 30, kEarLean = 340;
   // Typing fast stays fast through a flicker off this long (showAlong).
   static constexpr uint32_t kFastLingerMs = 800;
   // What it does with you now besides typing along, and the rig's channels

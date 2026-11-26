@@ -105,11 +105,12 @@ void paintHand(Raster& r, const Hand& h) {
   r.covered = {};
   const int lit = 4096 - of(2600, g);
   pad.fill(r, 0, -of(radius, 300), -of(radius, 380), 3500, ink(mix565(kGel, kPatch, of(120, g))));
-  // Cupped: the hollow of its palm, in shadow, opening the way its
-  // fingertips are turned.
+  // Cupped: the hollow of its palm, a step darker, opening the way its
+  // fingertips are turned, its edge softened by a wider half step.
   if (const int cup = of(h.cup, palm)) {
     const Point in = turned(0, -of(radius, 1500));
-    r.disk16(h.x16 + in.x, h.y16 + in.y, of(radius, of(1900, cup)), ink(mix565(kDeep, kShade, 110)));
+    r.disk16(h.x16 + in.x, h.y16 + in.y, of(radius, of(2200, cup)), ink(mix565(kGel, kDeep, 128)));
+    r.disk16(h.x16 + in.x, h.y16 + in.y, of(radius, of(1700, cup)), ink(kDeep));
   }
   r.alpha = base * h.alpha / 255 * lit / 4096;
   pad.fill(r, 0, -of(radius, 1100), -of(radius, 1300), 1900, ink(kLight));

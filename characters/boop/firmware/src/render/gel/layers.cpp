@@ -190,32 +190,34 @@ void mutedMic(Raster& r, const rig::Anchors& at, int side, int alpha) {
 }
 
 // While you speak: the sound coming in to its ear on `side`, from the
-// Mac's side. Each beat of its nod (`ms` into it), three short arcs, each
-// bowed toward the ear as a wave from far off is, come in from kFrom px
-// out, faint, to the rim of the hand there (or with none, of its ear),
-// brightening, and are caught there about its nod's dip, kCaught into the
-// beat. Thin pale strokes on the dark beside it, five points each.
+// Mac's side, a steady stream. Three arcs, each bowed toward the ear as a
+// wave from far off is, a third of its nod's beat apart (`ms` into it), so
+// two or three always show: each comes in from kFrom px out to the rim of
+// the hand there (or with none, of its ear) over the whole beat, from
+// kTall px tall and faint to kShort and whole, and is caught there, one at
+// the nod's dip, kCaught into the beat. 3 px pale strokes, five points.
 void heard(Raster& r, const Engine& e, const rig::Anchors& at, int side, uint32_t ms, int alpha) {
-  constexpr int kBeat = 1600, kCaught = 700, kTravel = 380, kApart = 170, kGone = 70;
-  constexpr int kFrom = 46, kBow = 40;
+  constexpr int kBeat = 1600, kCaught = 700, kGone = 120;
+  constexpr int kFrom = 70, kBow = 40, kTall = 40, kShort = 26;
   const Hand& hand = handsPlan().moved[side > 0];
   const bool held = e.ear && (e.ear > 0) == (side > 0) && hand.shown();
   const Ears ear = ears(at);
   const Point to = held ? Point{hand.x16, hand.y16}
                         : Point{(side > 0 ? ear.right + 6 : ear.left - 6) * 16, ear.y * 16};
   // Into the palm a little: a wave's caught, not stopped at its edge.
-  const int rim16 = held ? hand.drawn16() * 3 / 4 : 8 * 16;
-  const int beat = int(ms % kBeat);
+  const int rim16 = held ? hand.drawn16() * 4 / 5 : 8 * 16;
   for (int i = 0; i < 3; ++i) {
-    const int age = beat - (kCaught + (i - 1) * kApart - kTravel);
-    if (age < 0 || age >= kTravel + kGone) continue;
-    const int in = std::min(age, kTravel) * 1000 / kTravel;  // 0 far out … 1000 caught
-    const int fade = age < kTravel ? 50 + in * 190 / 1000 : 240 * (kTravel + kGone - age) / kGone;
+    const int age = int((ms + kBeat - kCaught + uint32_t(i) * kBeat / 3) % kBeat);  // 0 far out … kBeat caught
+    const int in = age * 1000 / kBeat;
+    // Faint far out, whole near; gone into the palm over its last kGone ms.
+    const int fade = std::min(90 + in * 165 / 1000, (kBeat - age) * 255 / kGone);
     r.alpha = alpha * fade / 255;
-    // The arc's circle, out beyond it from the ear: a wave going in.
-    const int far16 = rim16 + kFrom * 16 * (1000 - in) / 1000;
-    const int cx = to.x + side * (far16 + kBow * 16), cy = to.y;
-    const int span = 340 - in * 80 / 1000;  // 4096ths of a turn either way, less as it comes in
+    // The arc's circle, out beyond it from the ear: a wave going in, `tall`
+    // px from end to end (its half kBow * sin(span), span in a turn's 4096ths).
+    const int near16 = rim16 + (kFrom * 16 - rim16) * (1000 - in) / 1000;
+    const int cx = to.x + side * (near16 + kBow * 16), cy = to.y;
+    const int tall = kTall + (kShort - kTall) * in / 1000;
+    const int span = tall * 4096 / (2 * kBow) * 1000 / 6283;  // asin(x) ~ x, near enough here
     Point arc[5];
     for (int k = 0; k < 5; ++k) {
       const int a = -span + k * span / 2;
