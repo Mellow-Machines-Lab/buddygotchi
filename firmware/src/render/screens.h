@@ -43,7 +43,7 @@ struct Strip {
   // Several agents (`state.pips`): a pip each on the strip's line, by its
   // kind ('w' working, 'c' holding a card, 'i' idle, 'a' wanting you) and
   // its lane's slot (-1 for none); which one the screen follows, and its
-  // name for the chip at the strip's right; a pill of news from another,
+  // name for its pip on the strip's line; a pill of news from another,
   // by its pip ("api finished"). None with one agent.
   static constexpr int kPips = 6;
   int pipCount = 0;

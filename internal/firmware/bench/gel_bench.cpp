@@ -41,6 +41,14 @@ struct Scene {
   std::vector<std::string> repeat;  // one in turn every 2 s
 };
 
+// Four agents' state, `watch` the one followed.
+std::string agents(int watch) {
+  static const char* const kWho[] = {"web", "boop-voice-f", "internal-too", "docs"};
+  return std::string("{") + kWorking +
+         R"(,"busy":3,"idle":1,"calls":[[0,4,"searching TODO"],[1,6,"building BoopKit \u00b7 2 min"],[2,2,"editing WorkStream +12"]],"pips":"w0w1w2i3","watch":)" +
+         std::to_string(watch) + R"(,"who":")" + kWho[watch] + "\"}";
+}
+
 std::vector<Scene> scenes() {
   const std::string working = std::string("{") + kWorking + "}";
   return {
@@ -54,6 +62,9 @@ std::vector<Scene> scenes() {
         R"({"t":"do","name":"call","args":{"a":0,"w":"done","as":"gather"}})"}},
       {"attention", std::string("{") + kWorking + R"(,"attn":{"id":5000,"agent":"codex","project":"perf"}})", {}, {}},
       {"idle", R"({"t":"state","base":"idle","mood":"calm","idle":1,"vol":0,"when":["day"]})", {}, {}},
+      // Four agents, the one followed switching every 4 s: the strip's
+      // row slides, and the name on the line changes.
+      {"agents", agents(1), {}, {agents(1), agents(1), agents(2), agents(2)}},
       {"invite",
        R"({"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]})",
        {R"({"t":"do","name":"react","play":"now","args":{"sign":"nice!","mood":"happy","loops":1,"invite":{"skit":"win","pose":"palm","touch":"tap","payoff":"highfive","ms":60000,"xp":3,"label":"tap"}}})"},

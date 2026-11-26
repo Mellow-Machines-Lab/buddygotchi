@@ -291,6 +291,12 @@ class Face {
     (void)rule, (void)on;
     return false;
   }
+  // Puts the strip's counts on its line, or back in its row: dbg.counts's,
+  // for the owner to see, until the next reset. False on a face without.
+  virtual bool countsOnLine(bool on) {
+    (void)on;
+    return false;
+  }
   // The work stream to draw (render/stream.h), the device's, set before
   // each frame: a face that has no stream ignores it.
   virtual void watch(const Stream* stream) { (void)stream; }

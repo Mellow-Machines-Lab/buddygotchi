@@ -65,20 +65,43 @@ extension Core {
         pill = (key, chat ? "\(name) waits for you" : "\(name) finished", now)
     }
 
-    /// The longest name the board gives an agent, in bytes.
+    /// The longest name the board gives an agent in a pill, in bytes.
     static let maxLabelBytes = 12
+    /// The longest name the board's line gives the agent the screen
+    /// follows, in its pip, in bytes: about what the line holds beside one
+    /// other pip (the gel's `fitPips`), which cuts it shorter, with "…",
+    /// beside more.
+    static let maxWatchNameBytes = 28
 
-    /// What the board calls the agent `key`, at the strip's right and in a
-    /// pill: its project, else its agent. When another live agent works in
-    /// the same project (every thread in one folder), its thread's name, so
-    /// the two can be told apart.
+    /// What the board calls the agent `key` in a pill: its project, else
+    /// its agent. When another live agent works in the same project (every
+    /// thread in one folder), its thread's name, so the two can be told
+    /// apart.
     func label(of key: String) -> String {
-        guard let s = sessions[key] else { return "" }
+        guard let (name, thread) = name(of: key) else { return "" }
+        return StateSnapshot.clip(name, marked: thread, max: Self.maxLabelBytes)
+    }
+
+    /// The same name, as the pip on the board's line shows the agent the
+    /// screen follows: up to `maxWatchNameBytes`, and a longer one cut at a
+    /// word where that keeps half of it, ending in "…", never a bare cut.
+    func watchLabel(of key: String) -> String {
+        guard let (name, _) = name(of: key) else { return "" }
+        let text = StateSnapshot.drawable(name)
+        guard text.utf8.count > Self.maxWatchNameBytes else { return text }
+        let ellipsis = "\u{2026}"
+        let cut = WorkStream.clip(text, Self.maxWatchNameBytes - ellipsis.utf8.count)
+        return cut.trimmingCharacters(in: CharacterSet(charactersIn: " -_.·")) + ellipsis
+    }
+
+    /// `key`'s name, uncut, and whether it's its thread's.
+    private func name(of key: String) -> (String, Bool)? {
+        guard let s = sessions[key] else { return nil }
         if let name = s.name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty,
            sessions.contains(where: { $0.key != key && $0.value.project == s.project }) {
-            return StateSnapshot.clip(name, marked: true, max: Self.maxLabelBytes)
+            return (name, true)
         }
-        return StateSnapshot.clip(s.project.isEmpty ? s.agent.rawValue : s.project, max: Self.maxLabelBytes)
+        return (s.project.isEmpty ? s.agent.rawValue : s.project, false)
     }
 
     /// The colour `key` is drawn in: its lane's while it has one, else its
@@ -121,7 +144,7 @@ extension Core {
         }
         if let w = watching, let at = order.firstIndex(of: w), sessions[w] != nil {
             snapshot.watch = at
-            snapshot.watchName = label(of: w)
+            snapshot.watchName = watchLabel(of: w)
         }
         if let p = pill, now - p.at < Self.pillMs, p.key != watching, let at = order.firstIndex(of: p.key) {
             snapshot.pill = StateSnapshot.Pill(at: at, text: p.text)

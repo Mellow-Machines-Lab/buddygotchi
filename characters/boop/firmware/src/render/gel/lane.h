@@ -103,4 +103,27 @@ int switchArrows(uint32_t now);
 // the desk's monitor is lit in its colour.
 int watchedSlot();
 
+// The pips on the strip's line with several agents (`pips`), from one end
+// of the line to the other `line` px: the others dots kPipDot in radius,
+// kPipGap apart, the line's rule stopping kPipRuleGap short of them; the
+// watched one a pill kPillTall high in its lane's colour holding its name
+// in the large font, as much as fits with kLineLeast of the line at each
+// end, cut as text() cuts it, with "…" (`glyphs` its cells, "…" included,
+// `room` the px text() is given), or with no name the long pip, kPipLong.
+// `width` is all of them, gaps and all.
+constexpr int kPipDot = 5, kPipGap = 8, kPipLong = 26, kPipRuleGap = 12;
+constexpr int kPillTall = 26, kPillPad = 8, kLineLeast = 24;
+struct PipsFit {
+  int width = 0, pill = 0, glyphs = 0, room = 0;
+  bool cut = false;
+};
+PipsFit fitPips(int pips, bool watched, const char* name, int line);
+
+// The counts on the line, for the owner to see (dbg.counts): with one
+// agent at work, its marks (the spinner and its number, the to-do list's
+// "3/4") stand at the line's right end and the doing has the whole row.
+// Off by default; a reset turns it off.
+void setCountsOnLine(bool on);
+bool countsOnLine();
+
 }  // namespace render::gel

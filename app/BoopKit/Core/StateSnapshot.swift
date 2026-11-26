@@ -216,7 +216,7 @@ public struct StateSnapshot: Equatable, Sendable {
     }
     /// The pips, with two agents or more; none with one.
     public var pips: [Pip] = []
-    /// Which pip the screen follows, and its name for the strip's chip.
+    /// Which pip the screen follows, and its name for its pip on the line.
     public var watch: Int?
     public var watchName: String?
     /// A pill: news from an agent you aren't watching, by its pip.

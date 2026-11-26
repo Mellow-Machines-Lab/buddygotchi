@@ -7,7 +7,7 @@ import XCTest
 /// and news from another is a pill.
 final class WatchTests: XCTestCase {
     /// One agent: no pips. Two: a pip each, the last prompted watched, and
-    /// its name for the strip's chip; idle ones hollow.
+    /// its name for its pip on the line; idle ones hollow.
     func testThePipsAndTheWatchedAgent() {
         let rig = CoreRig()
         rig.send(.turnStart, session: "a")
@@ -25,6 +25,43 @@ final class WatchTests: XCTestCase {
         XCTAssertTrue(s.jsonLine.contains(#""watch":"#))
     }
 
+    /// The name on the line: whole up to `maxWatchNameBytes`; longer, cut at
+    /// a word where that keeps half of it, else mid-word, and always ending
+    /// in "…", never a bare cut. The pill keeps its short name. With six
+    /// agents, each name its longest and needing escapes, the state still
+    /// fits the board's line.
+    func testTheWatchedNameIsCutWithAnEllipsis() {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart, session: "a", project: "web")
+        rig.wait(1000)
+        rig.send(.turnStart, session: "b", project: "internal-tools-marketing-suite")
+        rig.wait(1000)
+        XCTAssertEqual(rig.state.watchName, "internal-tools-marketing\u{2026}", "no word end: mid-word, a dash at the cut left out")
+        rig.send(.turnStart, session: "c", project: "boop-voice-fw")
+        rig.wait(1000)
+        XCTAssertEqual(rig.state.watchName, "boop-voice-fw", "13 bytes, whole")
+        rig.send(.turnStart, session: "d", project: "the landing page and its docs")
+        rig.wait(1000)
+        XCTAssertEqual(rig.state.watchName, "the landing page and its\u{2026}", "at a word")
+        for name in [rig.state.watchName ?? ""] {
+            XCTAssertLessThanOrEqual(name.utf8.count, Core.maxWatchNameBytes)
+        }
+        rig.send(.turnEnd, session: "b", project: "internal-tools-marketing-suite")
+        XCTAssertEqual(rig.state.pill?.text.hasPrefix("internal-too"), true, "the pill keeps its short name")
+
+        let full = CoreRig(workStream: true)
+        let quotes = String(repeating: "\"", count: 40)
+        for i in 1...6 {
+            full.send(.turnStart, session: "q\(i)", project: quotes + "\(i)")
+            full.send(.activity, session: "q\(i)", project: quotes + "\(i)", tool: "Read", id: "r\(i)")
+            full.wait(1000)
+        }
+        let state = full.state
+        XCTAssertEqual(state.pips.count, 6)
+        XCTAssertNotNil(state.watchName)
+        XCTAssertTrue(state.fits, "\(state.jsonLine.utf8.count) \(state.jsonLine)")
+    }
+
     /// The board names an agent by its project; when two work in the same
     /// project, by its thread's name, so "src" and "src" can be told apart.
     func testTwoAgentsInOneFolderGoByTheirThreads() {
@@ -39,8 +76,8 @@ final class WatchTests: XCTestCase {
         start("b", "api", "Write the docs")
         XCTAssertEqual(rig.state.watchName, "api", "folders apart: the folder")
         start("c", "src", "Test and polish Boop")
-        XCTAssertEqual(rig.state.watchName, "Test and..", "one folder: the thread's name, cut at a word")
-        XCTAssertLessThanOrEqual(rig.state.watchName?.utf8.count ?? 99, Core.maxLabelBytes)
+        XCTAssertEqual(rig.state.watchName, "Test and polish Boop", "one folder: the thread's name, whole on the line")
+        XCTAssertLessThanOrEqual(rig.state.watchName?.utf8.count ?? 99, Core.maxWatchNameBytes)
         rig.send(.turnEnd, session: "a", project: "src")
         XCTAssertEqual(rig.state.pill?.text, "Fix the.. waits for you", "a chat turn, no calls")
         // A turn that only looked waits for you; one that ran the tests, its

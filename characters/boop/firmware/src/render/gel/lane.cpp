@@ -107,6 +107,8 @@ Term gTerm;
 // strength (noteSwitch); paintFrame sets them, the strip and its key read
 // them.
 int gSwitchDx = 0, gArrows = 0, gWatchSlot = -1;
+// The counts on the line (dbg.counts): off, as the board ships.
+bool gCountsOnLine = false;
 // What the last frame showed, and when the watched one and the set of
 // agents last changed.
 struct Switching {
@@ -305,8 +307,7 @@ enum : unsigned { kShowBusy = 1, kShowHelpers = 2, kShowIdle = 4, kShowTodo = 8,
 // list the longest turn with one is ("3/7"), from x, each with the gap
 // after it, those in `shown` alone. Drawn when r is given; either way, the
 // x after them, so the names leave them the room they take.
-int marks(Raster* r, const Strip& s, int x, int cy, int spin, unsigned shown) {
-  const Font& f = kSign;
+int marks(Raster* r, const Strip& s, int x, int cy, int spin, unsigned shown, const Font& f = kSign) {
   const int ty = cy - f.h / 2;
   const uint16_t white = rgb565(kEyeRgb), grey = rgb565(kNarrationRgb);
   char n[24];
@@ -411,32 +412,33 @@ static void splitRule(Raster& r, int x0, int x1, int y, int gap, uint16_t rule) 
 // you haven't seen) pulsing. The engine's documentation/design/
 // screen-guide.md, the map's 5.
 void paintPips(Raster& r, const Strip& s, int x0, int x1, int y, int spin) {
-  constexpr int kDot = 5, kLong = 26, kGap = 8;
   const uint16_t rule = rgb565(kRuleRgb), grey = rgb565(kNarrationRgb);
-  int width = 0;
-  for (int i = 0; i < s.pipCount; ++i) width += (i == s.watch ? kLong : 2 * kDot) + (i ? kGap : 0);
-  const int cx = (x0 + x1) / 2, left = cx - width / 2;
-  splitRule(r, x0, x1, y, width / 2 + 12, rule);
+  const PipsFit fit = fitPips(s.pipCount, s.watch >= 0 && s.watch < s.pipCount, s.who, x1 - x0);
+  const int cx = (x0 + x1) / 2, left = cx - fit.width / 2;
+  splitRule(r, x0, x1, y, fit.width / 2 + kPipRuleGap, rule);
   const int cy = y + 1;
   for (int i = 0, x = left; i < s.pipCount; ++i) {
     const int slot = s.pipSlot[i];
     const uint16_t ink = laneInkOr(slot, grey);
     if (i == s.watch) {
-      r.round(x, cy - kDot, kLong, 2 * kDot, kDot, ink);
-      x += kLong + kGap;
+      // The watched one's name in it, in the dark of the lane colours' text.
+      const int tall = fit.glyphs ? kPillTall : 2 * kPipDot;
+      r.round(x, cy - tall / 2, fit.pill, tall, tall / 2, ink);
+      if (fit.glyphs) text(r, kLarge, x + kPillPad, cy - kLarge.h / 2, s.who, rgb565(0x06, 0x20, 0x1f), fit.room);
+      x += fit.pill + kPipGap;
       continue;
     }
     switch (s.pipKind[i]) {
-      case 'i': r.ring(x, cy - kDot, 2 * kDot, 2 * kDot, kDot, 2, ink); break;
+      case 'i': r.ring(x, cy - kPipDot, 2 * kPipDot, 2 * kPipDot, kPipDot, 2, ink); break;
       case 'a': {
         const int swell = spin / 2 % 2 ? 3 : 1;  // pulsing with the spinner's steps
-        r.disk(x + kDot, cy, kDot + swell, rgb565(kAmberRgb));
-        r.disk(x + kDot, cy, kDot - 1, ink);
+        r.disk(x + kPipDot, cy, kPipDot + swell, rgb565(kAmberRgb));
+        r.disk(x + kPipDot, cy, kPipDot - 1, ink);
         break;
       }
-      default: r.disk(x + kDot, cy, kDot, ink); break;
+      default: r.disk(x + kPipDot, cy, kPipDot, ink); break;
     }
-    x += 2 * kDot + kGap;
+    x += 2 * kPipDot + kPipGap;
   }
 }
 
@@ -459,12 +461,30 @@ int stripMargin(const Surface& panel, int cy) {
   return std::max(kMargin, panel.inset(cy - kSign.h / 2, cy + kSign.h / 2) + kCornerGap);
 }
 
+// The counts on the line (dbg.counts), for one agent at work with a doing
+// to show: no one needs you, and no finish names a turn.
+bool countsUp(const Strip& s) {
+  return gCountsOnLine && s.pipCount <= 1 && !s.agent && !s.doneAgent && !s.noApp && s.busy > 0 && gTerm.text &&
+         *gTerm.text;
+}
+
 // The rule along the lane's top, the drawer's grabber in its middle while
-// the drawer has rows to show: there whatever the lane's row holds.
+// the drawer has rows to show: there whatever the lane's row holds. With
+// the counts on the line, they stand at its right end as marks, the
+// numbers in the large font, and the rule stops short of them.
 void rule(Lane& l, const Strip& s, int spin) {
   const int y = ruleRow(l.h), margin = std::max(kMargin, l.r.s.inset(y, y + 2) + kCornerGap);
   if (s.pipCount > 1) return paintPips(l.r, s, margin, l.w - margin, y, spin);
-  paintRule(l.r, margin, l.w - margin, y, s.agent || s.busy > 0 || s.idle > 0);
+  const bool grabber = s.agent || s.busy > 0 || s.idle > 0;
+  if (!countsUp(s)) return paintRule(l.r, margin, l.w - margin, y, grabber);
+  const int at = l.w - margin - (marks(nullptr, s, 0, y + 1, spin, kShowAll, kLarge) - kMarkAfter);
+  marks(&l.r, s, at, y + 1, spin, kShowAll, kLarge);
+  // The grabber in the panel's middle, as it is with the counts in the row.
+  const int cx = l.w / 2, side = kGrabberW / 2 + kGrabberGap, stop = at - kPipRuleGap;
+  const uint16_t ink = rgb565(kRuleRgb);
+  l.r.round(margin, y, cx - side - margin, 2, 1, ink);
+  if (stop > cx + side) l.r.round(cx + side, y, stop - cx - side, 2, 1, ink);
+  l.r.round(cx - kGrabberW / 2, y + 1 - kGrabberH / 2, kGrabberW, kGrabberH, kGrabberH / 2, rgb565(kGrabberRgb));
 }
 
 // The work's term, fitted to `room` px: too long, a file's name loses its
@@ -588,10 +608,10 @@ void strip(Lane& l, const Strip& s, int spin) {
     marks(&r, s, x + kIcon, cy, spin, shown);
     return;
   }
-  // Several agents (the pips on the rule say how many): news from another
-  // as a pill in its lane's colour, for a few seconds; else what the one the
-  // screen follows is doing, and its name on a chip at the right, in its
-  // lane's colour, where the counts were.
+  // Several agents (the pips on the rule say how many, and the long one
+  // whose they are): news from another as a pill in its lane's colour, for
+  // a few seconds; else what the one the screen follows is doing, across
+  // the whole row.
   if (s.pipCount > 1) {
     const auto inkOf = [&](int pip) {
       const int slot = pip >= 0 ? s.pipSlot[pip] : -1;
@@ -619,27 +639,29 @@ void strip(Lane& l, const Strip& s, int spin) {
     // comes to rest, faded by how far it still has to go.
     const int dx = gSwitchDx, left = margin + dx;
     r.alpha = 255 - 255 * std::min(std::abs(dx), kSwitchPx) / (2 * kSwitchPx);
-    int chip = right + dx;
-    if (s.who && *s.who) {
-      const int w = glyphCount(s.who) * kLarge.w + 16, h = kLarge.h;
-      chip = right + dx - w;
-      const uint16_t ink = inkOf(s.watch);
-      r.round(chip, cy - h / 2, w, h, 4, ink);
-      text(r, kLarge, chip + 8, cy - kLarge.h / 2, s.who, rgb565(0x06, 0x20, 0x1f), w - 16);
-    }
+    // Sliding, it shows only within its row, clear of the arrows.
+    const int room = right - margin;
     const bool rests = s.watch >= 0 && s.pipKind[s.watch] == 'i';
     char fitted[Stream::kDoingBytes];
+    r.bounds = {margin, 0, right, l.h};
     if (!rests && s.busy > 0 && gTerm.text && *gTerm.text)
-      text(r, f, left, ty, fitTerm(gTerm.text, f, chip - kIcon - left, fitted), gTerm.ink, chip - kIcon - left);
+      text(r, f, left, ty, fitTerm(gTerm.text, f, room, fitted), gTerm.ink, room);
     else if (rests)
-      text(r, f, left, ty, "resting", grey, chip - kIcon - left);  // the one followed rests
+      text(r, f, left, ty, "resting", grey, room);  // the one followed rests
+    r.bounds = Raster::kEverywhere;
     r.alpha = 255;
     return;
   }
   // Nothing named, while the agents work: what they're doing first, in
   // the strip's font ("searching TODO"), and the counts as marks at the
   // right end, the to-do list last; the drawer, pulled up, has them in
-  // full. With no term, or no agent working, the counts in words.
+  // full. With no term, or no agent working, the counts in words. With
+  // the counts on the line, the doing has the whole row.
+  if (countsUp(s)) {
+    char fitted[Stream::kDoingBytes];
+    text(r, f, margin, ty, fitTerm(gTerm.text, f, right - margin, fitted), gTerm.ink, right - margin);
+    return;
+  }
   if (s.busy > 0 && gTerm.text && *gTerm.text) {
     const int w = marks(nullptr, s, 0, cy, spin, kShowAll) - kMarkAfter;
     const int at = right - w;
@@ -694,9 +716,13 @@ uint32_t laneKey(const char* line, const Strip& s, int spin, const char* caption
     const int pulse = pulses ? spin / 2 % 2 : 0;
     add(&pulse, sizeof pulse);
     str(gTerm.text), add(&gTerm.ink, sizeof gTerm.ink);
-    const int numbers[] = {s.more,      int(s.doneOutcome), s.busy,  s.idle,    s.helpers,
-                           s.todoDone,  s.todoTotal,        s.noApp, s.opacity, s.busy > 0 ? spin : 0,
-                           rowAlpha};
+    // The spinner's step only while one can show: with several agents the
+    // strip has none (the drawer's lid has its own), so their lane, the
+    // name on the line and all, is drawn again only when what it says changes.
+    const bool spinner = s.busy > 0 && (s.pipCount <= 1 || s.agent || s.doneAgent);
+    const int numbers[] = {s.more,    int(s.doneOutcome), s.busy,      s.idle,
+                           s.helpers, s.todoDone,         s.todoTotal, s.noApp,
+                           s.opacity, spinner ? spin : 0, rowAlpha,    gCountsOnLine};
     add(numbers, sizeof(numbers));
   }
   return h ? h : 1;
@@ -882,5 +908,28 @@ int switchArrows(uint32_t now) {
 }
 
 int watchedSlot() { return gWatchSlot; }
+
+PipsFit fitPips(int pips, bool watched, const char* name, int line) {
+  PipsFit f;
+  f.width = (pips - (watched ? 1 : 0)) * 2 * kPipDot + std::max(0, pips - 1) * kPipGap;
+  if (!watched) return f;
+  // What the name has: the line less the dots, the rule's gaps by the pips,
+  // a little of the line at each end and the pill's pads.
+  const int most = (line - f.width - 2 * (kPipRuleGap + kLineLeast) - 2 * kPillPad) / kLarge.w;
+  const int glyphs = name ? glyphCount(name) : 0;
+  if (glyphs <= 0 || most < 2) {
+    f.pill = kPipLong, f.width += f.pill;
+    return f;
+  }
+  f.cut = glyphs > most;
+  // Cut, as text() cuts it: render::cutAt's glyphs, then one cell's "…".
+  f.glyphs = f.cut ? cutAt(name, most - 1) + 1 : glyphs;
+  f.room = (f.cut ? most : glyphs) * kLarge.w;
+  f.pill = f.glyphs * kLarge.w + 2 * kPillPad, f.width += f.pill;
+  return f;
+}
+
+void setCountsOnLine(bool on) { gCountsOnLine = on; }
+bool countsOnLine() { return gCountsOnLine; }
 
 }  // namespace render::gel
