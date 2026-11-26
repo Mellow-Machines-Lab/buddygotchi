@@ -28,15 +28,15 @@ the agent does now.
 | # | Element | Place and size | Its one job | Whose | How it changes |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Band | 0,0 · 502×38 | Something you must act on: needs you, listening | For you | Drops in. Needs you also puts an amber rim on the whole screen |
-| 2 | Boop | 106,52 · 290×250 | Pose: who it works for. Rhythm and gaze: you. Face: Boop | Boop | Moves all the time. Rises 88 for a held picture, 196 for a show |
-| 3 | Monitor | 24,240 · 70×50 | The kind of work: search, edit, run, helpers. Red for a failure | Agent | In place. Frame in the lane colour. Dark when idle |
-| 4 | Keys | 150,290 · 210×20 | Where the hands go when typing, yours or the agent's | Boop | In place |
-| 5 | Line and pips | y 336–362, centred | Every agent, and which one you see. The swipe hint. Pull up for the drawer | Agents | A pip pulses when its agent wants you |
+| 2 | Boop | 106,32 · 290×250 | Pose: who it works for. Rhythm and gaze: you. Face: Boop | Boop | Moves all the time. Rises 88 for a held picture, 196 for a show |
+| 3 | Monitor | 24,220 · 70×50 | The kind of work: search, edit, run, helpers. Red for a failure | Agent | In place. Frame in the lane colour. Dark when idle |
+| 4 | Keys | 150,270 · 210×20 | Where the hands go when typing, yours or the agent's | Boop | In place |
+| 5 | Line and pips | y 333–364, centred | Every agent, and which one you see. With the strip's row under it, the bar: swipe across it or tap an arrow's third to switch, pull up for the drawer. With several agents, an arrow at each end of the strip's row | Agents | A pip pulses when its agent wants you. The arrows stay dim, brighten as the set of agents changes, and the one switched toward flashes |
 | 6 | Doing now | 24,368 · the whole row, 22 px | This call, as a verb and its object. Clay for a failure. "your turn" after a chat turn | Agent | In place, at every call |
-| 7 | Agent name | In its pip on the line, 26 px high, its name in 14 px or more | Which agent you see, in its lane colour. As much of the name as fits beside the other pips, cut with "…" | Agent | In place, on a switch |
-| 8 | Held picture | 24,158 · 454×188 | The work as a live picture | Agent | Rises from below. Put down when its data stops |
+| 7 | Agent name | In its pip on the line, 32 px high, its name in the sign's font, or the smaller large font when it would be cut | Which agent you see, in its lane colour. As much of the name as fits beside the other pips, cut with "…" | Agent | In place, on a switch |
+| 8 | Held picture | 24,138 · 454×188 | The work as a live picture | Agent | Rises from below. Put down when its data stops |
 | 9 | Pill | Centred, y 306 · 34 high | News from an agent you are not watching | For you | Rises, stays about 4 s, a tap goes there |
-| 10 | Show | 30,60 · 442×288. The agent's picture is 420×190 inside it | A result as a picture | For you | Rises, stays 30 s, folds into the low sign |
+| 10 | Show | 30,40 · 442×288. The agent's picture is 420×190 inside it | A result as a picture | For you | Rises, stays 30 s, folds into the low sign |
 | 11 | Low sign | 70,352 · 362×46 | A finished turn: green for done, clay for failed. A tap opens it. What it earned rides at its right end as a chip, `+5 XP`. Also a ship or a fix with its chip, the ring full (`100 XP today, day 12`, gold, a ring mark) and last week's league place (gold, a medal) | For you | Takes the strip's place |
 
 The drawer and an ask keep their places of today: the drawer comes up from
@@ -105,13 +105,17 @@ tap, a light passing across asks for a stroke.
    2 is up.
 4. **A low sign.** It takes the strip's place, for the agent you watch.
 5. **A pill.** For any other agent. Never more than one; a second one waits.
-6. **Your swipe.** A finger that starts off Boop's body (on the strip or
-   the empty screen) and travels is a swipe; one that starts on the body is
-   always a stroke. Boop keeps your agent until it goes idle or you swipe
-   again. On a switch the strip's row and the card slide in from the side
-   you swiped toward (0.32 s) while Boop stays, and the monitor's frame
-   takes the new agent's colour. When the set of agents changes, two faint
-   arrows at the strip's ends say there are others to swipe to.
+6. **Your swipe.** A finger that starts off Boop's body (in the bar under
+   the desk, or the empty screen) and travels is a swipe; one that starts on
+   the body is always a stroke, and the body's margin stops at the bar. In
+   the bar the first 22 px decide: more across than up is a swipe, and the
+   drawer stays shut; more up is the drawer's pull. A tap in the bar's left
+   or right third asks for the agent before or the next. Boop keeps your
+   agent until it goes idle or you switch again. While you swipe, the
+   strip's row and the card follow a third of your finger's way; on a switch
+   they slide in from the side you switched toward (0.32 s) while Boop
+   stays, that side's arrow flashes, and the monitor's frame takes the new
+   agent's colour. With no switch they spring back.
 
 Every agent has its own colour from when Boop first sees it, a resting one
 too, and keeps it across turns: its pip, which holds its name while you watch it, the monitor's frame, its

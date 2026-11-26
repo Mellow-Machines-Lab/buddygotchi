@@ -605,7 +605,8 @@ A state a face doesn't know draws `idle`. A Moment whose design has no
 length (`loopMs` of 0) plays nothing.
 
 Where a touch starts decides what it is. One that starts on the body (as the
-face last drew it, a finger's width round its rim: `Face::bodyAt`) is Boop's:
+face last drew it, a finger's width round its rim: `Face::bodyAt`, but not in
+the bar under the desk, `Face::barTop`) is Boop's:
 a tap a poke, or a boop on the nose; a move a stroke, a ruffle, a rub or a
 tickle, however fast it lets go. One that starts anywhere else is the
 screen's, and the face neither follows nor dips for it: a move a stroke's
@@ -613,7 +614,8 @@ length is a swipe, which with several agents asks the Mac for the next one or
 the one before (`agent`, `next` or `prev`) and with one does nothing; a tap
 does nothing at all, unless a tap anywhere means something: on the needs-you
 screen, while the face is held, on a finish that names whose turn it was, or
-on an ask's answers in the lane. An invite's touch off the body still answers
+on an ask's answers in the lane; with several agents a tap on the bar's left
+or right third asks for the one before or the next. An invite's touch off the body still answers
 it, as its glow may sit beside the body. BOOT's press is still a poke. A firm
 press that bounces, the panel saying it lifted and touched again while the
 finger stays (within `app/touch_gesture.h`'s `kBounceMs`, 300 ms, and

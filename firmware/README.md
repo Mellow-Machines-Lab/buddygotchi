@@ -240,15 +240,18 @@ rule the face hasn't.
   screen's bus.
 - **A tap or a stroke does nothing:** it started off the body, on the
   screen beside it (`render::Face::bodyAt`, a finger's width round the
-  body as drawn). Off the body a tap is nothing, and a move a swipe, which
-  switches agent with several and does nothing with one. `touch.last` in
+  body as drawn, never in the bar under the desk, `render::Face::barTop`).
+  Off the body a tap is nothing, but in the bar's left or right third with
+  several agents, and a move a swipe, which switches agent with several and
+  does nothing with one. `touch.last` in
   `internal/tools/boopctl state` says where the last touch went down,
   whether that was on the body (`body`), what it was and how long it took.
-- **A swipe up doesn't open the agents' drawer (gel):** it must start on
-  the strip, the bottom rows of the screen (`app/device.h`'s
-  `kDrawerFromY`, canvas rows from 205 down), and go up `kDrawerPullPx`
-  (22 canvas px), while the Mac has sessions to list;
-  one that starts on the body is a stroke. `dbg.state`'s
+- **A swipe up doesn't open the agents' drawer (gel):** it must start in
+  the bar under the desk (`render::Face::barTop`, the gel's `kDeskRow`,
+  canvas rows from 177 down), and go up `kDrawerPullPx` (22 canvas px)
+  before it goes as far across, while the Mac has sessions to list; one
+  that goes further across first is a swipe between agents, and one that
+  starts on the body is a stroke. `dbg.state`'s
   `drawer.open` says how far open it is, 0 to 1000, and `drawer.scroll`
   and `drawer.skip` how far its rows are scrolled (canvas px) and where
   the Mac's window of them starts.

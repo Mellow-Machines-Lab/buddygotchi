@@ -1286,10 +1286,10 @@ While the agents work and nothing needs you, the board draws the Mac's
 work stream (`render/stream.h`, `gel/stream.h`). Nothing falls behind the
 body. The newest call's doing of any lane (`Stream::newest`), what its
 agent is doing in a verb and its object, is the work's term, first in
-the strip in its own font, grey: `searching TODO`, with the counts as
-marks at the right end (a spinner and its number, a sleeper and its,
-the to-do list last), cut to the room they leave (`termFor` in
-`gel/lane.cpp`). With several agents the watched one's doing has the
+the strip in its own font, grey: `searching TODO`, across the whole
+row, with the counts as marks at the right end of the line above it (a
+spinner and its number, a sleeper and its, the to-do list last;
+`termFor` in `gel/lane.cpp`). With several agents the watched one's doing has the
 whole row, and its name rides in its pip on the strip's line, a pill in
 its lane's colour holding as much of it as fits beside the other pips,
 cut with "…" (`fitPips`). The counts in full are the drawer's, pulled up from
