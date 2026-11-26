@@ -1994,6 +1994,7 @@ static void test_the_rig_carries_reaches_and_melts_the_gel() {
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
 void test_a_divisor_divides_exactly();
+void test_root_is_the_floor_of_the_square_root();
 // test_cells.cpp
 void test_every_cell_plays_truthfully();
 void test_ten_minutes_of_work();
@@ -3533,6 +3534,7 @@ int main() {
   RUN_TEST(test_it_rises_for_its_sign);
   RUN_TEST(test_software_clock_matches_binary64);
   RUN_TEST(test_a_divisor_divides_exactly);
+  RUN_TEST(test_root_is_the_floor_of_the_square_root);
   RUN_TEST(test_all_expressions_draw_inside_native_surface);
   RUN_TEST(test_frame_replay_is_byte_identical);
   RUN_TEST(test_a_helper_draws_the_same_body);

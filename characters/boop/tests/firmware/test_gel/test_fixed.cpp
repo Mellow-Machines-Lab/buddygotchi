@@ -2,6 +2,7 @@
 #include <unity.h>
 #include <cmath>
 #include "render/gel/fixed.h"
+#include "render/gel/geometry.h"
 #include "render/gel/motion.h"
 using namespace render::gel;
 static double number(F f) { return double(f.raw) / F::scale; }
@@ -62,4 +63,19 @@ void test_software_clock_matches_binary64() {
     TEST_ASSERT_TRUE(time * 1000 == T::literal(expected * 1000));
     TEST_ASSERT_TRUE((time - T::literal(.4)) == T::literal(expected - .4));
   }
+}
+// root() is ⌊√n⌋ from its table, with no division, wherever it's asked:
+// every n up to 2^20, around each square, and the top of the range. It was
+// checked against the old Newton's root on all 2^32 once.
+void test_root_is_the_floor_of_the_square_root() {
+  const auto exact = [](uint32_t n) {
+    const uint32_t r = uint32_t(root(n));
+    return uint64_t(r) * r <= n && (uint64_t(r) + 1) * (r + 1) > n;
+  };
+  for (uint32_t n = 0; n <= (1u << 20); ++n) TEST_ASSERT_TRUE(exact(n));
+  for (uint64_t k = 1; k <= 65535; ++k)
+    for (const uint64_t n : {k * k - 1, k * k, k * k + 1}) TEST_ASSERT_TRUE(exact(uint32_t(n)));
+  for (uint32_t n = 0xffffffffu; n >= 0xffff0000u; --n) TEST_ASSERT_TRUE(exact(n));
+  Random random{53};
+  for (int i = 0; i < 200000; ++i) TEST_ASSERT_TRUE(exact(random.next()));
 }

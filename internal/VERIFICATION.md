@@ -442,6 +442,12 @@ accepted; the mirror's shots, every one, are the simulator's.
    and the three finishes. A Mac on Bluetooth keeps sending its own `state`,
    so it starts each just after one, and `fps_min_clean` leaves out the
    seconds one came in; it has a budget only for the scenes `--scenes` has.
+   The face's stages (`gel_parts`) include `hands_us`, a move's hands and
+   their hit rings (the knock's), drawn after everything else. With no
+   board, `internal/firmware/bench/bench.sh` plays the same scenes in the
+   simulator's board on the Mac and prints each stage's microseconds a
+   frame and the slowest second: the Mac's, on one core, for comparing a
+   change with the build before, never for these budgets.
    Flash the everyday build (`make flash`) afterwards.
 5. When a change could leak memory or wedge the board:
    `internal/tools/boopctl soak` (20 minutes by default, with one 35 s
@@ -556,8 +562,8 @@ slowest pass is under the 1.5 s deadline; and the sample reads well.
 
 ### L6: the owner
 
-Only a person can check Bluetooth (`make dev`), real touches and
-calibration, sound by ear (`boopctl takes`,
+Only a person can check Bluetooth (`make dev`), real touches, sound
+by ear (`boopctl takes`,
 `takes --board-volume`, `takes --levels`, `play needs`), real Claude
 Code and Codex sessions, the Mac app in the real menu bar, and how Boop
 feels. A day of real

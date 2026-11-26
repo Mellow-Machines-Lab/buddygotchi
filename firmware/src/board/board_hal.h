@@ -62,7 +62,7 @@ class BoardHal : public app::Hal {
   // card, and the default touch map.
   void beginBoard();
 
-  app::TouchCal cal_;         // from NVS; invalid until `boopctl calibrate` has run on this rotation
+  app::TouchCal cal_;         // from NVS; invalid until one is fitted (dbg.touchcal) on this rotation
   app::TouchCal defaultCal_;  // used until then: the board's own (its hal.cpp)
   const linkkit::Ble* ble_ = nullptr;
 };

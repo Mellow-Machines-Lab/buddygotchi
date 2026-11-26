@@ -82,7 +82,7 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
       ownsCanvas_ = true;
     }
     // With "fill", a solid screen of that palette index (webcam framing).
-    // With "target": [x, y], a cross to tap on black (boopctl calibrate).
+    // With "target": [x, y], a cross to tap on black, to fit a touch map by.
     live_.patternFill = doc["fill"] | -1;
     JsonArrayConst target = doc["target"];
     live_.targetX = target.size() == 2 ? render::clamp(target[0].as<int>(), 0, render::kWidth - 1) : -1;
@@ -199,7 +199,7 @@ void Device::ping(JsonObject d) {
   d["voice"] = voice::assetsVersion();
   d["card"] = hal_.cardState();
   d["fx"] = b_.face().clips().version();
-  d["w"] = render::kWidth;  // the screen as drawn, for boopctl calibrate
+  d["w"] = render::kWidth;  // the screen as drawn, for a tool fitting a touch map
   d["h"] = render::kHeight;
 }
 

@@ -340,6 +340,61 @@ void Raster::polygon16(const Point* v, int n, uint16_t ink, const Point* clip, i
 // the segment really is, which costs a division or two.
 constexpr int kSlantColumns = 8;
 
+namespace {
+// The columns [lo, hi] of row `cy` (its centre, in sixteenths) that a
+// segment of a stroke covers whole, `whole` (256ths) its radius less half a
+// pixel, as stroke16 finds each pixel, solved once for the row: a disk's
+// (`disk`, one point) within `whole` of its centre; a level one's beside
+// its middle, strictly between its ends, within `whole` of its line
+// (Segment::distance, `most` the largest cross product that rounds to
+// `whole`), its round ends left to each pixel's own test. A slanted one's
+// are left to them too. Empty, lo > hi, when none are.
+void wholeSpan(const Segment& s, int whole, int64_t most, bool disk, int cy, int& lo, int& hi) {
+  lo = 1, hi = 0;
+  if (whole <= 0) return;
+  const int64_t apy = cy - s.a.y;
+  if (disk) {
+    // (ex² + apy²) · 256 <= whole², ex = x·16 + 8 − a.x: |ex| <= m.
+    const int64_t room = (int64_t(whole) * whole >> 8) - apy * apy;
+    if (room < 0) return;
+    int64_t m = root64(uint64_t(room));
+    while ((m + 1) * (m + 1) <= room) ++m;
+    while (m * m > room) --m;
+    lo = -floor16(-(s.a.x - 8 - int(m))), hi = floor16(s.a.x - 8 + int(m));
+    return;
+  }
+  // Near enough the surface that Segment::distance's sums keep to 32 bits.
+  const auto near = [](Point p) { return std::abs(p.x) < 16384 && std::abs(p.y) < 16384; };
+  if (s.aby || !s.abx || !near(s.a) || !near(s.b) || std::abs(apy) * std::abs(int64_t(s.abx)) > most) return;
+  // x·16 + 8 strictly between the ends.
+  const int left = std::min(s.a.x, s.b.x), right = std::max(s.a.x, s.b.x);
+  lo = floor16(left - 8) + 1, hi = -floor16(-(right - 8)) - 1;
+}
+// The columns [lo, hi] of row `cy` within `beyond` (256ths) of the disk at
+// `a`, as Segment::distance tests a disk's pixels, (ex² + ey²) · 256 <
+// beyond² in 32 bits: no pixel past them shows. Every column, while the
+// disk is too big for that test to keep to 32 bits.
+void reachSpan(Point a, int beyond, int cy, int& lo, int& hi) {
+  lo = INT_MIN, hi = INT_MAX;
+  const int64_t far = beyond / 16 + 16;  // the most |ex| or |ey| in its box, sixteenths
+  if (2 * far * far * 256 >= (int64_t(1) << 32)) return;
+  const int64_t ey = cy - a.y, room = (int64_t(beyond) * beyond - 1) / 256 - ey * ey;
+  if (room < 0) {
+    lo = 1, hi = 0;
+    return;
+  }
+  int64_t m = root64(uint64_t(room));
+  while ((m + 1) * (m + 1) <= room) ++m;
+  while (m * m > room) --m;
+  lo = -floor16(-(a.x - 8 - int(m))), hi = floor16(a.x - 8 + int(m));
+}
+// The largest |cross| (Segment::distance) that rounds to at most `whole`:
+// (|cross| · reciprocal + 2^23) >> 24 <= whole.
+int64_t mostCross(const Segment& s, int whole) {
+  return whole > 0 ? ((int64_t(whole) + 1) * (int64_t(1) << 24) - (int64_t(1) << 23) - 1) / s.reciprocal : -1;
+}
+}  // namespace
+
 void Raster::stroke16(const Point* v, int n, int width16, uint16_t ink) {
   if (off() || n < 1 || alpha <= 2) return;
   const int radius = std::max(4, width16 / 2), outer = radius + 8;
@@ -354,13 +409,23 @@ void Raster::stroke16(const Point* v, int n, int width16, uint16_t ink) {
             x1 = std::min({s.width, kMaxWidth, floor16(maxX + outer) + 1, bounds.x1}) - 1;
   if (y0 > y1 || x0 > x1) return;
   const int count = std::min(kMaxSegments, std::max(1, n - 1));
-  // A disk (one point): a pixel whose centre is inside its edge's band is
-  // covered whole, with no square root.
+  // A pixel whose centre is inside the edge's band is covered whole.
   const int whole = radius * 16 - 128;
-  const uint64_t whole2 = whole > 0 ? uint64_t(whole) * uint64_t(whole) : 0;
   for (int i = 0; i < count; ++i) segments[i].set(v[i], v[std::min(i + 1, n - 1)]);
+  // A bar's (one level segment, a hand's pad) whole middle is found a row
+  // at a time; a longer stroke's segments are left to their pixels.
+  const int64_t most = n == 2 && !segments[0].aby ? mostCross(segments[0], whole) : -1;
+  // What a stroke drawn later covers whole (covered) is left: a disk, or a
+  // level bar.
+  Segment later;
+  const bool skips = covered.radius16 > 0 && !recording && covered.a.y == covered.b.y;
+  const int laterWhole = std::max(4, covered.radius16) * 16 - 128;
+  if (skips) later.set(covered.a, covered.b);
+  const int64_t laterMost = skips ? mostCross(later, laterWhole) : -1;
   for (int y = y0; y <= y1; ++y) {
     const int cy = y * 16 + 8;
+    int skipLo = 1, skipHi = 0;
+    if (skips) wholeSpan(later, laterWhole, laterMost, later.length2 == 0, cy, skipLo, skipHi);
     for (int i = 0; i < count; ++i) {
       const Segment& segment = segments[i];
       const Point a = segment.a, b = segment.b;
@@ -379,18 +444,30 @@ void Raster::stroke16(const Point* v, int n, int width16, uint16_t ink) {
         from = std::max(from, floor16(std::min(one, other) - outer - 2));
         to = std::min(to, floor16(std::max(one, other) + outer + 2));
       }
+      if (n == 1) {  // a disk: nothing past its edge
+        int reachLo, reachHi;
+        reachSpan(a, outer * 16, cy, reachLo, reachHi);
+        from = std::max(from, reachLo), to = std::min(to, reachHi);
+      }
+      // Its whole middle on this row at once, then each other pixel by its
+      // distance (256ths of a pixel: coverage is the share of the pixel
+      // inside, and within `whole` of it there's no root to take).
+      int lo, hi;
+      wholeSpan(segment, whole, most, n == 1, cy, lo, hi);
+      lo = std::max(lo, from), hi = std::min(hi, to);
       for (int x = from; x <= to; ++x) {
-        if (coverage[x] >= 256) continue;
-        if (n == 1 && whole2) {
-          const int64_t ex = x * 16 + 8 - a.x, ey = cy - a.y;
-          if (uint64_t(ex * ex + ey * ey) << 8 <= whole2) {
-            coverage[x] = 256;
-            touched(x);
-            continue;
-          }
+        if (x >= skipLo && x <= skipHi) {
+          x = skipHi;
+          continue;
         }
-        // 256ths of a pixel: coverage is the share of the pixel inside.
-        // Within `whole` of it the pixel's covered whole: no root needed.
+        if (x >= lo && x <= hi) {
+          const int end = skipLo > x && skipLo <= skipHi && skipLo <= hi ? skipLo - 1 : hi;
+          std::fill(coverage + x, coverage + end + 1, uint16_t(256));
+          touched(x), touched(end);
+          x = end;
+          continue;
+        }
+        if (coverage[x] >= 256) continue;
         const int d = segment.distance(x * 16 + 8, cy, outer * 16, whole);
         if (d < 0 || d >= outer * 16) continue;
         coverage[x] = uint16_t(std::max(int(coverage[x]), std::clamp(radius * 16 + 128 - d, 0, 256)));
@@ -420,7 +497,15 @@ void Raster::round(int x, int y, int w, int h, int radius, uint16_t ink) {
     }
     auto corner = [&](int col) {
       const int cx = col * 16 + 8, qx = std::max(x * 16 + r16 - cx, cx - ((x + w) * 16 - r16));
-      coverage[col] = uint16_t(qx > 0 ? edgeCoverage(r16 - root(uint32_t(qx * qx + qy * qy))) : 256);
+      if (qx <= 0) {
+        coverage[col] = 256;
+        return;
+      }
+      // Half a pixel inside the arc or past it needs no root, as ring's.
+      const uint32_t d2 = uint32_t(qx * qx + qy * qy);
+      coverage[col] = uint16_t(r16 > 7 && d2 < uint32_t((r16 - 7) * (r16 - 7)) ? 256
+                               : d2 >= uint32_t((r16 + 8) * (r16 + 8))         ? 0
+                                                                               : edgeCoverage(r16 - root(d2)));
     };
     for (int col = x0; col <= leftEnd; ++col) corner(col);
     for (int col = std::max(x0, rightStart); col <= x1; ++col) corner(col);

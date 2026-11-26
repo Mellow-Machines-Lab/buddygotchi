@@ -1109,11 +1109,11 @@ int GelFace::profile(char* out, size_t n, uint32_t frames) {
   int written = std::snprintf(
       out, n,
       "gel_parts engine_us=%lu sync_us=%lu body_us=%lu art_us=%lu layers_us=%lu props_us=%lu clear_us=%lu "
-      "lane_us=%lu stream_us=%lu behind_us=%lu front_us=%lu\n",
+      "lane_us=%lu stream_us=%lu behind_us=%lu front_us=%lu hands_us=%lu\n",
       (unsigned long)(p.engine / frames), (unsigned long)(p.sync / frames), (unsigned long)(p.body / frames),
       (unsigned long)(p.art / frames), (unsigned long)(p.layers / frames), (unsigned long)(p.props / frames),
       (unsigned long)(p.clear / frames), (unsigned long)(p.lane / frames), (unsigned long)(p.stream / frames),
-      (unsigned long)(p.behind / frames), (unsigned long)(p.front / frames));
+      (unsigned long)(p.behind / frames), (unsigned long)(p.front / frames), (unsigned long)(p.hands / frames));
   p = Profile{};
   return written > 0 && size_t(written) < n ? written : 0;
 }

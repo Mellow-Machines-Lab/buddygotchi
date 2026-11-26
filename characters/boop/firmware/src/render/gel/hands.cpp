@@ -35,6 +35,12 @@ struct Pad {
     else
       r.disk16(x16 + dx16, y16 + dy16, rad, ink);
   }
+  // The same pad as fill draws it, as what's drawn before it leaves
+  // (Raster::covered).
+  Raster::Pen pen(int grow16, int dx16, int dy16, int scale) const {
+    const int rad = std::max(8, of(radius16, scale) + grow16), half = std::max(0, of(half16, scale));
+    return {{x16 + dx16 - half, y16 + dy16}, {x16 + dx16 + half, y16 + dy16}, rad};
+  }
 };
 
 }  // namespace
@@ -77,16 +83,26 @@ void paintHand(Raster& r, const Hand& h) {
     return;
   }
   // Its shadow, down and to its right, so it reads apart from the body it's
-  // in front of; less on the glass, where it's flat.
+  // in front of; less on the glass, where it's flat. Each layer up to the
+  // gel leaves what the next, opaque, covers whole.
+  const bool opaque = r.opaqueAt(base * h.alpha / 255);
+  const Raster::Pen rim = pad.pen(20, 0, 0, 4096), deep = pad.pen(0, 0, 0, 4096),
+                    gel = pad.pen(0, -of(radius, 300), -of(radius, 380), 3500);
   r.alpha = base * h.alpha / 255 * (110 - of(60, g)) / 255;
+  if (opaque) r.covered = rim;
   pad.fill(r, 16, 24, 40, 4096, kShade);
+  r.covered = {};
   r.alpha = base * h.alpha / 255;
   if (tipR >= 12)
     for (const Point& t : tips) r.disk16(h.x16 + t.x, h.y16 + t.y, tipR + 20, ink(kEdge));
+  if (opaque) r.covered = deep;
   pad.fill(r, 20, 0, 0, 4096, ink(kEdge));
+  r.covered = {};
   if (tipR >= 12)
     for (const Point& t : tips) r.disk16(h.x16 + t.x, h.y16 + t.y, tipR, ink(kDeep));
+  if (opaque) r.covered = gel;
   pad.fill(r, 0, 0, 0, 4096, ink(kDeep));
+  r.covered = {};
   const int lit = 4096 - of(2600, g);
   pad.fill(r, 0, -of(radius, 300), -of(radius, 380), 3500, ink(mix565(kGel, kPatch, of(120, g))));
   r.alpha = base * h.alpha / 255 * lit / 4096;

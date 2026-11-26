@@ -139,6 +139,18 @@ struct Raster {
   // When set, the shapes (but text) are kept in it, not drawn: the surface
   // is left as it was.
   Recording* recording = nullptr;
+  // A stroke of one segment drawn later over everything here, opaque (a
+  // hand's layers, render/gel/hands.cpp): a disk (a = b) or a level bar,
+  // `radius16` half its width. A stroke drawn meanwhile leaves the pixels
+  // it will cover whole, since they'd only be painted over; none at radius 0.
+  struct Pen {
+    Point a, b;
+    int radius16 = 0;
+  };
+  Pen covered;
+  // Whether a shape drawn at opacity `a` paints a pixel it covers whole
+  // with its ink alone, whatever was there.
+  bool opaqueAt(int a) const { return !recording && shown(a) >= 253; }
   // What `r` kept, blended into the surface `dx`, `dy` pixels from where
   // it was kept, inside the bounds: pixel for pixel what its shapes would
   // have drawn there, had they been drawn that far over.

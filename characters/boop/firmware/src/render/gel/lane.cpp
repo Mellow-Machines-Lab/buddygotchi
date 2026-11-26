@@ -820,11 +820,12 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   const Point spot = inviteSpot(e.invite, at, hands.moved, glowRadius);
   paintInviteGlow(surface, e.invite, at, spot, glowRadius);
   {
+    Measure measure(profile.hands);
     Raster r{surface};
     for (int side = 0; side < 2; ++side)
       if (hands.at[side] == HandsAt::kMove) paintHand(r, hands.moved[side]);
+    paintHits(surface, currentMove(e), hands.moved);
   }
-  paintHits(surface, currentMove(e), hands.moved);
   paintInvite(surface, e.invite, at, spot, glowRadius);
   if (sign.text && !sign.low) paintSign(surface, sign, at, hop);
   if (held) paintCard(surface, *card, s.pipCount > 1 ? gSwitchDx : 0);
