@@ -79,11 +79,11 @@ public struct Narration: Equatable, Sendable {
         case .poke?:
             let count = facts["in_a_row"]?.int ?? 1
             if facts["asleep"]?.bool == true { return Narration(cause: "You poked it while it slept.", fact: fit("you woke {name}")) }
-            return count > 1 ? Narration(cause: "You poked it \(count) times in a row.", fact: fit("you poked {name} x\(count)"))
+            return count > 1 ? Narration(cause: "You poked it \(count) times in a row.", fact: fit("poked \(count) times"))
                 : Narration(cause: "You poked it.", fact: fit("you poked {name}"))
         case .gesture?:
             if let count = facts["in_a_row"]?.int, count > 1 {
-                return Narration(cause: "You shook it \(count) times in a row.", fact: fit("you shook {name} x\(count)"))
+                return Narration(cause: "You shook it \(count) times in a row.", fact: fit("shaken \(count) times"))
             }
             if e.specificType == Core.dismissGesture { return Narration(cause: "You held a finger on the needs-you screen, to stop it showing.") }
             return Touch(e)?.narration.map { n in Narration(cause: n.cause, fact: n.fact.flatMap { fit($0) }) }
@@ -268,14 +268,17 @@ public struct Narration: Equatable, Sendable {
         func fit(_ options: String...) -> String? { Self.fit(options, name: name) }
         if case .int(let rung)? = facts["failing"] {
             return Narration(cause: "\(agent)'s calls\(on) keep failing: \(rung) times in \(WorkStream.ladderMs / 60_000) minutes.",
-                             fact: fit("calls failed x\(rung)"))
+                             fact: fit("calls keep failing"))
         }
         guard let topic = facts["topic"]?.string, TranscriptView.checks.contains(topic) else { return nil }
         let before = facts["failed_before"]?.int ?? 0
         let subject = topic == "tests" ? "The tests\(on)" : "The \(topic)\(on)"
         switch facts["result"]?.string {
         case "failed"?:
-            return before > 0 ? Narration(cause: "\(subject) failed again: \(before + 1) times in a row.", fact: fit("\(topic) failed x\(before + 1)", "\(topic) x\(before + 1)"))
+            // The lane's words: "tests failed again", then "still failing",
+            // the check's name first where it fits (CLAUDE.md, The UI's words).
+            return before > 0 ? Narration(cause: "\(subject) failed again: \(before + 1) times in a row.",
+                                          fact: before == 1 ? fit("\(topic) failed again", "failed again") : fit("\(topic) still failing", "still failing"))
                 : Narration(cause: "\(subject) failed.", fact: fit("\(topic) failed"))
         case "ok"? where before > 0:
             return Narration(cause: "\(subject) \(topic == "tests" ? "pass" : "passes") again.", fact: fit(topic == "tests" ? "tests pass again" : "\(topic) passes again", "\(topic) passes"))

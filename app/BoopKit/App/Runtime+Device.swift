@@ -166,8 +166,25 @@ extension Runtime {
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
     func playRule(_ reaction: Moment, _ ended: @escaping (DeviceLink.Outcome) -> Void = { _ in }) {
         let reaction = calmed(reaction), now = options.clock()
+        doSent()
         rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction),
-                    ttl: rig.reactions.ttl(BoopDevice.reactionTTL, now: now), by: .rule, now: now, ended)
+                    ttl: rig.reactions.ttl(BoopDevice.reactionTTL, now: now), by: .rule, now: now) { [weak self] outcome in
+            self?.doEnded()
+            ended(outcome)
+        }
+    }
+
+    /// A Moment's `do` is out, or has ended: the board is busy for the
+    /// core's shows while any is (`Core.boardBusy`). A word of the work
+    /// stream isn't one: it covers no show. On `home`.
+    func doSent() {
+        openDos += 1
+        core.boardBusy = true
+    }
+
+    func doEnded() {
+        openDos = max(0, openDos - 1)
+        core.boardBusy = openDos > 0
     }
 
     /// A word of the work stream that comes forward: it waits in the
@@ -186,7 +203,9 @@ extension Runtime {
         let reaction = calmed(reaction)
         let now = options.clock(), reactions = rig.reactions, ttl = reactions.ttl(BoopDevice.ttl(reaction), now: now)
         var sent: Int?
-        let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: ttl, by: .brain, now: now) { outcome in
+        doSent()
+        let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: ttl, by: .brain, now: now) { [weak self] outcome in
+            self?.doEnded()
             if let sent { reactions.ended(sent) }
             if let end = reactions.read(outcome, pending) { pending.finish(end) }
         }

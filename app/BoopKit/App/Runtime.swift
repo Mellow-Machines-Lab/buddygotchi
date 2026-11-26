@@ -293,6 +293,9 @@ public final class Runtime: @unchecked Sendable {
     /// The rest of the Mac's facts `{"dev":"along",…}` lines set, read in
     /// place of the Mac's when there's no `along` reader.
     var devAlong = Along.Facts()
+    /// The Moments sent to the device and not yet ended, a `do` each: while
+    /// any is out, the board is busy for the core's shows (`Core.boardBusy`).
+    var openDos = 0
     /// The anchor's display is gone or changed (`displaysChanged`): Boop
     /// follows nothing and turns nowhere until it's shown again.
     var anchorGone = false

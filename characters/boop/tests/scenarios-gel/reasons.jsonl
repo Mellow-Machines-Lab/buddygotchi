@@ -25,7 +25,7 @@
 {"clock":1700}
 {"clock":1800}
 {"shot":"poke-x3"}
-{"t":"do","id":2,"name":"react","args":{"mood":"happy","loops":1,"reason":"you poked Boop x3"}}
+{"t":"do","id":2,"name":"react","args":{"mood":"happy","loops":1,"reason":"poked 3 times"}}
 {"clock":1900}
 {"clock":2000}
 {"t":"state","vol":0,"when":["day"],"base":"idle","mood":"calm","idle":1}

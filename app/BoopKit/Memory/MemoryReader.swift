@@ -269,11 +269,11 @@ public final class MemoryReader: TranscriptReader {
         return parts.isEmpty ? "a quiet time" : parts.joined(separator: "; ")
     }
 
-    /// The dream for the board's lane, a few words: "stroked x4".
+    /// The dream for the board's lane, a few words: "stroked 4 times".
     static func fact(_ t: Tallies) -> String {
-        if t.strokes > 0 { return "stroked x\(t.strokes)" }
-        if t.talks > 0 { return "talked x\(t.talks)" }
-        if t.failed > 0 { return "\(t.failed) failed" }
+        if t.strokes > 0 { return t.strokes == 1 ? "stroked once" : "stroked \(t.strokes) times" }
+        if t.talks > 0 { return t.talks == 1 ? "talked once" : "talked \(t.talks) times" }
+        if t.failed > 0 { return t.failed == 1 ? "a turn failed" : "\(t.failed) turns failed" }
         if t.turns > 0 { return t.turns == 1 ? "1 turn" : "\(t.turns) turns" }
         return "a quiet time"
     }

@@ -218,6 +218,10 @@ public final class Core {
     /// The shows for the board (`BoardShow`), and the last one's id.
     var boardShows: [BoardShow] = []
     var nextBoardShow = 0
+    /// Whether the board is busy with a Moment of the Mac's: a `do` sent and
+    /// not yet ended, as the runtime keeps count (`Runtime.openDos`). A show
+    /// spends none of its time under one (`tidyBoardShows`).
+    public var boardBusy = false
     /// What each session's turn has done, for its held pictures.
     var turnWork: [String: TurnWork] = [:]
 

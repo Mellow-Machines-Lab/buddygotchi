@@ -127,7 +127,15 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(t.late, 1)
         XCTAssertEqual(MemoryReader.tags(t), ["fond", "late", "failed", "long"])
         XCTAssertEqual(MemoryReader.sentence(t), "you stroked it 2 times; 1 turn on \"api\", 1 failed")
-        XCTAssertEqual(MemoryReader.fact(t), "stroked x2")
+        XCTAssertEqual(MemoryReader.fact(t), "stroked 2 times")
+        var once = t
+        once.strokes = 1
+        XCTAssertEqual(MemoryReader.fact(once), "stroked once", "the lane's words, never \"x1\"")
+        once.strokes = 0
+        once.talks = 3
+        XCTAssertEqual(MemoryReader.fact(once), "talked 3 times")
+        once.talks = 0
+        XCTAssertEqual(MemoryReader.fact(once), "a turn failed")
     }
 
     func stroke(_ seq: Int, _ ms: Int64) -> Event {

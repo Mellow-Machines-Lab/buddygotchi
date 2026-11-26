@@ -87,6 +87,35 @@ final class ShowBoardTests: XCTestCase {
         XCTAssertEqual(rig.state.show?.headline, "two")
     }
 
+    /// A show's 30 s pass only while the board can hold it up: not under a
+    /// Moment of the Mac's (`Core.boardBusy`, the finish and its invite that
+    /// follow a turn), nor while something needs you, which both cover it.
+    func testAShowSpendsItsTimeOnlyWhileTheBoardIsFree() throws {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart, session: "a", project: "api")
+        rig.send(.turnStart, session: "b", project: "web")
+        rig.wait(1000)
+        let a = try XCTUnwrap(rig.core.sessions.values.first { $0.id == "a" }).key
+        rig.core.boardShows = []
+        rig.core.queueBoardShow(Show(headline: "api is 2x faster", svg: svg), key: a, agent: "claude", working: true, at: rig.now)
+        rig.core.boardBusy = true  // the finish and its invite play on the board
+        rig.send(.turnEnd, session: "a", project: "api")
+        rig.wait(40_000)
+        XCTAssertEqual(rig.state.show?.headline, "api is 2x faster", "no time spent under a Moment")
+        rig.core.boardBusy = false
+        rig.wait(10_000)
+        XCTAssertNotNil(rig.state.show, "10 s of its 30 spent")
+        rig.send(.needsYou, session: "b", tool: "Bash")
+        XCTAssertNil(rig.state.show, "left out while something needs you")
+        rig.wait(40_000)
+        rig.send(.turnEnd, session: "b", project: "web")
+        XCTAssertNotNil(rig.state.show, "back, with 20 s left: none spent under needs you")
+        rig.wait(19_000)
+        XCTAssertNotNil(rig.state.show)
+        rig.wait(2_000)
+        XCTAssertNil(rig.state.show, "its 30 s up")
+    }
+
     /// The picture goes as a blob once, and again after 6 s when it hasn't
     /// come; the state names it once the board has it; a new show or a
     /// board that said hello starts again.
@@ -103,7 +132,7 @@ final class ShowBoardTests: XCTestCase {
         let link = DeviceLink(app: "boop", transport: sink)
         link.connection(true, now: 0)
         var blobs = ShowBlobs()
-        let show = Core.BoardShow(id: 3, key: "k", show: Show(headline: "h", svg: svg), agent: "claude", at: 0)
+        let show = Core.BoardShow(id: 3, key: "k", show: Show(headline: "h", svg: svg), agent: "claude", at: 0, clockAt: 0)
         let fields: JSONObject = ["t": "state", "show": ["i": 3, "h": "h", "a": 0, "g": "claude"]]
         var drawn = 0
         let picture: (Show) -> Data? = { _ in drawn += 1; return Data([0x0F, 0xFF]) }

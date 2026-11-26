@@ -23,19 +23,35 @@ final class NarrationTests: XCTestCase {
         XCTAssertEqual(back(3 * 86_400_000), Narration(cause: "You came back after 3 days away.", fact: "you were away 3 d"))
     }
 
+    /// The lane's words for a check failing again, and for calls that keep
+    /// failing: warm and short, the check's name first where it fits, and
+    /// never a count written "x3" (CLAUDE.md, The UI's words).
+    func testAFailingCheckReadsWarmlyOnTheLane() {
+        func fact(_ topic: String, before: Int) -> String? {
+            Narration.check(["topic": .string(topic), "result": .string("failed"), "failed_before": .int(Int64(before))],
+                            agent: "claude", on: "", name: "Boop")?.fact
+        }
+        XCTAssertEqual(fact("tests", before: 0), "tests failed")
+        XCTAssertEqual(fact("tests", before: 1), "tests failed again")
+        XCTAssertEqual(fact("tests", before: 2), "still failing")
+        XCTAssertEqual(fact("build", before: 1), "build failed again")
+        XCTAssertEqual(fact("build", before: 3), "still failing")
+        XCTAssertEqual(Narration.check(["failing": .int(3)], agent: "claude", on: "", name: "Boop")?.fact, "calls keep failing")
+    }
+
     /// Every care gesture, and a poke, gives the board a fact; what you
     /// said gives none, as the sign answers it.
     func testTouchesGiveTheBoardAFactAndWordsDont() {
         XCTAssertEqual(Narration.of(event(.gesture, "stroke"), line: nil, name: "Boop"), Narration(cause: "You stroked it.", fact: "you stroked Boop"))
         XCTAssertEqual(Narration.of(event(.gesture, "pickup"), line: nil, name: "Bartholomew")?.fact, "you picked it up", "a long name gives way to it")
         XCTAssertEqual(Narration.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(4)]), name: "Boop"),
-                       Narration(cause: "You poked it 4 times in a row.", fact: "you poked Boop x4"))
+                       Narration(cause: "You poked it 4 times in a row.", fact: "poked 4 times"))
         XCTAssertEqual(Narration.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(1), "asleep": .bool(true)]), name: "Boop")?.fact,
                        "you woke Boop")
         XCTAssertEqual(Narration.of(event(.gesture, "shake"), line: Line("", facts: ["in_a_row": .int(1)]), name: "Boop"),
                        Narration(cause: "You shook it.", fact: "you shook Boop"))
         XCTAssertEqual(Narration.of(event(.gesture, "shake"), line: Line("", facts: ["in_a_row": .int(3)]), name: "Boop"),
-                       Narration(cause: "You shook it 3 times in a row.", fact: "you shook Boop x3"))
+                       Narration(cause: "You shook it 3 times in a row.", fact: "shaken 3 times"))
         let said = Narration.of(event(.said, "mic"), line: Line("You said to Boop: \"hi\".", facts: ["words": .string("hi")]))
         XCTAssertEqual(said, Narration(cause: "You said \"hi\"."))
     }

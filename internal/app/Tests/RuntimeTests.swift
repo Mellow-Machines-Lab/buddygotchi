@@ -2191,6 +2191,22 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(kinds, ["act_end", "tool_end"], "the act's end is logged first, so the call's line is the newest")
     }
 
+    /// The board is busy for the core's shows from a Moment's `do` until
+    /// its `ended` (`Core.boardBusy`, `Runtime.openDos`).
+    func testTheBoardIsBusyWhileAMomentPlays() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        XCTAssertFalse(runtime.home.sync { runtime.core.boardBusy })
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
+        eventually("a reaction is out") { !transport.dos("react").isEmpty }
+        XCTAssertTrue(runtime.home.sync { runtime.core.boardBusy })
+        runtime.home.sync { for line in transport.dos { runtime.device(FakeTransport.ended(FakeTransport.id(line), "done")) } }
+        eventually("every do ended") { runtime.home.sync { !runtime.core.boardBusy } }
+    }
+
     /// `do` ids start somewhere random at every launch and
     /// count up, so an earlier launch's call still on the device can't
     /// share one (linkkit/SPEC.md §3; LinkKit's own tests pin the rest).
