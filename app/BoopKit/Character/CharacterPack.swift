@@ -86,6 +86,11 @@ public struct CharacterPack: Sendable {
     /// Every face the pack draws, in its order: the emotion question's
     /// options, and the names the board knows.
     public let moods: [Mood]
+    /// The faces past `moods` the board draws (`board_faces`), the meme
+    /// faces: each a Moment's emotion at the rare moment a rule names it
+    /// (`RulesBrain.meme`), where alone the brain is offered it; never a
+    /// lasting mood's look.
+    public let boardFaces: [Mood]
     /// The moods the creature settles into, in the pack's order: the mood
     /// question's options.
     public let lasting: [Lasting]
@@ -97,6 +102,8 @@ public struct CharacterPack: Sendable {
     // Derived once, since the mood output reads them on every pass.
     let options: [Option]
     let faces: [Option]
+    /// The board's faces as the emotion question's options, by id.
+    let memes: [String: Option]
     let byId: [String: Mood]
     let lastingById: [String: Lasting]
 }
@@ -163,12 +170,16 @@ extension CharacterPack {
         claimsAFix = Set(json["claims_a_fix"] as? [String] ?? [])
         skits = try CharacterPack.skits(json["skits"] as? [[String: Any]] ?? [], in: source)
         moods = try (json["moods"] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
+        boardFaces = try (json["board_faces"] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
         acts = json["acts"] as? [String: [String: String]] ?? [:]
         // The board reports the id, and the firmware names each mood in code.
         guard id.wholeMatch(of: /[a-z0-9-]+/) != nil else { throw CharacterPackError("\(source): id \(id) isn't lower case, digits and -") }
         let names = Set(moods.map(\.id))
         guard !moods.isEmpty else { throw CharacterPackError("\(source): moods names no face") }
         guard names.count == moods.count else { throw CharacterPackError("\(source): moods names a face twice") }
+        guard Set(boardFaces.map(\.id)).count == boardFaces.count, names.isDisjoint(with: boardFaces.map(\.id)) else {
+            throw CharacterPackError("\(source): moods and board_faces name a face twice")
+        }
         guard let rows = json["lasting"] as? [[String: Any]] else { throw CharacterPackError("\(source): lasting is missing") }
         lasting = try rows.map { try CharacterPack.lasting($0, in: source) }
         let lastingNames = Set(lasting.map(\.id))
@@ -198,6 +209,7 @@ extension CharacterPack {
 
         options = lasting.map { Option($0.id, $0.meaning, notFor: $0.notFor) }
         faces = moods.map { Option($0.id, $0.face, notFor: $0.faceNotFor) }
+        memes = Dictionary(uniqueKeysWithValues: boardFaces.map { ($0.id, Option($0.id, $0.face, notFor: $0.faceNotFor)) })
         byId = Dictionary(uniqueKeysWithValues: moods.map { ($0.id, $0) })
         lastingById = Dictionary(uniqueKeysWithValues: lasting.map { ($0.id, $0) })
     }
@@ -207,6 +219,9 @@ extension CharacterPack {
     public func settled(_ id: String) -> String? {
         lastingById[id] != nil ? id : byId[id]?.settles
     }
+
+    /// Whether a Moment may show `id`: one of `moods`, or of the board's own.
+    public func isFace(_ id: String) -> Bool { byId[id] != nil || memes[id] != nil }
 
     /// One lasting mood, or nil for a word that isn't one.
     public func lasting(_ id: String) -> Lasting? { lastingById[id] }

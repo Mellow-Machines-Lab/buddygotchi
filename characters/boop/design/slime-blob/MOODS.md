@@ -14,8 +14,9 @@ how its parts fit.
   rests in. Every other names the mood it `settles` into.
 - **`board_faces`** has six more the board draws, the meme faces:
   deadpan, side_eye, squint, smug, silent_scream and faint, each with a
-  move of its own (CONTINUITY.md, Meme faces). The Mac doesn't read them,
-  so no rule or brain picks one yet; to let one, move it into `moods`.
+  move of its own (CONTINUITY.md, Meme faces). Each is a Moment's
+  emotion at the one rare moment a rule names it for (`RulesBrain.meme`),
+  never a mood's; squint has none yet.
 - **Cross** rests in three faces, its `levels`: annoyed, grumpy, angry.
   The app counts the level; Jev picks cross and never the level.
 - **Curious, determined, excited, wounded and surprised** are faces only.

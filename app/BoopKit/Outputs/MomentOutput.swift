@@ -490,7 +490,20 @@ public final class MomentOutput: Output {
     /// Its questions, the sign's where there's one to pick, and at a skit
     /// which take it says (`takeQuestion`).
     public func questions(now: Event?, log: LogView) -> [Question] {
-        faceAndSign(now: now, log: log) + (takeQuestion(now, log).map { [$0] } ?? [])
+        let meme = self.meme(Self.about(now, log))
+        return faceAndSign(now: now, log: log).map { q in
+            guard q.key == Self.emotionKey, let meme else { return q }
+            return Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy, options: q.options + [meme])
+        } + (takeQuestion(now, log).map { [$0] } ?? [])
+    }
+
+    /// The meme face `about` calls for, as an option of the emotion
+    /// question: offered there alone (`RulesBrain.meme`), never at your
+    /// words, nor where the rules make the Moment whole.
+    func meme(_ about: Event?) -> Option? {
+        guard let about, !Self.isTalk(about) else { return nil }
+        let facts = line(about)?.facts ?? [:]
+        return RulesBrain.meme(RulesBrain.read(about, facts: facts), facts: facts).flatMap { pack.memes[$0] }
     }
 
     /// The face, and the sign's where there's one to pick: for what you
@@ -769,11 +782,11 @@ public final class MomentOutput: Output {
         // slot's first, as the mood colours it (`RulesBrain.faces`).
         let slot = self.slot(about, facts: lineFacts, ruled: ruled != nil)
         let skit = slot.flatMap { self.skit(at: $0, facts: lineFacts) }
-        if let slot, skit != nil, !pack.faces.contains(where: { $0.name == answers[Self.emotionKey]?.choice }),
+        if let slot, skit != nil, !pack.isFace(answers[Self.emotionKey]?.choice ?? ""),
            let face = RulesBrain.colour(RulesBrain.faces[slot] ?? [], mood: moodID(log) ?? pack.defaultMood, level: moodLevel(log)).first {
             answers[Self.emotionKey] = Answer(choice: face)
         }
-        guard let choice = answers[Self.emotionKey]?.choice, pack.faces.contains(where: { $0.name == choice }) else {
+        guard let choice = answers[Self.emotionKey]?.choice, pack.isFace(choice) else {
             // No Moment, but a mood that moved still says so.
             if let now, let moved = moodMoved(now, log) { note(moved, now.at) }
             return nil
@@ -999,7 +1012,7 @@ public final class MomentOutput: Output {
         if let wishing { makeWish(wishing, at) }
         // 4. What it started, as its line in HISTORY: in progress until
         // the device says how the reaction ended.
-        let did = "\(pack.name) had \(Self.article(choice)) \(choice) moment (\(size.name))"
+        let did = "\(pack.name) had \(Self.article(choice)) \(choice.replacingOccurrences(of: "_", with: " ")) moment (\(size.name))"
             + (pick.map { ", playing \(Self.article($0)) \($0)" }
                 ?? replied?.did ?? "")
         // The takes' ids in order, and the reply as it played, for the

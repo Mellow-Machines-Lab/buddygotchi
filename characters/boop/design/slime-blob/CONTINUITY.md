@@ -944,8 +944,9 @@ Six faces past the Mac's 18, each with one body move that sells it. They
 keep the gel's face language: solid dark eyes with no whites, one small
 mouth; the lids and where the eyes look do the acting. They're the pack's
 `board_faces` (character.json): the board draws each by its name on the
-wire, and the Mac doesn't read them, so no rule or brain picks one yet; a
-Moment, `state`, the invite's back or a scenario may name one.
+wire. The Mac shows one only at the rare moment a rule names it for
+(`RulesBrain.meme`), as a Moment's emotion; `state`, the invite's back or
+a scenario may name one too.
 
 | Face | Its art | Its move (`face-<face>`) |
 | --- | --- | --- |

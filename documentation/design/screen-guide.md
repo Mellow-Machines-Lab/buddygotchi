@@ -251,8 +251,11 @@ the body moves, and it's still again at rest. Each rule has a switch
 
 Six faces past the 18, each with one body move that sells it, in the
 gel's face language: solid dark eyes, no whites, one small mouth, the
-lids and the gaze doing the acting. The board draws them; no rule or brain
-on the Mac picks one yet, but the back wears side-eye.
+lids and the gaze doing the acting. A Moment shows one only at its rare
+moment (`RulesBrain.meme`): deadpan at a second failed check, side-eye at
+calls failing in a row, smug at a fix or a hard-won win, the silent scream
+as failures pile up, a faint when a very long turn fails or the agent
+gives up. Squint has none yet. The back wears side-eye too.
 
 | Face | Looks | Its move |
 | --- | --- | --- |

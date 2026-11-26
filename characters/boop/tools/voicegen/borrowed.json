@@ -12,6 +12,9 @@
     "surprised": "curious",
     "amused": "happy",
     "affectionate": "happy",
-    "lonely": "sad"
+    "lonely": "sad",
+    "smug": "proud",
+    "faint": "sad",
+    "silent_scream": "grumpy"
   }
 }

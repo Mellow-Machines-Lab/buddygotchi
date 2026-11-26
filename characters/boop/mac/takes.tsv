@@ -5,99 +5,99 @@ placeholder.nonverbal.talk-yes.mhm__happy__contained	Mhm	reply	yes	sound	happy p
 placeholder.nonverbal.talk-yes.mhm__calm__contained	Mhm	reply	yes	sound	calm		698
 placeholder.nonverbal.talk-yes.mhm__curious__contained	Mhm	reply	yes	sound	curious surprised		638
 placeholder.nonverbal.talk-yes.mhm__excited__contained	Mhm	reply	yes	sound	excited		568
-placeholder.nonverbal.talk-yes.mhm__proud__contained	Mhm	reply	yes	sound	proud mischievous		658
+placeholder.nonverbal.talk-yes.mhm__proud__contained	Mhm	reply	yes	sound	proud mischievous smug		658
 placeholder.nonverbal.talk-yes.mhm__engaged__contained	Mhm	reply	yes	sound	focused		628
 placeholder.nonverbal.talk-yes.mm-hm__happy__contained	Mm-hm!	reply	yes	sound	happy pleased amused affectionate		608
 placeholder.nonverbal.talk-yes.mm-hm__calm__contained	Mm-hm!	reply	yes	sound	calm		698
 placeholder.nonverbal.talk-yes.mm-hm__curious__contained	Mm-hm!	reply	yes	sound	curious surprised		638
 placeholder.nonverbal.talk-yes.mm-hm__excited__contained	Mm-hm!	reply	yes	sound	excited		568
-placeholder.nonverbal.talk-yes.mm-hm__proud__contained	Mm-hm!	reply	yes	sound	proud mischievous		658
+placeholder.nonverbal.talk-yes.mm-hm__proud__contained	Mm-hm!	reply	yes	sound	proud mischievous smug		658
 placeholder.nonverbal.talk-yes.mm-hm__engaged__contained	Mm-hm!	reply	yes	sound	focused		628
 placeholder.nonverbal.talk-yes.uh-huh__happy__contained	Uh-huh	reply	yes	sound	happy pleased amused affectionate		449
 placeholder.nonverbal.talk-yes.uh-huh__calm__contained	Uh-huh	reply	yes	sound	calm		519
 placeholder.nonverbal.talk-yes.uh-huh__curious__contained	Uh-huh	reply	yes	sound	curious surprised		459
 placeholder.nonverbal.talk-yes.uh-huh__excited__contained	Uh-huh	reply	yes	sound	excited		409
-placeholder.nonverbal.talk-yes.uh-huh__proud__contained	Uh-huh	reply	yes	sound	proud mischievous		479
+placeholder.nonverbal.talk-yes.uh-huh__proud__contained	Uh-huh	reply	yes	sound	proud mischievous smug		479
 placeholder.nonverbal.talk-yes.uh-huh__engaged__contained	Uh-huh	reply	yes	sound	focused		469
 placeholder.word.talk-yes.yes__happy__contained	Yes	reply	yes	word	happy pleased amused affectionate		369
 placeholder.word.talk-yes.yes__calm__contained	Yes	reply	yes	word	calm		429
 placeholder.word.talk-yes.yes__curious__contained	Yes	reply	yes	word	curious surprised		379
 placeholder.word.talk-yes.yes__excited__contained	Yes	reply	yes	word	excited		339
-placeholder.word.talk-yes.yes__proud__contained	Yes	reply	yes	word	proud mischievous		389
+placeholder.word.talk-yes.yes__proud__contained	Yes	reply	yes	word	proud mischievous smug		389
 placeholder.word.talk-yes.yes__engaged__contained	Yes	reply	yes	word	focused		369
 placeholder.word.talk-yes.yup__happy__contained	Yup	reply	yes	word	happy pleased amused affectionate		359
 placeholder.word.talk-yes.yup__calm__contained	Yup	reply	yes	word	calm		419
 placeholder.word.talk-yes.yup__curious__contained	Yup	reply	yes	word	curious surprised		379
 placeholder.word.talk-yes.yup__excited__contained	Yup	reply	yes	word	excited		339
-placeholder.word.talk-yes.yup__proud__contained	Yup	reply	yes	word	proud mischievous		379
+placeholder.word.talk-yes.yup__proud__contained	Yup	reply	yes	word	proud mischievous smug		379
 placeholder.word.talk-yes.yup__engaged__contained	Yup	reply	yes	word	focused		369
 placeholder.word.talk-yes.sure__happy__contained	Sure	reply	yes	word	happy pleased amused affectionate		439
 placeholder.word.talk-yes.sure__calm__contained	Sure	reply	yes	word	calm		519
 placeholder.word.talk-yes.sure__curious__contained	Sure	reply	yes	word	curious surprised		459
 placeholder.word.talk-yes.sure__excited__contained	Sure	reply	yes	word	excited		409
-placeholder.word.talk-yes.sure__proud__contained	Sure	reply	yes	word	proud mischievous		489
+placeholder.word.talk-yes.sure__proud__contained	Sure	reply	yes	word	proud mischievous smug		489
 placeholder.word.talk-yes.sure__engaged__contained	Sure	reply	yes	word	focused		459
 placeholder.word.talk-yes.okay__happy__contained	Okay	reply	yes	word	happy pleased amused affectionate		469
 placeholder.word.talk-yes.okay__calm__contained	Okay	reply	yes	word	calm		558
 placeholder.word.talk-yes.okay__curious__contained	Okay	reply	yes	word	curious surprised		499
 placeholder.word.talk-yes.okay__excited__contained	Okay	reply	yes	word	excited		429
-placeholder.word.talk-yes.okay__proud__contained	Okay	reply	yes	word	proud mischievous		509
+placeholder.word.talk-yes.okay__proud__contained	Okay	reply	yes	word	proud mischievous smug		509
 placeholder.word.talk-yes.okay__engaged__contained	Okay	reply	yes	word	focused		489
 placeholder.phrase.talk-yes.you-bet__happy__contained	You bet	reply	yes	phrase	happy pleased amused affectionate		479
 placeholder.phrase.talk-yes.you-bet__calm__contained	You bet	reply	yes	phrase	calm		558
 placeholder.phrase.talk-yes.you-bet__curious__contained	You bet	reply	yes	phrase	curious surprised		499
 placeholder.phrase.talk-yes.of-course__excited__contained	Of course	reply	yes	phrase	excited		519
-placeholder.phrase.talk-yes.of-course__proud__contained	Of course	reply	yes	phrase	proud mischievous		598
+placeholder.phrase.talk-yes.of-course__proud__contained	Of course	reply	yes	phrase	proud mischievous smug		598
 placeholder.phrase.talk-yes.of-course__engaged__contained	Of course	reply	yes	phrase	focused		568
 placeholder.phrase.talk-yes.yes-yes__happy__contained	Yes yes	reply	yes	phrase	happy pleased amused affectionate		558
 placeholder.phrase.talk-yes.yes-yes__calm__contained	Yes yes	reply	yes	phrase	calm		648
 placeholder.phrase.talk-yes.yes-yes__curious__contained	Yes yes	reply	yes	phrase	curious surprised		578
 placeholder.phrase.talk-yes.sure-thing__excited__contained	Sure thing	reply	yes	phrase	excited		558
-placeholder.phrase.talk-yes.sure-thing__proud__contained	Sure thing	reply	yes	phrase	proud mischievous		688
+placeholder.phrase.talk-yes.sure-thing__proud__contained	Sure thing	reply	yes	phrase	proud mischievous smug		688
 placeholder.phrase.talk-yes.sure-thing__engaged__contained	Sure thing	reply	yes	phrase	focused		658
 placeholder.nonverbal.talk-no.nuh-uh__annoyed__contained	Nuh-uh	reply	no	sound	annoyed		449
-placeholder.nonverbal.talk-no.nuh-uh__grumpy__contained	Nuh-uh	reply	no	sound	grumpy angry		459
-placeholder.nonverbal.talk-no.nuh-uh__proud__contained	Nuh-uh	reply	no	sound	proud mischievous		449
+placeholder.nonverbal.talk-no.nuh-uh__grumpy__contained	Nuh-uh	reply	no	sound	grumpy angry silent_scream		459
+placeholder.nonverbal.talk-no.nuh-uh__proud__contained	Nuh-uh	reply	no	sound	proud mischievous smug		449
 placeholder.nonverbal.talk-no.nuh-uh__calm__contained	Nuh-uh	reply	no	sound	calm		479
-placeholder.nonverbal.talk-no.nuh-uh__irritated__contained	Nuh-uh	reply	no	sound	grumpy angry		409
+placeholder.nonverbal.talk-no.nuh-uh__irritated__contained	Nuh-uh	reply	no	sound	grumpy angry silent_scream		409
 placeholder.nonverbal.talk-no.hmm-mm__annoyed__contained	Hmm-mm	reply	no	sound	annoyed		728
-placeholder.nonverbal.talk-no.hmm-mm__grumpy__contained	Hmm-mm	reply	no	sound	grumpy angry		778
-placeholder.nonverbal.talk-no.hmm-mm__proud__contained	Hmm-mm	reply	no	sound	proud mischievous		748
+placeholder.nonverbal.talk-no.hmm-mm__grumpy__contained	Hmm-mm	reply	no	sound	grumpy angry silent_scream		778
+placeholder.nonverbal.talk-no.hmm-mm__proud__contained	Hmm-mm	reply	no	sound	proud mischievous smug		748
 placeholder.nonverbal.talk-no.hmm-mm__calm__contained	Hmm-mm	reply	no	sound	calm		808
-placeholder.nonverbal.talk-no.hmm-mm__irritated__contained	Hmm-mm	reply	no	sound	grumpy angry		678
+placeholder.nonverbal.talk-no.hmm-mm__irritated__contained	Hmm-mm	reply	no	sound	grumpy angry silent_scream		678
 placeholder.nonverbal.talk-no.nn-nn__annoyed__contained	Nn-nn	reply	no	sound	annoyed		728
-placeholder.nonverbal.talk-no.nn-nn__grumpy__contained	Nn-nn	reply	no	sound	grumpy angry		788
-placeholder.nonverbal.talk-no.nn-nn__proud__contained	Nn-nn	reply	no	sound	proud mischievous		748
+placeholder.nonverbal.talk-no.nn-nn__grumpy__contained	Nn-nn	reply	no	sound	grumpy angry silent_scream		788
+placeholder.nonverbal.talk-no.nn-nn__proud__contained	Nn-nn	reply	no	sound	proud mischievous smug		748
 placeholder.nonverbal.talk-no.nn-nn__calm__contained	Nn-nn	reply	no	sound	calm		818
-placeholder.nonverbal.talk-no.nn-nn__irritated__contained	Nn-nn	reply	no	sound	grumpy angry		698
+placeholder.nonverbal.talk-no.nn-nn__irritated__contained	Nn-nn	reply	no	sound	grumpy angry silent_scream		698
 placeholder.word.talk-no.nope__annoyed__contained	Nope	reply	no	word	annoyed		409
-placeholder.word.talk-no.nope__grumpy__contained	Nope	reply	no	word	grumpy angry		429
-placeholder.word.talk-no.nope__proud__contained	Nope	reply	no	word	proud mischievous		409
+placeholder.word.talk-no.nope__grumpy__contained	Nope	reply	no	word	grumpy angry silent_scream		429
+placeholder.word.talk-no.nope__proud__contained	Nope	reply	no	word	proud mischievous smug		409
 placeholder.word.talk-no.nope__calm__contained	Nope	reply	no	word	calm		449
-placeholder.word.talk-no.nope__irritated__contained	Nope	reply	no	word	grumpy angry		369
+placeholder.word.talk-no.nope__irritated__contained	Nope	reply	no	word	grumpy angry silent_scream		369
 placeholder.word.talk-no.nah__annoyed__contained	Nah	reply	no	word	annoyed		419
-placeholder.word.talk-no.nah__grumpy__contained	Nah	reply	no	word	grumpy angry		439
-placeholder.word.talk-no.nah__proud__contained	Nah	reply	no	word	proud mischievous		449
+placeholder.word.talk-no.nah__grumpy__contained	Nah	reply	no	word	grumpy angry silent_scream		439
+placeholder.word.talk-no.nah__proud__contained	Nah	reply	no	word	proud mischievous smug		449
 placeholder.word.talk-no.nah__calm__contained	Nah	reply	no	word	calm		479
-placeholder.word.talk-no.nah__irritated__contained	Nah	reply	no	word	grumpy angry		389
+placeholder.word.talk-no.nah__irritated__contained	Nah	reply	no	word	grumpy angry silent_scream		389
 placeholder.word.talk-no.no__annoyed__contained	No	reply	no	word	annoyed		409
-placeholder.word.talk-no.no__grumpy__contained	No	reply	no	word	grumpy angry		439
-placeholder.word.talk-no.no__proud__contained	No	reply	no	word	proud mischievous		449
+placeholder.word.talk-no.no__grumpy__contained	No	reply	no	word	grumpy angry silent_scream		439
+placeholder.word.talk-no.no__proud__contained	No	reply	no	word	proud mischievous smug		449
 placeholder.word.talk-no.no__calm__contained	No	reply	no	word	calm		479
-placeholder.word.talk-no.no__irritated__contained	No	reply	no	word	grumpy angry		379
+placeholder.word.talk-no.no__irritated__contained	No	reply	no	word	grumpy angry silent_scream		379
 placeholder.word.talk-no.never__annoyed__contained	Never	reply	no	word	annoyed		519
-placeholder.word.talk-no.never__grumpy__contained	Never	reply	no	word	grumpy angry		548
-placeholder.word.talk-no.never__proud__contained	Never	reply	no	word	proud mischievous		528
+placeholder.word.talk-no.never__grumpy__contained	Never	reply	no	word	grumpy angry silent_scream		548
+placeholder.word.talk-no.never__proud__contained	Never	reply	no	word	proud mischievous smug		528
 placeholder.word.talk-no.never__calm__contained	Never	reply	no	word	calm		568
-placeholder.word.talk-no.never__irritated__contained	Never	reply	no	word	grumpy angry		479
+placeholder.word.talk-no.never__irritated__contained	Never	reply	no	word	grumpy angry silent_scream		479
 placeholder.phrase.talk-no.no-way__annoyed__contained	No way	reply	no	phrase	annoyed		568
-placeholder.phrase.talk-no.no-way__grumpy__contained	No way	reply	no	phrase	grumpy angry		598
-placeholder.phrase.talk-no.not-today__proud__contained	Not today	reply	no	phrase	proud mischievous		798
+placeholder.phrase.talk-no.no-way__grumpy__contained	No way	reply	no	phrase	grumpy angry silent_scream		598
+placeholder.phrase.talk-no.not-today__proud__contained	Not today	reply	no	phrase	proud mischievous smug		798
 placeholder.phrase.talk-no.not-today__calm__contained	Not today	reply	no	phrase	calm		878
-placeholder.phrase.talk-no.nope-nope__irritated__contained	Nope nope	reply	no	phrase	grumpy angry		618
+placeholder.phrase.talk-no.nope-nope__irritated__contained	Nope nope	reply	no	phrase	grumpy angry silent_scream		618
 placeholder.phrase.talk-no.nope-nope__annoyed__contained	Nope nope	reply	no	phrase	annoyed		688
-placeholder.phrase.talk-no.make-me__grumpy__contained	Make me	reply	no	phrase	grumpy angry		648
-placeholder.phrase.talk-no.make-me__proud__contained	Make me	reply	no	phrase	proud mischievous		628
+placeholder.phrase.talk-no.make-me__grumpy__contained	Make me	reply	no	phrase	grumpy angry silent_scream		648
+placeholder.phrase.talk-no.make-me__proud__contained	Make me	reply	no	phrase	proud mischievous smug		628
 placeholder.nonverbal.talk-huh.hm__curious__contained	Hm?	reply	huh	sound	curious surprised		409
 placeholder.nonverbal.talk-huh.hm__calm__contained	Hm?	reply	huh	sound	calm		429
 placeholder.nonverbal.talk-huh.hm__engaged__contained	Hm?	reply	huh	sound	focused		379
@@ -140,179 +140,179 @@ placeholder.nonverbal.talk-hello.oh__happy__contained	Oh!	reply	hello	sound	happ
 placeholder.nonverbal.talk-hello.oh__excited__contained	Oh!	reply	hello	sound	excited		309
 placeholder.nonverbal.talk-hello.oh__calm__contained	Oh!	reply	hello	sound	calm		379
 placeholder.nonverbal.talk-hello.oh__curious__contained	Oh!	reply	hello	sound	curious surprised		339
-placeholder.nonverbal.talk-hello.oh__sad__contained	Oh!	reply	hello	sound	sad lonely		429
+placeholder.nonverbal.talk-hello.oh__sad__contained	Oh!	reply	hello	sound	sad lonely faint		429
 placeholder.nonverbal.talk-hello.heyy__happy__contained	Heyy	reply	hello	sound	happy pleased amused affectionate		449
 placeholder.nonverbal.talk-hello.heyy__excited__contained	Heyy	reply	hello	sound	excited		409
 placeholder.nonverbal.talk-hello.heyy__calm__contained	Heyy	reply	hello	sound	calm		528
 placeholder.nonverbal.talk-hello.heyy__curious__contained	Heyy	reply	hello	sound	curious surprised		479
-placeholder.nonverbal.talk-hello.heyy__sad__contained	Heyy	reply	hello	sound	sad lonely		618
+placeholder.nonverbal.talk-hello.heyy__sad__contained	Heyy	reply	hello	sound	sad lonely faint		618
 placeholder.word.talk-hello.hiya__happy__contained	Hiya	reply	hello	word	happy pleased amused affectionate		439
 placeholder.word.talk-hello.hiya__excited__contained	Hiya	reply	hello	word	excited		399
 placeholder.word.talk-hello.hiya__calm__contained	Hiya	reply	hello	word	calm		509
 placeholder.word.talk-hello.hiya__curious__contained	Hiya	reply	hello	word	curious surprised		459
-placeholder.word.talk-hello.hiya__sad__contained	Hiya	reply	hello	word	sad lonely		578
+placeholder.word.talk-hello.hiya__sad__contained	Hiya	reply	hello	word	sad lonely faint		578
 placeholder.word.talk-hello.yo__happy__contained	Yo	reply	hello	word	happy pleased amused affectionate		409
 placeholder.word.talk-hello.yo__excited__contained	Yo	reply	hello	word	excited		379
 placeholder.word.talk-hello.yo__calm__contained	Yo	reply	hello	word	calm		469
 placeholder.word.talk-hello.yo__curious__contained	Yo	reply	hello	word	curious surprised		429
-placeholder.word.talk-hello.yo__sad__contained	Yo	reply	hello	word	sad lonely		519
+placeholder.word.talk-hello.yo__sad__contained	Yo	reply	hello	word	sad lonely faint		519
 placeholder.phrase.talk-hello.hi-there__happy__contained	Hi there	reply	hello	phrase	happy pleased amused affectionate		598
 placeholder.phrase.talk-hello.hi-there__excited__contained	Hi there	reply	hello	phrase	excited		558
 placeholder.phrase.talk-hello.oh-hello__calm__contained	Oh, hello	reply	hello	phrase	calm		987
-placeholder.phrase.talk-hello.there-you-are__sad__contained	There you are	reply	hello	phrase	sad lonely		878
+placeholder.phrase.talk-hello.there-you-are__sad__contained	There you are	reply	hello	phrase	sad lonely faint		878
 placeholder.phrase.talk-hello.there-you-are__happy__contained	There you are	reply	hello	phrase	happy pleased amused affectionate		668
 placeholder.phrase.talk-hello.right-here__excited__contained	Right here	reply	hello	phrase	excited		568
 placeholder.phrase.talk-hello.right-here__calm__contained	Right here	reply	hello	phrase	calm		748
 placeholder.nonverbal.talk-bye.bye-ee__happy__contained	Bye-ee	reply	bye	sound	happy pleased amused affectionate		419
 placeholder.nonverbal.talk-bye.bye-ee__calm__contained	Bye-ee	reply	bye	sound	calm		489
-placeholder.nonverbal.talk-bye.bye-ee__sad__contained	Bye-ee	reply	bye	sound	sad lonely		548
+placeholder.nonverbal.talk-bye.bye-ee__sad__contained	Bye-ee	reply	bye	sound	sad lonely faint		548
 placeholder.nonverbal.talk-bye.bye-ee__curious__contained	Bye-ee	reply	bye	sound	curious surprised		439
 placeholder.nonverbal.talk-bye.mwah__happy__contained	Mwah	reply	bye	sound	happy pleased amused affectionate		489
 placeholder.nonverbal.talk-bye.mwah__calm__contained	Mwah	reply	bye	sound	calm		588
-placeholder.nonverbal.talk-bye.mwah__sad__contained	Mwah	reply	bye	sound	sad lonely		648
+placeholder.nonverbal.talk-bye.mwah__sad__contained	Mwah	reply	bye	sound	sad lonely faint		648
 placeholder.nonverbal.talk-bye.mwah__curious__contained	Mwah	reply	bye	sound	curious surprised		509
 placeholder.word.talk-bye.bye__happy__contained	Bye	reply	bye	word	happy pleased amused affectionate		359
 placeholder.word.talk-bye.bye__calm__contained	Bye	reply	bye	word	calm		419
-placeholder.word.talk-bye.bye__sad__contained	Bye	reply	bye	word	sad lonely		469
+placeholder.word.talk-bye.bye__sad__contained	Bye	reply	bye	word	sad lonely faint		469
 placeholder.word.talk-bye.bye__curious__contained	Bye	reply	bye	word	curious surprised		369
 placeholder.word.talk-bye.later__happy__contained	Later	reply	bye	word	happy pleased amused affectionate		479
 placeholder.word.talk-bye.later__calm__contained	Later	reply	bye	word	calm		548
-placeholder.word.talk-bye.later__sad__contained	Later	reply	bye	word	sad lonely		628
+placeholder.word.talk-bye.later__sad__contained	Later	reply	bye	word	sad lonely faint		628
 placeholder.word.talk-bye.later__curious__contained	Later	reply	bye	word	curious surprised		499
 placeholder.word.talk-bye.night__happy__contained	Night	reply	bye	word	happy pleased amused affectionate		379
 placeholder.word.talk-bye.night__calm__contained	Night	reply	bye	word	calm		429
-placeholder.word.talk-bye.night__sad__contained	Night	reply	bye	word	sad lonely		469
+placeholder.word.talk-bye.night__sad__contained	Night	reply	bye	word	sad lonely faint		469
 placeholder.word.talk-bye.night__curious__contained	Night	reply	bye	word	curious surprised		399
 placeholder.word.talk-bye.ciao__happy__contained	Ciao	reply	bye	word	happy pleased amused affectionate		419
 placeholder.word.talk-bye.ciao__calm__contained	Ciao	reply	bye	word	calm		489
-placeholder.word.talk-bye.ciao__sad__contained	Ciao	reply	bye	word	sad lonely		528
+placeholder.word.talk-bye.ciao__sad__contained	Ciao	reply	bye	word	sad lonely faint		528
 placeholder.word.talk-bye.ciao__curious__contained	Ciao	reply	bye	word	curious surprised		439
 placeholder.phrase.talk-bye.see-you__happy__contained	See you	reply	bye	phrase	happy pleased amused affectionate		479
 placeholder.phrase.talk-bye.see-you__calm__contained	See you	reply	bye	phrase	calm		578
-placeholder.phrase.talk-bye.night-night__sad__contained	Night night	reply	bye	phrase	sad lonely		808
+placeholder.phrase.talk-bye.night-night__sad__contained	Night night	reply	bye	phrase	sad lonely faint		808
 placeholder.phrase.talk-bye.night-night__curious__contained	Night night	reply	bye	phrase	curious surprised		618
 placeholder.phrase.talk-bye.bye-bye__happy__contained	Bye bye	reply	bye	phrase	happy pleased amused affectionate		519
 placeholder.phrase.talk-bye.bye-bye__calm__contained	Bye bye	reply	bye	phrase	calm		618
-placeholder.phrase.talk-bye.come-back-soon__sad__contained	Come back soon	reply	bye	phrase	sad lonely		1117
+placeholder.phrase.talk-bye.come-back-soon__sad__contained	Come back soon	reply	bye	phrase	sad lonely faint		1117
 placeholder.phrase.talk-bye.come-back-soon__curious__contained	Come back soon	reply	bye	phrase	curious surprised		878
-placeholder.nonverbal.talk-thanks.hehe__proud__contained	Hehe	reply	thanks	sound	proud mischievous		608
+placeholder.nonverbal.talk-thanks.hehe__proud__contained	Hehe	reply	thanks	sound	proud mischievous smug		608
 placeholder.nonverbal.talk-thanks.hehe__happy__contained	Hehe	reply	thanks	sound	happy pleased amused affectionate		568
 placeholder.nonverbal.talk-thanks.hehe__excited__contained	Hehe	reply	thanks	sound	excited		519
-placeholder.nonverbal.talk-thanks.aww__proud__contained	Aww	reply	thanks	sound	proud mischievous		499
+placeholder.nonverbal.talk-thanks.aww__proud__contained	Aww	reply	thanks	sound	proud mischievous smug		499
 placeholder.nonverbal.talk-thanks.aww__happy__contained	Aww	reply	thanks	sound	happy pleased amused affectionate		459
 placeholder.nonverbal.talk-thanks.aww__excited__contained	Aww	reply	thanks	sound	excited		419
-placeholder.word.talk-thanks.thanks__proud__contained	Thanks	reply	thanks	word	proud mischievous		519
+placeholder.word.talk-thanks.thanks__proud__contained	Thanks	reply	thanks	word	proud mischievous smug		519
 placeholder.word.talk-thanks.thanks__happy__contained	Thanks	reply	thanks	word	happy pleased amused affectionate		479
 placeholder.word.talk-thanks.thanks__excited__contained	Thanks	reply	thanks	word	excited		439
-placeholder.word.talk-thanks.woo__proud__contained	Woo	reply	thanks	word	proud mischievous		389
+placeholder.word.talk-thanks.woo__proud__contained	Woo	reply	thanks	word	proud mischievous smug		389
 placeholder.word.talk-thanks.woo__happy__contained	Woo	reply	thanks	word	happy pleased amused affectionate		379
 placeholder.word.talk-thanks.woo__excited__contained	Woo	reply	thanks	word	excited		349
-placeholder.phrase.talk-thanks.aw-shucks__proud__contained	Aw, shucks	reply	thanks	phrase	proud mischievous		858
+placeholder.phrase.talk-thanks.aw-shucks__proud__contained	Aw, shucks	reply	thanks	phrase	proud mischievous smug		858
 placeholder.phrase.talk-thanks.aw-shucks__happy__contained	Aw, shucks	reply	thanks	phrase	happy pleased amused affectionate		778
 placeholder.phrase.talk-thanks.anytime__excited__contained	Anytime	reply	thanks	phrase	excited		528
-placeholder.phrase.talk-thanks.anytime__proud__contained	Anytime	reply	thanks	phrase	proud mischievous		628
+placeholder.phrase.talk-thanks.anytime__proud__contained	Anytime	reply	thanks	phrase	proud mischievous smug		628
 placeholder.phrase.talk-thanks.team-effort__happy__contained	Team effort	reply	thanks	phrase	happy pleased amused affectionate		638
 placeholder.phrase.talk-thanks.team-effort__excited__contained	Team effort	reply	thanks	phrase	excited		578
-placeholder.phrase.talk-thanks.we-rock__proud__contained	We rock	reply	thanks	phrase	proud mischievous		479
+placeholder.phrase.talk-thanks.we-rock__proud__contained	We rock	reply	thanks	phrase	proud mischievous smug		479
 placeholder.phrase.talk-thanks.we-rock__happy__contained	We rock	reply	thanks	phrase	happy pleased amused affectionate		469
 placeholder.nonverbal.talk-love.aww__happy__contained	Aww	reply	thanks	sound	happy pleased amused affectionate		459
 placeholder.nonverbal.talk-love.aww__excited__contained	Aww	reply	thanks	sound	excited		419
-placeholder.nonverbal.talk-love.aww__proud__contained	Aww	reply	thanks	sound	proud mischievous		499
-placeholder.nonverbal.talk-love.aww__sad__contained	Aww	reply	thanks	sound	sad lonely		598
+placeholder.nonverbal.talk-love.aww__proud__contained	Aww	reply	thanks	sound	proud mischievous smug		499
+placeholder.nonverbal.talk-love.aww__sad__contained	Aww	reply	thanks	sound	sad lonely faint		598
 placeholder.nonverbal.talk-love.mmm__happy__contained	Mmm	reply	thanks	sound	happy pleased amused affectionate		678
 placeholder.nonverbal.talk-love.mmm__excited__contained	Mmm	reply	thanks	sound	excited		658
-placeholder.nonverbal.talk-love.mmm__proud__contained	Mmm	reply	thanks	sound	proud mischievous		718
-placeholder.nonverbal.talk-love.mmm__sad__contained	Mmm	reply	thanks	sound	sad lonely		868
+placeholder.nonverbal.talk-love.mmm__proud__contained	Mmm	reply	thanks	sound	proud mischievous smug		718
+placeholder.nonverbal.talk-love.mmm__sad__contained	Mmm	reply	thanks	sound	sad lonely faint		868
 placeholder.word.talk-love.aww__happy__contained	Aww	reply	thanks	word	happy pleased amused affectionate		459
 placeholder.word.talk-love.aww__excited__contained	Aww	reply	thanks	word	excited		419
-placeholder.word.talk-love.aww__proud__contained	Aww	reply	thanks	word	proud mischievous		499
-placeholder.word.talk-love.aww__sad__contained	Aww	reply	thanks	word	sad lonely		598
+placeholder.word.talk-love.aww__proud__contained	Aww	reply	thanks	word	proud mischievous smug		499
+placeholder.word.talk-love.aww__sad__contained	Aww	reply	thanks	word	sad lonely faint		598
 placeholder.word.talk-love.love__happy__contained	Love	reply	thanks	word	happy pleased amused affectionate		419
 placeholder.word.talk-love.love__excited__contained	Love	reply	thanks	word	excited		379
-placeholder.word.talk-love.love__proud__contained	Love	reply	thanks	word	proud mischievous		449
-placeholder.word.talk-love.love__sad__contained	Love	reply	thanks	word	sad lonely		499
+placeholder.word.talk-love.love__proud__contained	Love	reply	thanks	word	proud mischievous smug		449
+placeholder.word.talk-love.love__sad__contained	Love	reply	thanks	word	sad lonely faint		499
 placeholder.word.talk-love.hug__happy__contained	Hug	reply	thanks	word	happy pleased amused affectionate		429
 placeholder.word.talk-love.hug__excited__contained	Hug	reply	thanks	word	excited		419
-placeholder.word.talk-love.hug__proud__contained	Hug	reply	thanks	word	proud mischievous		469
-placeholder.word.talk-love.hug__sad__contained	Hug	reply	thanks	word	sad lonely		528
+placeholder.word.talk-love.hug__proud__contained	Hug	reply	thanks	word	proud mischievous smug		469
+placeholder.word.talk-love.hug__sad__contained	Hug	reply	thanks	word	sad lonely faint		528
 placeholder.phrase.talk-love.love-you-too__happy__contained	Love you too	reply	thanks	phrase	happy pleased amused affectionate		668
 placeholder.phrase.talk-love.love-you-too__excited__contained	Love you too	reply	thanks	phrase	excited		618
-placeholder.phrase.talk-love.aww-you__proud__contained	Aww, you	reply	thanks	phrase	proud mischievous		828
-placeholder.phrase.talk-love.aww-you__sad__contained	Aww, you	reply	thanks	phrase	sad lonely		1097
+placeholder.phrase.talk-love.aww-you__proud__contained	Aww, you	reply	thanks	phrase	proud mischievous smug		828
+placeholder.phrase.talk-love.aww-you__sad__contained	Aww, you	reply	thanks	phrase	sad lonely faint		1097
 placeholder.phrase.talk-love.big-hug__happy__contained	Big hug	reply	thanks	phrase	happy pleased amused affectionate		638
 placeholder.phrase.talk-love.big-hug__excited__contained	Big hug	reply	thanks	phrase	excited		598
-placeholder.phrase.talk-love.forgiven__proud__contained	Forgiven	reply	thanks	phrase	proud mischievous		698
-placeholder.phrase.talk-love.forgiven__sad__contained	Forgiven	reply	thanks	phrase	sad lonely		828
+placeholder.phrase.talk-love.forgiven__proud__contained	Forgiven	reply	thanks	phrase	proud mischievous smug		698
+placeholder.phrase.talk-love.forgiven__sad__contained	Forgiven	reply	thanks	phrase	sad lonely faint		828
 placeholder.nonverbal.talk-ouch.ow__wounded__contained	Ow!	reply	ouch	sound	wounded		419
-placeholder.nonverbal.talk-ouch.ow__sad__contained	Ow!	reply	ouch	sound	sad lonely		419
+placeholder.nonverbal.talk-ouch.ow__sad__contained	Ow!	reply	ouch	sound	sad lonely faint		419
 placeholder.nonverbal.talk-ouch.ow__annoyed__contained	Ow!	reply	ouch	sound	annoyed		339
-placeholder.nonverbal.talk-ouch.ow__grumpy__contained	Ow!	reply	ouch	sound	grumpy angry		359
+placeholder.nonverbal.talk-ouch.ow__grumpy__contained	Ow!	reply	ouch	sound	grumpy angry silent_scream		359
 placeholder.nonverbal.talk-ouch.oof__wounded__contained	Oof	reply	ouch	sound	wounded		359
-placeholder.nonverbal.talk-ouch.oof__sad__contained	Oof	reply	ouch	sound	sad lonely		379
+placeholder.nonverbal.talk-ouch.oof__sad__contained	Oof	reply	ouch	sound	sad lonely faint		379
 placeholder.nonverbal.talk-ouch.oof__annoyed__contained	Oof	reply	ouch	sound	annoyed		309
-placeholder.nonverbal.talk-ouch.oof__grumpy__contained	Oof	reply	ouch	sound	grumpy angry		319
+placeholder.nonverbal.talk-ouch.oof__grumpy__contained	Oof	reply	ouch	sound	grumpy angry silent_scream		319
 placeholder.word.talk-ouch.rude__wounded__contained	Rude	reply	ouch	word	wounded		489
-placeholder.word.talk-ouch.rude__sad__contained	Rude	reply	ouch	word	sad lonely		489
+placeholder.word.talk-ouch.rude__sad__contained	Rude	reply	ouch	word	sad lonely faint		489
 placeholder.word.talk-ouch.rude__annoyed__contained	Rude	reply	ouch	word	annoyed		419
-placeholder.word.talk-ouch.rude__grumpy__contained	Rude	reply	ouch	word	grumpy angry		439
+placeholder.word.talk-ouch.rude__grumpy__contained	Rude	reply	ouch	word	grumpy angry silent_scream		439
 placeholder.word.talk-ouch.hey__wounded__contained	Hey!	reply	ouch	word	wounded		489
-placeholder.word.talk-ouch.hey__sad__contained	Hey!	reply	ouch	word	sad lonely		509
+placeholder.word.talk-ouch.hey__sad__contained	Hey!	reply	ouch	word	sad lonely faint		509
 placeholder.word.talk-ouch.hey__annoyed__contained	Hey!	reply	ouch	word	annoyed		419
-placeholder.word.talk-ouch.hey__grumpy__contained	Hey!	reply	ouch	word	grumpy angry		439
+placeholder.word.talk-ouch.hey__grumpy__contained	Hey!	reply	ouch	word	grumpy angry silent_scream		439
 placeholder.word.talk-ouch.mean__wounded__contained	Mean	reply	ouch	word	wounded		469
-placeholder.word.talk-ouch.mean__sad__contained	Mean	reply	ouch	word	sad lonely		489
+placeholder.word.talk-ouch.mean__sad__contained	Mean	reply	ouch	word	sad lonely faint		489
 placeholder.word.talk-ouch.mean__annoyed__contained	Mean	reply	ouch	word	annoyed		409
-placeholder.word.talk-ouch.mean__grumpy__contained	Mean	reply	ouch	word	grumpy angry		439
+placeholder.word.talk-ouch.mean__grumpy__contained	Mean	reply	ouch	word	grumpy angry silent_scream		439
 placeholder.phrase.talk-ouch.that-hurt__wounded__contained	That hurt	reply	ouch	phrase	wounded		748
-placeholder.phrase.talk-ouch.that-hurt__sad__contained	That hurt	reply	ouch	phrase	sad lonely		778
+placeholder.phrase.talk-ouch.that-hurt__sad__contained	That hurt	reply	ouch	phrase	sad lonely faint		778
 placeholder.phrase.talk-ouch.not-nice__annoyed__contained	Not nice	reply	ouch	phrase	annoyed		648
-placeholder.phrase.talk-ouch.not-nice__grumpy__contained	Not nice	reply	ouch	phrase	grumpy angry		688
+placeholder.phrase.talk-ouch.not-nice__grumpy__contained	Not nice	reply	ouch	phrase	grumpy angry silent_scream		688
 placeholder.phrase.talk-ouch.well-ouch__wounded__contained	Well, ouch	reply	ouch	phrase	wounded		1037
-placeholder.phrase.talk-ouch.well-ouch__sad__contained	Well, ouch	reply	ouch	phrase	sad lonely		1057
+placeholder.phrase.talk-ouch.well-ouch__sad__contained	Well, ouch	reply	ouch	phrase	sad lonely faint		1057
 placeholder.phrase.talk-ouch.be-nice__annoyed__contained	Be nice	reply	ouch	phrase	annoyed		519
-placeholder.phrase.talk-ouch.be-nice__grumpy__contained	Be nice	reply	ouch	phrase	grumpy angry		548
+placeholder.phrase.talk-ouch.be-nice__grumpy__contained	Be nice	reply	ouch	phrase	grumpy angry silent_scream		548
 placeholder.nonverbal.talk-comfort.aww__calm__contained	Aww	reply	comfort	sound	calm		538
 placeholder.nonverbal.talk-comfort.aww__happy__contained	Aww	reply	comfort	sound	happy pleased amused affectionate		459
 placeholder.nonverbal.talk-comfort.mm__calm__contained	Mm...	reply	comfort	sound	calm		648
 placeholder.nonverbal.talk-comfort.mm__happy__contained	Mm...	reply	comfort	sound	happy pleased amused affectionate		568
-placeholder.word.talk-comfort.there__sad__contained	There	reply	comfort	word	sad lonely		548
+placeholder.word.talk-comfort.there__sad__contained	There	reply	comfort	word	sad lonely faint		548
 placeholder.word.talk-comfort.there__calm__contained	There	reply	comfort	word	calm		499
 placeholder.word.talk-comfort.there__wounded__contained	There	reply	comfort	word	wounded		538
 placeholder.word.talk-comfort.there__happy__contained	There	reply	comfort	word	happy pleased amused affectionate		439
-placeholder.word.talk-comfort.hug__sad__contained	Hug	reply	comfort	word	sad lonely		528
+placeholder.word.talk-comfort.hug__sad__contained	Hug	reply	comfort	word	sad lonely faint		528
 placeholder.word.talk-comfort.hug__calm__contained	Hug	reply	comfort	word	calm		499
 placeholder.word.talk-comfort.hug__wounded__contained	Hug	reply	comfort	word	wounded		509
 placeholder.word.talk-comfort.hug__happy__contained	Hug	reply	comfort	word	happy pleased amused affectionate		429
-placeholder.word.talk-comfort.okay__sad__contained	Okay	reply	comfort	word	sad lonely		628
+placeholder.word.talk-comfort.okay__sad__contained	Okay	reply	comfort	word	sad lonely faint		628
 placeholder.word.talk-comfort.okay__calm__contained	Okay	reply	comfort	word	calm		558
 placeholder.word.talk-comfort.okay__wounded__contained	Okay	reply	comfort	word	wounded		618
 placeholder.word.talk-comfort.okay__happy__contained	Okay	reply	comfort	word	happy pleased amused affectionate		469
-placeholder.phrase.talk-comfort.i-m-here__sad__contained	I'm here	reply	comfort	phrase	sad lonely		748
+placeholder.phrase.talk-comfort.i-m-here__sad__contained	I'm here	reply	comfort	phrase	sad lonely faint		748
 placeholder.phrase.talk-comfort.i-m-here__calm__contained	I'm here	reply	comfort	phrase	calm		668
 placeholder.phrase.talk-comfort.it-s-okay__wounded__contained	It's okay	reply	comfort	phrase	wounded		908
 placeholder.phrase.talk-comfort.it-s-okay__happy__contained	It's okay	reply	comfort	phrase	happy pleased amused affectionate		698
-placeholder.phrase.talk-comfort.deep-breath__sad__contained	Deep breath	reply	comfort	phrase	sad lonely		728
+placeholder.phrase.talk-comfort.deep-breath__sad__contained	Deep breath	reply	comfort	phrase	sad lonely faint		728
 placeholder.phrase.talk-comfort.deep-breath__calm__contained	Deep breath	reply	comfort	phrase	calm		658
 placeholder.phrase.talk-comfort.there-there__wounded__contained	There there	reply	comfort	phrase	wounded		778
 placeholder.phrase.talk-comfort.there-there__happy__contained	There there	reply	comfort	phrase	happy pleased amused affectionate		618
 placeholder.nonverbal.talk-hehe.hehe__happy__contained	Hehe	reply	hehe	sound	happy pleased amused affectionate		568
 placeholder.nonverbal.talk-hehe.hehe__excited__contained	Hehe	reply	hehe	sound	excited		519
-placeholder.nonverbal.talk-hehe.hehe__proud__contained	Hehe	reply	hehe	sound	proud mischievous		608
+placeholder.nonverbal.talk-hehe.hehe__proud__contained	Hehe	reply	hehe	sound	proud mischievous smug		608
 placeholder.word.talk-hehe.haha__happy__contained	Haha	reply	hehe	word	happy pleased amused affectionate		538
 placeholder.word.talk-hehe.haha__excited__contained	Haha	reply	hehe	word	excited		509
-placeholder.word.talk-hehe.haha__proud__contained	Haha	reply	hehe	word	proud mischievous		578
+placeholder.word.talk-hehe.haha__proud__contained	Haha	reply	hehe	word	proud mischievous smug		578
 placeholder.word.talk-hehe.silly__happy__contained	Silly	reply	hehe	word	happy pleased amused affectionate		439
 placeholder.word.talk-hehe.silly__excited__contained	Silly	reply	hehe	word	excited		409
-placeholder.word.talk-hehe.silly__proud__contained	Silly	reply	hehe	word	proud mischievous		469
+placeholder.word.talk-hehe.silly__proud__contained	Silly	reply	hehe	word	proud mischievous smug		469
 placeholder.word.talk-hehe.lol__happy__contained	Lol	reply	hehe	word	happy pleased amused affectionate		409
 placeholder.word.talk-hehe.lol__excited__contained	Lol	reply	hehe	word	excited		389
-placeholder.word.talk-hehe.lol__proud__contained	Lol	reply	hehe	word	proud mischievous		429
+placeholder.word.talk-hehe.lol__proud__contained	Lol	reply	hehe	word	proud mischievous smug		429
 placeholder.phrase.talk-hehe.good-one__happy__contained	Good one	reply	hehe	phrase	happy pleased amused affectionate		528
 placeholder.phrase.talk-hehe.good-one__excited__contained	Good one	reply	hehe	phrase	excited		499
-placeholder.phrase.talk-hehe.you-re-funny__proud__contained	You're funny	reply	hehe	phrase	proud mischievous		678
+placeholder.phrase.talk-hehe.you-re-funny__proud__contained	You're funny	reply	hehe	phrase	proud mischievous smug		678
 placeholder.phrase.talk-hehe.you-re-funny__happy__contained	You're funny	reply	hehe	phrase	happy pleased amused affectionate		608
 placeholder.phrase.talk-hehe.stop-it__excited__contained	Stop it	reply	hehe	phrase	excited		479
-placeholder.phrase.talk-hehe.stop-it__proud__contained	Stop it	reply	hehe	phrase	proud mischievous		568
+placeholder.phrase.talk-hehe.stop-it__proud__contained	Stop it	reply	hehe	phrase	proud mischievous smug		568
 placeholder.nonverbal.talk-status.hmm__engaged__contained	Hmm	reply	status	sound	focused		399
 placeholder.nonverbal.talk-status.hmm__calm__contained	Hmm	reply	status	sound	calm		429
 placeholder.nonverbal.talk-status.hmm__curious__contained	Hmm	reply	status	sound	curious surprised		389
@@ -359,31 +359,31 @@ placeholder.phrase.talk-hush.not-a-peep__annoyed__contained	Not a peep	reply	hus
 placeholder.phrase.talk-hush.not-a-peep__calm__contained	Not a peep	reply	hush	phrase	calm		718
 placeholder.phrase.talk-hush.not-a-peep__wounded__contained	Not a peep	reply	hush	phrase	wounded		778
 placeholder.nonverbal.talk-notme.hmm-mm__calm__contained	Hmm-mm	reply	no	sound	calm		808
-placeholder.nonverbal.talk-notme.hmm-mm__proud__contained	Hmm-mm	reply	no	sound	proud mischievous		748
+placeholder.nonverbal.talk-notme.hmm-mm__proud__contained	Hmm-mm	reply	no	sound	proud mischievous smug		748
 placeholder.nonverbal.talk-notme.hmm-mm__annoyed__contained	Hmm-mm	reply	no	sound	annoyed		728
 placeholder.nonverbal.talk-notme.hmm-mm__curious__contained	Hmm-mm	reply	no	sound	curious surprised		728
 placeholder.nonverbal.talk-notme.nn-nn__calm__contained	Nn-nn	reply	no	sound	calm		818
-placeholder.nonverbal.talk-notme.nn-nn__proud__contained	Nn-nn	reply	no	sound	proud mischievous		748
+placeholder.nonverbal.talk-notme.nn-nn__proud__contained	Nn-nn	reply	no	sound	proud mischievous smug		748
 placeholder.nonverbal.talk-notme.nn-nn__annoyed__contained	Nn-nn	reply	no	sound	annoyed		728
 placeholder.nonverbal.talk-notme.nn-nn__curious__contained	Nn-nn	reply	no	sound	curious surprised		718
 placeholder.word.talk-notme.nope__calm__contained	Nope	reply	no	word	calm		449
-placeholder.word.talk-notme.nope__proud__contained	Nope	reply	no	word	proud mischievous		409
+placeholder.word.talk-notme.nope__proud__contained	Nope	reply	no	word	proud mischievous smug		409
 placeholder.word.talk-notme.nope__annoyed__contained	Nope	reply	no	word	annoyed		409
 placeholder.word.talk-notme.nope__curious__contained	Nope	reply	no	word	curious surprised		399
 placeholder.word.talk-notme.mac__calm__contained	Mac	reply	no	word	calm		419
-placeholder.word.talk-notme.mac__proud__contained	Mac	reply	no	word	proud mischievous		389
+placeholder.word.talk-notme.mac__proud__contained	Mac	reply	no	word	proud mischievous smug		389
 placeholder.word.talk-notme.mac__annoyed__contained	Mac	reply	no	word	annoyed		369
 placeholder.word.talk-notme.mac__curious__contained	Mac	reply	no	word	curious surprised		369
 placeholder.word.talk-notme.them__calm__contained	Them	reply	no	word	calm		479
-placeholder.word.talk-notme.them__proud__contained	Them	reply	no	word	proud mischievous		439
+placeholder.word.talk-notme.them__proud__contained	Them	reply	no	word	proud mischievous smug		439
 placeholder.word.talk-notme.them__annoyed__contained	Them	reply	no	word	annoyed		469
 placeholder.word.talk-notme.them__curious__contained	Them	reply	no	word	curious surprised		459
 placeholder.phrase.talk-notme.not-me__calm__contained	Not me	reply	no	phrase	calm		698
-placeholder.phrase.talk-notme.not-me__proud__contained	Not me	reply	no	phrase	proud mischievous		638
+placeholder.phrase.talk-notme.not-me__proud__contained	Not me	reply	no	phrase	proud mischievous smug		638
 placeholder.phrase.talk-notme.not-me__annoyed__contained	Not me	reply	no	phrase	annoyed		668
 placeholder.phrase.talk-notme.ask-the-mac__curious__contained	Ask the Mac	reply	no	phrase	curious surprised		708
 placeholder.phrase.talk-notme.ask-the-mac__calm__contained	Ask the Mac	reply	no	phrase	calm		818
-placeholder.phrase.talk-notme.ask-the-mac__proud__contained	Ask the Mac	reply	no	phrase	proud mischievous		748
+placeholder.phrase.talk-notme.ask-the-mac__proud__contained	Ask the Mac	reply	no	phrase	proud mischievous smug		748
 placeholder.phrase.talk-notme.not-my-job__annoyed__contained	Not my job	reply	no	phrase	annoyed		838
 placeholder.phrase.talk-notme.not-my-job__curious__contained	Not my job	reply	no	phrase	curious surprised		848
 placeholder.phrase.talk-notme.not-my-job__calm__contained	Not my job	reply	no	phrase	calm		928
@@ -400,188 +400,188 @@ phase1.word.search.look__calm__contained	Look	reply	status	word	calm		748
 phase1.word.search.look__engaged__contained	Look	reply	status	word	focused		748
 phase1.word.search.look__determined__contained	Look	reply	status	word	determined		738
 phase1.word.search.look__annoyed__contained	Look	reply	status	word	annoyed		828
-phase1.word.search.look__irritated__contained	Look	reply	status	word	grumpy angry		948
-phase1.word.search.look__grumpy__contained	Look	reply	status	word	grumpy angry		868
-phase1.word.search.look__whiny__contained	Look	reply	status	word	sad lonely		1227
+phase1.word.search.look__irritated__contained	Look	reply	status	word	grumpy angry silent_scream		948
+phase1.word.search.look__grumpy__contained	Look	reply	status	word	grumpy angry silent_scream		868
+phase1.word.search.look__whiny__contained	Look	reply	status	word	sad lonely faint		1227
 phase1.word.search.look__wounded__contained	Look	reply	status	word	wounded		908
-phase1.word.search.look__sad__contained	Look	reply	status	word	sad lonely		848
+phase1.word.search.look__sad__contained	Look	reply	status	word	sad lonely faint		848
 phase1.word.search.look__happy__contained	Look	reply	status	word	happy pleased amused affectionate		778
 phase1.word.search.look__excited__contained	Look	reply	status	word	excited		838
-phase1.word.search.look__proud__contained	Look	reply	status	word	proud mischievous		1087
+phase1.word.search.look__proud__contained	Look	reply	status	word	proud mischievous smug		1087
 phase1.word.search.look__curious__contained	Look	reply	status	word	curious surprised		798
 phase1.word.search.peek__calm__contained	Peek	reply	status	word	calm		718
 phase1.word.search.peek__engaged__contained	Peek	reply	status	word	focused		718
 phase1.word.search.peek__determined__contained	Peek	reply	status	word	determined		668
 phase1.word.search.peek__annoyed__contained	Peek	reply	status	word	annoyed		858
-phase1.word.search.peek__irritated__contained	Peek	reply	status	word	grumpy angry		908
-phase1.word.search.peek__grumpy__contained	Peek	reply	status	word	grumpy angry		848
-phase1.word.search.peek__whiny__contained	Peek	reply	status	word	sad lonely		1207
+phase1.word.search.peek__irritated__contained	Peek	reply	status	word	grumpy angry silent_scream		908
+phase1.word.search.peek__grumpy__contained	Peek	reply	status	word	grumpy angry silent_scream		848
+phase1.word.search.peek__whiny__contained	Peek	reply	status	word	sad lonely faint		1207
 phase1.word.search.peek__wounded__contained	Peek	reply	status	word	wounded		878
-phase1.word.search.peek__sad__contained	Peek	reply	status	word	sad lonely		868
+phase1.word.search.peek__sad__contained	Peek	reply	status	word	sad lonely faint		868
 phase1.word.search.peek__happy__contained	Peek	reply	status	word	happy pleased amused affectionate		718
 phase1.word.search.peek__excited__contained	Peek	reply	status	word	excited		778
-phase1.word.search.peek__proud__contained	Peek	reply	status	word	proud mischievous		987
+phase1.word.search.peek__proud__contained	Peek	reply	status	word	proud mischievous smug		987
 phase1.word.search.peek__curious__contained	Peek	reply	status	word	curious surprised		718
 phase1.word.celebrate.yay__calm__contained	Yay	reply	thanks	word	calm		878
 phase1.word.celebrate.yay__engaged__contained	Yay	reply	thanks	word	focused		898
 phase1.word.celebrate.yay__determined__contained	Yay	reply	thanks	word	determined		818
 phase1.word.celebrate.yay__happy__contained	Yay	reply	thanks	word	happy pleased amused affectionate		908
 phase1.word.celebrate.yay__excited__contained	Yay	reply	thanks	word	excited		1027
-phase1.word.celebrate.yay__proud__contained	Yay	reply	thanks	word	proud mischievous		1237
+phase1.word.celebrate.yay__proud__contained	Yay	reply	thanks	word	proud mischievous smug		1237
 phase1.word.celebrate.yay__curious__contained	Yay	reply	thanks	word	curious surprised		798
 phase1.word.celebrate.nice__calm__contained	Nice	reply	thanks	word	calm		918
 phase1.word.celebrate.nice__engaged__contained	Nice	reply	thanks	word	focused		1057
 phase1.word.celebrate.nice__determined__contained	Nice	reply	thanks	word	determined		967
 phase1.word.celebrate.nice__happy__contained	Nice	reply	thanks	word	happy pleased amused affectionate		728
 phase1.word.celebrate.nice__excited__contained	Nice	reply	thanks	word	excited		758
-phase1.word.celebrate.nice__proud__contained	Nice	reply	thanks	word	proud mischievous		1416
+phase1.word.celebrate.nice__proud__contained	Nice	reply	thanks	word	proud mischievous smug		1416
 phase1.word.celebrate.nice__curious__contained	Nice	reply	thanks	word	curious surprised		838
 phase1.word.celebrate.sweet__calm__contained	Sweet	reply	thanks	word	calm		938
 phase1.word.celebrate.sweet__engaged__contained	Sweet	reply	thanks	word	focused		1047
 phase1.word.celebrate.sweet__determined__contained	Sweet	reply	thanks	word	determined		938
 phase1.word.celebrate.sweet__happy__contained	Sweet	reply	thanks	word	happy pleased amused affectionate		1027
 phase1.word.celebrate.sweet__excited__contained	Sweet	reply	thanks	word	excited		1027
-phase1.word.celebrate.sweet__proud__contained	Sweet	reply	thanks	word	proud mischievous		1307
+phase1.word.celebrate.sweet__proud__contained	Sweet	reply	thanks	word	proud mischievous smug		1307
 phase1.word.celebrate.sweet__curious__contained	Sweet	reply	thanks	word	curious surprised		1057
 phase1.word.setback.ouch__calm__contained	Ouch	reply	ouch	word	calm		928
 phase1.word.setback.ouch__engaged__contained	Ouch	reply	ouch	word	focused		838
 phase1.word.setback.ouch__determined__contained	Ouch	reply	ouch	word	determined		818
 phase1.word.setback.ouch__annoyed__contained	Ouch	reply	ouch	word	annoyed		898
-phase1.word.setback.ouch__irritated__contained	Ouch	reply	ouch	word	grumpy angry		908
-phase1.word.setback.ouch__grumpy__contained	Ouch	reply	ouch	word	grumpy angry		898
-phase1.word.setback.ouch__whiny__contained	Ouch	reply	ouch	word	sad lonely		1377
+phase1.word.setback.ouch__irritated__contained	Ouch	reply	ouch	word	grumpy angry silent_scream		908
+phase1.word.setback.ouch__grumpy__contained	Ouch	reply	ouch	word	grumpy angry silent_scream		898
+phase1.word.setback.ouch__whiny__contained	Ouch	reply	ouch	word	sad lonely faint		1377
 phase1.word.setback.ouch__wounded__contained	Ouch	reply	ouch	word	wounded		967
-phase1.word.setback.ouch__sad__contained	Ouch	reply	ouch	word	sad lonely		1047
+phase1.word.setback.ouch__sad__contained	Ouch	reply	ouch	word	sad lonely faint		1047
 phase1.word.setback.ouch__happy__contained	Ouch	reply	ouch	word	happy pleased amused affectionate		868
 phase1.word.setback.ouch__excited__contained	Ouch	reply	ouch	word	excited		908
-phase1.word.setback.ouch__proud__contained	Ouch	reply	ouch	word	proud mischievous		958
+phase1.word.setback.ouch__proud__contained	Ouch	reply	ouch	word	proud mischievous smug		958
 phase1.word.setback.ouch__curious__contained	Ouch	reply	ouch	word	curious surprised		848
 phase1.word.attention.hello__engaged__contained	Hello	reply	hello	word	focused		698
 phase1.word.attention.hello__determined__contained	Hello	reply	hello	word	determined		738
 phase1.word.attention.hello__annoyed__contained	Hello	reply	hello	word	annoyed		928
-phase1.word.attention.hello__irritated__contained	Hello	reply	hello	word	grumpy angry		1037
-phase1.word.attention.hello__grumpy__contained	Hello	reply	hello	word	grumpy angry		1037
-phase1.word.attention.hello__whiny__contained	Hello	reply	hello	word	sad lonely		1267
-phase1.word.attention.hello__sad__contained	Hello	reply	hello	word	sad lonely		908
+phase1.word.attention.hello__irritated__contained	Hello	reply	hello	word	grumpy angry silent_scream		1037
+phase1.word.attention.hello__grumpy__contained	Hello	reply	hello	word	grumpy angry silent_scream		1037
+phase1.word.attention.hello__whiny__contained	Hello	reply	hello	word	sad lonely faint		1267
+phase1.word.attention.hello__sad__contained	Hello	reply	hello	word	sad lonely faint		908
 phase1.word.attention.hello__happy__contained	Hello	reply	hello	word	happy pleased amused affectionate		748
 phase1.word.attention.hello__excited__contained	Hello	reply	hello	word	excited		788
-phase1.word.attention.hello__proud__contained	Hello	reply	hello	word	proud mischievous		1067
+phase1.word.attention.hello__proud__contained	Hello	reply	hello	word	proud mischievous smug		1067
 phase1.word.attention.hey__calm__contained	Hey	reply	hello	word	calm		718
 phase1.word.attention.hey__engaged__contained	Hey	reply	hello	word	focused		818
 phase1.word.attention.hey__determined__contained	Hey	reply	hello	word	determined		678
 phase1.word.attention.hey__annoyed__contained	Hey	reply	hello	word	annoyed		898
-phase1.word.attention.hey__irritated__contained	Hey	reply	hello	word	grumpy angry		928
-phase1.word.attention.hey__grumpy__contained	Hey	reply	hello	word	grumpy angry		918
-phase1.word.attention.hey__whiny__contained	Hey	reply	hello	word	sad lonely		1137
+phase1.word.attention.hey__irritated__contained	Hey	reply	hello	word	grumpy angry silent_scream		928
+phase1.word.attention.hey__grumpy__contained	Hey	reply	hello	word	grumpy angry silent_scream		918
+phase1.word.attention.hey__whiny__contained	Hey	reply	hello	word	sad lonely faint		1137
 phase1.word.attention.hey__wounded__contained	Hey	reply	hello	word	wounded		948
-phase1.word.attention.hey__sad__contained	Hey	reply	hello	word	sad lonely		818
+phase1.word.attention.hey__sad__contained	Hey	reply	hello	word	sad lonely faint		818
 phase1.word.attention.hey__happy__contained	Hey	reply	hello	word	happy pleased amused affectionate		758
 phase1.word.attention.hey__excited__contained	Hey	reply	hello	word	excited		818
-phase1.word.attention.hey__proud__contained	Hey	reply	hello	word	proud mischievous		1077
+phase1.word.attention.hey__proud__contained	Hey	reply	hello	word	proud mischievous smug		1077
 phase1.word.attention.hey__curious__contained	Hey	reply	hello	word	curious surprised		628
 phase1.word.poke.boop__calm__contained	Boop	reply	thanks	word	calm		568
 phase1.word.poke.boop__engaged__contained	Boop	reply	thanks	word	focused		509
 phase1.word.poke.boop__determined__contained	Boop	reply	thanks	word	determined		598
 phase1.word.poke.boop__annoyed__contained	Boop	reply	thanks	word	annoyed		618
-phase1.word.poke.boop__irritated__contained	Boop	reply	thanks	word	grumpy angry		818
-phase1.word.poke.boop__grumpy__contained	Boop	reply	thanks	word	grumpy angry		778
-phase1.word.poke.boop__whiny__contained	Boop	reply	thanks	word	sad lonely		1187
+phase1.word.poke.boop__irritated__contained	Boop	reply	thanks	word	grumpy angry silent_scream		818
+phase1.word.poke.boop__grumpy__contained	Boop	reply	thanks	word	grumpy angry silent_scream		778
+phase1.word.poke.boop__whiny__contained	Boop	reply	thanks	word	sad lonely faint		1187
 phase1.word.poke.boop__wounded__contained	Boop	reply	thanks	word	wounded		848
-phase1.word.poke.boop__sad__contained	Boop	reply	thanks	word	sad lonely		808
+phase1.word.poke.boop__sad__contained	Boop	reply	thanks	word	sad lonely faint		808
 phase1.word.poke.boop__happy__contained	Boop	reply	thanks	word	happy pleased amused affectionate		728
 phase1.word.poke.boop__excited__contained	Boop	reply	thanks	word	excited		708
-phase1.word.poke.boop__proud__contained	Boop	reply	thanks	word	proud mischievous		878
+phase1.word.poke.boop__proud__contained	Boop	reply	thanks	word	proud mischievous smug		878
 phase1.word.poke.boop__curious__contained	Boop	reply	thanks	word	curious surprised		558
 phase1.word.poke.hi__calm__contained	Hi	reply	hello	word	calm		668
 phase1.word.poke.hi__engaged__contained	Hi	reply	hello	word	focused		728
 phase1.word.poke.hi__determined__contained	Hi	reply	hello	word	determined		698
 phase1.word.poke.hi__annoyed__contained	Hi	reply	hello	word	annoyed		818
-phase1.word.poke.hi__irritated__contained	Hi	reply	hello	word	grumpy angry		928
-phase1.word.poke.hi__grumpy__contained	Hi	reply	hello	word	grumpy angry		938
-phase1.word.poke.hi__whiny__contained	Hi	reply	hello	word	sad lonely		1247
+phase1.word.poke.hi__irritated__contained	Hi	reply	hello	word	grumpy angry silent_scream		928
+phase1.word.poke.hi__grumpy__contained	Hi	reply	hello	word	grumpy angry silent_scream		938
+phase1.word.poke.hi__whiny__contained	Hi	reply	hello	word	sad lonely faint		1247
 phase1.word.poke.hi__wounded__contained	Hi	reply	hello	word	wounded		878
-phase1.word.poke.hi__sad__contained	Hi	reply	hello	word	sad lonely		698
+phase1.word.poke.hi__sad__contained	Hi	reply	hello	word	sad lonely faint		698
 phase1.word.poke.hi__happy__contained	Hi	reply	hello	word	happy pleased amused affectionate		658
 phase1.word.poke.hi__excited__contained	Hi	reply	hello	word	excited		768
-phase1.word.poke.hi__proud__contained	Hi	reply	hello	word	proud mischievous		1007
+phase1.word.poke.hi__proud__contained	Hi	reply	hello	word	proud mischievous smug		1007
 phase1.word.poke.hi__curious__contained	Hi	reply	hello	word	curious surprised		658
 phase1.word.poke.howdy__calm__contained	Howdy	reply	hello	word	calm		658
 phase1.word.poke.howdy__engaged__contained	Howdy	reply	hello	word	focused		828
 phase1.word.poke.howdy__determined__contained	Howdy	reply	hello	word	determined		658
 phase1.word.poke.howdy__annoyed__contained	Howdy	reply	hello	word	annoyed		908
-phase1.word.poke.howdy__irritated__contained	Howdy	reply	hello	word	grumpy angry		1087
-phase1.word.poke.howdy__grumpy__contained	Howdy	reply	hello	word	grumpy angry		1117
-phase1.word.poke.howdy__whiny__contained	Howdy	reply	hello	word	sad lonely		1327
+phase1.word.poke.howdy__irritated__contained	Howdy	reply	hello	word	grumpy angry silent_scream		1087
+phase1.word.poke.howdy__grumpy__contained	Howdy	reply	hello	word	grumpy angry silent_scream		1117
+phase1.word.poke.howdy__whiny__contained	Howdy	reply	hello	word	sad lonely faint		1327
 phase1.word.poke.howdy__wounded__contained	Howdy	reply	hello	word	wounded		977
-phase1.word.poke.howdy__sad__contained	Howdy	reply	hello	word	sad lonely		868
+phase1.word.poke.howdy__sad__contained	Howdy	reply	hello	word	sad lonely faint		868
 phase1.word.poke.howdy__happy__contained	Howdy	reply	hello	word	happy pleased amused affectionate		718
 phase1.word.poke.howdy__excited__contained	Howdy	reply	hello	word	excited		768
-phase1.word.poke.howdy__proud__contained	Howdy	reply	hello	word	proud mischievous		1037
+phase1.word.poke.howdy__proud__contained	Howdy	reply	hello	word	proud mischievous smug		1037
 phase1.word.poke.howdy__curious__contained	Howdy	reply	hello	word	curious surprised		668
 phase1.word.poke.tickles__calm__contained	Tickles	reply	hehe	word	calm		918
 phase1.word.poke.tickles__engaged__contained	Tickles	reply	hehe	word	focused		918
 phase1.word.poke.tickles__determined__contained	Tickles	reply	hehe	word	determined		948
 phase1.word.poke.tickles__annoyed__contained	Tickles	reply	hehe	word	annoyed		1047
-phase1.word.poke.tickles__irritated__contained	Tickles	reply	hehe	word	grumpy angry		1057
-phase1.word.poke.tickles__grumpy__contained	Tickles	reply	hehe	word	grumpy angry		1027
-phase1.word.poke.tickles__whiny__contained	Tickles	reply	hehe	word	sad lonely		1317
+phase1.word.poke.tickles__irritated__contained	Tickles	reply	hehe	word	grumpy angry silent_scream		1057
+phase1.word.poke.tickles__grumpy__contained	Tickles	reply	hehe	word	grumpy angry silent_scream		1027
+phase1.word.poke.tickles__whiny__contained	Tickles	reply	hehe	word	sad lonely faint		1317
 phase1.word.poke.tickles__wounded__contained	Tickles	reply	hehe	word	wounded		1037
-phase1.word.poke.tickles__sad__contained	Tickles	reply	hehe	word	sad lonely		1017
+phase1.word.poke.tickles__sad__contained	Tickles	reply	hehe	word	sad lonely faint		1017
 phase1.word.poke.tickles__happy__contained	Tickles	reply	hehe	word	happy pleased amused affectionate		858
 phase1.word.poke.tickles__excited__contained	Tickles	reply	hehe	word	excited		967
-phase1.word.poke.tickles__proud__contained	Tickles	reply	hehe	word	proud mischievous		1167
+phase1.word.poke.tickles__proud__contained	Tickles	reply	hehe	word	proud mischievous smug		1167
 phase1.word.poke.tickles__curious__contained	Tickles	reply	hehe	word	curious surprised		938
 phase1.word.poke.yep__calm__contained	Yep	reply	yes	word	calm		668
 phase1.word.poke.yep__engaged__contained	Yep	reply	yes	word	focused		678
 phase1.word.poke.yep__determined__contained	Yep	reply	yes	word	determined		658
 phase1.word.poke.yep__annoyed__contained	Yep	reply	yes	word	annoyed		778
-phase1.word.poke.yep__irritated__contained	Yep	reply	yes	word	grumpy angry		738
-phase1.word.poke.yep__grumpy__contained	Yep	reply	yes	word	grumpy angry		778
-phase1.word.poke.yep__whiny__contained	Yep	reply	yes	word	sad lonely		1227
+phase1.word.poke.yep__irritated__contained	Yep	reply	yes	word	grumpy angry silent_scream		738
+phase1.word.poke.yep__grumpy__contained	Yep	reply	yes	word	grumpy angry silent_scream		778
+phase1.word.poke.yep__whiny__contained	Yep	reply	yes	word	sad lonely faint		1227
 phase1.word.poke.yep__wounded__contained	Yep	reply	yes	word	wounded		828
-phase1.word.poke.yep__sad__contained	Yep	reply	yes	word	sad lonely		798
+phase1.word.poke.yep__sad__contained	Yep	reply	yes	word	sad lonely faint		798
 phase1.word.poke.yep__happy__contained	Yep	reply	yes	word	happy pleased amused affectionate		678
 phase1.word.poke.yep__excited__contained	Yep	reply	yes	word	excited		698
-phase1.word.poke.yep__proud__contained	Yep	reply	yes	word	proud mischievous		1905
+phase1.word.poke.yep__proud__contained	Yep	reply	yes	word	proud mischievous smug		1905
 phase1.word.poke.yep__curious__contained	Yep	reply	yes	word	curious surprised		628
 phase1.word.idle.quiet__calm__contained	Quiet	reply	hush	word	calm		958
 phase1.word.idle.quiet__engaged__contained	Quiet	reply	hush	word	focused		967
 phase1.word.idle.quiet__determined__contained	Quiet	reply	hush	word	determined		878
 phase1.word.idle.quiet__annoyed__contained	Quiet	reply	hush	word	annoyed		997
-phase1.word.idle.quiet__irritated__contained	Quiet	reply	hush	word	grumpy angry		958
-phase1.word.idle.quiet__grumpy__contained	Quiet	reply	hush	word	grumpy angry		977
-phase1.word.idle.quiet__whiny__contained	Quiet	reply	hush	word	sad lonely		1466
+phase1.word.idle.quiet__irritated__contained	Quiet	reply	hush	word	grumpy angry silent_scream		958
+phase1.word.idle.quiet__grumpy__contained	Quiet	reply	hush	word	grumpy angry silent_scream		977
+phase1.word.idle.quiet__whiny__contained	Quiet	reply	hush	word	sad lonely faint		1466
 phase1.word.idle.quiet__wounded__contained	Quiet	reply	hush	word	wounded		1017
-phase1.word.idle.quiet__sad__contained	Quiet	reply	hush	word	sad lonely		1037
+phase1.word.idle.quiet__sad__contained	Quiet	reply	hush	word	sad lonely faint		1037
 phase1.word.idle.quiet__happy__contained	Quiet	reply	hush	word	happy pleased amused affectionate		1027
 phase1.word.idle.quiet__excited__contained	Quiet	reply	hush	word	excited		928
-phase1.word.idle.quiet__proud__contained	Quiet	reply	hush	word	proud mischievous		1257
+phase1.word.idle.quiet__proud__contained	Quiet	reply	hush	word	proud mischievous smug		1257
 phase1.word.idle.quiet__curious__contained	Quiet	reply	hush	word	curious surprised		977
 phase1.word.idle.hullo__calm__contained	Hullo	reply	hello	word	calm		708
 phase1.word.idle.hullo__engaged__contained	Hullo	reply	hello	word	focused		758
 phase1.word.idle.hullo__determined__contained	Hullo	reply	hello	word	determined		728
 phase1.word.idle.hullo__annoyed__contained	Hullo	reply	hello	word	annoyed		948
-phase1.word.idle.hullo__irritated__contained	Hullo	reply	hello	word	grumpy angry		1147
-phase1.word.idle.hullo__grumpy__contained	Hullo	reply	hello	word	grumpy angry		1157
-phase1.word.idle.hullo__whiny__contained	Hullo	reply	hello	word	sad lonely		1377
+phase1.word.idle.hullo__irritated__contained	Hullo	reply	hello	word	grumpy angry silent_scream		1147
+phase1.word.idle.hullo__grumpy__contained	Hullo	reply	hello	word	grumpy angry silent_scream		1157
+phase1.word.idle.hullo__whiny__contained	Hullo	reply	hello	word	sad lonely faint		1377
 phase1.word.idle.hullo__wounded__contained	Hullo	reply	hello	word	wounded		1007
-phase1.word.idle.hullo__sad__contained	Hullo	reply	hello	word	sad lonely		928
+phase1.word.idle.hullo__sad__contained	Hullo	reply	hello	word	sad lonely faint		928
 phase1.word.idle.hullo__happy__contained	Hullo	reply	hello	word	happy pleased amused affectionate		758
 phase1.word.idle.hullo__excited__contained	Hullo	reply	hello	word	excited		828
-phase1.word.idle.hullo__proud__contained	Hullo	reply	hello	word	proud mischievous		1217
+phase1.word.idle.hullo__proud__contained	Hullo	reply	hello	word	proud mischievous smug		1217
 phase1.word.idle.hullo__curious__contained	Hullo	reply	hello	word	curious surprised		738
 phase1.word.idle.peace__calm__contained	Peace	reply	bye	word	calm		878
 phase1.word.idle.peace__engaged__contained	Peace	reply	bye	word	focused		948
 phase1.word.idle.peace__determined__contained	Peace	reply	bye	word	determined		778
 phase1.word.idle.peace__annoyed__contained	Peace	reply	bye	word	annoyed		958
-phase1.word.idle.peace__irritated__contained	Peace	reply	bye	word	grumpy angry		977
-phase1.word.idle.peace__grumpy__contained	Peace	reply	bye	word	grumpy angry		948
-phase1.word.idle.peace__whiny__contained	Peace	reply	bye	word	sad lonely		1287
+phase1.word.idle.peace__irritated__contained	Peace	reply	bye	word	grumpy angry silent_scream		977
+phase1.word.idle.peace__grumpy__contained	Peace	reply	bye	word	grumpy angry silent_scream		948
+phase1.word.idle.peace__whiny__contained	Peace	reply	bye	word	sad lonely faint		1287
 phase1.word.idle.peace__wounded__contained	Peace	reply	bye	word	wounded		958
-phase1.word.idle.peace__sad__contained	Peace	reply	bye	word	sad lonely		918
+phase1.word.idle.peace__sad__contained	Peace	reply	bye	word	sad lonely faint		918
 phase1.word.idle.peace__happy__contained	Peace	reply	bye	word	happy pleased amused affectionate		898
 phase1.word.idle.peace__excited__contained	Peace	reply	bye	word	excited		768
-phase1.word.idle.peace__proud__contained	Peace	reply	bye	word	proud mischievous		1197
+phase1.word.idle.peace__proud__contained	Peace	reply	bye	word	proud mischievous smug		1197
 phase1.word.idle.peace__curious__contained	Peace	reply	bye	word	curious surprised		908
 phase1.phrase.plan.hmm-perhaps__curious__contained	Hmm, perhaps	reply	dunno	phrase	curious surprised		1536
 phase1.phrase.analyze.what-what__curious__contained	What, what?	reply	huh	phrase	curious surprised		1167
@@ -593,16 +593,16 @@ phase1.phrase.success.got-it__happy__contained	Got it	reply	yes	phrase	happy ple
 phase1.phrase.success.nice-one__happy__contained	Nice one	reply	thanks	phrase	happy pleased amused affectionate		1117
 phase1.phrase.success.good-stuff__happy__contained	Good stuff	reply	thanks	phrase	happy pleased amused affectionate		1097
 phase1.phrase.celebrate.happy-circuits__excited__contained	Happy circuits	reply	thanks	phrase	excited		1317
-phase1.phrase.pride.no-biggie__proud__contained	No biggie	reply	thanks	phrase	proud mischievous		1257
-phase1.phrase.pride.naturally-naturally__proud__contained	Naturally, naturally	reply	yes	phrase	proud mischievous		2614
-phase1.phrase.pride.heh-obviously__proud__contained	Heh, obviously	reply	thanks	phrase	proud mischievous		1865
-phase1.phrase.setback.oh-dear__sad__contained	Oh dear	reply	comfort	phrase	sad lonely		1287
-phase1.phrase.setback.not-quite__sad__contained	Not quite	reply	no	phrase	sad lonely		1247
-phase1.phrase.frustration.why-though__whiny__contained	Why though	reply	ouch	phrase	sad lonely		1586
+phase1.phrase.pride.no-biggie__proud__contained	No biggie	reply	thanks	phrase	proud mischievous smug		1257
+phase1.phrase.pride.naturally-naturally__proud__contained	Naturally, naturally	reply	yes	phrase	proud mischievous smug		2614
+phase1.phrase.pride.heh-obviously__proud__contained	Heh, obviously	reply	thanks	phrase	proud mischievous smug		1865
+phase1.phrase.setback.oh-dear__sad__contained	Oh dear	reply	comfort	phrase	sad lonely faint		1287
+phase1.phrase.setback.not-quite__sad__contained	Not quite	reply	no	phrase	sad lonely faint		1247
+phase1.phrase.frustration.why-though__whiny__contained	Why though	reply	ouch	phrase	sad lonely faint		1586
 phase1.phrase.attention.hello-hello__curious__contained	Hello hello	reply	hello	phrase	curious surprised		1177
-phase1.phrase.return.tiny-report__proud__contained	Tiny report	reply	status	phrase	proud mischievous		1656
-phase1.phrase.return.at-your-service__proud__contained	At your service	reply	yes	phrase	proud mischievous		1436
-phase1.phrase.return.mission-update__proud__contained	Mission update	reply	status	phrase	proud mischievous		1696
+phase1.phrase.return.tiny-report__proud__contained	Tiny report	reply	status	phrase	proud mischievous smug		1656
+phase1.phrase.return.at-your-service__proud__contained	At your service	reply	yes	phrase	proud mischievous smug		1436
+phase1.phrase.return.mission-update__proud__contained	Mission update	reply	status	phrase	proud mischievous smug		1696
 phase1.phrase.poke.boop-back__happy__contained	Boop back	reply	thanks	phrase	happy pleased amused affectionate		1087
 phase1.phrase.poke.oh-hello__curious__contained	Oh, hello	reply	hello	phrase	curious surprised		1377
 phase1.phrase.poke.easy-there__calm__contained	Easy there	reply	no	phrase	calm		1197
@@ -631,78 +631,78 @@ phase1.nonverbal.ponder.huh__engaged__contained	Huh?	reply	huh	sound	focused		68
 phase1.nonverbal.ponder.huh__calm__contained	Huh?	reply	huh	sound	calm		558
 phase1.nonverbal.ponder.huh__determined__contained	Huh?	reply	huh	sound	determined		618
 phase1.nonverbal.frustration.pfft__annoyed__contained	Pfft	reply	no	sound	annoyed		658
-phase1.nonverbal.frustration.pfft__irritated__contained	Pfft	reply	no	sound	grumpy angry		519
-phase1.nonverbal.frustration.pfft__grumpy__contained	Pfft	reply	no	sound	grumpy angry		598
-phase1.nonverbal.frustration.pfft__whiny__contained	Pfft	reply	no	sound	sad lonely		928
+phase1.nonverbal.frustration.pfft__irritated__contained	Pfft	reply	no	sound	grumpy angry silent_scream		519
+phase1.nonverbal.frustration.pfft__grumpy__contained	Pfft	reply	no	sound	grumpy angry silent_scream		598
+phase1.nonverbal.frustration.pfft__whiny__contained	Pfft	reply	no	sound	sad lonely faint		928
 phase1.nonverbal.frustration.pfft__wounded__contained	Pfft	reply	no	sound	wounded		1297
-phase1.nonverbal.frustration.pfft__sad__contained	Pfft	reply	no	sound	sad lonely		808
+phase1.nonverbal.frustration.pfft__sad__contained	Pfft	reply	no	sound	sad lonely faint		808
 phase1.nonverbal.frustration.tsk__annoyed__contained	Tsk...	reply	no	sound	annoyed		548
-phase1.nonverbal.frustration.tsk__irritated__contained	Tsk...	reply	no	sound	grumpy angry		509
-phase1.nonverbal.frustration.tsk__grumpy__contained	Tsk...	reply	no	sound	grumpy angry		558
-phase1.nonverbal.frustration.tsk__whiny__contained	Tsk...	reply	no	sound	sad lonely		828
+phase1.nonverbal.frustration.tsk__irritated__contained	Tsk...	reply	no	sound	grumpy angry silent_scream		509
+phase1.nonverbal.frustration.tsk__grumpy__contained	Tsk...	reply	no	sound	grumpy angry silent_scream		558
+phase1.nonverbal.frustration.tsk__whiny__contained	Tsk...	reply	no	sound	sad lonely faint		828
 phase1.nonverbal.frustration.tsk__wounded__contained	Tsk...	reply	no	sound	wounded		618
-phase1.nonverbal.frustration.tsk__sad__contained	Tsk...	reply	no	sound	sad lonely		628
+phase1.nonverbal.frustration.tsk__sad__contained	Tsk...	reply	no	sound	sad lonely faint		628
 phase1.nonverbal.frustration.hmph__annoyed__contained	Hmph	reply	no	sound	annoyed		1486
 phase1.nonverbal.frustration.hmph__annoyed__contained	Hmph	reply	hush	sound	annoyed		1486
-phase1.nonverbal.frustration.hmph__irritated__contained	Hmph	reply	no	sound	grumpy angry		568
-phase1.nonverbal.frustration.hmph__irritated__contained	Hmph	reply	hush	sound	grumpy angry		568
-phase1.nonverbal.frustration.hmph__grumpy__contained	Hmph	reply	no	sound	grumpy angry		668
-phase1.nonverbal.frustration.hmph__grumpy__contained	Hmph	reply	hush	sound	grumpy angry		668
-phase1.nonverbal.frustration.hmph__whiny__contained	Hmph	reply	no	sound	sad lonely		1007
-phase1.nonverbal.frustration.hmph__whiny__contained	Hmph	reply	hush	sound	sad lonely		1007
+phase1.nonverbal.frustration.hmph__irritated__contained	Hmph	reply	no	sound	grumpy angry silent_scream		568
+phase1.nonverbal.frustration.hmph__irritated__contained	Hmph	reply	hush	sound	grumpy angry silent_scream		568
+phase1.nonverbal.frustration.hmph__grumpy__contained	Hmph	reply	no	sound	grumpy angry silent_scream		668
+phase1.nonverbal.frustration.hmph__grumpy__contained	Hmph	reply	hush	sound	grumpy angry silent_scream		668
+phase1.nonverbal.frustration.hmph__whiny__contained	Hmph	reply	no	sound	sad lonely faint		1007
+phase1.nonverbal.frustration.hmph__whiny__contained	Hmph	reply	hush	sound	sad lonely faint		1007
 phase1.nonverbal.frustration.hmph__wounded__contained	Hmph	reply	no	sound	wounded		728
 phase1.nonverbal.frustration.hmph__wounded__contained	Hmph	reply	hush	sound	wounded		728
-phase1.nonverbal.frustration.hmph__sad__contained	Hmph	reply	no	sound	sad lonely		469
-phase1.nonverbal.frustration.hmph__sad__contained	Hmph	reply	hush	sound	sad lonely		469
+phase1.nonverbal.frustration.hmph__sad__contained	Hmph	reply	no	sound	sad lonely faint		469
+phase1.nonverbal.frustration.hmph__sad__contained	Hmph	reply	hush	sound	sad lonely faint		469
 phase1.nonverbal.delight.heh__calm__contained	Heh...	reply	hehe	sound	calm		538
 phase1.nonverbal.delight.heh__engaged__contained	Heh...	reply	hehe	sound	focused		628
 phase1.nonverbal.delight.heh__determined__contained	Heh...	reply	hehe	sound	determined		578
 phase1.nonverbal.delight.heh__happy__contained	Heh...	reply	hehe	sound	happy pleased amused affectionate		638
 phase1.nonverbal.delight.heh__excited__contained	Heh...	reply	hehe	sound	excited		608
-phase1.nonverbal.delight.heh__proud__contained	Heh...	reply	hehe	sound	proud mischievous		1416
+phase1.nonverbal.delight.heh__proud__contained	Heh...	reply	hehe	sound	proud mischievous smug		1416
 phase1.nonverbal.delight.heh__curious__contained	Heh...	reply	hehe	sound	curious surprised		718
 phase1.nonverbal.delight.hehehe__calm__contained	Hehehe...	reply	hehe	sound	calm		1087
 phase1.nonverbal.delight.hehehe__engaged__contained	Hehehe...	reply	hehe	sound	focused		1257
 phase1.nonverbal.delight.hehehe__determined__contained	Hehehe...	reply	hehe	sound	determined		1137
 phase1.nonverbal.delight.hehehe__happy__contained	Hehehe...	reply	hehe	sound	happy pleased amused affectionate		1067
 phase1.nonverbal.delight.hehehe__excited__contained	Hehehe...	reply	hehe	sound	excited		1157
-phase1.nonverbal.delight.hehehe__proud__contained	Hehehe...	reply	hehe	sound	proud mischievous		1456
+phase1.nonverbal.delight.hehehe__proud__contained	Hehehe...	reply	hehe	sound	proud mischievous smug		1456
 phase1.nonverbal.delight.hehehe__curious__contained	Hehehe...	reply	hehe	sound	curious surprised		938
 phase1.nonverbal.delight.ha__calm__contained	Ha!	reply	hehe	sound	calm		618
 phase1.nonverbal.delight.ha__engaged__contained	Ha!	reply	hehe	sound	focused		558
 phase1.nonverbal.delight.ha__determined__contained	Ha!	reply	hehe	sound	determined		598
 phase1.nonverbal.delight.ha__happy__contained	Ha!	reply	hehe	sound	happy pleased amused affectionate		698
 phase1.nonverbal.delight.ha__excited__contained	Ha!	reply	hehe	sound	excited		708
-phase1.nonverbal.delight.ha__proud__contained	Ha!	reply	hehe	sound	proud mischievous		658
+phase1.nonverbal.delight.ha__proud__contained	Ha!	reply	hehe	sound	proud mischievous smug		658
 phase1.nonverbal.delight.ha__curious__contained	Ha!	reply	hehe	sound	curious surprised		882
 phase1.nonverbal.delight.mm-hm__calm__contained	Mm-hm	reply	yes	sound	calm		878
 phase1.nonverbal.delight.mm-hm__engaged__contained	Mm-hm	reply	yes	sound	focused		987
 phase1.nonverbal.delight.mm-hm__determined__contained	Mm-hm	reply	yes	sound	determined		958
 phase1.nonverbal.delight.mm-hm__happy__contained	Mm-hm	reply	yes	sound	happy pleased amused affectionate		938
 phase1.nonverbal.delight.mm-hm__excited__contained	Mm-hm	reply	yes	sound	excited		1067
-phase1.nonverbal.delight.mm-hm__proud__contained	Mm-hm	reply	yes	sound	proud mischievous		1377
+phase1.nonverbal.delight.mm-hm__proud__contained	Mm-hm	reply	yes	sound	proud mischievous smug		1377
 phase1.nonverbal.delight.mm-hm__curious__contained	Mm-hm	reply	yes	sound	curious surprised		1037
 phase1.nonverbal.delight.eep__calm__contained	Eep!	reply	thanks	sound	calm		778
 phase1.nonverbal.delight.eep__engaged__contained	Eep!	reply	thanks	sound	focused		708
 phase1.nonverbal.delight.eep__determined__contained	Eep!	reply	thanks	sound	determined		658
 phase1.nonverbal.delight.eep__happy__contained	Eep!	reply	thanks	sound	happy pleased amused affectionate		718
 phase1.nonverbal.delight.eep__excited__contained	Eep!	reply	thanks	sound	excited		718
-phase1.nonverbal.delight.eep__proud__contained	Eep!	reply	thanks	sound	proud mischievous		858
+phase1.nonverbal.delight.eep__proud__contained	Eep!	reply	thanks	sound	proud mischievous smug		858
 phase1.nonverbal.delight.eep__curious__contained	Eep!	reply	thanks	sound	curious surprised		688
-phase1.nonverbal.deflate.aww__whiny__contained	Aww...	reply	comfort	sound	sad lonely		1157
+phase1.nonverbal.deflate.aww__whiny__contained	Aww...	reply	comfort	sound	sad lonely faint		1157
 phase1.nonverbal.deflate.aww__wounded__contained	Aww...	reply	comfort	sound	wounded		987
-phase1.nonverbal.deflate.aww__sad__contained	Aww...	reply	comfort	sound	sad lonely		908
+phase1.nonverbal.deflate.aww__sad__contained	Aww...	reply	comfort	sound	sad lonely faint		908
 phase1.nonverbal.deflate.aww__annoyed__contained	Aww...	reply	comfort	sound	annoyed		967
-phase1.nonverbal.deflate.mm__whiny__contained	Mm...	reply	comfort	sound	sad lonely		1177
+phase1.nonverbal.deflate.mm__whiny__contained	Mm...	reply	comfort	sound	sad lonely faint		1177
 phase1.nonverbal.deflate.mm__wounded__contained	Mm...	reply	comfort	sound	wounded		848
-phase1.nonverbal.deflate.mm__sad__contained	Mm...	reply	comfort	sound	sad lonely		758
+phase1.nonverbal.deflate.mm__sad__contained	Mm...	reply	comfort	sound	sad lonely faint		758
 phase1.nonverbal.deflate.mm__annoyed__contained	Mm...	reply	comfort	sound	annoyed		768
 phase1.borrowed.basta__annoyed__contained	Basta	reply	no	word	annoyed		898
-phase1.borrowed.basta__irritated__contained	Basta	reply	no	word	grumpy angry		967
-phase1.borrowed.basta__grumpy__contained	Basta	reply	no	word	grumpy angry		958
-phase1.borrowed.basta__whiny__contained	Basta	reply	no	word	sad lonely		1357
+phase1.borrowed.basta__irritated__contained	Basta	reply	no	word	grumpy angry silent_scream		967
+phase1.borrowed.basta__grumpy__contained	Basta	reply	no	word	grumpy angry silent_scream		958
+phase1.borrowed.basta__whiny__contained	Basta	reply	no	word	sad lonely faint		1357
 phase1.borrowed.basta__wounded__contained	Basta	reply	no	word	wounded		987
-phase1.borrowed.basta__sad__contained	Basta	reply	no	word	sad lonely		918
+phase1.borrowed.basta__sad__contained	Basta	reply	no	word	sad lonely faint		918
 phase1.borrowed.salut__calm__contained	Salut	reply	hello	word	calm		688
 phase1.borrowed.salut__calm__contained	Salut	reply	bye	word	calm		688
 phase1.borrowed.salut__engaged__contained	Salut	reply	hello	word	focused		658
@@ -713,16 +713,16 @@ phase1.borrowed.salut__happy__contained	Salut	reply	hello	word	happy pleased amu
 phase1.borrowed.salut__happy__contained	Salut	reply	bye	word	happy pleased amused affectionate		728
 phase1.borrowed.salut__excited__contained	Salut	reply	hello	word	excited		918
 phase1.borrowed.salut__excited__contained	Salut	reply	bye	word	excited		918
-phase1.borrowed.salut__proud__contained	Salut	reply	hello	word	proud mischievous		1347
-phase1.borrowed.salut__proud__contained	Salut	reply	bye	word	proud mischievous		1347
+phase1.borrowed.salut__proud__contained	Salut	reply	hello	word	proud mischievous smug		1347
+phase1.borrowed.salut__proud__contained	Salut	reply	bye	word	proud mischievous smug		1347
 phase1.borrowed.salut__curious__contained	Salut	reply	hello	word	curious surprised		738
 phase1.borrowed.salut__curious__contained	Salut	reply	bye	word	curious surprised		738
 previous.finish	Finish	skit	win	word	happy pleased amused affectionate		987
 previous.done	Done	skit	win	word	happy pleased amused affectionate		688
-previous.shit	Shit	skit	upset	swear	grumpy angry		977
-previous.fuck	Fuck	skit	upset	swear	grumpy angry		967
-new.d03	Done	skit	win	word	proud mischievous		1007
-new.d04	Done	skit	win	word	sad lonely		758
+previous.shit	Shit	skit	upset	swear	grumpy angry silent_scream		977
+previous.fuck	Fuck	skit	upset	swear	grumpy angry silent_scream		967
+new.d03	Done	skit	win	word	proud mischievous smug		1007
+new.d04	Done	skit	win	word	sad lonely faint		758
 new.d09	Hello	skit	back	word	curious surprised		758
 new.d10	Hello	skit	back	word	calm		668
 new.d11	Hello	skit	back	word	wounded		1007
@@ -731,9 +731,9 @@ phase1.word.success.done__calm__contained	Done	skit	win	word	calm		788
 phase1.word.success.done__engaged__contained	Done	skit	win	word	focused		628
 phase1.word.success.done__determined__contained	Done	skit	win	word	determined		678
 phase1.word.success.done__annoyed__contained	Done	skit	win	word	annoyed		788
-phase1.word.success.done__irritated__contained	Done	skit	win	word	grumpy angry		848
-phase1.word.success.done__grumpy__contained	Done	skit	win	word	grumpy angry		838
-phase1.word.success.done__whiny__contained	Done	skit	win	word	sad lonely		1416
+phase1.word.success.done__irritated__contained	Done	skit	win	word	grumpy angry silent_scream		848
+phase1.word.success.done__grumpy__contained	Done	skit	win	word	grumpy angry silent_scream		838
+phase1.word.success.done__whiny__contained	Done	skit	win	word	sad lonely faint		1416
 phase1.word.success.done__wounded__contained	Done	skit	win	word	wounded		718
 phase1.word.success.done__happy__contained	Done	skit	win	word	happy pleased amused affectionate		738
 phase1.word.success.done__excited__contained	Done	skit	win	word	excited		748
@@ -742,226 +742,226 @@ phase1.word.success.finish__calm__contained	Finish	skit	win	word	calm		878
 phase1.word.success.finish__engaged__contained	Finish	skit	win	word	focused		938
 phase1.word.success.finish__determined__contained	Finish	skit	win	word	determined		848
 phase1.word.success.finish__annoyed__contained	Finish	skit	win	word	annoyed		1017
-phase1.word.success.finish__irritated__contained	Finish	skit	win	word	grumpy angry		1077
-phase1.word.success.finish__grumpy__contained	Finish	skit	win	word	grumpy angry		1017
-phase1.word.success.finish__whiny__contained	Finish	skit	win	word	sad lonely		1377
+phase1.word.success.finish__irritated__contained	Finish	skit	win	word	grumpy angry silent_scream		1077
+phase1.word.success.finish__grumpy__contained	Finish	skit	win	word	grumpy angry silent_scream		1017
+phase1.word.success.finish__whiny__contained	Finish	skit	win	word	sad lonely faint		1377
 phase1.word.success.finish__wounded__contained	Finish	skit	win	word	wounded		1087
-phase1.word.success.finish__sad__contained	Finish	skit	win	word	sad lonely		987
+phase1.word.success.finish__sad__contained	Finish	skit	win	word	sad lonely faint		987
 phase1.word.success.finish__happy__contained	Finish	skit	win	word	happy pleased amused affectionate		928
 phase1.word.success.finish__excited__contained	Finish	skit	win	word	excited		858
-phase1.word.success.finish__proud__contained	Finish	skit	win	word	proud mischievous		1267
+phase1.word.success.finish__proud__contained	Finish	skit	win	word	proud mischievous smug		1267
 phase1.word.success.finish__curious__contained	Finish	skit	win	word	curious surprised		918
 phase1.word.success.complete__calm__contained	Complete	skit	win	word	calm		908
 phase1.word.success.complete__engaged__contained	Complete	skit	win	word	focused		948
 phase1.word.success.complete__determined__contained	Complete	skit	win	word	determined		928
 phase1.word.success.complete__annoyed__contained	Complete	skit	win	word	annoyed		1047
-phase1.word.success.complete__irritated__contained	Complete	skit	win	word	grumpy angry		1087
-phase1.word.success.complete__grumpy__contained	Complete	skit	win	word	grumpy angry		1077
-phase1.word.success.complete__whiny__contained	Complete	skit	win	word	sad lonely		1516
+phase1.word.success.complete__irritated__contained	Complete	skit	win	word	grumpy angry silent_scream		1087
+phase1.word.success.complete__grumpy__contained	Complete	skit	win	word	grumpy angry silent_scream		1077
+phase1.word.success.complete__whiny__contained	Complete	skit	win	word	sad lonely faint		1516
 phase1.word.success.complete__wounded__contained	Complete	skit	win	word	wounded		1037
-phase1.word.success.complete__sad__contained	Complete	skit	win	word	sad lonely		1017
+phase1.word.success.complete__sad__contained	Complete	skit	win	word	sad lonely faint		1017
 phase1.word.success.complete__happy__contained	Complete	skit	win	word	happy pleased amused affectionate		888
 phase1.word.success.complete__excited__contained	Complete	skit	win	word	excited		977
-phase1.word.success.complete__proud__contained	Complete	skit	win	word	proud mischievous		1217
+phase1.word.success.complete__proud__contained	Complete	skit	win	word	proud mischievous smug		1217
 phase1.word.success.complete__curious__contained	Complete	skit	win	word	curious surprised		928
 phase1.word.success.finished__calm__contained	Finished	skit	win	word	calm		928
 phase1.word.success.finished__engaged__contained	Finished	skit	win	word	focused		858
 phase1.word.success.finished__determined__contained	Finished	skit	win	word	determined		878
 phase1.word.success.finished__annoyed__contained	Finished	skit	win	word	annoyed		1067
-phase1.word.success.finished__irritated__contained	Finished	skit	win	word	grumpy angry		1037
-phase1.word.success.finished__grumpy__contained	Finished	skit	win	word	grumpy angry		1097
-phase1.word.success.finished__whiny__contained	Finished	skit	win	word	sad lonely		1416
+phase1.word.success.finished__irritated__contained	Finished	skit	win	word	grumpy angry silent_scream		1037
+phase1.word.success.finished__grumpy__contained	Finished	skit	win	word	grumpy angry silent_scream		1097
+phase1.word.success.finished__whiny__contained	Finished	skit	win	word	sad lonely faint		1416
 phase1.word.success.finished__wounded__contained	Finished	skit	win	word	wounded		1676
-phase1.word.success.finished__sad__contained	Finished	skit	win	word	sad lonely		1077
+phase1.word.success.finished__sad__contained	Finished	skit	win	word	sad lonely faint		1077
 phase1.word.success.finished__happy__contained	Finished	skit	win	word	happy pleased amused affectionate		868
 phase1.word.success.finished__excited__contained	Finished	skit	win	word	excited		878
-phase1.word.success.finished__proud__contained	Finished	skit	win	word	proud mischievous		1257
+phase1.word.success.finished__proud__contained	Finished	skit	win	word	proud mischievous smug		1257
 phase1.word.success.finished__curious__contained	Finished	skit	win	word	curious surprised		728
 phase1.word.success.success__calm__contained	Success	skit	win	word	calm		987
 phase1.word.success.success__engaged__contained	Success	skit	win	word	focused		997
 phase1.word.success.success__determined__contained	Success	skit	win	word	determined		987
 phase1.word.success.success__annoyed__contained	Success	skit	win	word	annoyed		1157
-phase1.word.success.success__irritated__contained	Success	skit	win	word	grumpy angry		1277
-phase1.word.success.success__grumpy__contained	Success	skit	win	word	grumpy angry		1137
-phase1.word.success.success__whiny__contained	Success	skit	win	word	sad lonely		1307
+phase1.word.success.success__irritated__contained	Success	skit	win	word	grumpy angry silent_scream		1277
+phase1.word.success.success__grumpy__contained	Success	skit	win	word	grumpy angry silent_scream		1137
+phase1.word.success.success__whiny__contained	Success	skit	win	word	sad lonely faint		1307
 phase1.word.success.success__wounded__contained	Success	skit	win	word	wounded		1097
-phase1.word.success.success__sad__contained	Success	skit	win	word	sad lonely		1167
+phase1.word.success.success__sad__contained	Success	skit	win	word	sad lonely faint		1167
 phase1.word.success.success__happy__contained	Success	skit	win	word	happy pleased amused affectionate		878
 phase1.word.success.success__excited__contained	Success	skit	win	word	excited		828
-phase1.word.success.success__proud__contained	Success	skit	win	word	proud mischievous		1416
+phase1.word.success.success__proud__contained	Success	skit	win	word	proud mischievous smug		1416
 phase1.word.success.success__curious__contained	Success	skit	win	word	curious surprised		948
 phase1.word.success.cleared__calm__contained	Cleared	skit	fix	word	calm		838
 phase1.word.success.cleared__engaged__contained	Cleared	skit	fix	word	focused		838
 phase1.word.success.cleared__determined__contained	Cleared	skit	fix	word	determined		848
 phase1.word.success.cleared__annoyed__contained	Cleared	skit	fix	word	annoyed		987
-phase1.word.success.cleared__irritated__contained	Cleared	skit	fix	word	grumpy angry		967
-phase1.word.success.cleared__grumpy__contained	Cleared	skit	fix	word	grumpy angry		977
-phase1.word.success.cleared__whiny__contained	Cleared	skit	fix	word	sad lonely		1367
+phase1.word.success.cleared__irritated__contained	Cleared	skit	fix	word	grumpy angry silent_scream		967
+phase1.word.success.cleared__grumpy__contained	Cleared	skit	fix	word	grumpy angry silent_scream		977
+phase1.word.success.cleared__whiny__contained	Cleared	skit	fix	word	sad lonely faint		1367
 phase1.word.success.cleared__wounded__contained	Cleared	skit	fix	word	wounded		997
-phase1.word.success.cleared__sad__contained	Cleared	skit	fix	word	sad lonely		928
+phase1.word.success.cleared__sad__contained	Cleared	skit	fix	word	sad lonely faint		928
 phase1.word.success.cleared__happy__contained	Cleared	skit	fix	word	happy pleased amused affectionate		818
 phase1.word.success.cleared__excited__contained	Cleared	skit	fix	word	excited		828
-phase1.word.success.cleared__proud__contained	Cleared	skit	fix	word	proud mischievous		1277
+phase1.word.success.cleared__proud__contained	Cleared	skit	fix	word	proud mischievous smug		1277
 phase1.word.success.cleared__curious__contained	Cleared	skit	fix	word	curious surprised		868
 phase1.word.success.fixed__calm__contained	Fixed	skit	fix	word	calm		828
 phase1.word.success.fixed__engaged__contained	Fixed	skit	fix	word	focused		928
 phase1.word.success.fixed__determined__contained	Fixed	skit	fix	word	determined		828
 phase1.word.success.fixed__annoyed__contained	Fixed	skit	fix	word	annoyed		948
-phase1.word.success.fixed__irritated__contained	Fixed	skit	fix	word	grumpy angry		1077
-phase1.word.success.fixed__grumpy__contained	Fixed	skit	fix	word	grumpy angry		1027
-phase1.word.success.fixed__whiny__contained	Fixed	skit	fix	word	sad lonely		1347
+phase1.word.success.fixed__irritated__contained	Fixed	skit	fix	word	grumpy angry silent_scream		1077
+phase1.word.success.fixed__grumpy__contained	Fixed	skit	fix	word	grumpy angry silent_scream		1027
+phase1.word.success.fixed__whiny__contained	Fixed	skit	fix	word	sad lonely faint		1347
 phase1.word.success.fixed__wounded__contained	Fixed	skit	fix	word	wounded		1526
-phase1.word.success.fixed__sad__contained	Fixed	skit	fix	word	sad lonely		1067
+phase1.word.success.fixed__sad__contained	Fixed	skit	fix	word	sad lonely faint		1067
 phase1.word.success.fixed__happy__contained	Fixed	skit	fix	word	happy pleased amused affectionate		808
 phase1.word.success.fixed__excited__contained	Fixed	skit	fix	word	excited		718
-phase1.word.success.fixed__proud__contained	Fixed	skit	fix	word	proud mischievous		2045
+phase1.word.success.fixed__proud__contained	Fixed	skit	fix	word	proud mischievous smug		2045
 phase1.word.success.fixed__curious__contained	Fixed	skit	fix	word	curious surprised		798
 phase1.word.success.passed__calm__contained	Passed	skit	fix	word	calm		858
 phase1.word.success.passed__engaged__contained	Passed	skit	fix	word	focused		828
 phase1.word.success.passed__determined__contained	Passed	skit	fix	word	determined		798
 phase1.word.success.passed__annoyed__contained	Passed	skit	fix	word	annoyed		888
-phase1.word.success.passed__irritated__contained	Passed	skit	fix	word	grumpy angry		898
-phase1.word.success.passed__grumpy__contained	Passed	skit	fix	word	grumpy angry		908
-phase1.word.success.passed__whiny__contained	Passed	skit	fix	word	sad lonely		1137
+phase1.word.success.passed__irritated__contained	Passed	skit	fix	word	grumpy angry silent_scream		898
+phase1.word.success.passed__grumpy__contained	Passed	skit	fix	word	grumpy angry silent_scream		908
+phase1.word.success.passed__whiny__contained	Passed	skit	fix	word	sad lonely faint		1137
 phase1.word.success.passed__wounded__contained	Passed	skit	fix	word	wounded		977
-phase1.word.success.passed__sad__contained	Passed	skit	fix	word	sad lonely		908
+phase1.word.success.passed__sad__contained	Passed	skit	fix	word	sad lonely faint		908
 phase1.word.success.passed__happy__contained	Passed	skit	fix	word	happy pleased amused affectionate		828
 phase1.word.success.passed__excited__contained	Passed	skit	fix	word	excited		828
-phase1.word.success.passed__proud__contained	Passed	skit	fix	word	proud mischievous		987
+phase1.word.success.passed__proud__contained	Passed	skit	fix	word	proud mischievous smug		987
 phase1.word.success.passed__curious__contained	Passed	skit	fix	word	curious surprised		788
 phase1.word.celebrate.victory__calm__contained	Victory	skit	win	word	calm		958
 phase1.word.celebrate.victory__engaged__contained	Victory	skit	win	word	focused		977
 phase1.word.celebrate.victory__determined__contained	Victory	skit	win	word	determined		987
 phase1.word.celebrate.victory__happy__contained	Victory	skit	win	word	happy pleased amused affectionate		1237
 phase1.word.celebrate.victory__excited__contained	Victory	skit	win	word	excited		1147
-phase1.word.celebrate.victory__proud__contained	Victory	skit	win	word	proud mischievous		1416
+phase1.word.celebrate.victory__proud__contained	Victory	skit	win	word	proud mischievous smug		1416
 phase1.word.celebrate.victory__curious__contained	Victory	skit	win	word	curious surprised		948
 phase1.word.setback.oops__calm__contained	Oops	skit	upset	word	calm		878
 phase1.word.setback.oops__engaged__contained	Oops	skit	upset	word	focused		808
 phase1.word.setback.oops__determined__contained	Oops	skit	upset	word	determined		818
 phase1.word.setback.oops__annoyed__contained	Oops	skit	upset	word	annoyed		898
-phase1.word.setback.oops__irritated__contained	Oops	skit	upset	word	grumpy angry		878
-phase1.word.setback.oops__grumpy__contained	Oops	skit	upset	word	grumpy angry		848
-phase1.word.setback.oops__whiny__contained	Oops	skit	upset	word	sad lonely		1057
+phase1.word.setback.oops__irritated__contained	Oops	skit	upset	word	grumpy angry silent_scream		878
+phase1.word.setback.oops__grumpy__contained	Oops	skit	upset	word	grumpy angry silent_scream		848
+phase1.word.setback.oops__whiny__contained	Oops	skit	upset	word	sad lonely faint		1057
 phase1.word.setback.oops__wounded__contained	Oops	skit	upset	word	wounded		898
-phase1.word.setback.oops__sad__contained	Oops	skit	upset	word	sad lonely		908
+phase1.word.setback.oops__sad__contained	Oops	skit	upset	word	sad lonely faint		908
 phase1.word.setback.oops__happy__contained	Oops	skit	upset	word	happy pleased amused affectionate		778
 phase1.word.setback.oops__excited__contained	Oops	skit	upset	word	excited		748
-phase1.word.setback.oops__proud__contained	Oops	skit	upset	word	proud mischievous		918
+phase1.word.setback.oops__proud__contained	Oops	skit	upset	word	proud mischievous smug		918
 phase1.word.setback.oops__curious__contained	Oops	skit	upset	word	curious surprised		808
 phase1.word.setback.drat__calm__contained	Drat	skit	upset	word	calm		948
 phase1.word.setback.drat__engaged__contained	Drat	skit	upset	word	focused		838
 phase1.word.setback.drat__determined__contained	Drat	skit	upset	word	determined		778
 phase1.word.setback.drat__annoyed__contained	Drat	skit	upset	word	annoyed		848
-phase1.word.setback.drat__irritated__contained	Drat	skit	upset	word	grumpy angry		868
-phase1.word.setback.drat__grumpy__contained	Drat	skit	upset	word	grumpy angry		938
-phase1.word.setback.drat__whiny__contained	Drat	skit	upset	word	sad lonely		1237
+phase1.word.setback.drat__irritated__contained	Drat	skit	upset	word	grumpy angry silent_scream		868
+phase1.word.setback.drat__grumpy__contained	Drat	skit	upset	word	grumpy angry silent_scream		938
+phase1.word.setback.drat__whiny__contained	Drat	skit	upset	word	sad lonely faint		1237
 phase1.word.setback.drat__wounded__contained	Drat	skit	upset	word	wounded		888
-phase1.word.setback.drat__sad__contained	Drat	skit	upset	word	sad lonely		1097
+phase1.word.setback.drat__sad__contained	Drat	skit	upset	word	sad lonely faint		1097
 phase1.word.setback.drat__happy__contained	Drat	skit	upset	word	happy pleased amused affectionate		858
 phase1.word.setback.drat__excited__contained	Drat	skit	upset	word	excited		878
-phase1.word.setback.drat__proud__contained	Drat	skit	upset	word	proud mischievous		958
+phase1.word.setback.drat__proud__contained	Drat	skit	upset	word	proud mischievous smug		958
 phase1.word.setback.drat__curious__contained	Drat	skit	upset	word	curious surprised		918
 phase1.word.setback.uh-oh__calm__contained	Uh-oh	skit	upset	word	calm		1126
 phase1.word.setback.uh-oh__engaged__contained	Uh-oh	skit	upset	word	focused		1007
 phase1.word.setback.uh-oh__determined__contained	Uh-oh	skit	upset	word	determined		838
 phase1.word.setback.uh-oh__annoyed__contained	Uh-oh	skit	upset	word	annoyed		958
-phase1.word.setback.uh-oh__irritated__contained	Uh-oh	skit	upset	word	grumpy angry		1007
-phase1.word.setback.uh-oh__grumpy__contained	Uh-oh	skit	upset	word	grumpy angry		1077
-phase1.word.setback.uh-oh__whiny__contained	Uh-oh	skit	upset	word	sad lonely		1397
+phase1.word.setback.uh-oh__irritated__contained	Uh-oh	skit	upset	word	grumpy angry silent_scream		1007
+phase1.word.setback.uh-oh__grumpy__contained	Uh-oh	skit	upset	word	grumpy angry silent_scream		1077
+phase1.word.setback.uh-oh__whiny__contained	Uh-oh	skit	upset	word	sad lonely faint		1397
 phase1.word.setback.uh-oh__wounded__contained	Uh-oh	skit	upset	word	wounded		967
-phase1.word.setback.uh-oh__sad__contained	Uh-oh	skit	upset	word	sad lonely		997
+phase1.word.setback.uh-oh__sad__contained	Uh-oh	skit	upset	word	sad lonely faint		997
 phase1.word.setback.uh-oh__happy__contained	Uh-oh	skit	upset	word	happy pleased amused affectionate		858
 phase1.word.setback.uh-oh__excited__contained	Uh-oh	skit	upset	word	excited		828
-phase1.word.setback.uh-oh__proud__contained	Uh-oh	skit	upset	word	proud mischievous		997
+phase1.word.setback.uh-oh__proud__contained	Uh-oh	skit	upset	word	proud mischievous smug		997
 phase1.word.setback.uh-oh__curious__contained	Uh-oh	skit	upset	word	curious surprised		858
 phase1.word.setback.failed__calm__contained	Failed	skit	upset	word	calm		967
 phase1.word.setback.failed__engaged__contained	Failed	skit	upset	word	focused		967
 phase1.word.setback.failed__determined__contained	Failed	skit	upset	word	determined		838
 phase1.word.setback.failed__annoyed__contained	Failed	skit	upset	word	annoyed		1466
-phase1.word.setback.failed__irritated__contained	Failed	skit	upset	word	grumpy angry		967
-phase1.word.setback.failed__grumpy__contained	Failed	skit	upset	word	grumpy angry		997
-phase1.word.setback.failed__whiny__contained	Failed	skit	upset	word	sad lonely		1387
+phase1.word.setback.failed__irritated__contained	Failed	skit	upset	word	grumpy angry silent_scream		967
+phase1.word.setback.failed__grumpy__contained	Failed	skit	upset	word	grumpy angry silent_scream		997
+phase1.word.setback.failed__whiny__contained	Failed	skit	upset	word	sad lonely faint		1387
 phase1.word.setback.failed__wounded__contained	Failed	skit	upset	word	wounded		1536
-phase1.word.setback.failed__sad__contained	Failed	skit	upset	word	sad lonely		1057
+phase1.word.setback.failed__sad__contained	Failed	skit	upset	word	sad lonely faint		1057
 phase1.word.setback.failed__happy__contained	Failed	skit	upset	word	happy pleased amused affectionate		858
 phase1.word.setback.failed__excited__contained	Failed	skit	upset	word	excited		878
-phase1.word.setback.failed__proud__contained	Failed	skit	upset	word	proud mischievous		2015
+phase1.word.setback.failed__proud__contained	Failed	skit	upset	word	proud mischievous smug		2015
 phase1.word.setback.failed__curious__contained	Failed	skit	upset	word	curious surprised		918
 phase1.word.setback.broken__calm__contained	Broken	skit	upset	word	calm		788
 phase1.word.setback.broken__engaged__contained	Broken	skit	upset	word	focused		878
 phase1.word.setback.broken__determined__contained	Broken	skit	upset	word	determined		838
 phase1.word.setback.broken__annoyed__contained	Broken	skit	upset	word	annoyed		898
-phase1.word.setback.broken__irritated__contained	Broken	skit	upset	word	grumpy angry		1047
-phase1.word.setback.broken__grumpy__contained	Broken	skit	upset	word	grumpy angry		958
-phase1.word.setback.broken__whiny__contained	Broken	skit	upset	word	sad lonely		1377
+phase1.word.setback.broken__irritated__contained	Broken	skit	upset	word	grumpy angry silent_scream		1047
+phase1.word.setback.broken__grumpy__contained	Broken	skit	upset	word	grumpy angry silent_scream		958
+phase1.word.setback.broken__whiny__contained	Broken	skit	upset	word	sad lonely faint		1377
 phase1.word.setback.broken__wounded__contained	Broken	skit	upset	word	wounded		1596
-phase1.word.setback.broken__sad__contained	Broken	skit	upset	word	sad lonely		848
+phase1.word.setback.broken__sad__contained	Broken	skit	upset	word	sad lonely faint		848
 phase1.word.setback.broken__happy__contained	Broken	skit	upset	word	happy pleased amused affectionate		918
 phase1.word.setback.broken__excited__contained	Broken	skit	upset	word	excited		1097
-phase1.word.setback.broken__proud__contained	Broken	skit	upset	word	proud mischievous		2005
+phase1.word.setback.broken__proud__contained	Broken	skit	upset	word	proud mischievous smug		2005
 phase1.word.setback.broken__curious__contained	Broken	skit	upset	word	curious surprised		808
 phase1.word.attention.hello__engaged__contained	Hello	skit	back	word	focused		698
 phase1.word.attention.hello__determined__contained	Hello	skit	back	word	determined		738
 phase1.word.attention.hello__annoyed__contained	Hello	skit	back	word	annoyed		928
-phase1.word.attention.hello__irritated__contained	Hello	skit	back	word	grumpy angry		1037
-phase1.word.attention.hello__grumpy__contained	Hello	skit	back	word	grumpy angry		1037
-phase1.word.attention.hello__whiny__contained	Hello	skit	back	word	sad lonely		1267
-phase1.word.attention.hello__sad__contained	Hello	skit	back	word	sad lonely		908
+phase1.word.attention.hello__irritated__contained	Hello	skit	back	word	grumpy angry silent_scream		1037
+phase1.word.attention.hello__grumpy__contained	Hello	skit	back	word	grumpy angry silent_scream		1037
+phase1.word.attention.hello__whiny__contained	Hello	skit	back	word	sad lonely faint		1267
+phase1.word.attention.hello__sad__contained	Hello	skit	back	word	sad lonely faint		908
 phase1.word.attention.hello__happy__contained	Hello	skit	back	word	happy pleased amused affectionate		748
 phase1.word.attention.hello__excited__contained	Hello	skit	back	word	excited		788
-phase1.word.attention.hello__proud__contained	Hello	skit	back	word	proud mischievous		1067
+phase1.word.attention.hello__proud__contained	Hello	skit	back	word	proud mischievous smug		1067
 phase1.word.attention.hey__calm__contained	Hey	skit	back	word	calm		718
 phase1.word.attention.hey__engaged__contained	Hey	skit	back	word	focused		818
 phase1.word.attention.hey__determined__contained	Hey	skit	back	word	determined		678
 phase1.word.attention.hey__annoyed__contained	Hey	skit	back	word	annoyed		898
-phase1.word.attention.hey__irritated__contained	Hey	skit	back	word	grumpy angry		928
-phase1.word.attention.hey__grumpy__contained	Hey	skit	back	word	grumpy angry		918
-phase1.word.attention.hey__whiny__contained	Hey	skit	back	word	sad lonely		1137
+phase1.word.attention.hey__irritated__contained	Hey	skit	back	word	grumpy angry silent_scream		928
+phase1.word.attention.hey__grumpy__contained	Hey	skit	back	word	grumpy angry silent_scream		918
+phase1.word.attention.hey__whiny__contained	Hey	skit	back	word	sad lonely faint		1137
 phase1.word.attention.hey__wounded__contained	Hey	skit	back	word	wounded		948
-phase1.word.attention.hey__sad__contained	Hey	skit	back	word	sad lonely		818
+phase1.word.attention.hey__sad__contained	Hey	skit	back	word	sad lonely faint		818
 phase1.word.attention.hey__happy__contained	Hey	skit	back	word	happy pleased amused affectionate		758
 phase1.word.attention.hey__excited__contained	Hey	skit	back	word	excited		818
-phase1.word.attention.hey__proud__contained	Hey	skit	back	word	proud mischievous		1077
+phase1.word.attention.hey__proud__contained	Hey	skit	back	word	proud mischievous smug		1077
 phase1.word.attention.hey__curious__contained	Hey	skit	back	word	curious surprised		628
 phase1.word.poke.hi__calm__contained	Hi	skit	back	word	calm		668
 phase1.word.poke.hi__engaged__contained	Hi	skit	back	word	focused		728
 phase1.word.poke.hi__determined__contained	Hi	skit	back	word	determined		698
 phase1.word.poke.hi__annoyed__contained	Hi	skit	back	word	annoyed		818
-phase1.word.poke.hi__irritated__contained	Hi	skit	back	word	grumpy angry		928
-phase1.word.poke.hi__grumpy__contained	Hi	skit	back	word	grumpy angry		938
-phase1.word.poke.hi__whiny__contained	Hi	skit	back	word	sad lonely		1247
+phase1.word.poke.hi__irritated__contained	Hi	skit	back	word	grumpy angry silent_scream		928
+phase1.word.poke.hi__grumpy__contained	Hi	skit	back	word	grumpy angry silent_scream		938
+phase1.word.poke.hi__whiny__contained	Hi	skit	back	word	sad lonely faint		1247
 phase1.word.poke.hi__wounded__contained	Hi	skit	back	word	wounded		878
-phase1.word.poke.hi__sad__contained	Hi	skit	back	word	sad lonely		698
+phase1.word.poke.hi__sad__contained	Hi	skit	back	word	sad lonely faint		698
 phase1.word.poke.hi__happy__contained	Hi	skit	back	word	happy pleased amused affectionate		658
 phase1.word.poke.hi__excited__contained	Hi	skit	back	word	excited		768
-phase1.word.poke.hi__proud__contained	Hi	skit	back	word	proud mischievous		1007
+phase1.word.poke.hi__proud__contained	Hi	skit	back	word	proud mischievous smug		1007
 phase1.word.poke.hi__curious__contained	Hi	skit	back	word	curious surprised		658
 phase1.word.poke.howdy__calm__contained	Howdy	skit	back	word	calm		658
 phase1.word.poke.howdy__engaged__contained	Howdy	skit	back	word	focused		828
 phase1.word.poke.howdy__determined__contained	Howdy	skit	back	word	determined		658
 phase1.word.poke.howdy__annoyed__contained	Howdy	skit	back	word	annoyed		908
-phase1.word.poke.howdy__irritated__contained	Howdy	skit	back	word	grumpy angry		1087
-phase1.word.poke.howdy__grumpy__contained	Howdy	skit	back	word	grumpy angry		1117
-phase1.word.poke.howdy__whiny__contained	Howdy	skit	back	word	sad lonely		1327
+phase1.word.poke.howdy__irritated__contained	Howdy	skit	back	word	grumpy angry silent_scream		1087
+phase1.word.poke.howdy__grumpy__contained	Howdy	skit	back	word	grumpy angry silent_scream		1117
+phase1.word.poke.howdy__whiny__contained	Howdy	skit	back	word	sad lonely faint		1327
 phase1.word.poke.howdy__wounded__contained	Howdy	skit	back	word	wounded		977
-phase1.word.poke.howdy__sad__contained	Howdy	skit	back	word	sad lonely		868
+phase1.word.poke.howdy__sad__contained	Howdy	skit	back	word	sad lonely faint		868
 phase1.word.poke.howdy__happy__contained	Howdy	skit	back	word	happy pleased amused affectionate		718
 phase1.word.poke.howdy__excited__contained	Howdy	skit	back	word	excited		768
-phase1.word.poke.howdy__proud__contained	Howdy	skit	back	word	proud mischievous		1037
+phase1.word.poke.howdy__proud__contained	Howdy	skit	back	word	proud mischievous smug		1037
 phase1.word.poke.howdy__curious__contained	Howdy	skit	back	word	curious surprised		668
 phase1.word.idle.hullo__calm__contained	Hullo	skit	back	word	calm		708
 phase1.word.idle.hullo__engaged__contained	Hullo	skit	back	word	focused		758
 phase1.word.idle.hullo__determined__contained	Hullo	skit	back	word	determined		728
 phase1.word.idle.hullo__annoyed__contained	Hullo	skit	back	word	annoyed		948
-phase1.word.idle.hullo__irritated__contained	Hullo	skit	back	word	grumpy angry		1147
-phase1.word.idle.hullo__grumpy__contained	Hullo	skit	back	word	grumpy angry		1157
-phase1.word.idle.hullo__whiny__contained	Hullo	skit	back	word	sad lonely		1377
+phase1.word.idle.hullo__irritated__contained	Hullo	skit	back	word	grumpy angry silent_scream		1147
+phase1.word.idle.hullo__grumpy__contained	Hullo	skit	back	word	grumpy angry silent_scream		1157
+phase1.word.idle.hullo__whiny__contained	Hullo	skit	back	word	sad lonely faint		1377
 phase1.word.idle.hullo__wounded__contained	Hullo	skit	back	word	wounded		1007
-phase1.word.idle.hullo__sad__contained	Hullo	skit	back	word	sad lonely		928
+phase1.word.idle.hullo__sad__contained	Hullo	skit	back	word	sad lonely faint		928
 phase1.word.idle.hullo__happy__contained	Hullo	skit	back	word	happy pleased amused affectionate		758
 phase1.word.idle.hullo__excited__contained	Hullo	skit	back	word	excited		828
-phase1.word.idle.hullo__proud__contained	Hullo	skit	back	word	proud mischievous		1217
+phase1.word.idle.hullo__proud__contained	Hullo	skit	back	word	proud mischievous smug		1217
 phase1.word.idle.hullo__curious__contained	Hullo	skit	back	word	curious surprised		738
 phase1.phrase.success.all-done__happy__contained	All done	skit	win	phrase	happy pleased amused affectionate		967
 phase1.phrase.success.job-done__happy__contained	Job done	skit	win	phrase	happy pleased amused affectionate		1137
@@ -969,10 +969,10 @@ phase1.phrase.success.we-did-it__happy__contained	We did it	skit	win	phrase	happ
 phase1.phrase.success.there-it-is__happy__contained	There it is	skit	fix	phrase	happy pleased amused affectionate		1027
 phase1.phrase.success.and-done__happy__contained	And done	skit	win	phrase	happy pleased amused affectionate		1317
 phase1.phrase.celebrate.ta-da-da__excited__contained	Ta-da-da	skit	win	phrase	excited		1187
-phase1.phrase.pride.nailed-it__proud__contained	Nailed it	skit	win	phrase	proud mischievous		1227
-phase1.phrase.setback.oh-no__sad__contained	Oh no	skit	upset	phrase	sad lonely		1217
-phase1.phrase.setback.aw-nuts__sad__contained	Aw, nuts	skit	upset	phrase	sad lonely		1596
-phase1.phrase.frustration.oh-come-on__irritated__contained	Oh, come on	skit	upset	phrase	grumpy angry		1536
+phase1.phrase.pride.nailed-it__proud__contained	Nailed it	skit	win	phrase	proud mischievous smug		1227
+phase1.phrase.setback.oh-no__sad__contained	Oh no	skit	upset	phrase	sad lonely faint		1217
+phase1.phrase.setback.aw-nuts__sad__contained	Aw, nuts	skit	upset	phrase	sad lonely faint		1596
+phase1.phrase.frustration.oh-come-on__irritated__contained	Oh, come on	skit	upset	phrase	grumpy angry silent_scream		1536
 phase1.phrase.frustration.not-again__annoyed__contained	Not again	skit	upset	phrase	annoyed		1337
 phase1.phrase.attention.hello-hello__curious__contained	Hello hello	skit	back	phrase	curious surprised		1177
 phase1.phrase.poke.oh-hello__curious__contained	Oh, hello	skit	back	phrase	curious surprised		1377
@@ -981,69 +981,69 @@ phase1.nonverbal.relief.phew__calm__contained	Phew...	skit	fix	sound	calm		1017
 phase1.nonverbal.relief.phew__engaged__contained	Phew...	skit	fix	sound	focused		888
 phase1.nonverbal.relief.phew__determined__contained	Phew...	skit	fix	sound	determined		928
 phase1.nonverbal.relief.phew__annoyed__contained	Phew...	skit	fix	sound	annoyed		958
-phase1.nonverbal.relief.phew__irritated__contained	Phew...	skit	fix	sound	grumpy angry		948
-phase1.nonverbal.relief.phew__grumpy__contained	Phew...	skit	fix	sound	grumpy angry		1057
-phase1.nonverbal.relief.phew__whiny__contained	Phew...	skit	fix	sound	sad lonely		1237
+phase1.nonverbal.relief.phew__irritated__contained	Phew...	skit	fix	sound	grumpy angry silent_scream		948
+phase1.nonverbal.relief.phew__grumpy__contained	Phew...	skit	fix	sound	grumpy angry silent_scream		1057
+phase1.nonverbal.relief.phew__whiny__contained	Phew...	skit	fix	sound	sad lonely faint		1237
 phase1.nonverbal.relief.phew__wounded__contained	Phew...	skit	fix	sound	wounded		1057
-phase1.nonverbal.relief.phew__sad__contained	Phew...	skit	fix	sound	sad lonely		1057
+phase1.nonverbal.relief.phew__sad__contained	Phew...	skit	fix	sound	sad lonely faint		1057
 phase1.nonverbal.relief.phew__excited__contained	Phew...	skit	fix	sound	excited		928
-phase1.nonverbal.relief.phew__proud__contained	Phew...	skit	fix	sound	proud mischievous		1117
+phase1.nonverbal.relief.phew__proud__contained	Phew...	skit	fix	sound	proud mischievous smug		1117
 phase1.nonverbal.relief.phew__curious__contained	Phew...	skit	fix	sound	curious surprised		1017
 phase1.nonverbal.relief.ahh__calm__contained	Ahh...	skit	fix	sound	calm		868
 phase1.nonverbal.relief.ahh__engaged__contained	Ahh...	skit	fix	sound	focused		898
 phase1.nonverbal.relief.ahh__determined__contained	Ahh...	skit	fix	sound	determined		848
 phase1.nonverbal.relief.ahh__annoyed__contained	Ahh...	skit	fix	sound	annoyed		948
-phase1.nonverbal.relief.ahh__irritated__contained	Ahh...	skit	fix	sound	grumpy angry		918
-phase1.nonverbal.relief.ahh__grumpy__contained	Ahh...	skit	fix	sound	grumpy angry		1057
-phase1.nonverbal.relief.ahh__whiny__contained	Ahh...	skit	fix	sound	sad lonely		1127
+phase1.nonverbal.relief.ahh__irritated__contained	Ahh...	skit	fix	sound	grumpy angry silent_scream		918
+phase1.nonverbal.relief.ahh__grumpy__contained	Ahh...	skit	fix	sound	grumpy angry silent_scream		1057
+phase1.nonverbal.relief.ahh__whiny__contained	Ahh...	skit	fix	sound	sad lonely faint		1127
 phase1.nonverbal.relief.ahh__wounded__contained	Ahh...	skit	fix	sound	wounded		997
-phase1.nonverbal.relief.ahh__sad__contained	Ahh...	skit	fix	sound	sad lonely		868
+phase1.nonverbal.relief.ahh__sad__contained	Ahh...	skit	fix	sound	sad lonely faint		868
 phase1.nonverbal.relief.ahh__happy__contained	Ahh...	skit	fix	sound	happy pleased amused affectionate		918
 phase1.nonverbal.relief.ahh__excited__contained	Ahh...	skit	fix	sound	excited		1007
-phase1.nonverbal.relief.ahh__proud__contained	Ahh...	skit	fix	sound	proud mischievous		1257
+phase1.nonverbal.relief.ahh__proud__contained	Ahh...	skit	fix	sound	proud mischievous smug		1257
 phase1.nonverbal.relief.ahh__curious__contained	Ahh...	skit	fix	sound	curious surprised		958
 phase1.nonverbal.relief.whew__calm__contained	Whew	skit	fix	sound	calm		918
 phase1.nonverbal.relief.whew__engaged__contained	Whew	skit	fix	sound	focused		828
 phase1.nonverbal.relief.whew__determined__contained	Whew	skit	fix	sound	determined		838
 phase1.nonverbal.relief.whew__annoyed__contained	Whew	skit	fix	sound	annoyed		868
-phase1.nonverbal.relief.whew__irritated__contained	Whew	skit	fix	sound	grumpy angry		918
-phase1.nonverbal.relief.whew__grumpy__contained	Whew	skit	fix	sound	grumpy angry		898
-phase1.nonverbal.relief.whew__whiny__contained	Whew	skit	fix	sound	sad lonely		1137
+phase1.nonverbal.relief.whew__irritated__contained	Whew	skit	fix	sound	grumpy angry silent_scream		918
+phase1.nonverbal.relief.whew__grumpy__contained	Whew	skit	fix	sound	grumpy angry silent_scream		898
+phase1.nonverbal.relief.whew__whiny__contained	Whew	skit	fix	sound	sad lonely faint		1137
 phase1.nonverbal.relief.whew__wounded__contained	Whew	skit	fix	sound	wounded		1037
-phase1.nonverbal.relief.whew__sad__contained	Whew	skit	fix	sound	sad lonely		1007
+phase1.nonverbal.relief.whew__sad__contained	Whew	skit	fix	sound	sad lonely faint		1007
 phase1.nonverbal.relief.whew__happy__contained	Whew	skit	fix	sound	happy pleased amused affectionate		928
 phase1.nonverbal.relief.whew__excited__contained	Whew	skit	fix	sound	excited		908
-phase1.nonverbal.relief.whew__proud__contained	Whew	skit	fix	sound	proud mischievous		1047
+phase1.nonverbal.relief.whew__proud__contained	Whew	skit	fix	sound	proud mischievous smug		1047
 phase1.nonverbal.relief.whew__curious__contained	Whew	skit	fix	sound	curious surprised		908
 phase1.nonverbal.relief.haa__calm__contained	Haa...	skit	fix	sound	calm		828
 phase1.nonverbal.relief.haa__engaged__contained	Haa...	skit	fix	sound	focused		798
 phase1.nonverbal.relief.haa__determined__contained	Haa...	skit	fix	sound	determined		728
 phase1.nonverbal.relief.haa__annoyed__contained	Haa...	skit	fix	sound	annoyed		888
-phase1.nonverbal.relief.haa__irritated__contained	Haa...	skit	fix	sound	grumpy angry		1905
-phase1.nonverbal.relief.haa__grumpy__contained	Haa...	skit	fix	sound	grumpy angry		2005
-phase1.nonverbal.relief.haa__whiny__contained	Haa...	skit	fix	sound	sad lonely		1077
+phase1.nonverbal.relief.haa__irritated__contained	Haa...	skit	fix	sound	grumpy angry silent_scream		1905
+phase1.nonverbal.relief.haa__grumpy__contained	Haa...	skit	fix	sound	grumpy angry silent_scream		2005
+phase1.nonverbal.relief.haa__whiny__contained	Haa...	skit	fix	sound	sad lonely faint		1077
 phase1.nonverbal.relief.haa__wounded__contained	Haa...	skit	fix	sound	wounded		918
-phase1.nonverbal.relief.haa__sad__contained	Haa...	skit	fix	sound	sad lonely		798
+phase1.nonverbal.relief.haa__sad__contained	Haa...	skit	fix	sound	sad lonely faint		798
 phase1.nonverbal.relief.haa__happy__contained	Haa...	skit	fix	sound	happy pleased amused affectionate		808
 phase1.nonverbal.relief.haa__excited__contained	Haa...	skit	fix	sound	excited		878
-phase1.nonverbal.relief.haa__proud__contained	Haa...	skit	fix	sound	proud mischievous		1027
+phase1.nonverbal.relief.haa__proud__contained	Haa...	skit	fix	sound	proud mischievous smug		1027
 phase1.nonverbal.relief.haa__curious__contained	Haa...	skit	fix	sound	curious surprised		868
 phase1.borrowed.salut__calm__contained	Salut	skit	back	word	calm		688
 phase1.borrowed.salut__engaged__contained	Salut	skit	back	word	focused		658
 phase1.borrowed.salut__determined__contained	Salut	skit	back	word	determined		738
 phase1.borrowed.salut__happy__contained	Salut	skit	back	word	happy pleased amused affectionate		728
 phase1.borrowed.salut__excited__contained	Salut	skit	back	word	excited		918
-phase1.borrowed.salut__proud__contained	Salut	skit	back	word	proud mischievous		1347
+phase1.borrowed.salut__proud__contained	Salut	skit	back	word	proud mischievous smug		1347
 phase1.borrowed.salut__curious__contained	Salut	skit	back	word	curious surprised		738
 phase1.explicit.shit__annoyed__contained	Shit	skit	upset	swear	annoyed		1007
-phase1.explicit.shit__irritated__contained	Shit	skit	upset	swear	grumpy angry		1007
-phase1.explicit.shit__grumpy__contained	Shit	skit	upset	swear	grumpy angry		1057
+phase1.explicit.shit__irritated__contained	Shit	skit	upset	swear	grumpy angry silent_scream		1007
+phase1.explicit.shit__grumpy__contained	Shit	skit	upset	swear	grumpy angry silent_scream		1057
 phase1.explicit.fuck__annoyed__contained	Fuck	skit	upset	swear	annoyed		918
-phase1.explicit.fuck__irritated__contained	Fuck	skit	upset	swear	grumpy angry		868
-phase1.explicit.fuck__grumpy__contained	Fuck	skit	upset	swear	grumpy angry		977
+phase1.explicit.fuck__irritated__contained	Fuck	skit	upset	swear	grumpy angry silent_scream		868
+phase1.explicit.fuck__grumpy__contained	Fuck	skit	upset	swear	grumpy angry silent_scream		977
 phase1.explicit.damn__annoyed__contained	Damn	skit	upset	swear	annoyed		798
-phase1.explicit.damn__irritated__contained	Damn	skit	upset	swear	grumpy angry		838
-phase1.explicit.damn__grumpy__contained	Damn	skit	upset	swear	grumpy angry		798
+phase1.explicit.damn__irritated__contained	Damn	skit	upset	swear	grumpy angry silent_scream		838
+phase1.explicit.damn__grumpy__contained	Damn	skit	upset	swear	grumpy angry silent_scream		798
 phase1.explicit.crap__annoyed__contained	Crap	skit	upset	swear	annoyed		977
-phase1.explicit.crap__irritated__contained	Crap	skit	upset	swear	grumpy angry		898
-phase1.explicit.crap__grumpy__contained	Crap	skit	upset	swear	grumpy angry		1007
+phase1.explicit.crap__irritated__contained	Crap	skit	upset	swear	grumpy angry silent_scream		898
+phase1.explicit.crap__grumpy__contained	Crap	skit	upset	swear	grumpy angry silent_scream		1007
