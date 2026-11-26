@@ -1099,7 +1099,9 @@ void Behaviour::dropInvite(uint32_t t) {
 bool Behaviour::inviteTouch(bool stroke, uint32_t t, bool injected) {
   Invite& v = invite_;
   const bool waiting = v.stage == Invite::kPose, late = v.stage == Invite::kShrug || v.stage == Invite::kWindow;
-  if (!(waiting || late) || v.in.stroke != stroke || noApp(t) || held(t) || faceDown_ || asking(t)) return false;
+  const bool pat = !stroke && v.in.stroke && v.in.pose == render::InvitePose::kBack;
+  if (!(waiting || late) || (v.in.stroke != stroke && !pat) || noApp(t) || held(t) || faceDown_ || asking(t))
+    return false;
   touchAlone(t);
   change(t, [&] {
     endInvite(waiting ? "answered" : "late", t, injected);

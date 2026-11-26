@@ -481,7 +481,8 @@ class Behaviour {
   static constexpr uint32_t kLateWindowMs = 30000;
   // A touch, a tap or a stroke, at t: true when it's the invite's, which
   // answers it (or, after a miss, pays off late): it plays nothing else and
-  // goes to the Mac as no touch. Its end waits in takeInviteEnd.
+  // goes to the Mac as no touch. A tap on a back turned is a pat, and pets
+  // it as a stroke does. Its end waits in takeInviteEnd.
   bool inviteTouch(bool stroke, uint32_t t, bool injected);
   // A newer reaction is about to play: the invite before its answer is
   // cut, its end before the kit ends its reaction; the window after a miss

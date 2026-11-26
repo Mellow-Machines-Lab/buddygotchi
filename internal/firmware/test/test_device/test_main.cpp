@@ -3037,6 +3037,27 @@ static void test_a_fast_stroke_answers_a_stroke() {
   TEST_ASSERT_TRUE_MESSAGE(has(q.usb.text, inviteLine("late", "stroke")), q.usb.text.c_str());
 }
 
+// A tap on a back turned is a pat: it pets it as a stroke does, in its
+// wait and late, with no poke. A tap on a lean is still a poke (above).
+static void test_a_tap_pats_a_back() {
+  InviteRig r;
+  r.runTo(1000);
+  r.doLine(1, "next", skitWith("back", "stroke", "sigh"));
+  r.run(kSaid + 200);
+  r.usb.text.clear();
+  r.tap();
+  TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, inviteLine("answered", "stroke")), r.usb.text.c_str());
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+
+  InviteRig q;
+  q.runTo(1000);
+  q.doLine(1, "next", skitWith("back", "stroke", "sigh", ",\"ms\":4000"));
+  q.run(kSaid + 4000 + render::InviteShow::kShrugMs + 1000);
+  q.usb.text.clear();
+  q.tap();
+  TEST_ASSERT_TRUE_MESSAGE(has(q.usb.text, inviteLine("late", "stroke")), q.usb.text.c_str());
+}
+
 // An invite with a pose, touch or payoff the board doesn't know is none,
 // and so is any on a face that draws none: the skit plays and ends as it
 // would with no invite, resting once its words are read.
@@ -3545,6 +3566,7 @@ int main() {
   RUN_TEST(test_an_invite_ends_once);
   RUN_TEST(test_an_invites_end_names_its_skit_whole);
   RUN_TEST(test_a_fast_stroke_answers_a_stroke);
+  RUN_TEST(test_a_tap_pats_a_back);
   RUN_TEST(test_a_touch_of_the_other_kind_passes_through);
   RUN_TEST(test_an_invite_it_cannot_play_is_ignored);
   RUN_TEST(test_an_invites_wait_is_held_in_range);
