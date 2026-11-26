@@ -641,13 +641,16 @@ void strip(Lane& l, const Strip& s, int spin) {
     r.alpha = 255;
     // The row gSwitchDx off: as a swipe drags it and it springs back, or
     // sliding in as you switch agents, faded by how far off it is.
-    const int dx = gSwitchDx, left = margin + dx;
+    // Its text stands kArrowGap in from either end, clear of the arrows,
+    // which the panel's rounded corners leave no room to move out.
+    constexpr int kArrowGap = 6;
+    const int from = margin + kArrowGap, to = right - kArrowGap, dx = gSwitchDx, left = from + dx;
     r.alpha = 255 - 255 * std::min(std::abs(dx), kSwitchPx) / (2 * kSwitchPx);
     // Sliding, it shows only within its row, clear of the arrows.
-    const int room = right - margin;
+    const int room = to - from;
     const bool rests = s.watch >= 0 && s.pipKind[s.watch] == 'i';
     char fitted[Stream::kDoingBytes];
-    r.bounds = {margin, 0, right, l.h};
+    r.bounds = {from, 0, to, l.h};
     if (!rests && s.busy > 0 && gTerm.text && *gTerm.text)
       text(r, f, left, ty, fitTerm(gTerm.text, f, room, fitted), gTerm.ink, room);
     else if (rests)
