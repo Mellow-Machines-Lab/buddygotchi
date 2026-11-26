@@ -171,14 +171,14 @@ class Device : public linkkit::App {
   // How long it springs open or shut, past the end and back; and how far a
   // finger goes (canvas px) before it pulls the drawer rather than taps.
   // The same distance, either way, makes a touch on its rows a drag, which
-  // picks none.
+  // picks none. Shut, a touch in the bar (Face::barTop) that goes that far,
+  // either way, is decided by it: further across than up, a swipe between
+  // agents to its end, the drawer staying shut; else a pull.
   static constexpr uint32_t kDrawerMs = 380, kDrawerPawMs = 260;
   static constexpr int kDrawerPullPx = 22;
   // A touch on the card that travels this far across, and further across
   // than up or down, is a swipe to the next card; less is a tap on it.
   static constexpr int kCardSwipePx = 28;
-  // Where on the canvas a finger starts that can pull it: on the strip.
-  static constexpr int kDrawerFromY = 205;
   // On the needs-you screen a touch shorter than this, and inside a hold's
   // spot, is the tap that opens the thread; a longer one is a hold let go
   // early, and sends nothing.
@@ -320,6 +320,11 @@ class Device : public linkkit::App {
     // It began on the body (Face::bodyAt): Boop's to feel. One that began off
     // it is the screen's, and the face neither follows nor dips for it.
     bool touchOnBody = false;
+    // It began in the bar (Face::barTop), and its first travel made it a
+    // swipe between agents (swiping), now swipeDx canvas px across while
+    // the screen follows one of several.
+    bool touchInBar = false, swiping = false;
+    int swipeDx = 0;
     // It's the last touch's press, bounced (TouchGesture::bounce): it lets go
     // saying nothing, as the first said what it was. Only the drawer, which
     // the finger holds, still answers it.

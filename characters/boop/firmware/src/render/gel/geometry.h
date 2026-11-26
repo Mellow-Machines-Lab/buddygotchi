@@ -71,7 +71,8 @@ struct Projector {
         depth = std::max(1024, -product(y, 862) - product(z, 4005));
     int height = surface.height * 95 / 100, focal = height * 4586;
     int perspective = focal * 16 / depth;
-    int px = surface.width * 8 + product(p.x, perspective), py = height * 8 - product(vy, perspective) + c.dy * 16;
+    int px = surface.width * 8 + product(p.x, perspective),
+        py = height * 8 - product(vy, perspective) + (c.dy - sceneLift(surface.height)) * 16;
     if (c.scale != 4096) {
       px = c.anchorX + int(int64_t(px - c.anchorX) * c.scale / 4096);
       py = c.anchorY + int(int64_t(py - c.anchorY) * c.scale / 4096);

@@ -22,6 +22,8 @@ struct Layout {
   int w, h;
   int x(int p) const { return w * p / 502; }
   int y(int p) const { return h * p / 410; }
+  // A row of the scene's, which stands kSceneLift up from where it was laid out.
+  int scene(int p) const { return y(p) - sceneLift(h); }
   // Sixteenths of a pixel of the 502 × 410 surface, as sixteenths of this
   // one's: what moves is placed in them (render/gel/subpixel.h).
   int x16(int p16) const { return w * p16 / 502; }
@@ -142,7 +144,7 @@ void moment(Raster& r, const Layout& l, const Stream& stream, const rig::Anchors
       if (age < flight) {
         r.alpha = 255 - k * 155 / flight;
         centred16(r, kLarge, lerp(l.x(kMonitorX) * 16, mouthX * 16, k, flight),
-                  lerp(l.y(kMonitorY) * 16, mouthY * 16, k, flight), word, ink);
+                  lerp(l.scene(kMonitorY) * 16, mouthY * 16, k, flight), word, ink);
       }
       if (age >= flight && age < flight + 900) {
         r.alpha = fadeBy(age, flight + 900, 300);
@@ -179,7 +181,7 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
   }
 
   // From the monitor to where it lands on the body.
-  const int fromX = l.x(kMonitorX), fromY = l.y(kMonitorY);
+  const int fromX = l.x(kMonitorX), fromY = l.scene(kMonitorY);
   const int eyesX = (at.eyeL.x + at.eyeR.x) / 32, eyesY = (at.eyeL.y + at.eyeR.y) / 32;
   const int crownX = at.crown.x / 16, crownY = at.crown.y / 16;
   const bool right = fromX >= surface.width / 2;

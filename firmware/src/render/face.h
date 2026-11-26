@@ -291,12 +291,6 @@ class Face {
     (void)rule, (void)on;
     return false;
   }
-  // Puts the strip's counts on its line, or back in its row: dbg.counts's,
-  // for the owner to see, until the next reset. False on a face without.
-  virtual bool countsOnLine(bool on) {
-    (void)on;
-    return false;
-  }
   // The work stream to draw (render/stream.h), the device's, set before
   // each frame: a face that has no stream ignores it.
   virtual void watch(const Stream* stream) { (void)stream; }
@@ -319,6 +313,15 @@ class Face {
   // say is all body.
   static constexpr int kBodyMarginPx = 12;
   virtual bool bodyAt(int x, int y) const { return (void)x, (void)y, true; }
+  // The canvas row from which down a touch is the bar's, under the desk:
+  // the strip's line and its row, the drawer's to pull up and the agents'
+  // to swipe or tap between, never the body's however near its rim. A face
+  // that doesn't say has the lane's top.
+  virtual int barTop() const { return kLaneTop; }
+  // A swipe between agents under way in the bar, `dx` canvas px across from
+  // where it began (0 for none), set before each frame: a face may move
+  // what it shows of the agent the screen follows with the finger.
+  virtual void swipe(int dx) { (void)dx; }
   // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
   // let go: a face may follow it, as the gel's dome leans into a stroke.
   virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }

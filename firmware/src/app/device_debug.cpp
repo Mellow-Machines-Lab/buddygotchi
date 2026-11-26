@@ -119,13 +119,6 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
                             : "{\"t\":\"dbg.motion\",\"ok\":false}";
     dirty_ = true;
     kit().reply(from, reply, std::strlen(reply));
-  } else if (!std::strcmp(type, "dbg.counts")) {
-    // The strip's counts on its line ("line": true) or in its row, for the
-    // owner to see: until the next reset.
-    const char* reply = b_.face().countsOnLine(doc["line"] | false) ? "{\"t\":\"dbg.counts\",\"ok\":true}"
-                                                                    : "{\"t\":\"dbg.counts\",\"ok\":false}";
-    dirty_ = true;
-    kit().reply(from, reply, std::strlen(reply));
   } else if (!std::strcmp(type, "dbg.press")) {
     live_.injPress = true;
     live_.injPressUntil = kit().now() + (doc["ms"] | kDefaultPressMs);

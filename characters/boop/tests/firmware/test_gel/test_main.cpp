@@ -2079,7 +2079,7 @@ void test_a_reason_alone();
 void test_the_name_on_the_line_fits();
 void test_the_line_holds_the_name();
 void test_the_line_is_kept_through_the_spinner();
-void test_the_counts_on_the_line_switch();
+void test_the_row_follows_a_swipe_and_springs_back();
 // test_drawer.cpp
 void test_a_pull_up_the_strip_opens_the_drawer();
 void test_a_quick_move_up_the_body_isnt_the_drawers();
@@ -2112,7 +2112,8 @@ static void test_gel_draws_natively() {
 }
 static void test_face_projection_and_pose_bounds() {
   // The face's anchors where the camera and the dome put them,
-  // at the 95% scene viewport. A 2 px tolerance covers integer/mesh approximation.
+  // at the 95% scene viewport, the scene's lift up. A 2 px tolerance covers
+  // integer/mesh approximation.
   for (uint64_t value = 0; value <= 0xffffffffu; value += 104729) {
     uint64_t r = root(uint32_t(value));
     TEST_ASSERT_TRUE(r * r <= value);
@@ -2125,8 +2126,8 @@ static void test_face_projection_and_pose_bounds() {
   auto left = camera.face(-1229, 258), right = camera.face(1229, 258), mouth = camera.face(0, -414);
   TEST_ASSERT_INT_WITHIN(32, 2852, left.x);
   TEST_ASSERT_INT_WITHIN(32, 5174, right.x);
-  TEST_ASSERT_INT_WITHIN(32, 3750, left.y);
-  TEST_ASSERT_INT_WITHIN(32, 4327, mouth.y);
+  TEST_ASSERT_INT_WITHIN(32, 3750 - kSceneLift * 16, left.y);
+  TEST_ASSERT_INT_WITHIN(32, 4327 - kSceneLift * 16, mouth.y);
   std::vector<uint16_t> pixels(502 * 410 + 2, 0xa55a);
   s.pixels = pixels.data() + 1;
   for (int sign : {-1, 1}) {
@@ -3341,7 +3342,8 @@ static void test_a_work_act_shows_on_the_monitor_and_the_strip() {
     const std::vector<uint16_t> bare(px);
     s.invalidate();
     paintFrame(s, *e, false, 0, nullptr, sign, strip, {}, rig::kRest, nullptr, 0, &acting, 600);
-    const size_t lane0 = size_t(502) * (410 * kLaneTop / kHeight), monitor0 = size_t(502) * (410 * 600 / 1000);
+    const size_t lane0 = size_t(502) * (410 * kLaneTop / kHeight),
+                 monitor0 = size_t(502) * (410 * 600 / 1000 - sceneLift(410));
     TEST_ASSERT_EQUAL_MEMORY(bare.data(), px.data(), monitor0 * 2);
     TEST_ASSERT_TRUE(std::memcmp(bare.data() + monitor0, px.data() + monitor0, (lane0 - monitor0) * 2) != 0);
     TEST_ASSERT_EQUAL_MEMORY(bare.data() + lane0, px.data() + lane0, (px.size() - lane0) * 2);
@@ -3717,6 +3719,6 @@ int main() {
   RUN_TEST(test_the_name_on_the_line_fits);
   RUN_TEST(test_the_line_holds_the_name);
   RUN_TEST(test_the_line_is_kept_through_the_spinner);
-  RUN_TEST(test_the_counts_on_the_line_switch);
+  RUN_TEST(test_the_row_follows_a_swipe_and_springs_back);
   return UNITY_END();
 }

@@ -1,0 +1,75 @@
+// Switching agents from the bar, under the desk (the engine's
+// documentation/design/screen-guide.md, the map's 5 and 7): with several
+// agents, arrows at the strip's ends say there are others, dim at rest. A
+// swipe along the bar that drifts up as it goes stays a swipe: the strip's
+// row follows the finger a third of its way, and when the Mac's answer
+// comes the next one slides in from the right, the right arrow flashing;
+// the drawer stays shut. A tap in the bar's right third asks for the next
+// too. A swipe the Mac doesn't answer springs back. The swipe's shots,
+// every 66 ms, make the GIF of it.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":2,"idle":1,"when":["day"],"calls":[[0,4,"searching TODO"],[1,2,"editing Api.ts +31"]],"pips":"w0w1i2","watch":0,"who":"web"}
+{"clock":2500}
+{"shot":"arrows-at-rest"}
+{"t":"dbg.touch","x":250,"y":228,"to_x":90,"to_y":212,"ms":400}
+{"clock":2566}
+{"shot":"swipe-01"}
+{"clock":2632}
+{"shot":"swipe-02"}
+{"clock":2698}
+{"shot":"swipe-03"}
+{"clock":2764}
+{"shot":"swipe-04"}
+{"shot":"the-row-follows-the-finger","pin":true}
+{"clock":2830}
+{"shot":"swipe-05"}
+{"clock":2896}
+{"shot":"swipe-06"}
+{"clock":2962}
+{"shot":"swipe-07"}
+{"clock":3028}
+{"expect":{"last_input":{"k":"agent"},"drawer":{"open":0}}}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":2,"idle":1,"when":["day"],"calls":[[0,4,"searching TODO"],[1,2,"editing Api.ts +31"]],"pips":"w0w1i2","watch":1,"who":"api"}
+{"shot":"swipe-08"}
+{"clock":3094}
+{"shot":"swipe-09"}
+{"shot":"the-next-slides-in"}
+{"clock":3160}
+{"shot":"swipe-10"}
+{"clock":3226}
+{"shot":"swipe-11"}
+{"clock":3292}
+{"shot":"swipe-12"}
+{"clock":3358}
+{"shot":"swipe-13"}
+{"clock":3424}
+{"shot":"swipe-14"}
+{"clock":3490}
+{"shot":"swipe-15"}
+{"clock":3556}
+{"shot":"swipe-16"}
+{"clock":3622}
+{"shot":"swipe-17"}
+{"clock":3688}
+{"shot":"swipe-18"}
+{"clock":3754}
+{"shot":"swipe-19"}
+{"clock":3820}
+{"shot":"swipe-20"}
+{"clock":4500}
+{"t":"dbg.touch","x":295,"y":228,"ms":60}
+{"clock":4600}
+{"expect":{"last_input":{"k":"agent"}}}
+{"t":"state","base":"working","mood":"calm","vol":0,"busy":2,"idle":1,"when":["day"],"calls":[[0,4,"searching TODO"],[1,2,"editing Api.ts +31"]],"pips":"w0w1i2","watch":2,"who":"docs"}
+{"clock":4700}
+{"shot":"a-tap-on-the-right-flashes-it","pin":true}
+{"clock":6000}
+{"t":"dbg.touch","x":90,"y":228,"to_x":200,"to_y":228,"ms":300}
+{"clock":6264}
+{"shot":"dragged-right"}
+{"clock":6400}
+{"shot":"waiting-for-the-mac"}
+{"clock":6900}
+{"shot":"sprung-back"}
+{"t":"dbg.reset"}

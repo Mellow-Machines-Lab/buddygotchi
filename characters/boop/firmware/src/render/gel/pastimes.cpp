@@ -141,8 +141,8 @@ struct Stage {
   int rightX() const { return at.brimR.x / 16; }
   int sideY() const { return (at.brimL.y + at.brimR.y) / 32; }
   // The desk's top, and the floor beside it.
-  int deskY() const { return Y(307); }
-  int floorY() const { return Y(318); }
+  int deskY() const { return Y(307) - sceneLift(h); }
+  int floorY() const { return Y(318) - sceneLift(h); }
 };
 
 // Zs drifting up and right from (x, y), a new one every 900 ms, each for

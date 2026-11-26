@@ -265,7 +265,7 @@ void trophy(Raster& r, const Frame& f, bool onGold = false) {
 // Proud's bug, held up beside its trophy: the small one Boop caught.
 void gift(Raster& r, const Surface& s) {
   auto x = [&](int p) { return s.width * p / 1000; };
-  auto y = [&](int p) { return s.height * p / 1000; };
+  auto y = [&](int p) { return s.height * p / 1000 - sceneLift(s.height); };
   const int bx = 795, by = 180;
   const uint16_t ink = rgb565(44, 37, 29), amber = rgb565(239, 189, 103);
   for (int side : {-1, 1}) {
@@ -427,10 +427,17 @@ void goldBurst(Raster& r, int cx16, int cy16, int radius16, int turn, bool night
     r.touch(xl, y, xr + 1, y + 1);
   }
 }
+namespace {
+// The little trophy's foot at its highest, px of the AMOLED's 410: its cup
+// whole under the screen's top.
+constexpr int kTrophyFoot = 50;
+// The gold flood's middle, behind the body.
+int goldMiddle(const Surface& s) { return s.height * 560 / 1000 - sceneLift(s.height); }
+}  // namespace
 int finishCovers(const Surface& s, Finish f, int age) {
   if (f != Finish::kGoldRush) return 0;
   // The farthest corner above the lane from the flood's middle.
-  const int bottom = s.height * 4 / 5, cx = s.width / 2, cy = s.height * 560 / 1000;
+  const int bottom = s.height * 4 / 5, cx = s.width / 2, cy = goldMiddle(s);
   const int dx = std::max(cx, s.width - cx), dy = std::max(cy, bottom - cy);
   const int reach = root(uint32_t(dx * dx + dy * dy)) + 2;
   return goldRadius(age) >= reach ? bottom : 0;
@@ -444,7 +451,7 @@ void paintFinishBehind(Surface& s, Finish f, int age, int reveal, bool night) {
     // drains back at the end.
     const int radius = goldRadius(age);
     if (radius <= 0) return;
-    const int cx = s.width * 8, cy = s.height * 560 / 1000 * 16;
+    const int cx = s.width * 8, cy = goldMiddle(s) * 16;
     goldBurst(r, cx, cy, radius * 16, turnOf(seconds(age) * q(.35)), night);
   }
 }
@@ -482,9 +489,11 @@ void paintFinishFront(Surface& s, Finish f, int age, int reveal, const rig::Anch
       if (age > up && age < gone) {
         const int p = ease(age, up, up + 300), back = 4096 - ease(age, gone - 400, gone);
         const int pop = p + 1100 * sin12(F::ratio(p, 4096) * pi) / 4096;  // past its size, and back
-        trophy(r, {at.crown.x, at.crown.y - 6 * 16 - 26 * p / 4096 * 16, 2900 * pop / 4096 * back / 4096});
+        // Its foot no higher than leaves the whole cup on the screen.
+        const int foot = std::max(at.crown.y - 6 * 16 - 26 * p / 4096 * 16, h * kTrophyFoot / 410 * 16);
+        trophy(r, {at.crown.x, foot, 2900 * pop / 4096 * back / 4096});
       }
-      ring(reveal + 350, 1100, 8, h * 470 / 1000);
+      ring(reveal + 350, 1100, 8, h * 470 / 1000 - sceneLift(h));
       if (gifted) gift(r, s);
       if (f == Finish::kConfetti) {
         for (int i = 0; i < 2; ++i) {

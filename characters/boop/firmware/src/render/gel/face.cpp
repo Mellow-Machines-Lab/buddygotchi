@@ -87,7 +87,6 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   revision_ = cueRevision_ = 0;
   mixer_.reset(0, 0, nullptr);
   lively_.reset();
-  setCountsOnLine(false);
   layers_ = {};
   clip_ = cueing_ = base_ = idleMove_ = nullptr;
   idleMoveEnds_ = 0;
@@ -750,6 +749,9 @@ bool GelFace::bodyAt(int x, int y) const {
   }
   return false;
 }
+
+// The finger's way across, canvas px, as the panel's.
+void GelFace::swipe(int dx) { dragSwitch(dx * size_.width / 320); }
 
 void GelFace::wish(const WishShow& show) {
   // A wish left: a silent sigh and slump as its bubble fades.

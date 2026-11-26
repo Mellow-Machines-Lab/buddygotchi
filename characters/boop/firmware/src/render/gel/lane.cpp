@@ -36,8 +36,9 @@ struct Lane {
 
 uint16_t inkRgb565(int ink) { return paletteAt(inkAt(ink, kLevels)); }
 
-// How far the body ducks under the needs-you card, at its whole.
-constexpr int kAlertDuckPx = 12;
+// How far the body ducks under the needs-you card, at its whole: its crown
+// a little under where it stands at rest, before the scene's lift.
+constexpr int kAlertDuckPx = 6 + kSceneLift;
 constexpr int kMargin = 18;  // from the panel's edges, as the canvas's 12 px
 constexpr int kIcon = 18;    // the strip's marks, and the gap after them
 // How far what's laid out by the panel's rounded corners keeps from them
@@ -103,18 +104,19 @@ struct Term {
   uint16_t ink = 0;
 };
 Term gTerm;
-// This frame's switch: how far off the strip's row is, and its arrows'
-// strength (noteSwitch); paintFrame sets them, the strip and its key read
-// them.
-int gSwitchDx = 0, gArrows = 0, gWatchSlot = -1;
-// The counts on the line (dbg.counts): off, as the board ships.
-bool gCountsOnLine = false;
+// This frame's switch: how far off the strip's row is, its arrows'
+// strength, and the flash on the arrow at side gFlashSide (noteSwitch);
+// paintFrame sets them, the strip and its key read them.
+int gSwitchDx = 0, gArrows = 0, gFlash = 0, gFlashSide = 1, gWatchSlot = -1;
 // What the last frame showed, and when the watched one and the set of
-// agents last changed.
+// agents last changed; a finger's swipe under way (`dragged`, px across)
+// and where it has the row (`held`); and where the row was as it let go
+// (`sprung`, at letGoAt), until it's back or the switch comes.
 struct Switching {
   int watch = -1, pips = 0, dir = 1;
-  uint32_t slidAt = 0, arrowsAt = 0;
+  uint32_t slidAt = 0, arrowsAt = 0, letGoAt = 0;
   bool slid = false, arrowed = false;
+  int dragged = 0, held = 0, sprung = 0;
 } gSwitch;
 Term termFor(const Stream& st, uint32_t now, int watchSlot) {
   static char text[Stream::kWordBytes + 16];
@@ -424,7 +426,7 @@ void paintPips(Raster& r, const Strip& s, int x0, int x1, int y, int spin) {
       // The watched one's name in it, in the dark of the lane colours' text.
       const int tall = fit.glyphs ? kPillTall : 2 * kPipDot;
       r.round(x, cy - tall / 2, fit.pill, tall, tall / 2, ink);
-      if (fit.glyphs) text(r, kLarge, x + kPillPad, cy - kLarge.h / 2, s.who, rgb565(0x06, 0x20, 0x1f), fit.room);
+      if (fit.glyphs) text(r, *fit.font, x + kPillPad, cy - fit.font->h / 2, s.who, rgb565(0x06, 0x20, 0x1f), fit.room);
       x += fit.pill + kPipGap;
       continue;
     }
@@ -461,10 +463,10 @@ int stripMargin(const Surface& panel, int cy) {
   return std::max(kMargin, panel.inset(cy - kSign.h / 2, cy + kSign.h / 2) + kCornerGap);
 }
 
-// The counts on the line (dbg.counts), for one agent at work with a doing
-// to show: no one needs you, and no finish names a turn.
+// The counts on the line, for one agent at work with a doing to show: no
+// one needs you, and no finish names a turn.
 bool countsUp(const Strip& s) {
-  return gCountsOnLine && s.pipCount <= 1 && !s.agent && !s.doneAgent && !s.noApp && s.busy > 0 && gTerm.text &&
+  return s.pipCount <= 1 && !s.agent && !s.doneAgent && !s.noApp && s.busy > 0 && gTerm.text &&
          *gTerm.text;
 }
 
@@ -479,7 +481,7 @@ void rule(Lane& l, const Strip& s, int spin) {
   if (!countsUp(s)) return paintRule(l.r, margin, l.w - margin, y, grabber);
   const int at = l.w - margin - (marks(nullptr, s, 0, y + 1, spin, kShowAll, kLarge) - kMarkAfter);
   marks(&l.r, s, at, y + 1, spin, kShowAll, kLarge);
-  // The grabber in the panel's middle, as it is with the counts in the row.
+  // The grabber in the panel's middle, as it is without them.
   const int cx = l.w / 2, side = kGrabberW / 2 + kGrabberGap, stop = at - kPipRuleGap;
   const uint16_t ink = rgb565(kRuleRgb);
   l.r.round(margin, y, cx - side - margin, 2, 1, ink);
@@ -624,19 +626,21 @@ void strip(Lane& l, const Strip& s, int spin) {
       text(r, kLarge, x + 18, cy - kLarge.h / 2, s.pill, ink, w - 36);
       return;
     }
-    // Two arrows at the ends, a moment after the set of agents changes:
-    // there are others to swipe to.
-    if (gArrows > 0) {
+    // Two arrows at the ends: there are others to swipe or tap to. The one
+    // on the side switched toward flashes.
+    for (int side : {-1, 1}) {
+      const int x = side < 0 ? margin - 14 : right + 14;
+      Point v[3] = {{(x - side * 5) * 16, (cy - 9) * 16}, {(x + side * 4) * 16, cy * 16},
+                    {(x - side * 5) * 16, (cy + 9) * 16}};
       r.alpha = gArrows;
-      for (int side : {-1, 1}) {
-        const int x = side < 0 ? margin - 14 : right + 14;
-        Point v[3] = {{(x - side * 5) * 16, (cy - 8) * 16}, {(x + side * 3) * 16, cy * 16}, {(x - side * 5) * 16, (cy + 8) * 16}};
-        r.stroke16(v, 3, 3 * 16, grey);
-      }
-      r.alpha = 255;
+      r.stroke16(v, 3, 4 * 16, grey);
+      if (side != gFlashSide || !gFlash) continue;
+      r.alpha = gFlash;
+      r.stroke16(v, 3, 4 * 16, rgb565(kEyeRgb));
     }
-    // Sliding in as you switch agents: the row starts gSwitchDx off and
-    // comes to rest, faded by how far it still has to go.
+    r.alpha = 255;
+    // The row gSwitchDx off: as a swipe drags it and it springs back, or
+    // sliding in as you switch agents, faded by how far off it is.
     const int dx = gSwitchDx, left = margin + dx;
     r.alpha = 255 - 255 * std::min(std::abs(dx), kSwitchPx) / (2 * kSwitchPx);
     // Sliding, it shows only within its row, clear of the arrows.
@@ -652,25 +656,14 @@ void strip(Lane& l, const Strip& s, int spin) {
     r.alpha = 255;
     return;
   }
-  // Nothing named, while the agents work: what they're doing first, in
-  // the strip's font ("searching TODO"), and the counts as marks at the
-  // right end, the to-do list last; the drawer, pulled up, has them in
-  // full. With no term, or no agent working, the counts in words. With
-  // the counts on the line, the doing has the whole row.
+  // Nothing named, while the agents work: what they're doing has the whole
+  // row ("searching TODO"), in the strip's font, the counts on the line
+  // above it (rule); the drawer, pulled up, has them in full. With no term,
+  // or no agent working, the counts in words.
   if (countsUp(s)) {
     char fitted[Stream::kDoingBytes];
     text(r, f, margin, ty, fitTerm(gTerm.text, f, right - margin, fitted), gTerm.ink, right - margin);
     return;
-  }
-  if (s.busy > 0 && gTerm.text && *gTerm.text) {
-    const int w = marks(nullptr, s, 0, cy, spin, kShowAll) - kMarkAfter;
-    const int at = right - w;
-    if (at - kIcon - margin >= 4 * f.w) {
-      char fitted[Stream::kDoingBytes];
-      text(r, f, margin, ty, fitTerm(gTerm.text, f, at - kIcon - margin, fitted), gTerm.ink, at - kIcon - margin);
-      marks(&r, s, at, cy, spin, kShowAll);
-      return;
-    }
   }
   counts(&r, s, margin, right, cy, spin);
 }
@@ -709,7 +702,8 @@ uint32_t laneKey(const char* line, const Strip& s, int spin, const char* caption
     str(s.agent), str(s.project), str(s.name), str(s.doneAgent), str(s.doneThread);
     add(&s.pipCount, sizeof s.pipCount), add(s.pipKind, sizeof s.pipKind), add(s.pipSlot, sizeof s.pipSlot);
     add(&s.watch, sizeof s.watch), add(&s.pillAt, sizeof s.pillAt), str(s.who), str(s.pill);
-    add(&gSwitchDx, sizeof gSwitchDx), add(&gArrows, sizeof gArrows);
+    add(&gSwitchDx, sizeof gSwitchDx), add(&gArrows, sizeof gArrows), add(&gFlash, sizeof gFlash);
+    add(&gFlashSide, sizeof gFlashSide);
     // The spinner's step only while a pip pulses: one that wants you, not watched.
     bool pulses = false;
     for (int i = 0; i < s.pipCount; ++i) pulses |= i != s.watch && s.pipKind[i] == 'a';
@@ -722,7 +716,7 @@ uint32_t laneKey(const char* line, const Strip& s, int spin, const char* caption
     const bool spinner = s.busy > 0 && (s.pipCount <= 1 || s.agent || s.doneAgent);
     const int numbers[] = {s.more,    int(s.doneOutcome), s.busy,      s.idle,
                            s.helpers, s.todoDone,         s.todoTotal, s.noApp,
-                           s.opacity, spinner ? spin : 0, rowAlpha,    gCountsOnLine};
+                           s.opacity, spinner ? spin : 0, rowAlpha};
     add(numbers, sizeof(numbers));
   }
   return h ? h : 1;
@@ -796,7 +790,7 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   if (earned.shows()) low = earned;
   gTerm = stream ? termFor(*stream, now, s.watch >= 0 ? s.pipSlot[s.watch] : -1) : Term{};
   noteSwitch(s, now);
-  gSwitchDx = switchDx(now), gArrows = switchArrows(now);
+  gSwitchDx = switchDx(now), gArrows = switchArrows(now), gFlash = switchFlash(now, gFlashSide);
   gWatchSlot = s.pipCount > 1 && s.watch >= 0 ? s.pipSlot[s.watch] : -1;
   if (low.shows()) line = note = nullptr;
   // At rest it covers what's under it, so the strip's changes change nothing;
@@ -875,18 +869,26 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   return held;
 }
 
+void dragSwitch(int dx) { gSwitch.dragged = dx; }
+
 void noteSwitch(const Strip& s, uint32_t now) {
   Switching& w = gSwitch;
   if (s.pipCount < 2) {
     w = Switching{};
     return;
   }
+  // A swipe under way has the row a third of the finger's way, damped;
+  // let go, it waits there for the Mac's answer, then springs back.
+  if (w.dragged)
+    w.held = std::clamp(w.dragged / 3, -kSwitchPx, kSwitchPx);
+  else if (w.held)
+    w.sprung = w.held, w.held = 0, w.letGoAt = now;
   // The first frame with several: no slide, only the arrows.
   if (w.pips >= 2 && s.watch != w.watch && w.watch >= 0 && s.watch >= 0) {
     // To the next (rightward in the pips): it comes in from the right.
     const bool wrapped = std::abs(s.watch - w.watch) > 1 && s.pipCount > 2;
     w.dir = (s.watch > w.watch) != wrapped ? 1 : -1;
-    w.slidAt = now, w.slid = true;
+    w.slidAt = now, w.slid = true, w.sprung = 0;
   }
   if (s.pipCount != w.pips) w.arrowsAt = now, w.arrowed = true;
   w.watch = s.watch, w.pips = s.pipCount;
@@ -894,17 +896,32 @@ void noteSwitch(const Strip& s, uint32_t now) {
 
 int switchDx(uint32_t now) {
   const Switching& w = gSwitch;
-  if (!w.slid || now - w.slidAt >= kSwitchMs) return 0;
-  const int left = 1000 - ease1000(int((now - w.slidAt) * 1000 / kSwitchMs), 1000);
-  return w.dir * kSwitchPx * left / 1000;
+  if (w.held) return w.held;
+  if (w.slid && now - w.slidAt < kSwitchMs) {
+    const int left = 1000 - ease1000(int((now - w.slidAt) * 1000 / kSwitchMs), 1000);
+    return w.dir * kSwitchPx * left / 1000;
+  }
+  const uint32_t back = now - w.letGoAt;
+  if (!w.sprung || back >= kAnswerMs + kSwitchMs) return 0;
+  if (back < kAnswerMs) return w.sprung;
+  return w.sprung * (1000 - ease1000(int((back - kAnswerMs) * 1000 / kSwitchMs), 1000)) / 1000;
 }
 
 int switchArrows(uint32_t now) {
   const Switching& w = gSwitch;
-  if (!w.arrowed || now - w.arrowsAt >= kArrowsMs) return 0;
-  // In over 200 ms, held, out over the last 600: faint, at most 150.
-  const int age = int(now - w.arrowsAt), peak = 150;
-  return std::min({peak, age * peak / 200, int(kArrowsMs - age) * peak / 600});
+  if (!w.arrowed || now - w.arrowsAt >= kArrowsMs) return kArrowsDim;
+  // As the set changes: up to full over 200 ms, held, back over the last 600.
+  const int age = int(now - w.arrowsAt);
+  return std::max(kArrowsDim, std::min({255, age * 255 / 200, int(kArrowsMs - age) * 255 / 600}));
+}
+
+int switchFlash(uint32_t now, int& side) {
+  const Switching& w = gSwitch;
+  side = w.dir;
+  if (!w.slid || now - w.slidAt >= kFlashMs) return 0;
+  // Bright at once, held a beat, out over the rest.
+  const int age = int(now - w.slidAt), hold = 150;
+  return age < hold ? 255 : int(kFlashMs - age) * 255 / int(kFlashMs - hold);
 }
 
 int watchedSlot() { return gWatchSlot; }
@@ -915,8 +932,10 @@ PipsFit fitPips(int pips, bool watched, const char* name, int line) {
   if (!watched) return f;
   // What the name has: the line less the dots, the rule's gaps by the pips,
   // a little of the line at each end and the pill's pads.
-  const int most = (line - f.width - 2 * (kPipRuleGap + kLineLeast) - 2 * kPillPad) / kLarge.w;
+  const int has = line - f.width - 2 * (kPipRuleGap + kLineLeast) - 2 * kPillPad;
   const int glyphs = name ? glyphCount(name) : 0;
+  if (glyphs > 0 && glyphs * kSign.w <= has) f.font = &kSign;
+  const int w = f.font->w, most = has / w;
   if (glyphs <= 0 || most < 2) {
     f.pill = kPipLong, f.width += f.pill;
     return f;
@@ -924,12 +943,9 @@ PipsFit fitPips(int pips, bool watched, const char* name, int line) {
   f.cut = glyphs > most;
   // Cut, as text() cuts it: render::cutAt's glyphs, then one cell's "…".
   f.glyphs = f.cut ? cutAt(name, most - 1) + 1 : glyphs;
-  f.room = (f.cut ? most : glyphs) * kLarge.w;
-  f.pill = f.glyphs * kLarge.w + 2 * kPillPad, f.width += f.pill;
+  f.room = (f.cut ? most : glyphs) * w;
+  f.pill = f.glyphs * w + 2 * kPillPad, f.width += f.pill;
   return f;
 }
-
-void setCountsOnLine(bool on) { gCountsOnLine = on; }
-bool countsOnLine() { return gCountsOnLine; }
 
 }  // namespace render::gel

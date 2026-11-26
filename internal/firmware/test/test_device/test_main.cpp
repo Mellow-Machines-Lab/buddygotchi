@@ -3455,6 +3455,69 @@ static void test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px() {
   TEST_ASSERT_EQUAL_INT(1, d.count(kClosed));
 }
 
+// Pins the bar (Face::barTop): a touch that starts there, under the desk,
+// is decided by its first kDrawerPullPx. With three agents one that drifts
+// up as it goes across is a swipe between agents, the drawer staying shut;
+// one mostly up pulls the drawer as ever. A tap in the bar's left third
+// asks for the one before, in its right third the next, in its middle
+// nothing. It's never the body's, even inside its rim's margin, and one
+// that starts on the body above it is the body's still. With one agent a
+// swipe or a tap there asks for none, and the swipe pulls no drawer.
+static void test_the_bar_decides_swipe_pull_and_taps() {
+  constexpr const char* kThree =
+      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":1,\"vol\":0,\"pips\":\"w0w1i2\",\"watch\":0}";
+  constexpr const char* kNext = "{\"t\":\"ev\",\"kind\":\"agent\",\"did\":\"next\"}";
+  constexpr const char* kPrev = "{\"t\":\"ev\",\"kind\":\"agent\",\"did\":\"prev\"}";
+  constexpr const char* kAgent = "\"kind\":\"agent\"";
+  const int bar = testface::StubFace::kBarTop;
+  {
+    DrawerRig b(kThree);
+    b.touch(260, 230, 120, 195, 300);  // 140 px across, 35 up
+    b.run(400);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(1, b.count(kNext), b.usb.text.c_str());
+    TEST_ASSERT_EQUAL_INT(0, b.count(kOpened));
+    TEST_ASSERT_EQUAL_INT(0, b.open());
+    b.touch(170, 232, 150, 150, 300);  // 82 up, 20 across
+    b.run(400 + app::Device::kDrawerMs);
+    TEST_ASSERT_EQUAL_INT(1, b.count(kOpened));
+    TEST_ASSERT_EQUAL_INT(1, b.count(kAgent));
+  }
+  {
+    DrawerRig b(kThree);
+    b.touch(30, 230, 30, 230, 60);
+    b.run(200);
+    TEST_ASSERT_EQUAL_INT(1, b.count(kPrev));
+    b.touch(290, 230, 290, 230, 60);
+    b.run(200);
+    TEST_ASSERT_EQUAL_INT(1, b.count(kNext));
+    b.touch(160, 230, 160, 230, 60);
+    b.run(200);
+    TEST_ASSERT_EQUAL_INT(2, b.count(kAgent));
+    TEST_ASSERT_EQUAL_INT(0, b.count(kTapped));
+    b.touch(230, bar + 4, 230, bar + 4, 60);  // in the body's rim margin
+    b.run(200);
+    TEST_ASSERT_EQUAL_INT(2, b.count(kNext));
+    b.touch(80, bar + 4, 240, bar + 4, 120);  // across it, a stroke above
+    b.run(300);
+    TEST_ASSERT_EQUAL_INT(2, b.count(kPrev));
+    TEST_ASSERT_EQUAL_INT(0, b.count("\"kind\":\"gesture\""));
+    b.touch(160, bar - 12, 160, 40, 160);  // up the body, from above the bar
+    b.run(400);
+    TEST_ASSERT_EQUAL_INT(1, b.count("{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"ruffle\""));
+    TEST_ASSERT_EQUAL_INT(0, b.count(kOpened));
+  }
+  {
+    DrawerRig b;  // one agent at work
+    b.touch(260, 230, 120, 195, 300);
+    b.run(400);
+    b.touch(290, 230, 290, 230, 60);
+    b.run(200);
+    TEST_ASSERT_EQUAL_INT(0, b.count(kAgent));
+    TEST_ASSERT_EQUAL_INT(0, b.count(kOpened));
+    TEST_ASSERT_EQUAL_INT(0, b.count(kTapped));
+  }
+}
+
 // Pins the card's touches (kCardSwipePx, 28): a finger across the card asks
 // the Mac for the next card (leftwards) or the one before, a tap or a short
 // roll asks it to open the card, and neither is a tap or a stroke on Boop. A
@@ -3704,6 +3767,7 @@ int main() {
   RUN_TEST(test_a_wish_mets_sign_is_read_before_the_next);
   RUN_TEST(test_boot_only_shuts_the_open_drawer);
   RUN_TEST(test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px);
+  RUN_TEST(test_the_bar_decides_swipe_pull_and_taps);
   RUN_TEST(test_a_swipe_across_the_card_asks_for_the_next_and_a_tap_opens_it);
   RUN_TEST(test_a_pick_is_the_row_the_finger_went_down_on);
   RUN_TEST(test_needs_you_and_no_app_shut_the_drawer);

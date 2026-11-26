@@ -59,7 +59,8 @@ int cardHop(const CardShow& c) {
 }
 
 Box cardBox(const Surface& s, const CardShow& c) {
-  const int h = cardHeight(c), bottom = s.height * 4 / 5 - CardLayout::kGap - dotsRow(c), y = bottom - h;
+  const int h = cardHeight(c), bottom = s.height * 4 / 5 - sceneLift(s.height) - CardLayout::kGap - dotsRow(c),
+            y = bottom - h;
   if (c.pic) {
     const int wide = c.pic == 's' ? CardShow::kShowW + 2 * kShowMargin : kPicW;
     const int w = std::min(wide, s.width - 2 * (CardLayout::kEdge + CardLayout::kHand)), x = (s.width - w) / 2;

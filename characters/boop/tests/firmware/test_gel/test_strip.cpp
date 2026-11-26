@@ -1,7 +1,7 @@
 // The strip with several agents (render/gel/lane.h): the name of the one
 // the screen follows in its pip on the line, as much as fits and cut with
-// "…"; the lane kept while only the spinner's step changes; and the counts
-// on the line, for the owner to see, off until asked.
+// "…"; the lane kept while only the spinner's step changes; and the
+// strip's row and arrows as you switch agents.
 #include <unity.h>
 
 #include <cstring>
@@ -40,8 +40,9 @@ Strip several(int pips, const char* who) {
 }  // namespace
 
 // The name on the line: whole when it fits beside the other pips with some
-// line at each end; else cut as text() cuts it, its "…" a cell of the
-// pill; never past the line, whatever the name and however many agents.
+// line at each end, in the sign's font if it fits whole in it; else cut as
+// text() cuts it, in the large font, its "…" a cell of the pill; never
+// past the line, whatever the name and however many agents.
 void test_the_name_on_the_line_fits() {
   const int line = Panel().line();
   const char* longest = "internal-tools-marketing-sui";  // 28
@@ -49,21 +50,23 @@ void test_the_name_on_the_line_fits() {
   for (int pips = 2; pips <= Strip::kPips; ++pips) {
     const PipsFit whole = fitPips(pips, true, "boop-voice-fw", line);
     TEST_ASSERT_FALSE(whole.cut);
+    TEST_ASSERT_TRUE(whole.font == &kSign);
     TEST_ASSERT_EQUAL_INT(13, whole.glyphs);
-    TEST_ASSERT_EQUAL_INT(13 * kLarge.w + 2 * kPillPad, whole.pill);
+    TEST_ASSERT_EQUAL_INT(13 * kSign.w + 2 * kPillPad, whole.pill);
     for (const char* name : {"a", "web", "the landing page and its\xE2\x80\xA6", longest}) {
       const PipsFit f = fitPips(pips, true, name, line);
       TEST_ASSERT_TRUE(f.width + 2 * (kPipRuleGap + kLineLeast) <= line);
-      TEST_ASSERT_EQUAL_INT(f.glyphs * kLarge.w + 2 * kPillPad, f.pill);
-      TEST_ASSERT_TRUE(f.glyphs * kLarge.w <= f.room);
+      TEST_ASSERT_EQUAL_INT(f.glyphs * f.font->w + 2 * kPillPad, f.pill);
+      TEST_ASSERT_TRUE(f.glyphs * f.font->w <= f.room);
+      if (f.cut) TEST_ASSERT_TRUE(f.font == &kLarge);
       if (f.cut)
         TEST_ASSERT_TRUE(f.glyphs < glyphCount(name));
       else
         TEST_ASSERT_EQUAL_INT(glyphCount(name), f.glyphs);
     }
   }
-  // Up to four agents, a name of 24 shows whole; six cut the longest.
-  TEST_ASSERT_FALSE(fitPips(4, true, "the landing page and its", line).cut);
+  // Up to three agents, a name of 24 shows whole; six cut the longest.
+  TEST_ASSERT_FALSE(fitPips(3, true, "the landing page and its", line).cut);
   TEST_ASSERT_TRUE(fitPips(6, true, longest, line).cut);
   // No name, or no agent watched: the long pip, or only dots.
   TEST_ASSERT_EQUAL_INT(kPipLong, fitPips(3, true, "", line).pill);
@@ -106,20 +109,37 @@ void test_the_line_is_kept_through_the_spinner() {
   TEST_ASSERT_NOT_EQUAL(laneKey(nullptr, asking), laneKey(nullptr, asking, 1));
 }
 
-// The counts on the line: off as the board starts, on by dbg.counts, and
-// off again after a reset; on, the lane's key says so.
-void test_the_counts_on_the_line_switch() {
-  linkkit::Rng rng;
-  GelFace face;
-  face.reset(0, rng);
-  TEST_ASSERT_FALSE(countsOnLine());
-  Strip one;
-  one.busy = 1;
-  const uint32_t row = laneKey(nullptr, one);
-  TEST_ASSERT_TRUE(face.countsOnLine(true));
-  TEST_ASSERT_TRUE(countsOnLine());
-  TEST_ASSERT_NOT_EQUAL(row, laneKey(nullptr, one));
-  face.reset(0, rng);
-  TEST_ASSERT_FALSE(countsOnLine());
-  TEST_ASSERT_EQUAL_UINT32(row, laneKey(nullptr, one));
+// Switching agents (noteSwitch): the arrows dim at rest, never gone; a swipe
+// under way drags the row a third of the finger's way, at most kSwitchPx;
+// let go, it waits kAnswerMs for the Mac, then springs back; the switch
+// slides the next in from the right, its arrow flashing, and ends the
+// spring.
+void test_the_row_follows_a_swipe_and_springs_back() {
+  Strip s = several(3, "web");
+  s.watch = 0;
+  noteSwitch(s, 0);
+  TEST_ASSERT_EQUAL_INT(kArrowsDim, switchArrows(kArrowsMs));
+  dragSwitch(-60);
+  noteSwitch(s, 2000);
+  TEST_ASSERT_EQUAL_INT(-20, switchDx(2000));
+  dragSwitch(-600);
+  noteSwitch(s, 2100);
+  TEST_ASSERT_EQUAL_INT(-kSwitchPx, switchDx(2100));
+  dragSwitch(0);
+  noteSwitch(s, 2200);
+  TEST_ASSERT_EQUAL_INT(-kSwitchPx, switchDx(2200 + kAnswerMs - 1));
+  TEST_ASSERT_EQUAL_INT(0, switchDx(2200 + kAnswerMs + kSwitchMs));
+  dragSwitch(-300);
+  noteSwitch(s, 3000);
+  dragSwitch(0);
+  noteSwitch(s, 3100);
+  s.watch = 1;
+  noteSwitch(s, 3200);
+  TEST_ASSERT_EQUAL_INT(kSwitchPx, switchDx(3200));
+  int side = 0;
+  TEST_ASSERT_EQUAL_INT(255, switchFlash(3200, side));
+  TEST_ASSERT_EQUAL_INT(1, side);
+  TEST_ASSERT_EQUAL_INT(0, switchDx(3200 + kSwitchMs));
+  TEST_ASSERT_EQUAL_INT(0, switchFlash(3200 + kFlashMs, side));
+  noteSwitch(Strip{}, 4000);  // one agent: nothing to switch to
 }

@@ -188,24 +188,27 @@ void paintProps(Surface& surface, const Engine& e, const Paws* paws, const Strea
     within({c.x, from, c.x + c.w, c.y + c.h});
     r.bounds = Raster::kEverywhere;
   };
-  auto text = [&](const char* label, int a, int b, uint16_t ink, const Font& font) {
-    r.text(label, x(a), y(b), ink, font);
+  // The desk and what's on it, a row of the scene's: kSceneLift up from
+  // where it was laid out, as the body stands.
+  const int scene = sceneLift(h);
+  auto desk = [&](int a, int b, int c, int d, int radius, uint16_t ink) {
+    r.round(x(a), y(b) - scene, x(c), y(d), x(radius), ink);
   };
   const uint16_t dark = rgb565(20, 55, 72), green = rgb565(140, 223, 203), light = rgb565(184, 233, 245),
                  blue = rgb565(100, 184, 207);
   F contact = s.envelope(e.timeMs(), kKey);
   if (s.desk.x > q(.001)) {
     r.alpha = (s.desk.x * 255).integer();
-    round(150, 749, 700, 21, 10, rgb565(25, 59, 77));
+    desk(150, 749, 700, 21, 10, rgb565(25, 59, 77));
     // The frame lights in the agent's colour while Boop holds its card, and
     // in the watched one's with several agents, so you know whose it is.
     const int slot = held && held->slot >= 0 ? held->slot : watchedSlot();
     const bool lit = slot >= 0 && slot < Stream::kLanes;
-    round(100, 600, 184, 116, 12, lit ? kLaneInk[slot] : blue);
-    round(104, 604, 176, 108, 10, dark);
-    round(114, 611, 156, 89, 8, rgb565(7, 24, 32));
-    round(178, 715, 26, 32, 8, dark);
-    round(140, 739, 98, 10, 5, blue);
+    desk(100, 600, 184, 116, 12, lit ? kLaneInk[slot] : blue);
+    desk(104, 604, 176, 108, 10, dark);
+    desk(114, 611, 156, 89, 8, rgb565(7, 24, 32));
+    desk(178, 715, 26, 32, 8, dark);
+    desk(140, 739, 98, 10, 5, blue);
     // The monitor says what the work is, in one icon that fills it: a
     // pencil writing as it types, a magnifying glass drifting as it looks,
     // a prompt as something runs, a flask filling as the tests run, an
@@ -216,10 +219,10 @@ void paintProps(Surface& surface, const Engine& e, const Paws* paws, const Strea
     const uint32_t ms = uint32_t(F(e.timeMs()).integer());
     const MonitorIcon icon = monitorIcon(stream, streamNow, activityOf(deskState));
     if (icon == MonitorIcon::kCross || icon == MonitorIcon::kClock)
-      round(114, 611, 156, 89, 8, icon == MonitorIcon::kCross ? rgb565(70, 18, 20) : rgb565(62, 42, 6));
+      desk(114, 611, 156, 89, 8, icon == MonitorIcon::kCross ? rgb565(70, 18, 20) : rgb565(62, 42, 6));
     else if (icon == MonitorIcon::kTick)
-      round(114, 611, 156, 89, 8, rgb565(16, 52, 28));
-    const int cx = x(192), cy = y(656);
+      desk(114, 611, 156, 89, 8, rgb565(16, 52, 28));
+    const int cx = x(192), cy = y(656) - scene;
     const uint16_t clay = rgb565(kClayRgb), sage = rgb565(kSageRgb), amber = rgb565(kAmberRgb);
     auto seg = [&](int ax, int ay, int bx, int by, int width, uint16_t ink) {
       r.line({cx + ax, cy + ay}, {cx + bx, cy + by}, width, ink);
@@ -304,14 +307,14 @@ void paintProps(Surface& surface, const Engine& e, const Paws* paws, const Strea
     // the keyboard alone and you still, they rest.
     const bool brisk = paws && paws->tapping, soft = brisk || deskAlpha >= alongAlpha;
     auto lift = [&](int side) { return brisk ? briskLift(paws->phase, side) : typeLift(ms, side); };
-    round(387, 713, 258, 30, 8, rgb565(49, 88, 107));
+    desk(387, 713, 258, 30, 8, rgb565(49, 88, 107));
     for (int row = 0; row < 2; ++row)
       for (int key = 0; key < 9; ++key) {
         bool pressed = contact > q(.35) && key == (s.hasLast && s.last.side < 0 ? 2 : 6);
         // Typing with you: the keys under a paw light as it comes down.
         if (brisk && (key == 1 || key == 2 || key == 6 || key == 7))
           pressed = pressed || lift(key < 4 ? -1 : 1) < kBriskLift / 3;
-        round(397 + key * 26, 718 + row * 10, 19, 6, 2, pressed ? light : rgb565(144, 170, 176));
+        desk(397 + key * 26, 718 + row * 10, 19, 6, 2, pressed ? light : rgb565(144, 170, 176));
       }
     // The paws, by the activity, easing from one pose to the next
     // (Scenes::pose): on the keys and typing; off the keys and still on the
@@ -334,7 +337,7 @@ void paintProps(Surface& surface, const Engine& e, const Paws* paws, const Strea
       int yy = 711 + (s.hasLast && s.last.side == side ? (contact * 9).integer() : 0) - lift - flail;
       // Its hand, a pad flat on the keys, unless the hand's elsewhere.
       if (handsPlan().has(side, HandsAt::kDesk))
-        paintHand(r, onKeys(x(500 + side * (78 + flail / 3) + dx), y(yy), kDeskHandPx));
+        paintHand(r, onKeys(x(500 + side * (78 + flail / 3) + dx), y(yy) - scene, kDeskHandPx));
     }
   }
   // Each prop's alpha is its ramped visibility; one fading out still draws
@@ -346,12 +349,15 @@ void paintProps(Surface& surface, const Engine& e, const Paws* paws, const Strea
     // The mic and its label in a row over the head, centred together, the
     // label in the large font to read at arm's length, as the cards' do,
     // and clear of the dome's top. The ring breathes in sixteenths of a
-    // pixel, two pixels wide, its outer edge 15.5 to 21.5 px out.
+    // pixel, two pixels wide, its outer edge 15.5 to 21.5 px out. Half the
+    // scene's lift up, so the crown, lifted, stays clear of it.
     constexpr int kMic = 372, kLabel = 555;
-    circle16(r, x(kMic) * 16 + 8, y(144) * 16 + 8, 15 * 16 - 8 + (s.listeningPulse * 96).integer(), 2 * 16, blue);
-    round(kMic - 8, 119, 16, 31, 8, light);
-    r.line({x(kMic), y(153)}, {x(kMic), y(164)}, 2, blue);
-    text("LISTENING", kLabel, 144, light, kLarge);
+    const int up = scene / 2;
+    circle16(r, x(kMic) * 16 + 8, (y(144) - up) * 16 + 8, 15 * 16 - 8 + (s.listeningPulse * 96).integer(), 2 * 16,
+             blue);
+    r.round(x(kMic - 8), y(119) - up, x(16), y(31), x(8), light);
+    r.line({x(kMic), y(153) - up}, {x(kMic), y(164) - up}, 2, blue);
+    r.text("LISTENING", x(kLabel), y(144) - up, light, kLarge);
   }
   r.alpha = 255;
   if (F alert = s.visible(Scenes::kAlertProp, now); alert > F(0)) {

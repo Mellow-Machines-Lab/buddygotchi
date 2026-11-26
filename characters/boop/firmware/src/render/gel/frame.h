@@ -21,7 +21,7 @@ inline int ease(int t, int a, int b) {
 }
 inline int lerp(int a, int b, int e12) { return a + int(int64_t(b - a) * e12 / 4096); }
 // The row the body stands on.
-inline int floorY(const Surface& s) { return s.height * 783 / 1000; }
+inline int floorY(const Surface& s) { return s.height * 783 / 1000 - sceneLift(s.height); }
 
 // A point `u` units (px at scale 1, y down) from a centre in sixteenths,
 // turned by `c12`/`s12` (Q12 cosine and sine) and scaled (Q12).

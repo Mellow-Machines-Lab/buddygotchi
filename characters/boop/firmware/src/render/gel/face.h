@@ -109,6 +109,10 @@ class GelFace final : public Face {
   // The body as the last frame drew it (render/gel/painter.h, bodyAt), and
   // the rig's hands out of it.
   bool bodyAt(int x, int y) const override;
+  // Under the desk, where the body stands (kDeskRow).
+  int barTop() const override { return kDeskRow; }
+  // The strip's row follows it (render/gel/lane.h, dragSwitch).
+  void swipe(int dx) override;
   int cues(uint32_t, bool, voice::FxEvent*, bool&) override;
   int profile(char* out, size_t n, uint32_t frames) override;
   const Engine& engine() const { return *engine_; }
@@ -127,9 +131,6 @@ class GelFace final : public Face {
   // A rule of the motion layer (render/gel/lively.h) on or off by name, or
   // "all": dbg.motion's. A reset puts every one back as kRules has it.
   bool motionRule(const char* rule, bool on) override { return lively_.set(rule, on); }
-  // The strip's counts on its line (render/gel/lane.h): dbg.counts's. A
-  // reset puts them back in the row.
-  bool countsOnLine(bool on) override { return setCountsOnLine(on), true; }
   const Lively& lively() const { return lively_; }
   // What it shows of the pastimes at t: the one playing.
   PastimeShow pastimes(uint32_t t) const;

@@ -58,12 +58,20 @@ void applyGlass(PaintControls& c, const Surface& s);
 // The patch where the body touches the glass, over the body and under its
 // face, by its anchors; its middle into `at`'s patch.
 void paintPatch(Surface& s, const PaintControls& c, rig::Anchors& at);
+// How far up the scene stands from the rows it was laid out on, px of the
+// AMOLED's 410: the body and all that stands with it (the desk, its
+// monitor and keys, the paws on them, a card held up, the pastimes'
+// props, a finish's gold), leaving the room under the desk to the strip's
+// line. Each part laid out in rows of its own takes it off them
+// (sceneLift); what sits on the body's anchors moves with it.
+constexpr int kSceneLift = 20;
+inline int sceneLift(int height) { return height * kSceneLift / 410; }
 // The canvas row the body stands on (restBodyBottom), and how far above it
 // its eyes are.
-constexpr int kDeskRow = 188, kEyesOverDesk = 50;
+constexpr int kDeskRow = 188 - kSceneLift * 240 / 410, kEyesOverDesk = 50;
 // The rows the body fills at rest, laid out on the AMOLED's 410.
-inline int restBodyTop(int height) { return height * 92 / 410; }
-inline int restBodyBottom(int height) { return height * 322 / 410; }
+inline int restBodyTop(int height) { return height * 92 / 410 - sceneLift(height); }
+inline int restBodyBottom(int height) { return height * 322 / 410 - sceneLift(height); }
 // Where the body is this frame, from the same pose that draws it: the rig's
 // anchors (render/rig/rig.h), in sixteenths of a pixel, which a layer
 // (render/gel/layers.h) sits on, so it moves, squashes and leaves the screen

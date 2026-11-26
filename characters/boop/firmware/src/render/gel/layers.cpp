@@ -172,7 +172,8 @@ void notes(Raster& r, const rig::Anchors& at, uint32_t ms, int alpha) {
   const int side = n % 2 ? 1 : -1;
   const Point sway = turn(age * 32 / 1500 % 32);
   const int x = at.crown.x / 16 + side * (48 + age * 12 / kLife) + 2 * sway.x / 4096;
-  const int y = at.crown.y / 16 + 22 - age * kRise / kLife;
+  // Never over the screen's top, which a big bop's crown comes near.
+  const int y = std::max(3 * kSize, at.crown.y / 16 + 22 - age * kRise / kLife);
   r.alpha = alpha * std::min(255, std::min(age * 255 / 500, (kLife - age) * 255 / 1000)) / 255;
   // Behind the body: only what has come up over its shoulder shows.
   r.bounds = {0, 0, 1 << 30, at.crown.y / 16 + 12};

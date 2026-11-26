@@ -88,17 +88,24 @@ bool paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
 int bubbleRoom(const Surface& surface);
 
 // Switching the agent the screen follows (several agents, the screen
-// guide's map): the strip's row and the card slide in from the side you
-// swiped toward over kSwitchMs while Boop stays, and when the set of
-// agents changes two arrows at the strip's ends say there are others to
-// swipe to, for kArrowsMs. noteSwitch reads each frame's strip;
-// switchDx is how far off, in px, the watched agent's things are now,
-// and switchArrows how strong the arrows are (0 … 255).
-constexpr uint32_t kSwitchMs = 320, kArrowsMs = 1800;
-constexpr int kSwitchPx = 90;
+// guide's map): two arrows at the strip's ends say there are others to
+// swipe or tap to, always at kArrowsDim, full for kArrowsMs as the set of
+// agents changes. A swipe under way in the bar (dragSwitch, px across)
+// moves the strip's row and the card a third of the finger's way, at most
+// kSwitchPx; let go, they wait kAnswerMs for the Mac's answer and spring
+// back over kSwitchMs. The switch slides them in from the side switched
+// toward over kSwitchMs while Boop stays, the arrow on that side flashing
+// for kFlashMs. noteSwitch reads each frame's strip; switchDx is how far
+// off, in px, the watched agent's things are now, switchArrows how strong
+// the arrows are (0 … 255), and switchFlash how bright the flash is and on
+// which side (-1 the left).
+constexpr uint32_t kSwitchMs = 320, kArrowsMs = 1800, kAnswerMs = 250, kFlashMs = 600;
+constexpr int kSwitchPx = 90, kArrowsDim = 190;
+void dragSwitch(int dx);
 void noteSwitch(const Strip& strip, uint32_t now);
 int switchDx(uint32_t now);
 int switchArrows(uint32_t now);
+int switchFlash(uint32_t now, int& side);
 // The watched agent's lane slot this frame, with several agents, else -1:
 // the desk's monitor is lit in its colour.
 int watchedSlot();
@@ -107,23 +114,18 @@ int watchedSlot();
 // of the line to the other `line` px: the others dots kPipDot in radius,
 // kPipGap apart, the line's rule stopping kPipRuleGap short of them; the
 // watched one a pill kPillTall high in its lane's colour holding its name
-// in the large font, as much as fits with kLineLeast of the line at each
-// end, cut as text() cuts it, with "…" (`glyphs` its cells, "…" included,
-// `room` the px text() is given), or with no name the long pip, kPipLong.
-// `width` is all of them, gaps and all.
-constexpr int kPipDot = 5, kPipGap = 8, kPipLong = 26, kPipRuleGap = 12;
-constexpr int kPillTall = 26, kPillPad = 8, kLineLeast = 24;
+// (`font`): whole in the sign's font when it fits with kLineLeast of the
+// line at each end, else in the large font, as much as fits, cut as text()
+// cuts it, with "…" (`glyphs` its cells, "…" included, `room` the px
+// text() is given), or with no name the long pip, kPipLong. `width` is all
+// of them, gaps and all.
+constexpr int kPipDot = 7, kPipGap = 10, kPipLong = 32, kPipRuleGap = 12;
+constexpr int kPillTall = 32, kPillPad = 10, kLineLeast = 24;
 struct PipsFit {
   int width = 0, pill = 0, glyphs = 0, room = 0;
   bool cut = false;
+  const Font* font = &kLarge;
 };
 PipsFit fitPips(int pips, bool watched, const char* name, int line);
-
-// The counts on the line, for the owner to see (dbg.counts): with one
-// agent at work, its marks (the spinner and its number, the to-do list's
-// "3/4") stand at the line's right end and the doing has the whole row.
-// Off by default; a reset turns it off.
-void setCountsOnLine(bool on);
-bool countsOnLine();
 
 }  // namespace render::gel

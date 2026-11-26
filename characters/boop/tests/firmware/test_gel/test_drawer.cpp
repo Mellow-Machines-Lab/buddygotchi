@@ -140,12 +140,12 @@ void test_a_pull_up_the_strip_opens_the_drawer() {
   TEST_ASSERT_EQUAL_INT(1000, b.open());
 }
 
-// A quick move up that starts on the body, above the strip, is the body's,
+// A quick move up that starts on the body, above the bar, is the body's,
 // as it was: the dome flung, the Mac told it was ruffled, and no drawer.
 void test_a_quick_move_up_the_body_isnt_the_drawers() {
   Board b;
   b.usb.text.clear();
-  b.touch(160, 180, 160, 40, 160);
+  b.touch(160, 165, 160, 40, 160);
   b.run(400);
   TEST_ASSERT_EQUAL_INT(0, b.count(kOpen));
   TEST_ASSERT_EQUAL_INT(1, b.count("{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"ruffle\""));

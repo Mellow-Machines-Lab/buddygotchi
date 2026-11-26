@@ -708,6 +708,9 @@ void applyGlass(PaintControls& c, const Surface& s) {
     c.anchorX = anchor.x, c.anchorY = anchor.y;
   }
   c.scale = int(int64_t(c.scale) * (4096 + int64_t(kGlassScale) * c.glass / 4096) / 4096);
+  // Coming up to the glass it comes down the scene's lift, so its crown,
+  // bigger, stays on the screen.
+  c.offsetY += sceneLift(s.height) * 16 * c.glass / 4096;
 }
 
 void paintPatch(Surface& s, const PaintControls& c, rig::Anchors& at) {

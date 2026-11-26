@@ -134,12 +134,15 @@ class StubFace : public render::Face {
 
   // Its body, a box about where the gel's stands at rest, from (kBodyX0,
   // kBodyY0) to (kBodyX1, kBodyY1) on the canvas, its rim's margin in: the
-  // nose's spot is on it, the lane and the screen's corners aren't.
-  static constexpr int kBodyX0 = 64, kBodyY0 = 40, kBodyX1 = 256, kBodyY1 = 190;
+  // nose's spot is on it, the lane and the screen's corners aren't. The
+  // bar starts under its desk, at kBarTop, inside the rim's margin, as the
+  // gel's does.
+  static constexpr int kBodyX0 = 64, kBodyY0 = 40, kBodyX1 = 256, kBodyY1 = 190, kBarTop = 178;
 
   const char* name() const override { return "stub"; }
   const voice::EffectClips& clips() const override { return testface::clips(); }
   bool bodyAt(int x, int y) const override { return x >= kBodyX0 && x < kBodyX1 && y >= kBodyY0 && y < kBodyY1; }
+  int barTop() const override { return kBarTop; }
   void reset(uint32_t t, linkkit::Rng&) override { *this = StubFace{}, lookAt_ = t; }
   void sync(const render::FaceSource& next, const render::FaceContext& context, uint32_t t) override {
     context_ = context;

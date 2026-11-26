@@ -677,8 +677,10 @@ void Device::readInputs(uint32_t t) {
 
   // A touch on the body is a tap, sent on release however long it was held,
   // unless the face leaned into it (followLean); one off it is the screen's,
-  // a swipe or nothing (Face::bodyAt). On the needs-you screen a touch
-  // anywhere is the screen's: only a quick one is a tap (kNeedsYouTapMs),
+  // a swipe or nothing (Face::bodyAt). One in the bar, under the desk
+  // (Face::barTop), is never the body's, however near its rim: the
+  // drawer's pull, or a swipe or a tap between agents. On the needs-you
+  // screen a touch anywhere is the screen's: only a quick one is a tap (kNeedsYouTapMs),
   // and a finger held still (TouchGesture::held)
   // is the gesture `dismiss`, sent as the hold completes with the
   // number of the request the screen showed as the finger went down, so the
@@ -708,16 +710,20 @@ void Device::readInputs(uint32_t t) {
     live_.showDrawer = false;  // a finger first: the drawer a reaction asked for stays shut
     live_.touchPath.down(x, y, t);
     // A touch on the open drawer is the drawer's, and so is one that
-    // starts on the strip, should it go up, while there are sessions to
-    // list; neither moves the face.
+    // starts in the bar, under the desk, should it go up, while there are
+    // sessions to list, unless the card Boop holds is under it; none of
+    // these moves the face.
     const int open = drawerOpen(t);
-    live_.drawerTouch =
-        faced && b_.face().hasDrawer() && !b_.noApp(t) && (open > 0 || (y >= kDrawerFromY && hasSessions()));
     // The face is told of the card as it is now: it may not have drawn it yet.
     const render::CardShow held = cardShow(t);
     if (faced) b_.face().card(held);
-    live_.cardTouch = faced && !live_.drawerTouch && open <= 0 && held.on && b_.face().cardAt(x, y);
-    live_.drawerPulling = live_.scrolling = live_.touchSpent = false;
+    const bool onCard = faced && open <= 0 && held.on && b_.face().cardAt(x, y);
+    live_.touchInBar = faced && y >= b_.face().barTop();
+    live_.drawerTouch = faced && b_.face().hasDrawer() && !b_.noApp(t) &&
+                        (open > 0 || (live_.touchInBar && !onCard && hasSessions()));
+    live_.cardTouch = !live_.drawerTouch && onCard;
+    live_.drawerPulling = live_.scrolling = live_.swiping = live_.touchSpent = false;
+    live_.swipeDx = 0;
     live_.drawerDownId = 0;
     if (live_.drawerTouch) {
       live_.drawerGrabbed = open, live_.drawerTouchedAt = t, live_.drawerInjected = live_.injTouch;
@@ -739,7 +745,8 @@ void Device::readInputs(uint32_t t) {
     live_.touchOnNeedsYou = faced && needsYouShows(t) && open <= 0;
     live_.touchAttnId = live_.touchOnNeedsYou ? b_.model().attnId : 0;
     live_.touchDismissed = live_.touchLeant = false;
-    live_.touchOnBody = faced && !live_.drawerTouch && !live_.cardTouch && open <= 0 && b_.face().bodyAt(x, y);
+    live_.touchOnBody =
+        faced && !live_.drawerTouch && !live_.cardTouch && open <= 0 && !live_.touchInBar && b_.face().bodyAt(x, y);
     if (faced) {
       // The face dips for a touch on it, and for one anywhere while a tap
       // anywhere is a tap: needs you, the face held, a finish up.
@@ -753,17 +760,25 @@ void Device::readInputs(uint32_t t) {
       // Up opens it: once the finger has gone kDrawerPullPx (either way,
       // when it's open already), the drawer follows it, with a little give
       // past either end. Open, with more rows than show, it scrolls them
-      // instead, as far as they go, with the same give.
-      const int pulled = live_.touchPath.path().y0 - y;
+      // instead, as far as they go, with the same give. Shut, a finger that
+      // first goes further across than up is a swipe between agents, and
+      // the drawer stays shut under it to the end.
+      const int pulled = live_.touchPath.path().y0 - y, across = x - live_.touchPath.path().x0;
       const int most = b_.face().drawerScrollMax(drawer_.total());
-      if (!live_.drawerPulling && !live_.scrolling &&
-          (live_.drawerGrabbed > 0 ? std::abs(pulled) : pulled) >= kDrawerPullPx) {
-        if (live_.drawerGrabbed >= 900 && most > 0 && (pulled > 0 || live_.scrollGrabbed > 0))
+      const bool shut = live_.drawerGrabbed <= 0;
+      if (!live_.drawerPulling && !live_.scrolling && !live_.swiping &&
+          (shut ? std::max(std::abs(across), pulled) : std::abs(pulled)) >= kDrawerPullPx) {
+        if (shut && std::abs(across) > pulled)
+          live_.swiping = true;
+        else if (live_.drawerGrabbed >= 900 && most > 0 && (pulled > 0 || live_.scrollGrabbed > 0))
           live_.scrolling = true;
         else
           live_.drawerPulling = true;
-        if (!live_.drawerToldOpen) sayOpen(0, t);
+        if (!live_.swiping && !live_.drawerToldOpen) sayOpen(0, t);
       }
+      // The strip's row follows a swipe while the screen follows one of several.
+      const Model& m = b_.model();
+      live_.swipeDx = live_.swiping && m.pipCount > 1 && !m.attn ? across : 0;
       if (live_.scrolling) {
         int at = live_.scrollGrabbed + pulled;
         if (at > most) at = most + (at - most) / 4;
@@ -834,8 +849,9 @@ void Device::readInputs(uint32_t t) {
       // A touch the face leaned into is only that: it says so, and a finish
       // or a needs-you that came up under it hears no tap. Off the body a
       // tap is one only while a tap anywhere is (needs you, the face held, a
-      // finish up, an ask's answers in the lane); anywhere else it does
-      // nothing at all.
+      // finish up, an ask's answers in the lane); with several agents one in
+      // the bar's outer thirds asks for the one before or the next; anywhere
+      // else it does nothing at all.
       // A press bounced (touchBounce) gives nothing more: no second tap, boop
       // or gesture, nor a card opened twice.
       const bool brief = live_.lastTouch.ms < kNeedsYouTapMs && live_.touchPath.spread() <= TouchGesture::kHoldSpotPx;
@@ -879,19 +895,23 @@ void Device::readInputs(uint32_t t) {
         // left half picks `a`, the right `b`.
         const bool onAnswer = was == TouchGesture::kTap && b_.asking(t) && live_.lastTouch.y0 >= render::kLaneTop;
         const bool anywhere = live_.touchOnNeedsYou || b_.held(t) || b_.finishShown(t);
+        const int third = live_.lastTouch.x0 * 3 / render::kWidth;  // of the bar: 0 its left, 2 its right
         if (onAnswer) {
           input("tap", t);
           b_.answer(live_.lastTouch.x0 < render::kWidth / 2 ? "a" : "b", t, live_.touchInjected);
           drain();
         } else if ((was == TouchGesture::kTap && (live_.touchOnBody || anywhere)) || b_.held(t) || tapOnFinish) {
           tapped(t, live_.touchInjected, false, was == TouchGesture::kTap ? nullptr : live_.lastTouchWas);
-        } else if (was == TouchGesture::kSwipe && b_.model().pipCount > 1 && !b_.model().attn) {
+        } else if (b_.model().pipCount > 1 && !b_.model().attn &&
+                   (was == TouchGesture::kSwipe || (was == TouchGesture::kTap && live_.touchInBar && third != 1))) {
           // Several agents: a swipe off the body asks the Mac for the next
-          // one, or the one before, which the screen follows.
+          // one (leftward), or the one before, which the screen follows; so
+          // does a tap in the bar's right third, or its left. One in its
+          // middle does nothing.
           live_.lastTouchWas = "agent";
           input("agent", t);
-          const int dx = live_.lastTouch.x - live_.lastTouch.x0;
-          kit().emit("agent", dx < 0 ? "next" : "prev", nullptr, live_.touchInjected);
+          const bool next = was == TouchGesture::kSwipe ? live_.lastTouch.x < live_.lastTouch.x0 : third == 2;
+          kit().emit("agent", next ? "next" : "prev", nullptr, live_.touchInjected);
         } else if (was == TouchGesture::kGesture) {
           gestured(g, t, live_.touchInjected);
         }
@@ -900,7 +920,10 @@ void Device::readInputs(uint32_t t) {
   }
   // After letGo, which wakes a doze with a start: it has to see the lean.
   followLean(touching, t);
-  if (!touching && live_.touchDown) live_.drawerTouch = live_.drawerPulling = live_.scrolling = live_.cardTouch = false;
+  if (!touching && live_.touchDown) {
+    live_.drawerTouch = live_.drawerPulling = live_.scrolling = live_.swiping = live_.cardTouch = false;
+    live_.swipeDx = 0;
+  }
   if (touching != live_.touchDown) dirty_ = true;
   live_.touchDown = touching;
   // A finger or BOOT jolts the board: the motion sensor's thump isn't one.
@@ -1263,6 +1286,7 @@ void Device::render(uint32_t t) {
     b_.face().wish(b_.wishShow(t));
     b_.face().color(b_.model().color);
     b_.face().card(cardShow(t));
+    b_.face().swipe(live_.swipeDx);
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;

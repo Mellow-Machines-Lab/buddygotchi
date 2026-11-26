@@ -24,7 +24,7 @@
 {"shot":"swipe-down-let-go"}
 {"expect":{"moment":{"anim":"gesture","variant":2},"last_input":{"k":"gesture"},"touch":{"last":{"from":[160,60],"body":true,"was":"stroke"}}}}
 {"clock":7000}
-{"t":"dbg.touch","x":160,"y":180,"to_x":160,"to_y":40,"ms":160}
+{"t":"dbg.touch","x":160,"y":168,"to_x":160,"to_y":40,"ms":160}
 {"clock":7040}
 {"clock":7080}
 {"clock":7120}
