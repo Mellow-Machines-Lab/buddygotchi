@@ -105,7 +105,7 @@ void test_who_has_what() {
       {"typing, a sign up", facts({&W::typing, &W::signUp}), BodyBy::kLook, BeatBy::kTyping, true, EyesBy::kOwn,
        FaceBy::kMood, MarkBy::kNone, false},
       {"a call over all", facts({&W::call, &W::speaking, &W::music, &W::typing, &W::scrolling, &W::pointer}), BodyBy::kLook,
-       BeatBy::kCall, true, EyesBy::kCall, FaceBy::kMood, MarkBy::kMuted, true},
+       BeatBy::kCall, true, EyesBy::kCall, FaceBy::kMood, MarkBy::kMuted, false},
       {"at work, music", facts({&W::music, &W::desk}), BodyBy::kLook, BeatBy::kMusic, true, EyesBy::kOwn, FaceBy::kMood,
        MarkBy::kNotes, false},
       {"light: a pose's eyes", facts({&W::light, &W::posed, &W::desk, &W::scrolling, &W::pointer, &W::music}),
@@ -342,8 +342,9 @@ void test_it_looks_the_way_you_scroll() {
 }
 
 // Pins music: idle, it jams along the whole time it plays, eyes closed, a
-// bounce on the beat (a lift) and its head bobbing side to side, no pastime
-// dealt; as the music stops it looks round once. At work, in any pose, it
+// bounce on the beat (a lift) and its head bobbing side to side; its
+// pastimes go on, each over the jam, the beat there again after; as the
+// music stops it looks round once. At work, in any pose, it
 // jams smaller over the pose, still at its desk.
 void test_it_jams_to_your_music() {
   const uint32_t music = tagBit("music");
@@ -360,15 +361,18 @@ void test_it_jams_to_your_music() {
     low = std::min(low, lean), high = std::max(high, lean);
     lifted = std::max(lifted, board.channel(rig::Channel::kLift));
     lids = std::min(lids, board.channel(rig::Channel::kEyeOpenL));
-    pastime = pastime || face.pastimes(board.t).playing != Pastime::kNone;
-    if (!face.owners().beatShows || face.owners().beat != BeatBy::kMusic)
+    const bool passing = face.pastimes(board.t).playing != Pastime::kNone;
+    pastime = pastime || passing;
+    if (face.owners().beat != BeatBy::kMusic || (!passing && !face.owners().beatShows))
       TEST_FAIL_MESSAGE("it stopped jamming while the music played");
   });
+  while (face.pastimes(board.t).playing != Pastime::kNone) board.to(board.t + 16);
+  board.to(board.t + 16);
   TEST_ASSERT_EQUAL_STRING("music", face.passing(board.t));
   TEST_ASSERT_TRUE(high - low > 350);  // its head bobbing side to side
   TEST_ASSERT_TRUE(lifted >= 6);       // a bounce on the beat
   TEST_ASSERT_TRUE(lids < 650);        // eyes closed
-  TEST_ASSERT_FALSE(pastime);
+  TEST_ASSERT_TRUE(pastime);           // and its own life goes on
   board.tags(kDay | tierBit(1));
   board.to(board.t + 64);
   TEST_ASSERT_EQUAL_STRING("look-around", board.cueing());  // the music's stopped: a look round
@@ -393,9 +397,9 @@ void test_it_jams_to_your_music() {
 }
 
 // Pins the call: still and a little smaller, its eyes half closed and
-// still, its muted mic the one mark; no pastime however long; a stretch as
-// it ends. It has the beat over speaking and music, and the eyes over the
-// scroll's look; your typing keeps the keys.
+// still, its muted mic the one mark, its paws at rest though you type; no
+// pastime however long; a stretch as it ends. It has the beat over speaking
+// and music, and the eyes over the scroll's look.
 void test_a_call_keeps_it_still() {
   const uint32_t call = tagBit("oncall"), typing = tagBit("typing"), music = tagBit("music");
   Board board(SceneState::kIdle, kDay | tierBit(3));
@@ -407,7 +411,7 @@ void test_a_call_keeps_it_still() {
   TEST_ASSERT_FALSE(moved);
   const Owners& o = face.owners();
   TEST_ASSERT_TRUE(o.beatShows && o.beat == BeatBy::kCall && o.eyes == EyesBy::kCall && o.mark == MarkBy::kMuted);
-  TEST_ASSERT_TRUE(face.pastimes(board.t).tapping && face.engine().with.ticks == 0);
+  TEST_ASSERT_TRUE(!face.pastimes(board.t).tapping && face.engine().with.ticks == 0);
   TEST_ASSERT_EQUAL_STRING("oncall", face.passing(board.t));
   TEST_ASSERT_TRUE(board.channel(rig::Channel::kSquash) > 120 && board.channel(rig::Channel::kEyeOpenL) < 650);
   TEST_ASSERT_FALSE(face.engine().motion.attending);  // its eyes still, forward
@@ -736,11 +740,12 @@ void test_no_part_jumps_when_with_you_changes() {
         std::snprintf(what, sizeof what, "%s then %s", kFactNames[a], kFactNames[b]);
         judge(moments, kBaseNames[base], what, r.steps);
       }
-  const char* const kOver[] = {"a poke", "a finish", "needs you", "listening", "a pastime", "sleep", "cross", "sad", "tired"};
+  const char* const kOver[] = {"a poke", "a finish", "needs you", "listening", "a pastime",
+                               "sleep",  "cross",    "sad",       "tired",     "a pastime over the jam alone"};
   for (int base : {int(kIdleBase), int(kTypingPose)})
-    for (int k = 0; k < 9; ++k) {
+    for (int k = 0; k < 10; ++k) {
       Run r{Base(base)};
-      r.on[kMusic] = r.on[kTyping] = true;
+      r.on[kMusic] = true, r.on[kTyping] = k != 9;
       r.apply();
       r.play(3000);
       r.steps = Steps{};
@@ -750,7 +755,8 @@ void test_no_part_jumps_when_with_you_changes() {
         case 1: moment(b, SceneState::kTaskComplete, Outcome::kSuccess); break;
         case 2: needYou(b, true); break;
         case 3: b.b.talkOn(b.t, b.rng); break;
-        case 4: b.face().playPastime(base == kIdleBase ? Pastime::kLookAround : Pastime::kStretch, b.t); break;
+        case 4:
+        case 9: b.face().playPastime(base == kIdleBase ? Pastime::kLookAround : Pastime::kStretch, b.t); break;
         case 5: b.m.base = SceneState::kAsleep, b.state(); break;
         case 6: b.m.mood = Mood::kGrumpy, b.state(); break;
         case 7: b.m.mood = Mood::kSad, b.state(); break;

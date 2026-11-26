@@ -270,11 +270,12 @@ is true now (`whoHasWhat`, `render/gel/owners.h`).
 | Beat | You | A call (still), speaking (a nod), music (the bounce), typing (a sway), its own breath |
 | Eyes | Its attention | Your finger, whatever has the body, at light size the pose's, a call (half shut), the scroll's look, your pointer, the jam (shut), its own gaze |
 | Face | How it feels | A Moment's emotion, the jam's content face while the jam has the eyes (unless the mood keeps its own), the mood |
-| Hands | One job each | A move, a sign, a card, the low sign, the ear (speaking), the keys (typing) |
+| Hands | One job each | A move, a sign, a card, the low sign, the ear (speaking), the keys (typing, but on a call) |
 | Mark | One thing beside it | The muted mic, the ear's rings, the note, the key's ticks |
 
 Going with you rides only on its own look, idle or at work, with the Mac
-here; the mark stays through a pastime.
+here; the mark stays through a pastime. No pastime is dealt on a call, while
+you speak or in the scroll's look; music holds none off.
 
 1. **Covered, not stopped.** A lower owner still true runs on under the
    upper one, in step, and is simply there again when it leaves: the jam

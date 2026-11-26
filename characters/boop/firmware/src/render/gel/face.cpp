@@ -301,11 +301,11 @@ void GelFace::passTime(uint32_t t) {
   if (look != dealtLook_) dealtLook_ = look, restUntil_ = t + kRestMinMs + roll(kRestMaxMs - kRestMinMs);
   // Holding a card, its hands are full: no pastime is dealt over it.
   if (card_.on && playing()) endPastime(t, true);
-  // Nor one over its keyboard, out to type along with you, nor while it's
-  // with you (a call, speaking, music, the scroll's look): only typing at
-  // work leaves room for one.
+  // Nor one over its keyboard, out to type along with you, nor on a call,
+  // while you speak or in the scroll's look. Music holds none off: it may
+  // play for hours, and the jam's beat is there again after each.
   const Owners& o = owners_;
-  const bool busy = finger_ || card_.on || along_.target() || (o.beatShows && o.beat >= BeatBy::kMusic) ||
+  const bool busy = finger_ || card_.on || along_.target() || (o.beatShows && o.beat >= BeatBy::kSpeaking) ||
                     o.eyes == EyesBy::kScroll || (stream_ && stream_->drawn(t) && stream_->call.live);
   if (!shows || pastime_ != Pastime::kNone || busy || after(restUntil_, t)) return;
   deal(look, t);

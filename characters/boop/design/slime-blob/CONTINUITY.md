@@ -1139,7 +1139,7 @@ it, each a beat, a look or a mark beside it that reads from a chair
 "Who has what", `render/gel/owners.h`), and only on its own look, idle or
 at work, with nothing else on the body: on a call (`oncall`) it
 keeps still and a little smaller, its eyes half (`on-call`), with no
-music's bounce or pastime (your typing keeps the keys), and stretches up
+music's bounce or pastime, its paws at rest though you type, and stretches up
 as the call ends; while
 you speak (`speaking`, another app recording with no camera) it leans in,
 nods on a slow 1.6 s beat (`speak-along`) and holds a hand cupped at its
@@ -1177,7 +1177,9 @@ across, 15 of the rig's turn (`kEdgeTurn`), or nods up or down, 60 of a
 whole turn's 4096 (`kEdgeNod`); nearer the middle, none of it. At the edge
 nearest the board it leans in 215 toward the Mac's side, reaching up 68. The lean, slide and
 gaze follow over about 350 ms (`kLeanMs`), so a pointer that jumps is
-followed, never jumped to. While any of them is on, no pastime is dealt.
+followed, never jumped to. On a call, while you speak or in the scroll's
+look no pastime is dealt; music holds none off, and the jam is there again
+after each.
 The Mac never says what you scroll, hear, watch, say or copy: of a scroll,
 only its way.
 

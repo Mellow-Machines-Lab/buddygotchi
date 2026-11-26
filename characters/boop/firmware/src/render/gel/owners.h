@@ -79,7 +79,8 @@ inline Owners whoHasWhat(const WhatsTrue& f) {
                                                                     : EyesBy::kOwn;
   // The jam's content face goes with its shut eyes: open on you, the mood's.
   o.face = f.moment ? FaceBy::kMoment : o.eyes == EyesBy::kJam && !f.keepsFace ? FaceBy::kJam : FaceBy::kMood;
-  o.keys = with && f.typing && !f.signUp;
+  // A call is still: its hands rest, as a sign's hold them.
+  o.keys = with && f.typing && !f.signUp && !f.call;
   // One mark beside it, through a pastime too.
   const bool beside = f.place && (o.body == BodyBy::kLook || o.body == BodyBy::kPastime);
   o.mark = !beside      ? MarkBy::kNone
