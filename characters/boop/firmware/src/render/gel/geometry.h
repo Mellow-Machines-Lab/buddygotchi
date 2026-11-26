@@ -6,37 +6,14 @@
 #include <cstdint>
 namespace render::gel {
 // Q12 world coordinates; the camera and dome are slimegen's mesh's.
-// √(i · 2^24) in 256ths, for i from 64 to 256: root's first guess.
-struct RootTable {
-  uint32_t at[257];
-  constexpr RootTable() : at() {
-    for (int i = 64; i <= 256; ++i) {
-      const uint64_t square = uint64_t(i) << 40;
-      uint64_t lo = 0, hi = uint64_t(1) << 25;
-      while (lo < hi) {
-        const uint64_t middle = (lo + hi + 1) / 2;
-        if (middle * middle <= square)
-          lo = middle;
-        else
-          hi = middle - 1;
-      }
-      at[i] = uint32_t(lo);
-    }
-  }
-};
-inline constexpr RootTable kRootTable;
-// ⌊√n⌋. A guess from the table, between its two nearest entries, is
-// within one of it, and two comparisons make it exact: no division, where
-// Newton's steps took three or four, a pixel at a stroke's edge.
 inline int root(uint32_t n) {
   if (!n) return 0;
-  const int shift = __builtin_clz(n) & ~1;
-  const uint32_t x = n << shift, i = x >> 24, part = (x >> 8) & 0xffff;
-  const uint32_t guess = kRootTable.at[i] + uint32_t(uint64_t(kRootTable.at[i + 1] - kRootTable.at[i]) * part >> 16);
-  uint32_t r = guess >> (8 + shift / 2);
-  while (uint64_t(r) * r > n) --r;
-  while (uint64_t(r + 1) * (r + 1) <= n) ++r;
-  return int(r);
+  uint32_t r = 1u << ((33 - __builtin_clz(n)) / 2);
+  for (;;) {
+    uint32_t next = (r + n / r) / 2;
+    if (next >= r) return int(r);
+    r = next;
+  }
 }
 inline int product(int a, int b) { return a * b / 4096; }
 // The dome's radius at its widest, in world units (Q12); how far the rig's
@@ -52,24 +29,17 @@ struct Projector {
   const Surface& surface;
   const PaintControls& c;
   int sx, sy, sn, cs, turnSin, turnCos;
-  // The controls' shares that every point takes alike, worked out once.
-  int leanX, leanZ, dentZ, dentX, reachOut, reachIn, reachShift, height, focal;
   Projector(const Surface& s, const PaintControls& controls) : surface(s), c(controls) {
     turnSin = sinTurn(c.turn), turnCos = sinTurn(c.turn + 1024);
     sy = 4096 + product(c.squash, 2130);
     sx = 16777216 / std::max(1, root(uint32_t(std::max(3113, sy)) * 4096));
     sn = c.roll - product(product(c.roll, c.roll), c.roll) / 6;
     cs = 4096 - product(c.roll, c.roll) / 2;
-    leanX = product(c.lean, 1393), leanZ = product(c.lean, 369);
-    dentZ = product(c.dent, 492), dentX = product(c.dent, 102);
-    reachOut = product(std::abs(c.reach), kReachOut), reachIn = product(std::abs(c.reach), kReachIn);
-    reachShift = product(c.reach, kReachShift);
-    height = s.height * 95 / 100, focal = height * 4586;
   }
   World deform(World p, int h, int h2, int front = 4096, int dent = 4096) const {
-    p.x = product(p.x, sx) + product(leanX, h2);
-    p.z = product(p.z, sx) + product(leanZ, h) - product(dentZ, dent);
-    p.x += product(product(dentX, p.x), front);
+    p.x = product(p.x, sx) + product(product(c.lean, 1393), h2);
+    p.z = product(p.z, sx) + product(product(c.lean, 369), h) - product(product(c.dent, 492), dent);
+    p.x += product(product(product(c.dent, 102), p.x), front);
     p.y = product(p.y, sy);
     // A finger's pull leans and squashes the body (Engine::pose); here it
     // carries the top a little further after the finger, front and back
@@ -85,11 +55,11 @@ struct Projector {
       // Its middle, between base and crown, most: the reaching side out
       // (kReachOut, a cube's ease from its middle), the other pinched in
       // (kReachIn), and all of it a little toward the reach (kReachShift).
-      const int at = product(4 * h, 4096 - h), side = c.reach > 0 ? 1 : -1;
+      const int at = product(4 * h, 4096 - h), side = c.reach > 0 ? 1 : -1, k = std::abs(c.reach);
       const int t = std::clamp(side * p.x * 4096 / kDomeRadius, -4096, 4096);
-      if (t > 0) p.x += side * product(reachOut, product(product(product(t, t), t), at));
-      else p.x -= product(reachIn, product(p.x, at));
-      p.x += product(reachShift, at);
+      if (t > 0) p.x += side * product(product(k, kReachOut), product(product(product(t, t), t), at));
+      else p.x -= product(product(k, kReachIn), product(p.x, at));
+      p.x += product(product(c.reach, kReachShift), at);
     }
     p.x += c.slide;
     return p;
@@ -98,6 +68,7 @@ struct Projector {
     // eye=(0,1.45,3.3), target=(0,.74,0), f=1/tan(.42).
     int y = p.y - 5939, z = p.z - 13517, vy = product(y, 4005) - product(z, 862),
         depth = std::max(1024, -product(y, 862) - product(z, 4005));
+    int height = surface.height * 95 / 100, focal = height * 4586;
     int perspective = focal * 16 / depth;
     int px = surface.width * 8 + product(p.x, perspective), py = height * 8 - product(vy, perspective) + c.dy * 16;
     if (c.scale != 4096) {

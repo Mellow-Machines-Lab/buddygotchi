@@ -61,7 +61,7 @@ uint16_t texel(int ut, int vt, const Level& l) {
 // `n` pixels of the material from (ut, vt), a step of (ux, vx) a pixel.
 // The UVs step evenly, so when both ends round onto the grid every pixel
 // between does: the loop that takes most of the body's time needs no clamp.
-[[gnu::always_inline]] inline void texture(uint16_t* row, int ut, int vt, int ux, int vx, int n, const Level& l) {
+void texture(uint16_t* row, int ut, int vt, int ux, int vx, int n, const Level& l) {
   if (n <= 0) return;
   const auto on = [&](int t, int size) { return unsigned(texelAt(t, l.shift)) < unsigned(size); };
   if (!on(ut, l.width) || !on(ut + ux * (n - 1), l.width) || !on(vt, l.height) || !on(vt + vx * (n - 1), l.height)) {
@@ -75,20 +75,6 @@ uint16_t texel(int ut, int vt, const Level& l) {
 }
 // The rows drawn at a time (draw).
 constexpr int kEraseBand = 16;
-// [lo, hi] narrowed to the columns x from 0 where value + step · x >= 0
-// (lo >= 0, hi >= -1). It divides only when the edge narrows them: most of
-// a row's edges don't, and a division is the most a row costs the board.
-void clip(int value, int step, int& lo, int& hi) {
-  if (step > 0) {
-    if (value + lo * step < 0) lo = (-value + step - 1) / step;
-  } else if (step < 0) {
-    if (value < 0)
-      hi = -1;
-    else if (value < (hi + 1) * -step)
-      hi = value / -step;
-  } else if (value < 0)
-    hi = -1;
-}
 // An inner triangle, by pixel centre: most of the body, kept to the
 // tightest loop.
 void fill(Surface& s, Vertex a, Vertex b, Vertex c, const Level& level, int from, int to) {
@@ -118,9 +104,20 @@ void fill(Surface& s, Vertex a, Vertex b, Vertex c, const Level& level, int from
   e0 += dy0 * skip, e1 += dy1 * skip, e2 += dy2 * skip, tu += uy * skip, tv += vy * skip;
   for (int y = start; y <= y1; ++y) {
     int lo = 0, hi = x1 - x0;
-    clip(e0, dx0, lo, hi);
-    clip(e1, dx1, lo, hi);
-    clip(e2, dx2, lo, hi);
+    auto clip = [&](int value, int step) {
+      if (step > 0) {
+        if (value < 0) lo = std::max(lo, (-value + step - 1) / step);
+      } else if (step < 0) {
+        if (value < 0)
+          hi = -1;
+        else
+          hi = std::min(hi, value / -step);
+      } else if (value < 0)
+        hi = -1;
+    };
+    clip(e0, dx0);
+    clip(e1, dx1);
+    clip(e2, dx2);
     if (lo <= hi) {
       texture(s.pixels + y * s.width + x0 + lo, tu + ux * lo, tv + vx * lo, ux, vx, hi - lo + 1, level);
     }
@@ -189,6 +186,18 @@ void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned outline, const 
   int tu = color(a.u, b.u, c.u, e[0], e[1], e[2]), tv = color(a.v, b.v, c.v, e[0], e[1], e[2]);
   int ux = color(a.u, b.u, c.u, dx[0], dx[1], dx[2]), vx = color(a.v, b.v, c.v, dx[0], dx[1], dx[2]);
   int uy = color(a.u, b.u, c.u, dy[0], dy[1], dy[2]), vy = color(a.v, b.v, c.v, dy[0], dy[1], dy[2]);
+  // The columns from 0 where value + step * x >= 0 stay within [lo, hi].
+  auto clip = [](int value, int step, int& lo, int& hi) {
+    if (step > 0) {
+      if (value < 0) lo = std::max(lo, (-value + step - 1) / step);
+    } else if (step < 0) {
+      if (value < 0)
+        hi = -1;
+      else
+        hi = std::min(hi, value / -step);
+    } else if (value < 0)
+      hi = -1;
+  };
   const int skip = start - y0;  // as fill's
   for (int k = 0; k < 3; ++k) e[k] += dy[k] * skip, after[k] += afterY[k] * skip, before[k] += beforeY[k] * skip;
   tu += uy * skip, tv += vy * skip;
