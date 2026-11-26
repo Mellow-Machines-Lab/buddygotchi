@@ -241,9 +241,10 @@ public final class Core {
     // MARK: - Inputs
 
     /// An agent's event, as recorded (its `seq` set): anything else is
-    /// ignored. Its time is now.
+    /// ignored. Its time is now. `actEnded` says the act it ends was ended
+    /// and recorded already (`actEnd(by:at:)`).
     @discardableResult
-    public func handle(_ event: Event) -> [CoreEffect] {
+    public func handle(_ event: Event, actEnded: Bool = false) -> [CoreEffect] {
         guard let agentEvent = AgentEvent(event) else { return [] }
         let now = event.at
         var fx: [CoreEffect] = []
@@ -255,7 +256,7 @@ public final class Core {
             turnEndedElsewhere(agentEvent.key, chat: chat, at: now)
             boardShowsTurnEnded(agentEvent.key, at: now)
         }
-        let actEnded = streamAct(agentEvent, for: event.seq, now, &fx)
+        let actEnded = actEnded || streamAct(agentEvent, for: event.seq, now, &fx)
         let forward = actEnded ? nil : streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
         if let forward { call(forward, session: agentEvent.key, for: event.seq, now, &fx) }
@@ -273,11 +274,29 @@ public final class Core {
         default: return false
         }
         guard let act = changed else { return false }
+        fx.append(.record(actRecord(act, e, at: now)))
+        return e.phase == .end
+    }
+
+    /// The work act a call's end ends, ended now and recorded, or nil: for
+    /// the pipeline to log before the call's own event (`Pipeline.agent`).
+    /// The act's record is held from the brain (`TranscriptView.held`), and
+    /// the harness passes an event at wake 0 over for anything newer with a
+    /// line, held or not: logged after the call, the act's end would
+    /// silence the call's own line, a check's 3rd failure or a fix among
+    /// them.
+    public func actEnd(by event: Event, at now: Int64) -> Event? {
+        guard config.workStream, let e = AgentEvent(event), e.kind == .tool, e.phase == .end, e.tool != nil,
+              let act = stream.endAct(e, at: now) else { return nil }
+        return actRecord(act, e, at: now)
+    }
+
+    /// The record of `act` beginning or ending at `e`, so Jev hears of it.
+    func actRecord(_ act: WorkStream.Act, _ e: AgentEvent, at now: Int64) -> Event {
         var data: [String: JSONValue] = ["session": .string(act.session), "words": .string(act.words)]
         if let passed = act.passed { data["passed"] = .bool(passed) }
         if let topic = e.topic { data["topic"] = .string(topic) }
-        fx.append(.record(Event(at: now, source: .boop, type: .act, phase: e.phase == .start ? .start : .end, specificType: act.kind, data: data)))
-        return e.phase == .end
+        return Event(at: now, source: .boop, type: .act, phase: e.phase == .start ? .start : .end, specificType: act.kind, data: data)
     }
 
     /// What the work stream makes of an agent's event: a call joins its

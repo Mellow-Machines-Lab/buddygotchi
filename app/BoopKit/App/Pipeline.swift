@@ -128,8 +128,15 @@ public final class Pipeline {
     public func agent(_ event: Event, labels: PromptIntake.Labels? = nil) -> Step {
         let (event, text) = PromptIntake.split(event)
         return input(at: event.at) {
-            let e = harness.emit(core.unrepeated(event))
-            let fx = core.handle(e)
+            let stripped = core.unrepeated(event)
+            // The act a call's end ends is logged first: its record is held
+            // from the brain, and the harness passes an event at wake 0 over
+            // for anything newer, so logged after the call it would silence
+            // the call's own line (`Core.actEnd`).
+            let actEnd = core.actEnd(by: stripped, at: event.at)
+            if let actEnd { run([.record(actEnd)]) }
+            let e = harness.emit(stripped)
+            let fx = core.handle(e, actEnded: actEnd != nil)
             run(fx)
             // A prompt you sent, or a request you answered, is working with
             // the agents: it meets the `work` wish.

@@ -2156,6 +2156,41 @@ final class RuntimeTests: XCTestCase {
                       "with the brain it would have asked, apart from the passes the brain dropped")
     }
 
+    /// A check's failure is news for the brain though it ends a work act,
+    /// whose own record is held: the act's end is logged before the call's
+    /// (`Pipeline.agent`), so the harness doesn't pass the call over for it.
+    func testACheckFailingWakesTheBrainThoughItsActEnds() throws {
+        let asked = Lines()
+        var options = try options(nil)
+        let clock = VirtualClock(harnessT0)
+        options.clock = { clock.now }
+        let brain = ScriptedBrain { state, _ in
+            asked.add(String(state.split(separator: "\n").reversed()[1]))
+            return [:]
+        }
+        options.brain = { _ in brain }
+        let runtime = try Runtime(options)
+        try runtime.start()
+        defer { runtime.stop() }
+        eventually("the brain") { runtime.home.sync { runtime.harness.brain != nil } }
+        func hook(_ name: String, tool: String? = nil, failed: Bool = false, prompt: String? = nil) {
+            var line = HookLine(agent: "claude", hook: name, session: "s1", cwd: "/tmp/jetpack", tool: tool, prompt: prompt, ts: clock.now)
+            if tool != nil { (line.topic, line.program) = ("tests", "pytest") }
+            line.toolError = failed ? "exit_code" : nil
+            runtime.home.sync { runtime.hook(line, received: clock.now) }
+        }
+        hook("UserPromptSubmit", prompt: "go")
+        eventually("the prompt's pass") { asked.all.count == 1 }
+        clock.now += 3000
+        hook("PreToolUse", tool: "Bash")
+        clock.now += 3000
+        hook("PostToolUseFailure", tool: "Bash", failed: true)
+        eventually("the failed check's pass") { asked.all.count == 2 }
+        XCTAssertTrue(asked.all[1].contains("tests failed"), "\(asked.all)")
+        let kinds = runtime.home.sync { runtime.harness.log.events.map(\.kind).filter { $0 == "act_end" || $0 == "tool_end" } }
+        XCTAssertEqual(kinds, ["act_end", "tool_end"], "the act's end is logged first, so the call's line is the newest")
+    }
+
     /// `do` ids start somewhere random at every launch and
     /// count up, so an earlier launch's call still on the device can't
     /// share one (linkkit/SPEC.md §3; LinkKit's own tests pin the rest).
