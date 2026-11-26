@@ -133,7 +133,7 @@ These were open and are now settled. Change them here if they change.
 | Can a failed turn show? | Yes. Bad news is the most useful show |
 | Does a show from another agent interrupt? | Yes, once, then Boop returns. It waits while needs you or listening is up |
 | Several results at once? | One at a time, in order, at least 8 s each. Pills wait their turn too |
-| You type and speak together? | Speaking wins. One rhythm at a time |
+| You type and speak together? | Speaking has the beat and the mark; the other hand types on. Who has what: the screen guide |
 | Full size going-along during work? | No. Light size in every work pose |
 | Does typing stir a sleeping Boop? | No |
 | How does Boop show the time of day? | Energy: eyelids and tempo. No nightcap |

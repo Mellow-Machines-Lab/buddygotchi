@@ -1095,6 +1095,7 @@ quick as they follow a finger, so a look is a turn and never a dart.
 | A stretch of typing along of 8 s or more stops (thinking with you) | Up at you | 2 s (`kThinkAfterMs`, `kThinkMs`) |
 | At work in a pose of its own: looking, running, waiting | Where the pose's clip has its eyes (down a page, on the monitor, out at you: the rig's `gazeX` and `gazeY`); the rule itself rests | While the pose lasts |
 | On a call (`oncall`) | Forward, still | While the call lasts |
+| Music, idle, nothing above | Shut, in the jam | While it plays |
 | Scrolling, the way known (`scrolling` with `scrolldown` or `scrollup`) | The rule rests; the face looks straight down or straight up itself, the eyes all the way (`GelFace::kLookNod`), over the pointer too | While you scroll |
 | Your pointer moves (`state.ptr`), where it's free for you (never asleep) | Its way, as you see the board: across `ptr`'s x × 57 px and up or down y × 48 (`kPointerX`, `kPointerY`); at the edge of the screen nearest the board, right at it on the Mac's side, 560 px out (`kNearReach`), or up | Until the Mac stops sending it, 3 s after it stops |
 | Otherwise | Forward, with the engine's own small wander | |
@@ -1115,33 +1116,35 @@ bounce. The keys under the
 hands light as they land, which a small screen barely shows, so on each
 hand's beat a key's tick bursts just off that side of the body, three short
 strokes rimmed dark, out and up, gone by that hand's next tap, longer typing
-fast (`typingTicks` in `gel/layers.cpp`, read from `Engine::typingAlong`):
+fast (`typingTicks` in `gel/layers.cpp`, at `Engine::With::ticks`):
 the mark that reads from a chair, as speaking's rings do, in every pose,
-the light size too, and never under a sign held up. At work that's at its desk, which
+the light size too, but under another mark or a sign held up. At work that's at its desk, which
 is out already, and its eyes drop to the keys; you
 stop, and it's back to the soft typing. Only its typing pose types with
 you: looking, running or waiting, its hands are off the keys, the pose has
 the body, and your typing changes nothing until it types again. Idle, its keyboard comes out for
 it over the rig's fade; you stop, and its hands rest; the keyboard stays
 `kAlongLingerMs` (4 s) more, so a pause doesn't put it away and bring it
-back, and then goes, with a pastime's rest before the next pastime. It is
-the lowest thing there is: it waits for a pastime or a transition to end
-and never cuts one, and it goes at once for a finger, a Moment, a word
+back, and then goes, with a pastime's rest before the next pastime. Who
+has its hands, its beat and its mark is the screen guide's "Who has what"
+(`render/gel/owners.h`): it waits for a pastime or a transition to end and
+never cuts one, and it goes at once for a finger, a Moment, a word
 forward, needs you or sleep. No pastime is dealt over the
 keyboard alone; at work they're dealt as ever. The Mac says only that your
 hands are busy, never what they type.
 
 **With you** (`GelFace::showWithYou`): what else the Mac says of you at
-it, each the body, eyes and hands and one mark on or beside it that reads
-from a chair (below), lower even than typing along, and only where it's free for you
-(`GelFace::freeForYou`: idle, or at work in its typing pose with no word
-forward; no finger, card, transition or pastime): on a call (`oncall`) it
+it, each a beat, a look or a mark beside it that reads from a chair
+(below), each part going to the first owner true now (the screen guide's
+"Who has what", `render/gel/owners.h`), and only on its own look, idle or
+at work, with nothing else on the body: on a call (`oncall`) it
 keeps still and a little smaller, its eyes half (`on-call`), with no
-typing along, music or pastime, and stretches up as the call ends; while
+music's bounce or pastime (your typing keeps the keys), and stretches up
+as the call ends; while
 you speak (`speaking`, another app recording with no camera) it leans in,
 nods on a slow 1.6 s beat (`speak-along`) and holds a hand cupped at its
-ear on the Mac's side with rings pulsing by it (`gel/layers.cpp`), winning
-over typing along; while you scroll (`scrolling`, which the Mac holds
+ear on the Mac's side with rings pulsing by it (`gel/layers.cpp`), the
+beat and the mark over typing along, whose other hand types on; while you scroll (`scrolling`, which the Mac holds
 1.5 s after the last scroll) it looks straight the way you scroll and
 holds it, unmistakable at arm's length: scrolling down (`scrolldown`), its
 eyes all the way down (the rig's gaze 1000), its face nodded down the
@@ -1149,18 +1152,22 @@ dome with its mouth (`kLookNod`, 170 of a whole turn's 4096) and its body
 120 flatter; scrolling up (`scrollup`), all of it up, 140 taller and 4 px
 up. It comes in over about 90 ms and goes back over about 300 ms as you
 stop (`kLookInMs`, `kLookOutMs`), and a change of way swings straight
-from one to the other; the pointer waits. With the way not known it
+from one to the other; the pointer waits, and the jam's bounce goes on
+under it, its eyes open. With the way not known it
 does nothing rather than guess; at work in a pose of its own the pose
 keeps its eyes. Music (`music`) has it jam along the whole
-time it plays, idle: its eyes closed, a content face (the `pleased` one,
-unless its mood keeps its own), a bounce on every beat at 540 ms (about 111
+time it plays, idle: its eyes shut while nothing else has them (the
+scroll's look and the pointer open them, `kJamShut`), a content face with
+them (the `pleased` one, unless its mood keeps its own), a bounce on every beat at 540 ms (about 111
 a minute: a squash on the hit, then up taller with a lift of 8 px), its
 head bobbing side to side every other beat, in three bars that differ so
 minutes of it never look mechanical: the bounce and the swing, then
 quicker small bobs, then a wider swing with a big bop (`jam`, 6.48 s); at
 work, in any pose, or with a card held, the same at 0.4 over the pose, at
 its desk (`jam-desk`); as it stops, a look round (`look-around`). Any
-sound that goes on, a video's too, is music. Each pose comes and goes over 600 ms (`kWithFadeMs`). The
+sound that goes on, a video's too, is music. Each beat's clip comes and
+goes over up to 600 ms (`kWithFadeMs`), from where its own beat has got
+to since it began, so one covered comes back in step. The
 pointer leans it its way, 19 a step of `ptr`, slides it 1.4 px a step and
 turns the eyes further (the rig's gaze, 75 a step across, 60 up or down),
 and up its way it stretches up 8 a step. Toward its reach (from 4 of
@@ -1174,15 +1181,16 @@ followed, never jumped to. While any of them is on, no pastime is dealt.
 The Mac never says what you scroll, hear, watch, say or copy: of a scroll,
 only its way.
 
-A pose alone is too small to tell apart from across a desk, so music and a
-call each have a mark drawn at the body's anchors, rimmed dark to read over anything
-(`Engine::With`, drawn by `paintWith` in `gel/layers.cpp`), each fading in
-and out over the rig's fade, in any pose and at the light size too, so at
-work it still shows what you're doing while the pose has the body:
+A pose alone is too small to tell apart from across a desk, so each has a
+mark drawn at the body's anchors, rimmed dark to read over anything, one at
+a time (the muted mic, the ear's rings, the note, the key's ticks), each
+fading in and out over the rig's fade (`Engine::With`, drawn by
+`paintWith` in `gel/layers.cpp`), in any pose and at the light size too,
+so at work it still shows what you're doing while the pose has the body:
 
 | You | The mark |
 | --- | --- |
-| Music | A note, one at a time, every 3.2 s, rising from behind its shoulder on one side and then the other: it comes up over the shoulder (only what's above it shows), drifts up 60 px over 3 s with a small sway and fades in and out; for as long as the music plays, through its pastimes and typing along. No headphones: it wears nothing |
+| Music | A note, one at a time, every 3.2 s, rising from behind its shoulder on one side and then the other: it comes up over the shoulder (only what's above it shows), drifts up 60 px over 3 s with a small sway and fades in and out; for as long as the music plays, through its pastimes, over typing along's ticks. No headphones: it wears nothing |
 | On a call | A muted mic, a dark disc with a mic and a slash, held still by its ear on the Mac's side, and nothing else |
 
 Speaking's hand is at its ear, so no notes while you speak. Scrolling has
