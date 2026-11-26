@@ -88,8 +88,10 @@ extension Event {
         /// they waited for the morning (`held`). It wakes a pass, so Boop
         /// may answer it.
         case world
-        /// The board's link coming up (`start`) and dropping (`end`):
-        /// log-only, for the daily counts.
+        /// The board's link coming up (`start`) and dropping (`end`), and
+        /// a hello new on it (no phase, `specific_type` `hello`): log-only,
+        /// for the daily counts, and the Mac forgets which way up the
+        /// board lies.
         case link
         /// A card an agent handed Boop (`Card`): its status (`start`) or
         /// its result (`end`), with its words. Log-only: the words are the

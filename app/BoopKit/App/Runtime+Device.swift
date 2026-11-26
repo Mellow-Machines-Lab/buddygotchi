@@ -14,7 +14,7 @@ extension Runtime {
         let now = options.clock()
         rig.link.connection(up, now: now)
         showBlobs.forget()
-        pipeline.harness.emit(Event(at: now, source: .device, type: .link, phase: up ? .start : .end, specificType: "board"))
+        pipeline.link(up: up, at: now)
         if !up { run(core.linkDown(at: now)) }
         changed()
     }

@@ -150,8 +150,9 @@ public final class TranscriptView {
         var telling: (seq: Int, at: Int64, did: Int?)?
         /// The Boop day you last showed up on.
         var shownUp: String?
-        /// Lying face down, from the touch until its end.
-        var faceDown = false
+        /// Since when it lies face down, from the touch until anything
+        /// that says it doesn't (`faceDown(_:)`); nil face up.
+        var faceDownSince: Int64?
         /// The last agent event, poke, thing you said or coming back.
         var lastActivityAt: Int64?
         /// When the screen last locked, for the next lock's line.
@@ -338,10 +339,10 @@ public final class TranscriptView {
         if e.type == .world, e["plays"]?.bool == false { return "past the hour's world moments: the World tab counts it" }
         if e.type == .wish, e.specificType == Core.WishEnd.closed.rawValue { return "the day ended: \(name)'s wish closes quietly" }
         if e[PromptIntake.readingFollows]?.bool == true { return "its reading wakes the brain" }
-        // Folded up to `e` at most: `e` itself, if folded, is neither of
-        // the two gestures that change it, so the fold says as before it.
+        // Folded up to `e`, `e` included: a touch on the screen, a new
+        // link or face down's age says it isn't face down now.
         for x in log.events(after: fold.at) where x.seq <= e.seq { _ = take(x) }
-        if fold.faceDown, e.type != .said { return "\(name) is face down" }
+        if fold.faceDownSince != nil, e.type != .said { return "\(name) is face down" }
         guard e.type == .poke else { return nil }
         if log.dids(for: e.seq).contains(where: { $0.action == Core.openThread }) { return "the tap opened a thread" }
         if pokesAnswered(e, log) { return "\(name) is answering these pokes" }
@@ -396,6 +397,7 @@ public final class TranscriptView {
     /// Folds one event and returns its line, if it has one, with the
     /// dream under it when it's the one that tells it (`told`).
     func take(_ e: Event) -> Line? {
+        faceDown(e)
         if e.type == .dream {
             fold.at = max(fold.at, e.seq)
             fold.untold = e
@@ -406,6 +408,56 @@ public final class TranscriptView {
         reactedToFix(e)
         finishPlayed(e)
         return hello(foldLine(e), e)
+    }
+
+    /// App log lines: the pipeline sets them.
+    var note: (String) -> Void = { _ in }
+
+    /// Face down forgotten this long after the board said it, at the next
+    /// event, if nothing said so before: half a day, longer than any
+    /// meeting or afternoon of do not disturb, so only an end the Mac
+    /// never heard reaches it. Too late costs everything: every pass is
+    /// held, and Boop goes quiet. Too early costs little: the board itself
+    /// refuses every Moment while it lies face down.
+    public static let faceDownForgetMs: Int64 = 12 * 60 * 60_000
+
+    /// Follows face down, as a function of the log: from the board's
+    /// `facedown` until its end, a new link or hello (the Mac no longer
+    /// knows which way up the board lies, and the board says it again if
+    /// it still lies face down), what the board can't do face down
+    /// (`turnedUp`), or `faceDownForgetMs`.
+    func faceDown(_ e: Event) {
+        if e.type == .gesture, e.specificType == Touch.facedown.rawValue {
+            fold.faceDownSince = e.phase == nil ? e.at : nil
+        } else if e.type == .link || Self.turnedUp(e) {
+            fold.faceDownSince = nil
+        } else if let since = fold.faceDownSince, e.at - since > Self.faceDownForgetMs {
+            fold.faceDownSince = nil
+            note("view: face down since \(time.day(since)) \(time.clock(since)), over \(Self.faceDownForgetMs / 3_600_000) h with no end heard: forgotten")
+        }
+    }
+
+    /// Whether `e` says the board isn't lying face down, which the board
+    /// senses only face up, whatever the Mac last heard:
+    /// - a pick-up and its put-down: the motion sensor finds no pick-up
+    ///   while it lies face down, so it was turned up first;
+    /// - a finger on the screen, which lies against the desk face down: a
+    ///   poke (not BOOT's), a stroke, a hold, a swipe, a finger held on
+    ///   the needs-you screen, a row picked in the drawer, an invite
+    ///   answered, an ask answered.
+    /// Not a shake: the Mac reads a thump on the desk as one
+    /// (`Touch.read`), and the sensor feels both face down. Not BOOT, on
+    /// the board's edge, nor push-to-talk on it. The board's tilt never
+    /// reaches the Mac.
+    static func turnedUp(_ e: Event) -> Bool {
+        switch e.type {
+        case .poke?: e["src"]?.string != Core.buttonSource
+        case .gesture?: e.specificType != Touch.shake.rawValue
+        case .press?: e.specificType == Core.drawerPick
+        case .invite?: Touch.answering(e) != nil
+        case .ask?: e.specificType != Asks.ignored
+        default: false
+        }
     }
 
     /// Your hello, as its line's facts: the one place that says what comes
@@ -547,9 +599,6 @@ public final class TranscriptView {
             return messageRead(e)
         case .gesture?:
             noteActivity(e.at)
-            // Face down lasts until its end, which has no line, as a
-            // put-down has none.
-            if e.specificType == Touch.facedown.rawValue { fold.faceDown = e.phase == nil }
             if e.specificType == Core.dismissGesture { return Line(EventLine.dismissed(name: name), facts: ["gesture": .string(e.specificType)]) }
             if Touch(e) == .shake { return shake(e) }
             return Touch(e)?.line(name: name).map { Line($0, facts: ["gesture": .string(e.specificType)]) }

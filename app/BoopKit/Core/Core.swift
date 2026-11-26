@@ -179,6 +179,8 @@ public final class Core {
     /// The board's gesture for dismissing: a finger held on the needs-you
     /// screen, with the number of the request it showed (`attn.id`).
     public static let dismissGesture = "dismiss"
+    /// A poke's `src` when BOOT made it, the board's own name for BOOT.
+    public static let buttonSource = "button"
 
     /// Push-to-talk, as the core keeps it (`Talk`).
     public internal(set) var pushToTalk = Listening()

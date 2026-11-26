@@ -65,6 +65,7 @@ public final class Pipeline {
         view.time = time
         view.name = buddy.name
         view.daySign = { core.daySign(at: $0) }
+        view.note = note
         var options = Harness.Options()
         // Boop's own words on how to read HISTORY and NOW are in its guide's
         // section.
@@ -175,7 +176,10 @@ public final class Pipeline {
             // Whether it slept as you poked it, once the Mac says you can be
             // here with no agent open (`Core.sleepsAlone`); else the view
             // goes by whether any session is open, as it always did.
-            let data: [String: JSONValue] = core.lastInputAt == nil ? [:] : ["asleep": .bool(core.snapshot(at: now).doing == "asleep")]
+            var data: [String: JSONValue] = core.lastInputAt == nil ? [:] : ["asleep": .bool(core.snapshot(at: now).doing == "asleep")]
+            // BOOT's, which may be pressed face down, as no finger on the
+            // screen may (`TranscriptView.turnedUp`).
+            if !touch { data["src"] = .string(Core.buttonSource) }
             let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input", data: data))
             endNaps(at: now)
             run(core.poke(at: now, seq: e.seq, finish: finish, touch: touch))
@@ -276,6 +280,23 @@ public final class Pipeline {
             endNaps(at: now)
             if touch.meetsPetWish { run(core.meetWish(.pet, at: now)) }
         }
+    }
+
+    /// The board's link coming up or dropping. Logged only: the daily
+    /// counts count the drops, and the view forgets which way up the board
+    /// lies.
+    @discardableResult
+    public func link(up: Bool, at now: Int64) -> Step {
+        input(at: now) { harness.emit(Event(at: now, source: .device, type: .link, phase: up ? .start : .end, specificType: "board")) }
+    }
+
+    /// The board said a hello that's new on its link: the first on it, or
+    /// one from a board that restarted over a link that stayed up. Logged
+    /// only, as `link` with no phase: the view forgets which way up the
+    /// board lies, and the board says it again if it still lies face down.
+    @discardableResult
+    public func hello(at now: Int64) -> Step {
+        input(at: now) { harness.emit(Event(at: now, source: .device, type: .link, specificType: "hello")) }
     }
 
     /// The board's agents' drawer opened or shut (`ev drawer`): logged
