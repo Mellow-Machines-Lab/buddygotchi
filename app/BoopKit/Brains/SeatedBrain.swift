@@ -27,7 +27,9 @@ public final class SeatedBrain: ReadingBrain, @unchecked Sendable {
     /// call's own start, after a hop and the rules' answer, a Jev that
     /// stalls would end the pass late, and the harness would drop it, the
     /// rules' answers with it.
-    public static let margin: Duration = .milliseconds(100)
+    /// 300 ms: on a busy Mac (CI's runner showed it) a timer wakes 100 ms
+    /// late and more, and a pass that ends late is dropped whole.
+    public static let margin: Duration = .milliseconds(300)
 
     public var id: String { jev?.id ?? rules.id }
     let rules: RulesBrain

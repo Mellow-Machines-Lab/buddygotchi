@@ -267,7 +267,7 @@ extension SeatedBrainTests {
         // machine (CI's) room to wake late; the harness test below holds
         // the deadline itself.
         XCTAssertLessThan(took, .milliseconds(1800), "from the pass's start, not from the call")
-        XCTAssertGreaterThanOrEqual(took, .milliseconds(1400), "Jev had the time the pass gave it")
+        XCTAssertGreaterThanOrEqual(took, .milliseconds(1500) - SeatedBrain.margin, "Jev had the time the pass gave it")
     }
 
     /// Through the harness's own loop, its 1500 ms deadline and the
