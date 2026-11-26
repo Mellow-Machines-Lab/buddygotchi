@@ -877,6 +877,7 @@ public final class MomentOutput: Output {
         }
         if case .day(let day)? = hello?.extra { sign = day }
         var reaction = Moment(say: say, mood: choice, loops: size.loops, sign: sign)
+        reaction.answersTouch = about.flatMap(Touch.init) != nil
         reaction.gold = ruled?.gold
         reaction.mark = ruled?.mark
         if let sign { lastSign = sign }

@@ -196,20 +196,24 @@ extension Runtime {
 
     /// A reaction from the brain, sent at once to wait in the device's
     /// queue (`next`, for up to its `BoopDevice.ttl`, or past an invite in
-    /// flight: `Reactions.ttl`), and its handle, ended once it's
+    /// flight: `Reactions.ttl`), or to play at once when it answers a
+    /// touch and no finish or invite is in flight
+    /// (`BoopDevice.play(brain:finishing:)`), and its handle, ended once it's
     /// known how it went (read Boop's way by `Reactions`): at once when it
     /// can't be sent. On `home`.
     func queue(_ reaction: Moment, _ pending: Pending) {
         let reaction = calmed(reaction)
         let now = options.clock(), reactions = rig.reactions, ttl = reactions.ttl(BoopDevice.ttl(reaction), now: now)
+        let play = BoopDevice.play(brain: reaction, finishing: reactions.holdsTouch)
         var sent: Int?
         doSent()
-        let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: ttl, by: .brain, now: now) { [weak self] outcome in
+        let id = rig.link.do(reaction.name, args: reaction.args, play: play, ttl: ttl, by: .brain, now: now) { [weak self] outcome in
             self?.doEnded()
             if let sent { reactions.ended(sent) }
             if let end = reactions.read(outcome, pending) { pending.finish(end) }
         }
         sent = id
+        if let id, reaction.behindFinish || BoopDevice.finishes.contains(reaction.name) { reactions.sent(finishing: id) }
         if let id, let thread = reaction.who?.opens { reactions.sent(id, opens: thread, ttl: ttl, now: now) }
         if let id, let invite = reaction.invite { reactions.sent(id, inviting: invite.ms, ttl: ttl, now: now) }
     }

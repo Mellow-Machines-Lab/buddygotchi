@@ -472,7 +472,7 @@ mood calm · react.face excited</pre>
     <span class="label">LinkKit (linkkit/)</span>
     <ol class="hops">
       <li class="hop">
-        <div class="box c"><b>LinkKit</b><p>Carries the messages over Bluetooth or USB. On the board it keeps the queue: one <code>do</code> plays at a time, and a <code>next</code> waits for the one playing to finish, up to its <code>ttl</code> (5 s here), then plays.</p></div>
+        <div class="box c"><b>LinkKit</b><p>Carries the messages over Bluetooth or USB. On the board it keeps the queue: one <code>do</code> plays at a time, and a <code>next</code> waits for the one playing to finish, up to its <code>ttl</code> (5 s here), then plays. The brain's answer to a touch goes <code>now</code> instead, cutting a Moment that plays, so a poke is never skipped late behind a long one; behind a finish or an invite in flight it waits as a <code>next</code> (<code>BoopDevice.play(brain:finishing:)</code>).</p></div>
         <div class="pay"><span class="what"><code>ended</code> back to the Mac, once per <code>do</code></span>
   <pre>{
   "t": "ev",

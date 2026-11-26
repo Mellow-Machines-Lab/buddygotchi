@@ -102,6 +102,46 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
+    /// A touch is always answered: the brain's answer to a poke or a
+    /// gesture goes `now`, cutting a long Moment that plays rather than
+    /// waiting behind it to be skipped late; behind a finish in flight it
+    /// waits its turn (`next`), as any reaction does, until the finish ends.
+    /// The rest go `next`, as before.
+    func testATouchIsAnsweredAtOnce() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        runtime.home.sync {
+            runtime.connection(true)
+            runtime.device(FakeTransport.hello)
+            var touch = Moment(mood: "curious", loops: 1)
+            touch.answersTouch = true
+            func play(_ m: Moment) -> String? {
+                runtime.queue(m, Pending())
+                return transport.dos.last?.firstMatch(of: /"play":"(\w+)"/).map { String($0.1) }
+            }
+            XCTAssertEqual(play(Moment(mood: "happy", loops: 3, sign: "yay")), "next", "a reaction waits its turn")
+            XCTAssertEqual(play(touch), "now", "a touch's answer cuts it")
+            XCTAssertEqual(play(Moment(anim: "task_complete", mood: "happy", loops: 2, outcome: "success")), "next")
+            XCTAssertEqual(play(touch), "next", "never over a finish")
+            runtime.device(FakeTransport.ended(FakeTransport.id(transport.dos("task_complete")[0]), "done"))
+            XCTAssertEqual(play(touch), "now", "the finish is over")
+        }
+    }
+
+    /// The Moment the brain makes at a poke or a gesture answers a touch;
+    /// one at anything else doesn't.
+    func testAPokesMomentAnswersATouch() {
+        var sent: [Moment] = []
+        let react = MomentOutput(queue: { m, _ in sent.append(m) }, blocked: { nil }, speaks: { false })
+        let log = Transcript.log().view(now: 1000)
+        for (e, touch) in [(Event(at: 1000, source: .device, type: .poke, specificType: "poke"), true),
+                           (Event(at: 1000, source: .device, type: .gesture, specificType: "stroke"), true),
+                           (Event(at: 1000, source: .clock, type: .checkIn, specificType: "check_in"), false)] {
+            _ = react.run([MomentOutput.emotionKey: Answer(choice: "curious")], now: e, log: log)
+            XCTAssertEqual(sent.last?.answersTouch, touch, "\(e.type?.rawValue ?? "")")
+        }
+    }
+
     /// Every face draws every mood (characters/CHARACTER.md §9), so the
     /// hello's reply and every reconnect carry the mood itself, whatever
     /// face the hello says.
