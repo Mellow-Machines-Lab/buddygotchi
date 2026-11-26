@@ -1,6 +1,6 @@
 // The gel's pastimes (render/gel/pastimes.h), each on a frozen clock after
 // a reset, 15 minutes into the tiers (tier3). At work: the desk and nothing
-// else, 20 s in and 48 s on; then a stretch, the only pastime at work, the
+// else, 20 s in and 48 s on; then a stretch, one of work's pastimes, the
 // body's own with nothing beside it; idle: nothing beside it, however
 // long, a look around and a snooze's Zs; asleep, a snore's bubble; while
 // something needs you, no pastime at all. A state every 20 s keeps the

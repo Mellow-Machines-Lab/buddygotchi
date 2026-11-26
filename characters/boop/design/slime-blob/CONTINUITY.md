@@ -1016,7 +1016,9 @@ typing, searching as looking, testing and delegating as running).
   recipes, `key_contact` none) (`Scenes::advance`). The states never
   shown (planning, tool_use, searching, testing, delegating) have no
   recipe row of their own: each plays its activity's.
-- **Pastimes.** At work only the stretch is dealt, in any pose.
+- **Pastimes.** At work, typing: a look up at you from tier1, a stretch,
+  a sneeze and, tired, a yawn from tier2, the paws on the keys through
+  each. In the other poses only the stretch.
 - **The Mac holds them** so the body doesn't rock: running and looking
   show at least 3 s (`Core.poseHoldMs`), typing and waiting 1.5 s.
 - A work act (`wact`) runs under the running pose; its result's hop or

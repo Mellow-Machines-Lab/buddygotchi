@@ -397,7 +397,7 @@ final class ReasonsTests: XCTestCase {
         let source = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("characters/boop/firmware/src/render/gel/pastimes.cpp"), encoding: .utf8)
         let row = try NSRegularExpression(pattern: #"\{Pastime::k\w+, Body::k\w+, "([^"]+)""#)
         let names = row.matches(in: source, range: NSRange(source.startIndex..., in: source)).map { String(source[Range($0.range(at: 1), in: source)!]) }
-        XCTAssertEqual(names.count, 11, "the gel's pastimes (render/gel/pastimes.h)")
+        XCTAssertEqual(names.count, 14, "the gel's pastimes (render/gel/pastimes.h)")
         // And every other name the face's passing() says: typing along, and
         // what it does with you at the Mac (render/gel/face.cpp).
         let face = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("characters/boop/firmware/src/render/gel/face.cpp"), encoding: .utf8)

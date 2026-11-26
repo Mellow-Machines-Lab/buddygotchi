@@ -98,9 +98,17 @@ class Engine {
     scenes.lookMs = lookMs;
   }
   // A pastime's body the face dealt (render/gel/pastimes.h): a bit, which
-  // acting plays in place of its next gesture, or a take, which the scene
-  // plays as the look's next.
-  void playBit(int gag) { acting.play(gag, motion.time); }
+  // acting plays in place of its next gesture, idle or at the desk, or a
+  // take, which the scene plays as the look's next.
+  void playBit(int gag) {
+    deskBit_ = true;
+    acting.setSuppressed(false, motion.time);
+    acting.play(gag, motion.time);
+  }
+  // A pastime's bit at the desk stopped early: it gives way at once.
+  void stopBit() {
+    if (deskBit_) acting.playing = -1, deskBit_ = false;
+  }
   void playTake(int take) {
     scenes.playTake(take, timeMs(), random);
     sync();
@@ -263,6 +271,9 @@ class Engine {
 
  private:
   bool stamped_ = false, dazed_ = false;
+  // A pastime's bit is playing (playBit): acting plays it at the desk too,
+  // till it ends or the desk gives way.
+  bool deskBit_ = false;
   F dazeLids_ = 0;
   F leanX_ = 0, leanY_ = 0, leanShut_ = 0;
   Spring tilt_;

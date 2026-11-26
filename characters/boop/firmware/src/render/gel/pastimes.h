@@ -9,14 +9,16 @@
 // name), which its acting plays in place of its next gesture; or a take of
 // the engine's (a deeper snore, a dream:
 // slime::kPastimeTakes, by name), which its scene plays as the look's next
-// take. Each is for one look: working, idle or asleep; at work there is
-// only the stretch (documentation/design/screen-guide.md in the engine,
-// "Small details"). A working or idle one needs a tier (render/tags.h:
-// `tier1` from a minute, `tier2` from 5, `tier3` from 15: the Mac's clock
-// of the agents' working stretch or of their rest), and one asleep, a
-// wait, the seconds its look has shown; a row that needs a tag (the night)
-// needs no tier: it fits whenever its tag is on. They're dealt one
-// at a time, a rest of kRestMinMs to kRestMaxMs between them, the newest
+// take. Each is for one look: working, idle or asleep. At work they're the
+// body's at the desk, its paws staying on the keys: a stretch, a look up
+// at you, a yawn when tired, a sneeze; off the typing pose, whose eyes and
+// paws are the pose's, only the stretch (GelFace::deal). A bit at the desk
+// gives way as a clip does (Engine::stopBit). A working or idle one needs
+// a tier (render/tags.h: `tier1` from a minute, `tier2` from 5, `tier3`
+// from 15: the Mac's clock of the agents' working stretch or of their
+// rest), and one asleep, a wait, the seconds its look has shown; a row
+// that needs a tag (the night) needs no tier: it fits whenever its tag is
+// on. They're dealt one at a time, a rest of kRestMinMs to kRestMaxMs between them, the newest
 // kNewestPct of the time and an older one's the rest, never the same twice
 // in a row: the newest are those of the highest tier, then the longest
 // wait, and a row that needs a tag is newer than any while it fits. A row
@@ -45,9 +47,13 @@ namespace render::gel {
 
 enum class Pastime : uint8_t {
   kNone,
-  // At work: only the stretch. The tempo at work is yours (typing along),
-  // so Boop has no busier typing of its own.
+  // At work, at the desk, its paws on the keys: a stretch, a look up at
+  // you, a yawn when tired, a sneeze. The tempo at work is yours (typing
+  // along), so Boop has no busier typing of its own.
   kStretch,
+  kDeskLook,
+  kDeskYawn,
+  kDeskSneeze,
   // Idle.
   kLookAround,
   kHopeful,
