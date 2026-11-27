@@ -120,7 +120,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(board.request({"t": "dbg.ping"})["card"], "ok")
         board.send({**WORKING, "base": "idle", "busy": 0})  # a quiet face: only the `say` sounds
         board.pump(0.3)
-        board.send({"t": "do", "id": 1, "name": "react", "play": "now", "args": {"say": {"take": "previous.go"}}})
+        board.send({"t": "do", "id": 1, "name": "react", "play": "now", "args": {"say": {"take": "word.success.done__happy"}}})
         board.pump(3.0)
         state = board.request({"t": "dbg.state"})
         out = state["audio"]["out"]

@@ -288,8 +288,8 @@ final class HarnessTests: XCTestCase {
         try requireVoice()
         XCTAssertEqual(Moment(anim: Core.wishGone).line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"wish_gone","play":"if_free"}"#)
         XCTAssertEqual(Moment(say: .done).line(id: 2, play: .next),
-                       #"{"t":"do","id":2,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d03"}}}"#)
-        XCTAssertEqual(Moment(say: .done, mood: "grumpy").args.json, #"{"say":{"take":"new.d03"},"mood":"grumpy"}"#)
+                       #"{"t":"do","id":2,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"word.success.done__happy"}}}"#)
+        XCTAssertEqual(Moment(say: .done, mood: "grumpy").args.json, #"{"say":{"take":"word.success.done__happy"},"mood":"grumpy"}"#)
     }
 
     /// The pack's moods, in its order; a new Boop starts calm, the resting

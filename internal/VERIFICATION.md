@@ -159,8 +159,8 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 - The generators, each in its pack and writing into it, which its
   repository's `make` runs: `characters/boop/tools/voicegen/voicegen.py`
   (the voice file and the Mac's take table; SlimeBuddy's `make voice`;
-  beside it `placeholders.py`, which speaks the planned lines not recorded
-  yet and needs `brew install espeak-ng`) and
+  beside it `record.py`, which records takes with ElevenLabs, costs, and
+  needs `ffmpeg`) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's tables
   and the pack's moods;
   [its README](../characters/boop/tools/slimegen/README.md)), and

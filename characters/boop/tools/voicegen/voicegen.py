@@ -1,12 +1,15 @@
 """Builds Boop's voice from the recorded voice bank.
 
 The bank, character/design/assets/boop-voice-v1/, has whole recorded
-takes, each a word, a sound, a phrase or a swear performed in one mood.
-Every take in its manifest is read from its robot-soft WAV (8-bit,
-11.025 kHz), the near-silence around it trimmed, saturated and normalised
-so it's as loud on the small speaker, and stored as 8-bit unsigned
-samples. Two files come out, into Boop's pack (PACK_DIR), checked in
-there. Rerun this whenever the bank or a mapping changes:
+takes, each a word, a sound, a phrase, a swear or a sentence said in one
+delivery: bright (B), flat (F) or glum (G), the plan's `deliveries`
+(plans/sentences.json), each with the faces it plays in. record.py records
+them, all in one voice. Every take in the manifest is read from its
+robot-soft WAV (8-bit, 11.025 kHz), the near-silence around it trimmed,
+saturated and normalised so it's as loud on the small speaker, and stored
+as 8-bit unsigned samples. Two files come out, into Boop's pack
+(PACK_DIR), checked in there. Rerun this whenever the bank or a mapping
+changes:
 
     python3 character/tools/voicegen/voicegen.py [--card /Volumes/CARD] [--wav-dir DIR]
 
@@ -15,45 +18,27 @@ there. Rerun this whenever the bank or a mapping changes:
   and mouth (open or shut every 20 ms), found by id. `--card` also copies
   it onto a mounted card.
 - mac/takes.tsv (characters/CHARACTER.md §8): each take Boop may say,
-  its id, text, part and meaning, kind, the moods it plays in, an empty
+  its id, text, part and meaning, kind, the faces it plays in, an empty
   column (once the finish a take needed, kept so readers find eight) and
   its length, which the Mac picks from, and the pack's
   version, which the board reports.
 
-Boop says two parts of take. A reply's, to what you said on push-to-talk
-and at a lock's real wave: an entry of intent `talk.<reply>` is that
-reply's own words, and another entry that fits one counts for it too
-(REPLY_OF): "Yep" is a yes, "Tsk" a no. And a skit's (SKIT_OF,
-characters/CHARACTER.md §8): the few moments that always speak, each from
-takes of its own, such as `win`'s "Done" and "Nailed it", the skit's id
-their meaning. takes.tsv lists a take once for each reply and skit it
-counts for, by the same id; the voice file has it once. Every other take
-stays in the voice file and off the table, so nothing picks it: the voice
-file and its version are as they were when the table listed them too, and
-no board needs a new card. Needs you's own takes (intent `attention`, but
-for those a reply or a skit says) are in neither file. Six takes were
-recorded in moods Boop doesn't have; MOOD_OF gives them one, by the
-owner's word (2026-09-29).
+Boop says three parts of take. A reply's, to what you said on
+push-to-talk and at a lock's real wave: a dictionary entry of intent
+`talk.<reply>` is that reply's own words, and another entry that fits one
+counts for it too (REPLY_OF): "Yep" is a yes, "Tsk" a no. A skit's
+(SKIT_OF, characters/CHARACTER.md §8): the few moments that always speak,
+each from takes of its own, such as `win`'s "Done" and "Nailed it", the
+skit's id their meaning. takes.tsv lists a take once for each reply and
+skit it counts for, by the same id; the voice file has it once. And a
+sentence: one of the pack's lines said whole, an aside's or a remark's
+(`take=<id>` in signs.md's brackets), its words and deliveries the plan's;
+a recording whose entryId is `sentence.<id>` is one, its meaning the id.
 
-The takes were recorded in 13 moods, which MOODS keeps as the bank has
-them. Boop draws 18 faces: borrowed.json beside this script says which
-face a recorded mood that's no longer one plays in (`plays`: engaged's
-takes are focused's), and, temporarily, which recorded face each face
-with no takes of its own borrows (`borrows`); a pack built with `--pack`
-that has a tools/borrowed.json of its own lends by that one instead. A
-take's moods in the table
-are the face it plays in, then those that borrow it. Only takes.tsv says
-so; the audio and the version don't change.
-
-Placeholder takes, which placeholders.py speaks for lines not recorded
-yet, are built like any other.
-
-A third part is a sentence: one of the pack's lines said whole, an aside's
-or a remark's (`take=<id>` in signs.md's brackets). Its words, deliveries and
-faces are the bank's plans/sentences.json, which record.py records from; a
-recording whose entryId is `sentence.<id>` is one, its text the sentence's
-spoken words, its moods the faces its delivery plays in, its meaning the id.
-Once one is in the manifest, this puts it in both files with no other change.
+A word (`words`) is recorded flat and in the delivery its first meaning
+leans to (LEANS); its flat take also plays in the faces of the delivery it
+wasn't recorded in, so every face has every word. A sentence plays only in
+the deliveries it was recorded in.
 
 `--wav-dir` also writes every converted take as a WAV, for listening.
 """
@@ -75,10 +60,6 @@ from pathlib import Path
 PACK_DIR = Path(__file__).resolve().parents[2]
 BANK = PACK_DIR / "design" / "assets" / "boop-voice-v1"
 PACK, TABLE = "voice/voice.bin", "mac/takes.tsv"  # in a character pack
-# The face each recorded mood that's no longer one plays in; and, TEMPORARY,
-# the faces with no takes of their own, and the one each borrows. A pack
-# with its own tools/borrowed.json lends by that one.
-BORROWED = Path(__file__).resolve().parent / "borrowed.json"
 CARD_PATH = "boop/voice.bin"  # where the board looks on its card
 
 RATE = 11025        # the takes' sample rate on the board
@@ -99,13 +80,6 @@ MAGIC = b"BOOPVOX1"
 HEADER = struct.Struct("<8s16sIIIII20x")  # magic, version, count, record size, index at, rate, mouth ms
 ID_BYTES, TEXT_BYTES = 72, 36
 RECORD = struct.Struct(f"<{ID_BYTES}s{TEXT_BYTES}sIIII4x")  # id, text, samples at, len, mouth at, frames
-
-MOODS = ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad",
-         "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"]
-# Takes recorded in a mood Boop doesn't have, by the bank's label or, for
-# the two with none, by id: the mood they're used in.
-MOOD_OF = {"relieved": "happy", "weary": "whiny", "amused": "happy",
-           "previous.go": "calm", "previous.oi": "curious"}
 
 # The replies that merged into another (their recorded words go with
 # them), and the ones Boop no longer makes: their takes stay in voice.bin,
@@ -141,7 +115,7 @@ REPLY_OF = {
     "word.search.look": ["status"], "word.search.peek": ["status"], "phrase.return.tiny-report": ["status"],
     "phrase.return.mission-update": ["status"],
     "word.idle.quiet": ["hush"],
-    "nonverbal.relief.ahh": ["unhush"], "nonverbal.relief.phew": ["unhush"], "word.celebrate.hooray": ["unhush"],
+    "nonverbal.relief.ahh": ["unhush"], "nonverbal.relief.phew": ["unhush"],
 }
 # Entries that are a skit's own takes (the pack's `skits` in
 # character.json, and code says when each plays): each of their takes
@@ -169,6 +143,28 @@ SKIT_OF = {
 }
 
 
+# A word's deliveries: every reply's and skit's word is recorded flat (F),
+# and once more in the delivery its first meaning leans to, bright or glum.
+# The faces of the delivery it wasn't recorded in play its flat take.
+LEANS = {"yes": "B", "hello": "B", "bye": "B", "thanks": "B", "hehe": "B", "status": "B", "win": "B", "fix": "B", "back": "B",
+         "no": "G", "huh": "G", "dunno": "G", "ouch": "G", "comfort": "G", "hush": "G", "upset": "G"}
+
+
+def meanings(entry: dict) -> list[str]:
+    """The replies and skits an entry's takes count for, its own reply first."""
+    own = own_reply(entry)
+    out = ([own] if own else []) + REPLY_OF.get(entry["id"], []) + SKIT_OF.get(entry["id"], [])
+    return [m for m in out if m not in UNMADE]
+
+
+def words(dictionary: dict) -> list[dict]:
+    """Every word to record: each entry a reply or a skit says, with its
+    deliveries (flat, then the one its first meaning leans to)."""
+    return [{"id": e["id"], "spoken": e["text"], "deliveries": ["F", LEANS[m[0]]]}
+            for e in dictionary["entries"] if (m := meanings(e))]
+
+
+
 # The sentences' plan: each sentence's spoken words, and each delivery's
 # faces (record.py records from the same file).
 SENTENCES = BANK / "plans" / "sentences.json"
@@ -194,19 +190,6 @@ def own_reply(entry: dict) -> str | None:
         return None
     reply = intent[len("talk."):]
     return REPLY_AS.get(reply, reply)
-
-
-def in_voice(entry: dict) -> bool:
-    """Whether the entry's takes go in the voice file: all but needs you's
-    own, those no reply, skit or sentence says."""
-    return entry["intent"] != "attention" or entry["id"] in REPLY_OF or entry["id"] in SKIT_OF
-
-
-def mood(rec: dict) -> str:
-    m = MOOD_OF.get(rec["id"]) or MOOD_OF.get(rec["mood"]) or rec["mood"]
-    if m not in MOODS:
-        raise SystemExit(f"voicegen: {rec['id']} is in mood {rec['mood']!r}, which isn't one of Boop's; add it to MOOD_OF")
-    return m
 
 
 def text(entry: dict) -> str:
@@ -297,27 +280,24 @@ def write_pack(path: Path, ver: str, takes: list[dict], clips: list[bytes], mout
     tmp.replace(path)
 
 
-def lent(mood: str, borrowed: dict) -> list[str]:
-    """The faces a take recorded in `mood` plays in: its own (`plays`), then
-    those that borrow that one's takes."""
-    face = borrowed.get("plays", {}).get(mood, mood)
-    return [face] + [m for m, lender in borrowed["borrows"].items() if lender == face]
+def faces(rec: dict, deliveries: dict, recorded: set) -> list[str]:
+    """The faces a take plays in: its delivery's, and, for a word's flat
+    take, those of each delivery the word wasn't recorded in. A sentence
+    plays only in the deliveries it was recorded in."""
+    out = list(deliveries[rec["delivery"]]["faces"])
+    if rec["delivery"] == "F" and not rec["entryId"].startswith(SENTENCE):
+        out += [f for d, delivery in deliveries.items() if d not in recorded for f in delivery["faces"]]
+    return out
 
 
-def faces(t: dict, borrowed: dict) -> list[str]:
-    """The faces a take plays in: a sentence's, its delivery's (the plan's),
-    any other's, its mood's and those lent it."""
-    return t.get("faces") or lent(t["mood"], borrowed)
-
-
-def write_table(ver: str, takes: list[dict], borrowed: dict) -> str:
+def write_table(ver: str, takes: list[dict]) -> str:
     """takes.tsv, the Mac's table in a character pack
     (characters/CHARACTER.md §8): two comment lines, the pack's version,
     then every take as one line of tab-separated fields. The app reads it at
     start (`Take.all`)."""
     for t in takes:
         assert not any(c in t["text"] for c in '\t\n'), t["id"]
-    rows = ["\t".join([t["id"], t["text"], t["part"], t["meaning"], t["kind"], " ".join(faces(t, borrowed)), "",
+    rows = ["\t".join([t["id"], t["text"], t["part"], t["meaning"], t["kind"], " ".join(t["faces"]), "",
                        str(t["ms"])])
             for t in takes]
     return "\n".join([
@@ -330,7 +310,7 @@ def write_table(ver: str, takes: list[dict], borrowed: dict) -> str:
     ])
 
 
-def build(bank: Path, pack: Path, borrowed: dict, complete: bool = True) -> tuple[str, list[dict], list[bytes], list[dict]]:
+def build(bank: Path, pack: Path, complete: bool = True) -> tuple[str, list[dict], list[bytes], list[dict]]:
     """Builds `pack`'s voice file and table from `bank`: its version, every
     take with its audio, and the table's rows. `complete` checks that every
     entry REPLY_OF and SKIT_OF name has a recording (a test's small bank
@@ -340,7 +320,10 @@ def build(bank: Path, pack: Path, borrowed: dict, complete: bool = True) -> tupl
     plan_file = bank / "plans" / SENTENCES.name
     plan = json.loads(plan_file.read_text()) if plan_file.is_file() else {"sentences": [], "deliveries": {}}
     entries.update(sentence_entries(plan))
-    recs = [r for r in manifest["recordings"] if in_voice(entries[r["entryId"]])]
+    recs = manifest["recordings"]
+    recorded: dict[str, set] = {}
+    for r in recs:
+        recorded.setdefault(r["entryId"], set()).add(r["delivery"])
     bare = [r["id"] for r in recs if TEXTURE not in r["files"]]
     if bare:
         raise SystemExit(f"voicegen: no {TEXTURE} file yet for {', '.join(bare)}: make it, then run this again")
@@ -349,7 +332,8 @@ def build(bank: Path, pack: Path, borrowed: dict, complete: bool = True) -> tupl
     takes, clips, mouths = [], [], []
     for rec, (clip, mo) in zip(recs, out):
         e = entries[rec["entryId"]]
-        takes.append({"id": rec["id"], "text": text(e), "kind": kind(e), "mood": mood(rec), "ms": len(clip) * 1000 // RATE})
+        takes.append({"id": rec["id"], "text": text(e), "kind": kind(e), "ms": len(clip) * 1000 // RATE,
+                      "faces": faces(rec, plan["deliveries"], recorded[rec["entryId"]])})
         clips.append(clip)
         mouths.append(mo)
     ver = version(takes, clips, mouths)
@@ -362,9 +346,7 @@ def build(bank: Path, pack: Path, borrowed: dict, complete: bool = True) -> tupl
                for rec, t in zip(recs, takes) for reply in REPLY_OF.get(rec["entryId"], [])]
     skits = [{**t, "part": "skit", "meaning": skit}
              for rec, t in zip(recs, takes) for skit in SKIT_OF.get(rec["entryId"], [])]
-    deliveries = plan["deliveries"]
-    sentences = [{**t, "part": "sentence", "meaning": rec["entryId"][len(SENTENCE):],
-                  "faces": deliveries[rec["delivery"]]["faces"]}
+    sentences = [{**t, "part": "sentence", "meaning": rec["entryId"][len(SENTENCE):]}
                  for rec, t in zip(recs, takes) if rec["entryId"].startswith(SENTENCE)]
     for name, table_of in (("REPLY_OF", REPLY_OF), ("SKIT_OF", SKIT_OF)):
         missing = set(table_of) - {rec["entryId"] for rec in recs}
@@ -373,7 +355,7 @@ def build(bank: Path, pack: Path, borrowed: dict, complete: bool = True) -> tupl
     said = [t for t in own + replies + skits + sentences if not (t["part"] == "reply" and t["meaning"] in UNMADE)]
     write_pack(pack / PACK, ver, takes, clips, mouths)
     (pack / TABLE).parent.mkdir(parents=True, exist_ok=True)
-    (pack / TABLE).write_text(write_table(ver, said, borrowed))
+    (pack / TABLE).write_text(write_table(ver, said))
     return ver, takes, clips, said
 
 
@@ -385,9 +367,7 @@ def main() -> None:
     ap.add_argument("--wav-dir", type=Path, help="also write every converted take as a WAV here")
     args = ap.parse_args()
 
-    own = args.pack / "tools" / "borrowed.json"
-    borrowed = json.loads((own if own.is_file() else BORROWED).read_text())
-    ver, takes, clips, said = build(BANK, args.pack, borrowed)
+    ver, takes, clips, said = build(BANK, args.pack)
     built = args.pack / PACK
     if args.card:
         # Through voice.tmp, as the board copies one: a copy cut short

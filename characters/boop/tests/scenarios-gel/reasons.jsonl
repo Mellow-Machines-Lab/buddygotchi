@@ -233,7 +233,7 @@
 {"clock":20900}
 {"clock":21000}
 {"clock":21100}
-{"t":"do","id":3,"name":"react","args":{"say":{"take":"previous.go"}}}
+{"t":"do","id":3,"name":"react","args":{"say":{"take":"word.success.done__happy"}}}
 {"clock":21200}
 {"clock":21300}
 {"clock":21400}
@@ -338,7 +338,7 @@
 {"clock":30500}
 {"clock":30600}
 {"clock":30700}
-{"t":"do","id":4,"name":"react","args":{"say":{"take":"phase1.phrase.setback.technical-difficulties__sad__contained"}}}
+{"t":"do","id":4,"name":"react","args":{"say":{"take":"phrase.talk-ouch.well-ouch__sad"}}}
 {"clock":30800}
 {"clock":30900}
 {"clock":31000}

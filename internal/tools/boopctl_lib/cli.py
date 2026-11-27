@@ -1016,7 +1016,7 @@ def line_row(r: dict) -> str:
 def chosen_takes(only: str | None) -> list[Take]:
     """Every take, or with `only` those whose id starts with it, or whose
     text is it or has it as a word, in any case and without its dots and
-    marks ("again", "mamma mia", "previous.", "new.d15")."""
+    marks ("again", "nailed it", "sentence.", "borrowed.basta__sad")."""
     if not only:
         return list(takes())
     want = only.lower().strip(".?! ")

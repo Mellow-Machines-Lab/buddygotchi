@@ -8,7 +8,7 @@
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"happy","vol":0}
-{"t":"do","id":21,"name":"react","args":{"who":{"agent":"claude","thread":"fix-nav"},"say":{"take":"previous.yay"},"mood":"excited","loops":1}}
+{"t":"do","id":21,"name":"react","args":{"who":{"agent":"claude","thread":"fix-nav"},"say":{"take":"word.celebrate.yay__happy"},"mood":"excited","loops":1}}
 {"clock":200}
 {"shot":"coming"}
 {"clock":1000}
@@ -61,7 +61,7 @@
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"happy","vol":0}
-{"t":"do","id":34,"name":"task_complete","args":{"outcome":"success","turn":"tier3","loops":3,"say":{"take":"previous.yay"},"who":{"agent":"claude","thread":"Ship the landing page"}}}
+{"t":"do","id":34,"name":"task_complete","args":{"outcome":"success","turn":"tier3","loops":3,"say":{"take":"word.celebrate.yay__happy"},"who":{"agent":"claude","thread":"Ship the landing page"}}}
 {"clock":1500}
 {"shot":"cheer-before-sign"}
 {"clock":4000}

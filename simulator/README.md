@@ -172,7 +172,7 @@ long as the demo runs; `make -C internal demos` records several at once.
 To play, `demos.py` lays the recording out in `web/dist/demo/PACK/`, with
 `NAME-voice.bin`, a voice file with only the takes it says, cut from the
 pack's voice then (`tools/voice_subset.py`: about 70 KB for a minute's
-demo, where the whole voice is 32 MB).
+demo, where the whole voice is 5 MB).
 
 A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of Boop's
 `demo/recordings/demo.json`:
@@ -181,7 +181,7 @@ A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of Boop's
 {
   "version": 1, "character": "boop", "name": "Boop", "face": "gel", "length": 87,
   "script": "13976110452d4fbd9d19db4370195479f2b24bfbda9b82dd1d26683345774dad",
-  "takes": ["phase1.borrowed.andiamo__curious__contained", "…"],
+  "takes": ["borrowed.salut__calm", "…"],
   "events": [
     {"at": 0, "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"},
     {"at": 0.002, "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"},

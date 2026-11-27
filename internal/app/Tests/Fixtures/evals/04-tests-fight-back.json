@@ -1,12 +1,12 @@
 {
   "name": "Failing tests put Boop out, then determined, and passing after them proud",
-  "case": "The agent's tests fail three times in a row, two minutes apart, while it keeps working, and then pass. At the first failure Boop is put out: cross, with an annoyed or determined face, naming the tests or saying nothing about them. At the next it roots for the agent, turning focused. It stays focused through the last repeat, not grumpy. When the tests finally pass it turns proud, with a proud face. The first two failures say nothing; the third in a row, its upset skit, says so.",
+  "case": "The agent's tests fail three times in a row, two minutes apart, while it keeps working, and then pass. At the first failure Boop is put out: cross, with an annoyed or determined face, naming the tests or saying nothing about them. At the next it roots for the agent, turning focused. It stays focused through the last repeat, not grumpy. When the tests finally pass it turns proud, with a proud face. The first two failures say only an aside's sentence; the third in a row, its upset skit, says so.",
   "always": true,
   "why": "character/steering/mood/: a failed check moves calm to cross, a check failing while the agent works on moves cross to focused, and focused stays through more failures; the pass after failing moves it to proud; character/steering/guide.md: each change shows, with the new mood's face",
   "steps": [
     {"event": "turn started", "at": "0s", "workspace": "fix-nav"},
     {"event": "command", "at": "1m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "cross"}},
-    {"event": "command", "at": "3m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "focused", "said": "none", "intensity": "small|medium"}},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "focused", "said": "some", "intensity": "small|medium"}},
     {"event": "command", "at": "5m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "determined|annoyed|none", "mood": "focused", "said": "some"}},
     {"event": "command", "at": "7m", "topic": "tests", "failed": false, "workspace": "fix-nav", "expect": {"react": "proud", "mood": "proud"}}
   ]

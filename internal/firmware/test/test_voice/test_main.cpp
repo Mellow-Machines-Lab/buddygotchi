@@ -49,37 +49,37 @@ std::vector<uint8_t> samples(const voice::Clip& c) {
 void test_the_voice_file_finds_takes_by_id() {
   NEEDS_VOICE_PACK();
   TEST_ASSERT_TRUE(voice::fileOpen());
-  TEST_ASSERT_EQUAL(2995, voice::takeCount());  // Boop's voice file
+  TEST_ASSERT_EQUAL(500, voice::takeCount());  // Boop's voice file
   TEST_ASSERT_EQUAL(12, std::strlen(voice::assetsVersion()));
-  int go = voice::takeIndex("previous.go");
+  int go = voice::takeIndex("word.success.done__happy");
   TEST_ASSERT_TRUE(go >= 0);
-  TEST_ASSERT_EQUAL_STRING("Go", voice::takeText(go));
-  TEST_ASSERT_EQUAL_STRING("previous.go", voice::takeId(go));
-  TEST_ASSERT_EQUAL(go, voice::takeIndex("previous.go"));  // already loaded: the same handle
-  int boom = voice::takeIndex("new.d15");
-  TEST_ASSERT_EQUAL_STRING("Bada bing bada boom", voice::takeText(boom));
-  int longest = voice::takeIndex("phase1.phrase.delegate.little-reinforcements__determined__contained");
-  TEST_ASSERT_EQUAL_STRING("Little reinforcements", voice::takeText(longest));
+  TEST_ASSERT_EQUAL_STRING("Done", voice::takeText(go));
+  TEST_ASSERT_EQUAL_STRING("word.success.done__happy", voice::takeId(go));
+  TEST_ASSERT_EQUAL(go, voice::takeIndex("word.success.done__happy"));  // already loaded: the same handle
+  int phrase = voice::takeIndex("phrase.pride.naturally-naturally__happy");
+  TEST_ASSERT_EQUAL_STRING("Naturally, naturally", voice::takeText(phrase));
+  int longest = voice::takeIndex("sentence.upset.tests-oh-man__sad");
+  TEST_ASSERT_EQUAL_STRING("Oh man. The tests, again", voice::takeText(longest));
   TEST_ASSERT_EQUAL(-1, voice::takeIndex("banana"));
   TEST_ASSERT_EQUAL(-1, voice::takeIndex(nullptr));
   TEST_ASSERT_NULL(voice::takeText(-1));
   TEST_ASSERT_EQUAL_UINT32(0, voice::takeMs(-1));
   // A handle goes stale once enough other takes have been loaded.
-  const char* others[] = {"new.d01", "new.d02", "new.d03", "new.d04", "new.d05", "new.d06", "new.d07", "new.d08"};
+  const char* others[] = {"word.success.finish__happy", "word.success.done__calm", "word.success.complete__happy", "word.poke.hi__calm", "word.poke.howdy__calm", "word.poke.yep__calm", "word.search.peek__happy", "word.talk-hello.hiya__calm"};
   for (const char* id : others) TEST_ASSERT_TRUE(voice::takeIndex(id) >= 0);
   TEST_ASSERT_NULL(voice::takeText(go));
   // With no voice file there's no voice at all.
   voice::closeFile();
-  TEST_ASSERT_EQUAL(-1, voice::takeIndex("previous.go"));
+  TEST_ASSERT_EQUAL(-1, voice::takeIndex("word.success.done__happy"));
   TEST_ASSERT_EQUAL_STRING("none", voice::assetsVersion());
   TEST_ASSERT_TRUE(voicefile::open());
 }
 
 // A take plays whole: two output samples for each of its own, so its
-// length in ms is the recording's (638 ms for "Go", 7042 samples).
+// length in ms is the recording's (638 ms for "Done", 7042 samples).
 void test_a_take_plays_whole_at_its_pitch() {
   NEEDS_VOICE_PACK();
-  voice::Say l = say("previous.go");
+  voice::Say l = say("word.success.done__happy");
   TEST_ASSERT_EQUAL_UINT32(7042, l.a.len);
   TEST_ASSERT_EQUAL_UINT32(2 * 7042, voice::saySamples(l));
   TEST_ASSERT_EQUAL_UINT32(638, voice::takeMs(l.take));
@@ -109,12 +109,12 @@ void test_a_say_keeps_its_first_take_while_the_second_loads() {
   NEEDS_VOICE_PACK();
   voice::closeFile();
   TEST_ASSERT_TRUE(voicefile::open());
-  TEST_ASSERT_TRUE(voice::takeIndex("previous.go") >= 0);
-  const char* others[] = {"new.d01", "new.d02", "new.d03", "new.d04", "new.d05", "new.d06", "new.d07"};
+  TEST_ASSERT_TRUE(voice::takeIndex("word.success.done__happy") >= 0);
+  const char* others[] = {"word.success.finish__happy", "word.success.done__calm", "word.success.complete__happy", "word.poke.hi__calm", "word.poke.howdy__calm", "word.poke.yep__calm", "word.search.peek__happy"};
   for (const char* id : others) TEST_ASSERT_TRUE(voice::takeIndex(id) >= 0);
-  voice::Say l = say("previous.go", 6, "new.d08");
+  voice::Say l = say("word.success.done__happy", 6, "word.talk-hello.hiya__calm");
   TEST_ASSERT_TRUE(l.take >= 0 && l.then >= 0);
-  TEST_ASSERT_EQUAL_STRING("Go", voice::takeText(l.take));
+  TEST_ASSERT_EQUAL_STRING("Done", voice::takeText(l.take));
   TEST_ASSERT_EQUAL_UINT32(7042, l.a.len);
   TEST_ASSERT_TRUE(l.b.len > 0);
 }
@@ -123,10 +123,10 @@ void test_a_say_keeps_its_first_take_while_the_second_loads() {
 // silence, then the second, and says both words; its mouth follows each.
 void test_a_say_of_two_takes() {
   NEEDS_VOICE_PACK();
-  voice::Say l = say("previous.tsk", 10, "phase1.word.test.test__annoyed__contained");
+  voice::Say l = say("nonverbal.frustration.tsk__sad", 10, "borrowed.basta__sad");
   TEST_ASSERT_TRUE(l.then >= 0);
   TEST_ASSERT_EQUAL_UINT32(2 * (l.a.len + voice::kGapSamples + l.b.len), voice::saySamples(l));
-  TEST_ASSERT_EQUAL_UINT32(1377 + 180 + 868, voice::sayMs(l.take, l.then));  // a pair, its gap between
+  TEST_ASSERT_EQUAL_UINT32(648 + 180 + 738, voice::sayMs(l.take, l.then));  // a pair, its gap between
   voice::Player p;
   p.start(l);
   std::vector<uint8_t> out = renderAll(p);
@@ -136,12 +136,12 @@ void test_a_say_of_two_takes() {
   const uint32_t at = 2 * (l.a.len + voice::kGapSamples);
   for (uint32_t i = 0; i + 2 < 2 * l.b.len; i += 2) TEST_ASSERT_INT_WITHIN(1, b[i / 2], out[at + i]);
   // The mouth: the first take's, shut in the gap, then the second's.
-  for (uint32_t ms = 0; ms < 1377; ++ms) TEST_ASSERT_EQUAL(voice::mouthOpen(l.take, ms), voice::sayMouthOpen(l.take, l.then, ms));
-  for (uint32_t ms = 1377; ms < 1377 + 180; ++ms) TEST_ASSERT_FALSE(voice::sayMouthOpen(l.take, l.then, ms));
-  for (uint32_t ms = 0; ms < 868; ++ms)
-    TEST_ASSERT_EQUAL(voice::mouthOpen(l.then, ms), voice::sayMouthOpen(l.take, l.then, 1377 + 180 + ms));
+  for (uint32_t ms = 0; ms < 648; ++ms) TEST_ASSERT_EQUAL(voice::mouthOpen(l.take, ms), voice::sayMouthOpen(l.take, l.then, ms));
+  for (uint32_t ms = 648; ms < 648 + 180; ++ms) TEST_ASSERT_FALSE(voice::sayMouthOpen(l.take, l.then, ms));
+  for (uint32_t ms = 0; ms < 738; ++ms)
+    TEST_ASSERT_EQUAL(voice::mouthOpen(l.then, ms), voice::sayMouthOpen(l.take, l.then, 648 + 180 + ms));
   // A second take the voice file doesn't have: the first alone.
-  voice::Say one = say("previous.tsk", 10, "banana");
+  voice::Say one = say("nonverbal.frustration.tsk__sad", 10, "banana");
   TEST_ASSERT_EQUAL(-1, one.then);
   TEST_ASSERT_EQUAL_UINT32(2 * one.a.len, voice::saySamples(one));
 }
@@ -164,7 +164,7 @@ void test_a_cut_fades_instead_of_clicking() {
   NEEDS_VOICE_PACK();
   for (int how = 0; how < 2; ++how) {
     voice::Player p;
-    p.start(say("new.d14", 10));
+    p.start(say("phrase.setback.aw-nuts__sad", 10));
     uint8_t s = 128;
     for (uint32_t i = 0; i < p.total() && std::abs(int(s) - 128) < 60; ++i) p.render(&s, 1);
     TEST_ASSERT_TRUE(std::abs(int(s) - 128) >= 60);  // cut at a loud sample
@@ -181,13 +181,13 @@ void test_a_cut_fades_instead_of_clicking() {
 void test_volume_scales_and_zero_mutes() {
   NEEDS_VOICE_PACK();
   voice::Player p;
-  p.start(say("new.d14", 10));
+  p.start(say("phrase.setback.aw-nuts__sad", 10));
   int loud = peak(renderAll(p));
-  p.start(say("new.d14", 5));
+  p.start(say("phrase.setback.aw-nuts__sad", 5));
   int half = peak(renderAll(p));
   TEST_ASSERT_TRUE(loud > 90);
   TEST_ASSERT_INT_WITHIN(3, loud / 2, half);
-  p.start(say("new.d14", 0));
+  p.start(say("phrase.setback.aw-nuts__sad", 0));
   TEST_ASSERT_FALSE(p.playing());
   TEST_ASSERT_EQUAL_UINT32(0, p.total());
 }
@@ -196,12 +196,12 @@ void test_volume_scales_and_zero_mutes() {
 // 11.025 kHz), and is shut before, after and with no take.
 void test_the_mouth_follows_the_take() {
   NEEDS_VOICE_PACK();
-  int go = voice::takeIndex("previous.go");
+  int go = voice::takeIndex("word.success.done__happy");
   int open = 0;
   for (uint32_t ms = 0; ms < voice::takeMs(go); ++ms) open += voice::mouthOpen(go, ms);
   TEST_ASSERT_TRUE(open > 0);
-  TEST_ASSERT_FALSE(voice::mouthOpen(go, 0));  // "Go" starts quiet
-  TEST_ASSERT_TRUE(voice::mouthOpen(go, 40));  // and opens at its 3rd frame
+  TEST_ASSERT_FALSE(voice::mouthOpen(go, 0));  // "Done" starts quiet
+  TEST_ASSERT_TRUE(voice::mouthOpen(go, 80));  // and opens at its 5th frame
   TEST_ASSERT_FALSE(voice::mouthOpen(go, 100000));
   TEST_ASSERT_FALSE(voice::mouthOpen(-1, 100));
 }
@@ -219,7 +219,7 @@ void test_a_card_failing_mid_say_ends_it() {
   } card;
   TEST_ASSERT_TRUE(voice::openFile(&card));
   voice::Player p;
-  p.start(say("new.d20"));
+  p.start(say("sentence.upset.all-that__sad"));
   TEST_ASSERT_TRUE(p.playing());
   card.after = 2;  // the card fails a couple of refills into the `say`
   std::vector<uint8_t> out(512);
@@ -243,7 +243,7 @@ void test_a_lookup_reads_the_card_once() {
   } card;
   TEST_ASSERT_TRUE(voice::openFile(&card));
   card.reads = 0;
-  TEST_ASSERT_TRUE(voice::takeIndex("new.d15") >= 0);
+  TEST_ASSERT_TRUE(voice::takeIndex("phrase.pride.naturally-naturally__happy") >= 0);
   TEST_ASSERT_EQUAL(2, card.reads);  // its record, then its mouth
   card.reads = 0;
   TEST_ASSERT_EQUAL(-1, voice::takeIndex("banana"));

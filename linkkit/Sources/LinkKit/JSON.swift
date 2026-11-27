@@ -5,7 +5,7 @@ import Foundation
 /// (SPEC.md §2). Objects keep their keys in order, so a line the app builds
 /// comes out byte for byte the same every time.
 ///
-/// Literals build one: `["say": ["take": "new.d02"], "loops": 1]`.
+/// Literals build one: `["say": ["take": "word.success.done__calm"], "loops": 1]`.
 public enum JSON: Equatable, Sendable {
     case null
     case bool(Bool)

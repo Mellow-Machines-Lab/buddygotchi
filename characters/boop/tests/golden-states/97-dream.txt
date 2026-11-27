@@ -331,7 +331,7 @@ HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 1 on "api" (landing).
 3 min ago: claude finished turn 1 on "api" (landing): done, a long turn, no tool calls.
   Boop's mood changed: calm → happy.
-  Boop had a happy moment (medium), playing a success, and said "Finish".
+  Boop had a happy moment (medium), playing a success, and said "Ta-da! Finished".
   After it, Boop held up an aside about it.
 Boop has been happy for 3 min.
 
@@ -348,7 +348,7 @@ Today: 1 turn; you touched Boop once.
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude finished turn 1 on "api" (landing): done, a long turn, no tool calls.
   Boop's mood changed: calm → happy.
-  Boop had a happy moment (medium), playing a success, and said "Finish".
+  Boop had a happy moment (medium), playing a success, and said "Ta-da! Finished".
   After it, Boop held up an aside about it.
 7 min ago: You stroked Boop.
   Boop had a focused moment (small).
@@ -702,7 +702,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop had a focused moment (small).
 5 min ago: claude finished turn 2 on "api" (landing): failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → cross.
-  Boop had an annoyed moment (big), playing a failure, and said "Not again".
+  Boop had an annoyed moment (big), playing a failure, and said "All that work, and it broke".
   After it, Boop held up an aside about it.
 Boop has been cross for 5 min.
 
@@ -875,7 +875,7 @@ Today: 2 turns, 1 failed; you touched Boop 3 times.
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude finished turn 2 on "api" (landing): failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → cross.
-  Boop had an annoyed moment (big), playing a failure, and said "Not again".
+  Boop had an annoyed moment (big), playing a failure, and said "All that work, and it broke".
   After it, Boop held up an aside about it.
 5 min ago: You stroked Boop.
   Boop had a focused moment (small).

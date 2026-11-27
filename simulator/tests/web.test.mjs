@@ -22,7 +22,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const WORKING = { t: 'state', base: 'working', mood: 'calm', busy: 1, vol: 6 };
 const QUIET = { ...WORKING, base: 'idle', busy: 0 };  // a face that makes no sound of its own
-const GO = { t: 'do', id: 1, name: 'react', play: 'now', args: { say: { take: 'previous.go' } } };
+const GO = { t: 'do', id: 1, name: 'react', play: 'now', args: { say: { take: 'word.success.done__happy' } } };
 
 /// The core, with what the page's script does around it: the staged pack's build in dist/.
 async function board(env = {}) {
@@ -459,7 +459,7 @@ test('a recording plays into the board in order, and knows nothing of what its l
 test('a voice file cut down to a demo is one the board plays from', { skip: needsVoice }, async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'bsim-voice-'));
   const recording = path.join(dir, 'demo.json'), small = path.join(dir, 'voice.bin');
-  writeFileSync(recording, JSON.stringify({ takes: ['previous.go', 'previous.tsk'] }));
+  writeFileSync(recording, JSON.stringify({ takes: ['word.success.done__happy', 'nonverbal.frustration.tsk__sad'] }));
   const cut = spawn('python3', [path.join(repo, 'simulator/tools/voice_subset.py'), recording, '--out', small]);
   assert.equal(await new Promise(ok => cut.on('exit', ok)), 0);
   assert.ok(statSync(small).size < 200_000, 'two takes, not the whole voice');
@@ -469,7 +469,7 @@ test('a voice file cut down to a demo is one the board plays from', { skip: need
   b.insert(readFileSync(small));
   assert.equal((await b.request({ t: 'hello' })).voice, (await whole.request({ t: 'hello' })).voice, 'the same voice, by its version');
   b.send(QUIET);
-  b.send({ ...GO, args: { say: { take: 'previous.tsk' } } });
+  b.send({ ...GO, args: { say: { take: 'nonverbal.frustration.tsk__sad' } } });
   await b.run(150);
   assert.ok(await b.listen() > 2, 'it says a take the small pack has');
 });

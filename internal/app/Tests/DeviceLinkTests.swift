@@ -175,14 +175,14 @@ final class DeviceLinkTests: XCTestCase {
     func testDoLinesMatchTheProtocol() throws {
         try requireVoice()
         XCTAssertEqual(Moment(say: .done, mood: "proud", loops: 1).line(id: 558386700, play: .next),
-                       #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d03"},"mood":"proud","loops":1}}"#)
+                       #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"word.success.done__happy"},"mood":"proud","loops":1}}"#)
         XCTAssertEqual(Moment(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
         XCTAssertEqual(Moment(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
         let finish = Moment(anim: "task_complete", say: .done, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),
-                       #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"say":{"take":"new.d03"},"mood":"proud"}}"#)
+                       #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"say":{"take":"word.success.done__happy"},"mood":"proud"}}"#)
         // A finish names whose turn it was, the thread cut as names are and
         // escaped; the thread it opens isn't sent.
         let quoted = Moment(anim: "reply_ready",

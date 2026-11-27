@@ -35,7 +35,7 @@ namespace {
 
 // A take with a known length (a `say` speaks for its take's
 // length, and its bubble stays kBubbleReadMs longer).
-constexpr const char* kGo = "previous.go";  // 7042 samples: 638 ms
+constexpr const char* kGo = "word.success.done__happy";  // 7042 samples: 638 ms
 constexpr uint32_t kGoMs = 638;
 
 // A reaction from the Mac as LinkKit hands it over (linkkit/SPEC.md §4):
@@ -63,7 +63,7 @@ struct Rig {
     m.anim = a;
     onReaction(b, m, t);
   }
-  // A line on its own: take `id` ("Go", 638 ms, by default); null for a
+  // A line on its own: take `id` ("Done", 638 ms, by default); null for a
   // `say` with no take.
   bool say(const char* id = kGo) {
     ReactionIn m;
@@ -653,7 +653,7 @@ static void test_a_take_moves_the_mouth() {
   ReactionIn m;
   m.said = true, m.take = voice::takeIndex(kGo);
   TEST_ASSERT_TRUE(onReaction(r.b, m, r.t));
-  TEST_ASSERT_EQUAL_STRING("Go", r.b.bubble(r.t));
+  TEST_ASSERT_EQUAL_STRING("Done", r.b.bubble(r.t));
   TEST_ASSERT_EQUAL(m.take, r.b.take());
   TEST_ASSERT_TRUE(r.b.speaking(kGoMs - 1));  // 7042 samples at 11.025 kHz
   TEST_ASSERT_FALSE(r.b.speaking(kGoMs));
@@ -675,11 +675,11 @@ static void test_a_say_of_two_takes() {
   Rig r;
   r.state(base("idle"));
   ReactionIn m;
-  m.said = true, m.take = voice::takeIndex("previous.tsk");
-  m.then = voice::takeIndex("phase1.word.test.test__annoyed__contained");
+  m.said = true, m.take = voice::takeIndex("nonverbal.frustration.tsk__sad");
+  m.then = voice::takeIndex("borrowed.basta__sad");
   TEST_ASSERT_TRUE(onReaction(r.b, m, r.t));
-  TEST_ASSERT_EQUAL_STRING("Tsk... Test", r.b.bubble(r.t));
-  const uint32_t ms = 1377 + voice::kJoinGapMs + 868;
+  TEST_ASSERT_EQUAL_STRING("Tsk... Basta", r.b.bubble(r.t));
+  const uint32_t ms = 648 + voice::kJoinGapMs + 738;
   TEST_ASSERT_TRUE(r.b.speaking(ms - 1));
   TEST_ASSERT_FALSE(r.b.speaking(ms));
   for (uint32_t t = 0; t < ms; t += 7) TEST_ASSERT_EQUAL(voice::sayMouthOpen(m.take, m.then, t), r.b.show(t).mouthOpen);
@@ -768,7 +768,7 @@ static void test_a_face_alone_plays_its_loops() {
   f.key = 31;
   onReaction(r.b, f, r.t);
   TEST_ASSERT_EQUAL(seq, r.b.reactionSeq());
-  TEST_ASSERT_EQUAL_STRING("Go", r.b.bubble(r.t));
+  TEST_ASSERT_EQUAL_STRING("Done", r.b.bubble(r.t));
   TEST_ASSERT_TRUE(r.b.expression(r.t, e));
   // Skipped while something needs you, and with no app.
   r.at(30000);
@@ -815,7 +815,7 @@ static void test_an_expression_holds_its_loops() {
   TEST_ASSERT_TRUE(s.state == SceneState::kWorking);
   TEST_ASSERT_TRUE(s.mood == render::Mood::kProud);
   TEST_ASSERT_EQUAL_UINT32(1000, s.t);  // the look's clock goes on
-  // "Go"'s 638 ms, then the bubble's 1.2 s: the line is over first, and
+  // "Done"'s 638 ms, then the bubble's 1.2 s: the line is over first, and
   // the face holds to the design's next boundary.
   const uint32_t said = 1000 + kGoMs + Behaviour::kBubbleReadMs;
   TEST_ASSERT_TRUE(said < loop);
@@ -845,9 +845,9 @@ static void test_an_expression_holds_its_loops() {
   // A `say` longer than its loop: the face holds as long as it plays.
   r.at(6 * loop);
   r.state(m);
-  ReactionIn in = expressive(render::Mood::kExcited, "new.d20");  // "Mwahaha...", 2434 ms
+  ReactionIn in = expressive(render::Mood::kExcited, "sentence.upset.all-that__sad");  // "All that work, and it broke", 2424 ms
   onReaction(r.b, in, r.t);
-  const uint32_t end = r.t + 2434 + Behaviour::kBubbleReadMs;
+  const uint32_t end = r.t + 2424 + Behaviour::kBubbleReadMs;
   TEST_ASSERT_TRUE(end - r.t > loopMs(render::Mood::kExcited, SceneState::kWorking));
   r.at(end - 1);
   TEST_ASSERT_TRUE(r.b.expression(r.t, e));
@@ -2267,11 +2267,11 @@ static void test_a_finishs_say_waits_for_its_voice_window() {
   r.at(1000);
   ReactionIn in;
   in.anim = SceneState::kTaskComplete, in.variant = 1;  // the failed finish
-  in.said = true, in.take = voice::takeIndex("new.d20");  // "Mwahaha...", 2434 ms
+  in.said = true, in.take = voice::takeIndex("sentence.upset.all-that__sad");  // "All that work, and it broke", 2424 ms
   in.expr = true, in.mood = Mood::kGrumpy, in.key = 5;
   const uint32_t voice = testface::voiceMs(Mood::kGrumpy, SceneState::kTaskComplete, 1);
   const uint32_t loop = loopMs(Mood::kGrumpy, SceneState::kTaskComplete, 1);
-  uint32_t line = 2434 + Behaviour::kBubbleReadMs;
+  uint32_t line = 2424 + Behaviour::kBubbleReadMs;
   TEST_ASSERT_TRUE(voice > 0 && voice + line > loop);  // it doesn't fit: the hold stretches
   TEST_ASSERT_TRUE(onReaction(r.b, in, r.t));
   uint32_t left;
@@ -2285,7 +2285,7 @@ static void test_a_finishs_say_waits_for_its_voice_window() {
   r.at(1000 + voice);
   TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
   TEST_ASSERT_TRUE(r.b.speaking(r.t));
-  TEST_ASSERT_TRUE(r.b.show(r.t + firstOpen("new.d20")).mouthOpen);
+  TEST_ASSERT_TRUE(r.b.show(r.t + firstOpen("sentence.upset.all-that__sad")).mouthOpen);
   // Past its loop, the design rests on its last frame, in the brain's face.
   r.at(1000 + loop + 200);
   SceneShow s = r.b.show(r.t);

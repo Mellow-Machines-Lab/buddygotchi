@@ -294,7 +294,7 @@ static void test_gel_frames_always_reach_the_panel() {
   const char* bases[] = {"idle", "working", "asleep"};
   const char* acts[] = {"tool_use", "terminal", "tool_use", "analyzing", "terminal", "terminal", "waiting"};
   const char* moods[] = {"happy", "excited", "grumpy", "sad", "calm", "frightened", "amused", "tired", "crying"};
-  const char* takes[] = {"previous.go", "previous.dai", "new.d14"};
+  const char* takes[] = {"word.success.done__happy", "word.talk-bye.ciao__calm", "phrase.setback.aw-nuts__sad"};
   std::mt19937 rng(5);
   auto pick = [&](int n) { return int(rng() % uint32_t(n)); };
   for (int n = 0; n < 700; ++n) {

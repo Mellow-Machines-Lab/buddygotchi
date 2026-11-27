@@ -103,9 +103,9 @@ final class SkitTakeTests: XCTestCase {
     }
 
     /// The face the win plays in, and a text of the options it has a take
-    /// of and one it has none of, if the pack has such a face.
-    func faceWithAndWithout(_ options: [String]) -> (face: String, has: String, lacks: String)? {
-        let takes = Take.all.filter { $0.part == .skit && $0.meaning == "win" }
+    /// of and one it has none of, if `pack` has such a face.
+    func faceWithAndWithout(_ options: [String], in pack: CharacterPack) -> (face: String, has: String, lacks: String)? {
+        let takes = Take.all(in: pack).filter { $0.part == .skit && $0.meaning == "win" }
         for face in CharacterPack.active.faces.map(\.name) {
             let mine = Set(takes.filter { $0.moods.contains(face) }.map(\.text))
             if let has = options.first(where: mine.contains), let lacks = options.first(where: { !mine.contains($0) }) {
@@ -115,11 +115,28 @@ final class SkitTakeTests: XCTestCase {
         return nil
     }
 
+    /// Boop's pack with `text`'s takes no longer playing in `face`.
+    static func pack(dropping text: String, from face: String) throws -> CharacterPack {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("gappy-\(UUID().uuidString)")
+        let boop = CharacterPackTests.repo.appendingPathComponent("characters/boop")
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("mac"), withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: boop.appendingPathComponent("character.json"), to: dir.appendingPathComponent("character.json"))
+        let table = try String(contentsOf: boop.appendingPathComponent("mac/takes.tsv"), encoding: .utf8)
+        let rows = table.split(separator: "\n", omittingEmptySubsequences: false).map { row -> String in
+            var f = row.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+            guard f.count == 8, f[1] == text else { return String(row) }
+            f[5] = f[5].split(separator: " ").filter { $0 != face }.joined(separator: " ")
+            return f.joined(separator: "\t")
+        }
+        try rows.joined(separator: "\n").write(to: dir.appendingPathComponent("mac/takes.tsv"), atomically: true, encoding: .utf8)
+        return try CharacterPack(directory: dir)
+    }
+
     /// What Moment `answers` play at a long win, from a fresh output with
     /// the same seed: the texts it says.
-    func said(_ answers: Answers) -> [String] {
+    func said(_ answers: Answers, in pack: CharacterPack = .active) -> [String] {
         let queued = Queued()
-        _ = output(queued: queued).run(answers, now: event(.turn, .end), log: Self.log)
+        _ = output(pack, queued: queued).run(answers, now: event(.turn, .end), log: Self.log)
         return queued.all.first?.say?.takes.map(\.text) ?? []
     }
 
@@ -129,11 +146,15 @@ final class SkitTakeTests: XCTestCase {
     func testThePickIsSaidInTheChosenFaceElseTodaysPick() throws {
         try requireVoice()
         let options = try XCTUnwrap(takeQuestion(output(), event(.turn, .end))).options.map(\.name)
-        let (face, has, lacks) = try XCTUnwrap(faceWithAndWithout(options), "a face with some of the texts and not others")
-        let todays = said([MomentOutput.emotionKey: self.face(face)])
+        // Boop's own voice has every win text in every face (a word's flat
+        // take fills in for the delivery it lacks): its table with the last
+        // option gone from one face has a face that lacks one.
+        let gappy = try Self.pack(dropping: try XCTUnwrap(options.last), from: "happy")
+        let (face, has, lacks) = try XCTUnwrap(faceWithAndWithout(options, in: gappy), "a face with some of the texts and not others")
+        let todays = said([MomentOutput.emotionKey: self.face(face)], in: gappy)
         XCTAssertFalse(todays.isEmpty, "\(face) says something at a win")
-        XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face(has)]).last, has)
-        XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face(lacks)]), todays,
+        XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face(has)], in: gappy).last, has)
+        XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face(lacks)], in: gappy), todays,
                        "\(lacks) isn't in \(face): today's pick")
         // The first option, in a face that has it and whose own pick today is another.
         let first = try XCTUnwrap(CharacterPack.active.faces.map(\.name).first { f in
@@ -142,7 +163,7 @@ final class SkitTakeTests: XCTestCase {
         }, "a face that has \(options[0]) and picks another today")
         XCTAssertEqual(said([MomentOutput.emotionKey: self.face(first), MomentOutput.takeKey: self.face(options[0])]).last, options[0],
                        "Jev may pick the first")
-        XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face("Not a take.")]), todays,
+        XCTAssertEqual(said([MomentOutput.emotionKey: self.face(face), MomentOutput.takeKey: self.face("Not a take.")], in: gappy), todays,
                        "not offered: today's")
     }
 }

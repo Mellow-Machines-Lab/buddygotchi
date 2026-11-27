@@ -1,10 +1,12 @@
-"""Records Boop's sentences with ElevenLabs, from the bank's plan.
+"""Records Boop's voice with ElevenLabs, from the bank's plan.
 
 The plan is the bank's plans/sentences.json (character/design/assets/
 boop-voice-v1/): each sentence's spoken words and the deliveries to record
 it in (B bright, F flat, G glum), each delivery's bank mood, audio tag and
 acting direction. A take is one sentence in one delivery, its id
-`sentence.<id>__<mood>`. Run from anywhere, python 3.9, nothing to install:
+`sentence.<id>__<mood>`; tier 3 adds the words a reply or a skit says, in
+the deliveries voicegen's `words` gives each, its id `<entry id>__<mood>`.
+Run from anywhere, python 3.9, nothing to install:
 
     python3 characters/boop/tools/voicegen/record.py --tier 1 --dry-run
     ELEVENLABS_API_KEY=... python3 characters/boop/tools/voicegen/record.py --tier 1 --archive /abs/path/outside/the/repo
@@ -25,14 +27,15 @@ from it, so you can judge them before recording the rest.
 
 A real run asks ElevenLabs for each take with the bank's own settings
 (the plan's `voiceId` and `modelId`, seed 42, language auto, no other
-voice settings; the acting is the script's leading tag), keeps the MP3
+voice settings; the acting is the script's leading tag), plays it the
+plan's `pitch` times higher and PACE times faster (ffmpeg), keeps that MP3
 master in --archive (the bank keeps its masters outside the repo), makes
-the bank's `original` texture from it with tools/compress.py's recipe
-(macOS afconvert to 16-bit 11.025 kHz, then 8-bit) and the `robot-soft`
-one voicegen builds from, and files the take in the manifest with the
-sentence as its entry (`sentence.<id>`), its delivery and `reviewStatus:
-unreviewed-by-ear`. The robot-soft chain is provenance.json's words made
-small (`robot_soft`): its original code isn't in this repo, and no
+the bank's `original` texture from it (macOS afconvert to 16-bit 11.025
+kHz, then 8-bit) and the `robot-soft` one voicegen builds from, and files
+the take in the manifest with its entry (`sentence.<id>`, or the word's
+dictionary entry), its delivery and `reviewStatus: unreviewed-by-ear`.
+The robot-soft chain is provenance.json's words made small
+(`robot_soft`): its original code isn't in this repo, and no
 original/robot-soft pair is, so it can't be proven the same; listen first.
 """
 from __future__ import annotations
@@ -59,17 +62,37 @@ RECIPE = "pcm-u8-mono-11025-coreaudio-v1"
 SOFT_RECIPE = "pcm-u8-mono-11025, robot-soft chain from record.py"
 
 
+WORDS_TIER = 3  # the replies' and skits' short words record after the sentences
+
+
+def spoken(text: str) -> str:
+    """A word as the voice reads it: with a full stop if it ends bare."""
+    return text if text[-1] in ".!?" else text + "."
+
+
 def takes(plan: dict, tier: int) -> list[dict]:
-    """Every take of the plan's sentences up to `tier`: one a delivery."""
+    """Every take of the plan's sentences up to `tier`, one a delivery; and
+    at WORDS_TIER, of the words a reply or a skit says (voicegen's `words`),
+    each filed under its own entry."""
     out = []
     for s in plan["sentences"]:
         if s["tier"] > tier:
             continue
         for d in s["deliveries"]:
             delivery = plan["deliveries"][d]
-            out.append({"id": f"sentence.{s['id']}__{delivery['mood']}", "sentence": s["id"], "tier": s["tier"], "delivery": d,
+            out.append({"id": f"sentence.{s['id']}__{delivery['mood']}", "sentence": s["id"], "entry": f"sentence.{s['id']}",
+                        "batch": "sentences", "tier": s["tier"], "delivery": d,
                         "mood": delivery["mood"], "script": f"{delivery['tag']} {s['spoken']}",
                         "direction": delivery["direction"]})
+    if tier >= WORDS_TIER:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import voicegen
+        for w in voicegen.words(json.loads((BANK / "dictionary.json").read_text())):
+            for d in w["deliveries"]:
+                delivery = plan["deliveries"][d]
+                out.append({"id": f"{w['id']}__{delivery['mood']}", "sentence": w["id"], "entry": w["id"], "batch": "words",
+                            "tier": WORDS_TIER, "delivery": d, "mood": delivery["mood"],
+                            "script": f"{delivery['tag']} {spoken(w['spoken'])}", "direction": delivery["direction"]})
     return out
 
 
@@ -104,8 +127,8 @@ def sha(path: Path) -> str:
 
 def pcm8(master: Path, target: Path) -> dict:
     """The bank's `original` texture from an MP3 master: afconvert to 16-bit
-    mono 11.025 kHz, then 8-bit unsigned, as tools/compress.py does; with
-    the 16-bit samples as floats, for the robot-soft chain."""
+    mono 11.025 kHz, then 8-bit unsigned (RECIPE); with the 16-bit samples
+    as floats, for the robot-soft chain."""
     with tempfile.TemporaryDirectory(prefix="boop-record-") as d:
         decoded = Path(d) / "decoded.wav"
         subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16@11025", "-c", "1", "-r", "127", str(master), str(decoded)], check=True)
@@ -146,7 +169,7 @@ def pick(plan: dict, tier: int, have: set, only: list, redo: list) -> list:
     """The takes to record: `only`'s sentences or takes if any, else tiers
     1 to `tier`, but those the manifest has; and `redo`'s, again."""
     def named(t: dict, ids: list) -> bool:
-        return t["id"] in ids or t["id"][len("sentence."):] in ids or t["sentence"] in ids
+        return t["id"] in ids or t["id"][len("sentence."):] in ids or t["sentence"] in ids or t["entry"] in ids
     every = takes(plan, 99)
     scope = [t for t in every if named(t, only)] if only else [t for t in every if t["tier"] <= tier]
     again = [t for t in every if named(t, redo)]
@@ -252,10 +275,10 @@ def record(todo: list[dict], plan: dict, key: str, archive: Path, bank: Path = B
             (listen / f"{t['id']}.robot-soft.wav").write_bytes((bank / soft).read_bytes())
         manifest["recordings"] = [r for r in manifest["recordings"] if r["id"] != t["id"]]
         manifest["recordings"].append({
-            "id": t["id"], "entryId": f"sentence.{t['sentence']}", "delivery": t["delivery"], "mood": t["mood"],
+            "id": t["id"], "entryId": t["entry"], "delivery": t["delivery"], "mood": t["mood"],
             "moodStatus": "intended; listening review pending", "variant": "contained", "script": t["script"],
             "seconds": decoded["seconds"], "routineDurationEligible": True, "reviewStatus": "unreviewed-by-ear",
-            "performanceId": t["id"][len("sentence."):], "sourceBatch": "sentences",
+            "performanceId": t["id"], "sourceBatch": t["batch"],
             "generation": {"voiceId": plan["voiceId"], "modelId": plan["modelId"], "seed": SEED, "language": "auto", "pitch": plan.get("pitch", 1)},
             "master": {"sha256": hashlib.sha256(audio).hexdigest()},
             "files": {texture: {"path": path, "bytes": (bank / path).stat().st_size, "sha256": sha(bank / path), "recipe": recipe}

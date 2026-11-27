@@ -280,13 +280,13 @@ class ColumnsTests(unittest.TestCase):
             sent(t + 5, "rule", {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}),
             sent(t + 30, "brain", {"t": "do", "id": 43, "name": "task_complete", "play": "next", "ttl": 5000,
                                    "args": {"outcome": "success", "variant": 2, "who": {"agent": "claude", "thread": "api"},
-                                            "say": {"take": "new.d15"}, "mood": "proud"}}),
+                                            "say": {"take": "phrase.pride.naturally-naturally__happy"}, "mood": "proud"}}),
             sent(t + 40, "rule", {"t": "do", "id": 44, "name": "listening", "play": "now"}),
         ])
         reflex = self.texts(board.reflex_column())
         self.assertEqual(reflex, [f"{clock(t + 40)} listening", "  you pressed Talk on the Mac"])
         self.assertIn(("sent", "→ do stop_listening"), rows)
-        self.assertIn(("sent", f"→ do task_complete + say {feed.say_text({'take': 'new.d15'})}"), rows)
+        self.assertIn(("sent", f"→ do task_complete + say {feed.say_text({'take': 'phrase.pride.naturally-naturally__happy'})}"), rows)
         self.assertEqual(dict(board.facts(t + 1000))["showing"], "listening")
 
     def test_a_rule_reaction_the_device_skipped(self):
@@ -328,15 +328,15 @@ class ColumnsTests(unittest.TestCase):
     def test_takes_with_no_voice_pack(self):
         """With no voice file here, what a `say` said reads as its takes' ids."""
         with mock.patch.object(feed, "take", side_effect=feed.DeviceError("no voice file")):
-            self.assertEqual(feed.said(["new.d15", "topic.x"]), "new.d15 topic.x")
-            self.assertEqual(feed.say_text({"take": "new.d15", "then": "topic.x"}), "(new.d15, topic.x)")
+            self.assertEqual(feed.said(["phrase.pride.naturally-naturally__happy", "topic.x"]), "phrase.pride.naturally-naturally__happy topic.x")
+            self.assertEqual(feed.say_text({"take": "phrase.pride.naturally-naturally__happy", "then": "topic.x"}), "(phrase.pride.naturally-naturally__happy, topic.x)")
             self.assertEqual(feed.say_text({}), "no take")
 
     @needs_voice
     def test_takes_with_the_voice_pack(self):
         """With the pack's voice, a `say` reads as its words, and a take it lacks as none."""
         self.assertEqual(feed.say_text({"take": "banana"}), "no take")
-        self.assertTrue(feed.say_text({"take": "new.d15"}).endswith("” (new.d15)"))
+        self.assertTrue(feed.say_text({"take": "phrase.pride.naturally-naturally__happy"}).endswith("” (phrase.pride.naturally-naturally__happy)"))
 
     def test_the_decided_reactions(self):
         """Each pass that could react: its event, the face, move, intensity
@@ -379,7 +379,7 @@ class ColumnsTests(unittest.TestCase):
         forced = next(i for i, line in enumerate(lines) if dashboard_action(line).get("message", "").startswith(
             "Boop made a proud face"))
         board, _ = board_after(lines[: forced + 1])
-        # What it said is the take its action recorded (new.d03), not the word it picked.
+        # What it said is the take its action recorded (word.success.done__happy), not the word it picked.
         self.assertEqual(dict(board.facts(board.newest_ms))["showing"], "a proud reaction face (big), “Done”")
         board = self.board
         self.assertEqual(dict(board.facts(self.at[31] + 1000))["showing"], "Boop wiggled on its own.")
@@ -484,9 +484,9 @@ class ControlsTests(unittest.TestCase):
         """As the react output sends it, played `now` so
         it replaces what the sim shows; what react.move picks is its
         scene, with a finish's outcome (MomentOutput.scenes)."""
-        line = controls.preview_reaction("grumpy", "new.d14", 3)
+        line = controls.preview_reaction("grumpy", "phrase.setback.aw-nuts__sad", 3)
         self.assertEqual(line, {"t": "do", "name": "react", "play": "now",
-                                "args": {"mood": "grumpy", "loops": 3, "say": {"take": "new.d14"}}})
+                                "args": {"mood": "grumpy", "loops": 3, "say": {"take": "phrase.setback.aw-nuts__sad"}}})
         face = controls.preview_reaction("proud", None, 1, "success")
         self.assertEqual((face["name"], face["args"]["outcome"]), ("task_complete", "success"))
         woke = controls.preview_reaction("happy", None, 1, "wake up")
@@ -914,7 +914,7 @@ class ReactionKeysTests(unittest.TestCase):
                "questions": ["react.face", "react.move", "react.intensity", "say"]}
         self.assertEqual(picks_text(now), "proud 0.82 · success 0.90 · big 0.64 · glad 0.71")
         self.assertEqual(reaction_text({"pass": now}), "a success in a proud face (big)", "no takes recorded")
-        self.assertEqual(reaction_text({"pass": now}, ["new.d03", "gone"]),
+        self.assertEqual(reaction_text({"pass": now}, ["word.success.done__happy", "gone"]),
                          "a success in a proud face (big), “Done gone”", "a take the pack lacks, by its id")
         quiet = {"answers": {"react.face": a("calm"), "react.move": a("none"), "react.intensity": a("small"),
                              "say": a("none")}, "questions": ["react.face", "react.move", "react.intensity", "say"]}

@@ -555,14 +555,12 @@ remark takes its place.
   lists only what a reply, a skit or a sentence says: a take that's the words of
   several is in it once for each, by the same id (voicegen's `REPLY_OF`,
   `SKIT_OF`), and the voice file has it once. The table may list fewer
-  takes than the voice file holds: Boop's card keeps every take it was
-  built with, 2,995, and the table lists 957 of them, so the voice file
-  and its version stayed as they were when the table had the rest.
+  takes than the voice file holds; Boop's lists all 500.
 
 Both are built files and checked in, and a pack has both or neither. Boop's
-pack holds the recordings and voicegen, the tool that makes the two files;
-espeak-ng placeholders stand in for lines not recorded yet
-(`plans/regenerate.json` in its `design/assets/boop-voice-v1/`).
+pack holds the recordings, all in one voice (its
+`design/assets/boop-voice-v1/`), and voicegen, the tool that makes the two
+files.
 
 **Sentences.** A take of part `sentence` is one of the pack's lines said
 whole: a `signs.md` row (an aside's, a remark's, or `[aside back]`'s and
@@ -580,12 +578,14 @@ audio tag, an acting direction and the faces it plays in. `tools/voicegen/
 record.py` records them with ElevenLabs (`--tier`, `--only`, `--redo`,
 `--dry-run`; the key from `ELEVENLABS_API_KEY` or `~/.config/boop/
 elevenlabs.key`), with the bank's settings (seed 42, the acting as the
-script's leading tag), keeps the masters outside the repo with a listening
-copy, makes the bank's `original` texture and its `robot-soft` one (the
-chain provenance.json describes, rebuilt from those words: the original
-code isn't in the repo, nor any pair to prove it the same) and files each
-in the manifest as `sentence.<id>__<mood>`; voicegen then lists it with no
-other change. A new
+script's leading tag), plays each master the plan's `pitch` times higher
+and a little faster (ffmpeg), keeps the masters outside the repo with a
+listening copy, makes the bank's `original` texture and its `robot-soft`
+one (the chain provenance.json describes, rebuilt from those words: the
+original code isn't in the repo, nor any pair to prove it the same) and
+files each in the manifest as `sentence.<id>__<mood>`; voicegen then lists
+it with no other change. Its tier 3 records the words a reply or a skit
+says the same way, each as `<entry id>__<mood>`. A new
 voice file is a new version: a board whose card has the old one stays
 silent (§10) until the card has the new one (a card reader, or `boopctl
 card` over USB, which takes hours).
@@ -595,9 +595,10 @@ sound effects only.
 
 A pack with a voice has takes for every mood: Voice picks only takes whose
 moods include the emotion's. The table's moods column lists every mood a
-take plays in, so a take recorded in one mood may lend itself to others
-(`tools/voicegen/borrowed.json`), with no change to the audio or the
-version.
+take plays in, its delivery's faces. Boop records each word flat and in
+the delivery its first meaning leans to (voicegen's `LEANS`), and the flat
+take also plays in the faces of the delivery it lacks, so every face has
+every word; a sentence plays only in the deliveries it was recorded in.
 
 ## 9. Faces
 

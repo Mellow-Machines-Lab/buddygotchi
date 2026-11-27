@@ -313,7 +313,7 @@ static void test_input_reaches_every_live_link() {
   r.kit.connected();
   r.bleLine("{\"t\":\"state\",\"base\":\"idle\"}");
   r.hal.real = 1000;
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   press(100, 100);  // a tap
   press(800, 500);  // a hold: push-to-talk, and no tap
   for (const std::string* out : {&r.ble.text, &r.usb.text}) {
@@ -751,11 +751,11 @@ static void test_a_physical_hold_is_push_to_talk() {
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"moment\":{\"anim\":\"listening\",\"left_ms\":8000,"));
   // The reply, a `say`, ends it and plays.
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\"}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"proud\"}}");
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"moment\":null"));
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"take\":\"previous.go\""));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"take\":\"word.success.done__happy\""));
   TEST_ASSERT_TRUE(has(r.usb.text, "\"expr\":\"proud\""));
 }
 
@@ -1223,7 +1223,7 @@ static void test_reaction_plays_then_ends_and_a_new_one_replaces_it() {
   for (const char* gone : {"moonwalk", "oops", "happy", "levelup", "yawn", "nod", "thinking", "shrug", "idle", "terminal",
                            "cheer", "wiggle"}) {
     std::string line = std::string("{\"t\":\"do\",\"id\":8,\"name\":\"") + gone +
-                       "\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}";
+                       "\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}";
     r.usb.text.clear();
     r.usbLine(line.c_str());
     TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"ended\",\"data\":{\"id\":8,\"how\":\"skipped\","
@@ -1233,7 +1233,7 @@ static void test_reaction_plays_then_ends_and_a_new_one_replaces_it() {
   }
   TEST_ASSERT_EQUAL(0, int(r.hal.said.size()));
   // A reaction's `say` plays on its own.
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
 }
 
@@ -1273,13 +1273,13 @@ static void test_say_reaches_the_player() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":7}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"new.d14\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"phrase.setback.aw-nuts__sad\"}}}");
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
   const voice::Say& l = r.hal.said[0];
-  TEST_ASSERT_EQUAL(voice::takeIndex("new.d14"), l.take);
+  TEST_ASSERT_EQUAL(voice::takeIndex("phrase.setback.aw-nuts__sad"), l.take);
   TEST_ASSERT_EQUAL(7, l.vol);
   r.usbLine("{\"t\":\"dbg.state\"}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"new.d14\",\"out\":{"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"phrase.setback.aw-nuts__sad\",\"out\":{"));
   // A tap's poke plays, and the `say` plays on under it.
   r.usbLine("{\"t\":\"dbg.press\",\"ms\":50}");
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
@@ -1329,12 +1329,12 @@ static void test_a_reaction_carries_its_expression() {
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"expr\":null"));
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.dai\"},\"mood\":\"grumpy\"}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.talk-bye.ciao__calm\"},\"mood\":\"grumpy\"}}");
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"mood\":\"happy\""));  // the state's mood is kept
   TEST_ASSERT_TRUE(has(r.usb.text, "\"expr\":\"grumpy\""));
-  // The `say` (Dai, 460 ms) is over at 1660 ms; the face holds a loop of
+  // The `say` (Ciao, 489 ms) is over at 1689 ms; the face holds a loop of
   // the working design in grumpy, whose clock started with the state at 0.
   const uint32_t loop = testface::loopMs(render::Mood::kGrumpy, render::SceneState::kWorking);
   auto exprAt = [&](uint32_t t) {
@@ -1343,23 +1343,23 @@ static void test_a_reaction_carries_its_expression() {
     r.usbLine("{\"t\":\"dbg.state\"}");
     return has(r.usb.text, "\"expr\":\"grumpy\"");
   };
-  TEST_ASSERT_TRUE(460 + app::Behaviour::kBubbleReadMs < loop);
+  TEST_ASSERT_TRUE(489 + app::Behaviour::kBubbleReadMs < loop);
   TEST_ASSERT_TRUE(exprAt(1400));
   TEST_ASSERT_TRUE(exprAt(loop - 1));
   TEST_ASSERT_FALSE(exprAt(loop));
   TEST_ASSERT_TRUE(has(r.usb.text, "\"expr\":null"));
   // `loops`: two, from a boundary, end at the second one after it; over
   // 6 holds 6.
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"},\"mood\":\"grumpy\",\"loops\":2}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"grumpy\",\"loops\":2}}");
   TEST_ASSERT_TRUE(exprAt(3 * loop - 1));
   TEST_ASSERT_FALSE(exprAt(3 * loop));
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\"}");  // no "no app" meanwhile
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"},\"mood\":\"grumpy\",\"loops\":9}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"grumpy\",\"loops\":9}}");
   TEST_ASSERT_TRUE(exprAt(9 * loop - 1));
   TEST_ASSERT_FALSE(exprAt(9 * loop));
   // Unknown: no expression, and the `say` still plays.
   size_t said = r.hal.said.size();
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"},\"mood\":\"cheerful\"}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"cheerful\"}}");
   TEST_ASSERT_EQUAL(int(said + 1), int(r.hal.said.size()));
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
@@ -1371,12 +1371,12 @@ static void test_a_say_on_its_own_plays() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"working\"}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"moment\":null"));
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"previous.go\""));
-  // "Go"'s 638 ms + 1.2 s: the bubble goes, and the `say` with it.
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"word.success.done__happy\""));
+  // "Done"'s 638 ms + 1.2 s: the bubble goes, and the `say` with it.
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1837}");
   TEST_ASSERT_EQUAL(0, r.hal.hushes);
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1838}");
@@ -1386,13 +1386,13 @@ static void test_a_say_on_its_own_plays() {
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
   // A `say` of two takes: both play, one after the other,
   // and the status names the first.
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.tsk\",\"then\":\"phase1.word.test.test__annoyed__contained\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"nonverbal.frustration.tsk__sad\",\"then\":\"borrowed.basta__sad\"}}}");
   TEST_ASSERT_EQUAL(2, int(r.hal.said.size()));
   TEST_ASSERT_TRUE(r.hal.said.back().then >= 0);
   TEST_ASSERT_TRUE(r.hal.said.back().b.len > 0);
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"previous.tsk\""));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"nonverbal.frustration.tsk__sad\""));
 }
 
 static void test_mute_and_needs_you_keep_it_silent() {
@@ -1402,8 +1402,8 @@ static void test_mute_and_needs_you_keep_it_silent() {
       "{\"t\":\"state\",\"base\":\"idle\",\"attn\":{\"agent\":\"claude\",\"project\":\"x\"}}",
   };
   for (const char* st : states) {
-    for (const char* mo : {"{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"say\":{\"take\":\"previous.go\"}}}",
-                           "{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}"}) {
+    for (const char* mo : {"{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"say\":{\"take\":\"word.success.done__happy\"}}}",
+                           "{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}"}) {
       Rig r;
       r.usbLine(st);
       r.usbLine(mo);
@@ -1413,16 +1413,16 @@ static void test_mute_and_needs_you_keep_it_silent() {
   // Muted, the mouth still moves, at its voice window: only the sound goes.
   Rig r;
   r.usbLine(states[0]);
-  r.usbLine("{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":1,\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":1,\"say\":{\"take\":\"word.success.done__happy\"}}}");
   const uint32_t voice = testface::voiceMs(render::Mood::kHappy, render::SceneState::kTaskComplete, 0);
   r.usbLine(("{\"t\":\"dbg.clock\",\"freeze\":" + std::to_string(voice) + "}").c_str());
   r.usbLine("{\"t\":\"dbg.state\"}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"previous.go\""));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"word.success.done__happy\""));
   TEST_ASSERT_EQUAL(0, int(r.hal.said.size()));
   // A `say` stops when mute arrives while it plays.
   Rig q;
   q.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  q.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  q.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   TEST_ASSERT_EQUAL(1, int(q.hal.said.size()));
   q.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":0}");
   TEST_ASSERT_EQUAL(1, q.hal.hushes);
@@ -1434,7 +1434,7 @@ static void test_needs_you_hushes_a_say_for_its_alert() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":100}");
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"attn\":{\"agent\":\"claude\",\"project\":\"x\"}}");
@@ -1454,7 +1454,7 @@ static void test_a_reaction_with_an_id_is_answered_when_it_ends() {
   // Idle's second variation, a long loop (`variant`).
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
-  r.usbLine("{\"t\":\"do\",\"id\":5,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\"}}");
+  r.usbLine("{\"t\":\"do\",\"id\":5,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"proud\"}}");
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":0}");  // hushed, but it plays on
   r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1840}");  // the `say` is over: 640 ms + 1.2 s
@@ -1465,23 +1465,23 @@ static void test_a_reaction_with_an_id_is_answered_when_it_ends() {
   r.usbLine(("{\"t\":\"dbg.clock\",\"freeze\":" + std::to_string(loop) + "}").c_str());
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"ended\",\"data\":{\"id\":5,\"how\":\"done\"}}\n"));
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  r.usbLine("{\"t\":\"do\",\"id\":6,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"id\":6,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   r.usbLine("{\"t\":\"dbg.press\",\"ms\":50}");  // a tap's poke doesn't cut it
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
   TEST_ASSERT_FALSE(has(r.usb.text, "\"id\":6,"));
   r.usbLine(("{\"t\":\"dbg.clock\",\"freeze\":" + std::to_string(loop + 3000) + "}").c_str());
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"ended\",\"data\":{\"id\":6,\"how\":\"done\"}}\n"));
-  r.usbLine("{\"t\":\"do\",\"id\":7,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"id\":7,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   r.usbLine("{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\"}}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"ended\",\"data\":{\"id\":7,\"how\":\"cut\",\"why\":\"now\"}}\n"));
-  r.usbLine("{\"t\":\"do\",\"id\":8,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"id\":8,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"attn\":{\"agent\":\"claude\",\"project\":\"x\"}}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"ended\",\"data\":{\"id\":8,\"how\":\"cut\",\"why\":\"needs_you\"}}\n"));
-  r.usbLine("{\"t\":\"do\",\"id\":9,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"id\":9,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"ended\",\"data\":{\"id\":9,\"how\":\"skipped\",\"why\":\"needs_you\"}}\n"));
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
-  r.usbLine("{\"t\":\"do\",\"id\":10,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
+  r.usbLine("{\"t\":\"do\",\"id\":10,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   r.usbLine("{\"t\":\"dbg.reset\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"ended\",\"data\":{\"id\":10,\"how\":\"cut\",\"why\":\"reset\"}}\n"));
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":60000}");
@@ -1491,7 +1491,7 @@ static void test_a_reaction_with_an_id_is_answered_when_it_ends() {
   Rig b;
   b.kit.connected();
   const char* state = "{\"t\":\"state\",\"base\":\"idle\"}";
-  const char* reaction = "{\"t\":\"do\",\"id\":3,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}";
+  const char* reaction = "{\"t\":\"do\",\"id\":3,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}";
   b.kit.handleLine(state, std::strlen(state), linkkit::Link::kBle);
   b.kit.handleLine(reaction, std::strlen(reaction), linkkit::Link::kBle);
   b.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1840}");
@@ -1542,7 +1542,7 @@ static void test_volume_is_held_in_range() {
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":15}");
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"vol\":10,"));
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
   TEST_ASSERT_EQUAL(10, r.hal.said[0].vol);
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":-3}");
@@ -1740,7 +1740,7 @@ static void test_only_the_reply_ends_the_macs_listening() {
     TEST_ASSERT_TRUE_MESSAGE(has(r.usb.text, "\"moment\":{\"anim\":\"listening\""), other);
   }
   TEST_ASSERT_TRUE(has(r.usb.text, "\"expr\":null"));
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\"}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"proud\"}}");
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"moment\":null"));
@@ -1756,10 +1756,10 @@ static void test_a_finishs_say_starts_at_its_voice_window() {
   const uint32_t voice = testface::voiceMs(render::Mood::kHappy, render::SceneState::kTaskComplete, 0);
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":5}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}");  // a `say` playing
+  r.usbLine("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");  // a `say` playing
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
   r.usbLine("{\"t\":\"do\",\"id\":3,\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\","
-            "\"variant\":1,\"say\":{\"take\":\"new.d14\"}}}");
+            "\"variant\":1,\"say\":{\"take\":\"phrase.setback.aw-nuts__sad\"}}}");
   TEST_ASSERT_EQUAL(1, r.hal.hushes);  // it replaces the `say` playing
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
   r.usb.text.clear();
@@ -1770,17 +1770,17 @@ static void test_a_finishs_say_starts_at_its_voice_window() {
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
   r.usbLine(("{\"t\":\"dbg.clock\",\"freeze\":" + std::to_string(voice) + "}").c_str());
   TEST_ASSERT_EQUAL(2, int(r.hal.said.size()));
-  TEST_ASSERT_EQUAL(voice::takeIndex("new.d14"), r.hal.said[1].take);
+  TEST_ASSERT_EQUAL(voice::takeIndex("phrase.setback.aw-nuts__sad"), r.hal.said[1].take);
   TEST_ASSERT_EQUAL(7, r.hal.said[1].vol);  // the volume when it starts
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"new.d14\","));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"audio\":{\"playing\":true,\"take\":\"phrase.setback.aw-nuts__sad\","));
   // Tapped before its window, the `say` still plays over the poke; cut by
   // needs you, it never plays.
   for (const char* stop : {"tap", "needs"}) {
     Rig q;
     q.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-    q.usbLine("{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":1,\"say\":{\"take\":\"previous.go\"}}}");
+    q.usbLine("{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":1,\"say\":{\"take\":\"word.success.done__happy\"}}}");
     const bool tap = !std::strcmp(stop, "tap");
     if (tap) {
       q.usbLine("{\"t\":\"dbg.press\",\"ms\":50}");
@@ -1891,7 +1891,7 @@ static std::string stateOf(Rig& r) {
   r.usbLine("{\"t\":\"dbg.state\"}");
   return r.usb.text;
 }
-static const char* kGo = "{\"say\":{\"take\":\"previous.go\"}}";  // 638 ms, then 1.2 s of bubble
+static const char* kGo = "{\"say\":{\"take\":\"word.success.done__happy\"}}";  // 638 ms, then 1.2 s of bubble
 
 // A reaction with nothing left to play once its `say` and
 // bubble have played (the take, then 1.2 s) ends done then, and the
@@ -1905,7 +1905,7 @@ static void test_a_reaction_waits_for_the_say_before_it() {
   r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   doLine(r, 1, "react", "next", kGo);
   clockAt(r, 100);
-  doLine(r, 2, "react", "next", "{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\",\"loops\":3}");
+  doLine(r, 2, "react", "next", "{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"proud\",\"loops\":3}");
   TEST_ASSERT_TRUE(has(stateOf(r), "\"turn\":{\"holder\":{\"id\":1,\"name\":\"react\",\"resting\":false},"
                                    "\"waiting\":[{\"id\":2,\"name\":\"react\",\"left_ms\":5000}]}"));
   clockAt(r, 1837);
@@ -1914,7 +1914,7 @@ static void test_a_reaction_waits_for_the_say_before_it() {
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "done")));
   TEST_ASSERT_EQUAL(2, int(r.hal.said.size()));
   std::string st = stateOf(r);
-  TEST_ASSERT_TRUE(has(st, "\"audio\":{\"playing\":false,\"take\":\"previous.go\""));  // its take played 1838–2476
+  TEST_ASSERT_TRUE(has(st, "\"audio\":{\"playing\":false,\"take\":\"word.success.done__happy\""));  // its take played 1838–2476
   TEST_ASSERT_TRUE(has(st, "\"expr\":\"proud\""));
   TEST_ASSERT_TRUE(has(st, "\"holder\":{\"id\":2,\"name\":\"react\",\"resting\":false}"));
   clockAt(r, 4175);
@@ -1942,7 +1942,7 @@ static void test_the_next_reaction_waits_half_a_second_after_a_bubble() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // a long loop for the face to hold
   r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
-  doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\",\"loops\":3}");
+  doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"proud\",\"loops\":3}");
   clockAt(r, 100);
   doLine(r, 2, "react", "next", kGo);
   clockAt(r, 1838);  // the bubble goes
@@ -2018,7 +2018,7 @@ static void test_a_finish_plays_until_it_ends() {
   TEST_ASSERT_FALSE(has(r.usb.text, "\"id\":2,"));
   clockAt(r, 5101);
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(2, "skipped", "late")));
-  r.usbLine("{\"t\":\"do\",\"id\":3,\"name\":\"react\",\"ttl\":9000,\"args\":{\"say\":{\"take\":\"previous.go\"}}}");
+  r.usbLine("{\"t\":\"do\",\"id\":3,\"name\":\"react\",\"ttl\":9000,\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}");
   clockAt(r, 20000);
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "done")));
   TEST_ASSERT_EQUAL(1, int(r.hal.said.size()));
@@ -2034,7 +2034,7 @@ static void test_a_rules_reaction_never_cuts_a_say() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // a long loop for the face to hold
   r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
-  doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\",\"loops\":2}");
+  doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"proud\",\"loops\":2}");
   clockAt(r, 100);
   doLine(r, 2, "notice", "if_free");
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(2, "skipped", "busy")));
@@ -2148,7 +2148,7 @@ static void test_the_mic_drops_the_reactions_waiting() {
 static void test_a_tools_press_drops_only_usbs_waiting_reactions() {
   NEEDS_VOICE_PACK();
   Rig r;
-  const char* react = "{\"t\":\"do\",\"id\":%d,\"name\":\"react\",\"play\":\"next\",\"args\":{\"say\":{\"take\":\"previous.go\"}}}";
+  const char* react = "{\"t\":\"do\",\"id\":%d,\"name\":\"react\",\"play\":\"next\",\"args\":{\"say\":{\"take\":\"word.success.done__happy\"}}}";
   char line[160];
   r.kit.connected();
   r.bleLine("{\"t\":\"state\",\"base\":\"idle\"}");
@@ -2197,9 +2197,9 @@ static void test_a_new_launchs_reaction_is_its_own() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // the idle design's clock from 0
   clockAt(r, 1000);
-  doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\",\"loops\":4}");
+  doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"proud\",\"loops\":4}");
   clockAt(r, 4000);
-  doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\"}");  // the new launch's first
+  doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"word.success.done__happy\"},\"mood\":\"proud\"}");  // the new launch's first
   // Its face holds to the idle design's next boundary, or while its `say`
   // plays, whichever is later.
   const uint32_t idle = testface::loopMs(render::Mood::kProud, render::SceneState::kIdle);
@@ -3006,7 +3006,7 @@ struct InviteRig {
 // A skit's react: its take (638 ms) and its bubble (1.2 s more), then the
 // invite, `pose` waiting for `touch`, to pay off with `payoff`.
 std::string skitWith(const char* pose, const char* touch, const char* payoff, const char* more = "") {
-  return std::string("{\"say\":{\"take\":\"previous.go\"},\"invite\":{\"skit\":\"win\",\"pose\":\"") + pose +
+  return std::string("{\"say\":{\"take\":\"word.success.done__happy\"},\"invite\":{\"skit\":\"win\",\"pose\":\"") + pose +
          "\",\"touch\":\"" + touch + "\",\"payoff\":\"" + payoff + "\",\"label\":\"tap\"" + more + "}}";
 }
 const std::string kPalm = skitWith("palm", "tap", "highfive", ",\"ms\":4000,\"xp\":3");
@@ -3188,7 +3188,7 @@ static void test_an_invites_end_names_its_skit_whole() {
   InviteRig r;
   r.runTo(1000);
   r.doLine(1, "next",
-           "{\"say\":{\"take\":\"previous.go\"},\"invite\":{\"skit\":\"" + escaped +
+           "{\"say\":{\"take\":\"word.success.done__happy\"},\"invite\":{\"skit\":\"" + escaped +
                "\",\"pose\":\"palm\",\"touch\":\"stroke\",\"payoff\":\"highfive\",\"ms\":30000}}");
   r.run(kSaid + 500);
   r.usb.text.clear();

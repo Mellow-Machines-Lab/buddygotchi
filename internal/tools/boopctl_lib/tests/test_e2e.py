@@ -27,13 +27,13 @@ LOG = """\
 10:00:00.000 hook: claude UserPromptSubmit
 10:00:00.001 link rules → {"t":"state","base":"working","mood":"calm"}
 10:00:00.001 link rules → {"t":"do","id":6,"name":"starting","play":"if_free","args":{"variant":3,"ctx":"new_task"}}
-10:00:00.002 link brain → {"t":"do","id":7,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d03"},"mood":"excited","loops":1}}
+10:00:00.002 link brain → {"t":"do","id":7,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"word.success.done__happy"},"mood":"excited","loops":1}}
 10:00:00.100 device: do 6 ended done
 10:00:02.000 hook: claude Stop
 10:00:02.001 link rules → {"t":"state","base":"idle","mood":"calm"}
 10:00:02.002 link brain → {"t":"do","id":8,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","mood":"proud","loops":1}}
 10:00:02.100 device: do 7 ended done
-10:00:03.000 link brain → {"t":"do","id":9,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d03"},"mood":"calm","loops":1}}
+10:00:03.000 link brain → {"t":"do","id":9,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"word.success.done__happy"},"mood":"calm","loops":1}}
 10:00:03.100 device: do 8 ended done
 10:00:04.000 hook: claude UserPromptSubmit
 10:00:04.001 link rules → {"t":"do","id":10,"name":"listening","play":"now"}

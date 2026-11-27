@@ -33,19 +33,19 @@
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"happy","busy":1,"vol":0}
-{"t":"do","name":"react","args":{"say":{"take":"previous.go"}}}
+{"t":"do","name":"react","args":{"say":{"take":"word.success.done__happy"}}}
 {"clock":400}
 {"shot":"bubble-short"}
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"happy","busy":1,"vol":0}
-{"t":"do","name":"react","args":{"say":{"take":"phase1.phrase.setback.technical-difficulties__sad__contained"}}}
+{"t":"do","name":"react","args":{"say":{"take":"phrase.talk-ouch.well-ouch__sad"}}}
 {"clock":400}
 {"shot":"bubble-longest-take"}
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"happy","busy":1,"vol":0}
-{"t":"do","name":"react","args":{"say":{"take":"previous.tsk","then":"phase1.word.test.validate__annoyed__contained"}}}
+{"t":"do","name":"react","args":{"say":{"take":"nonverbal.frustration.tsk__sad","then":"borrowed.basta__sad"}}}
 {"clock":400}
 {"shot":"bubble-two-takes"}
 // The counts after it: helpers at work, and the agents idle.
@@ -82,7 +82,7 @@
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"happy","idle":1,"vol":0}
-{"t":"do","name":"react","args":{"say":{"take":"previous.yay"},"reason":"you picked Boop up","mood":"excited","loops":1}}
+{"t":"do","name":"react","args":{"say":{"take":"word.celebrate.yay__happy"},"reason":"you picked Boop up","mood":"excited","loops":1}}
 {"clock":400}
 {"shot":"caption-spoken"}
 {"clock":2500}
@@ -122,7 +122,7 @@
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"happy","busy":1,"vol":0}
-{"t":"do","id":22,"name":"task_complete","args":{"outcome":"success","who":{"agent":"claude","thread":"fix-nav"},"say":{"take":"previous.yay"},"reason":"tests pass"}}
+{"t":"do","id":22,"name":"task_complete","args":{"outcome":"success","who":{"agent":"claude","thread":"fix-nav"},"say":{"take":"word.celebrate.yay__happy"},"reason":"tests pass"}}
 {"clock":1500}
 {"shot":"finish-bubble-caption"}
 {"clock":4000}

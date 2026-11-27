@@ -55,7 +55,7 @@ class CLITests(unittest.TestCase):
     @needs_voice
     def test_the_hand_driven_commands_parse(self):
         parse = cli.build_parser().parse_args
-        self.assertEqual(parse(["play", "cheer", "--take", "previous.yay"]).take, "previous.yay")
+        self.assertEqual(parse(["play", "cheer", "--take", "word.celebrate.yay__happy"]).take, "word.celebrate.yay__happy")
         self.assertEqual(parse(["play", "needs", "--seconds", "3"]).seconds, 3)
         self.assertEqual(parse(["takes", "--levels", "1", "10"]).levels, [1, 10])
         self.assertTrue(parse(["takes", "--only", "Go", "--board-volume"]).board_volume)
@@ -153,8 +153,8 @@ class PlayTests(unittest.TestCase):
 
     @needs_voice
     def test_play_sends_a_take(self):  # `say` is {"take": id}
-        self.assertEqual(self.play("cheer", "--take", "new.d15")[0], 0)
-        self.assertEqual(self.args()[0]["say"], {"take": "new.d15"})
+        self.assertEqual(self.play("cheer", "--take", "phrase.pride.naturally-naturally__happy")[0], 0)
+        self.assertEqual(self.args()[0]["say"], {"take": "phrase.pride.naturally-naturally__happy"})
 
     def test_play_sends_the_facts(self):  # outcome, variant
         self.play("task_complete", "--outcome", "failure", "--variant", "2")
@@ -524,35 +524,35 @@ class TakesTests(unittest.TestCase):
 
     def test_the_takes_are_the_boards(self):
         takes = cli.takes()
-        self.assertEqual(len(takes), 2995)
+        self.assertEqual(len(takes), 500)
         self.assertEqual([t.id for t in takes], sorted((t.id for t in takes), key=str.encode), "the pack's order: by id")
-        go = cli.take("previous.go")
-        self.assertEqual((go.id, go.text, go.ms), ("previous.go", "Go", 638))
-        self.assertEqual(cli.take("new.d15").text, "Bada bing bada boom")
+        done = cli.take("word.success.done__happy")
+        self.assertEqual((done.id, done.text, done.ms), ("word.success.done__happy", "Done", 638))
+        self.assertEqual(cli.take("phrase.pride.naturally-naturally__happy").text, "Naturally, naturally")
         self.assertIsNone(cli.take("banana"))
 
     def test_only_picks_by_id_or_text(self):
-        gos = cli.chosen_takes("Go")
-        self.assertTrue({"previous.go", "new.d01", "new.d02"} <= {t.id for t in gos})
-        self.assertTrue(all(t.text == "Go" or "go" in t.text.lower().split() for t in gos), [t.text for t in gos])
-        self.assertEqual([t.id for t in cli.chosen_takes("new.d15")], ["new.d15"])
+        dones = cli.chosen_takes("Done")
+        self.assertTrue({"word.success.done__happy", "word.success.done__calm", "sentence.win.mm-done__sad"} <= {t.id for t in dones})
+        self.assertTrue(all("done" in t.text.lower().replace(".", " ").split() for t in dones), [t.text for t in dones])
+        self.assertEqual([t.id for t in cli.chosen_takes("phrase.pride.naturally-naturally__happy")], ["phrase.pride.naturally-naturally__happy"])
         self.assertTrue(all("again" in t.text.lower() for t in cli.chosen_takes("again")))
-        self.assertEqual([t.id for t in cli.chosen_takes("mamma mia")], ["new.d14"])
-        self.assertEqual({t.text for t in cli.chosen_takes("boom")}, {"Bada bing bada boom", "Boom shakalaka"})
-        self.assertEqual(len(cli.chosen_takes(None)), 2995)
+        self.assertEqual([t.id for t in cli.chosen_takes("nailed it")], ["phrase.pride.nailed-it__calm", "phrase.pride.nailed-it__happy"])
+        self.assertEqual({t.text for t in cli.chosen_takes("fixed")}, {"Fixed", "Phew. Fixed"})
+        self.assertEqual(len(cli.chosen_takes(None)), 500)
         with self.assertRaises(cli.DeviceError):
             cli.chosen_takes("banana")
 
     def test_a_take_is_checked_against_audio_out(self):
-        t = cli.take("previous.go")
+        t = cli.take("word.success.done__happy")
         states = iter([{"audio": {"out": {"lines": 3}}, "amp": False},
-                       {"amp": True, "vol": 6, "audio": {"out": {"lines": 4, "take": "previous.go", "plan_ms": 638,
+                       {"amp": True, "vol": 6, "audio": {"out": {"lines": 4, "take": "word.success.done__happy", "plan_ms": 638,
                                                                   "out_ms": 638, "wall_ms": 648, "cut": False}}}])
         board = FakeBoard(lambda msg: json.dumps({"t": msg["t"], **next(states)}).encode() + b"\n"
                           if msg["t"] == "dbg.state" else b"")
         r = cli.check_take(board, t)
         self.assertTrue(r["ok"], r)
-        self.assertIn({"t": "do", "name": "react", "play": "now", "args": {"say": {"take": "previous.go"}}}, board.sent,
+        self.assertIn({"t": "do", "name": "react", "play": "now", "args": {"say": {"take": "word.success.done__happy"}}}, board.sent,
                       "a `say` on its own: a reaction with no face, played at once")
 
 

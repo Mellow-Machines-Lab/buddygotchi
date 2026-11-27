@@ -1,47 +1,26 @@
 {
-  "importedOn": "2026-09-29",
-  "voiceId": "rErOatUrNIU3vfNcLl6Z",
+  "recordedOn": "2026-11-27",
+  "voice": "ElevenLabs stock voice Callum",
+  "voiceId": "N2lVS1w4EtoT3dr4eOWO",
   "modelId": "eleven_v4",
-  "batches": [
-    {
-      "name": "robot-language-v2",
-      "takes": 20
-    },
-    {
-      "name": "robot-dictionary-v1",
-      "takes": 20
-    },
-    {
-      "name": "robot-dictionary-phase1",
-      "takes": 2682,
-      "reusedPilotSlots": 20
-    }
-  ],
-  "excluded": "Other voices, six superseded early Robot Minion auditions, raw accounting ledgers, API keys, execution logs and decoded intermediates.",
-  "review": "All takes unreviewed by ear at export. Intended mood labels are not listening guarantees.",
+  "seed": 42,
+  "pitch": "Each master played 1.55 times higher and 1.15 times faster with ffmpeg (record.py), before the textures.",
+  "takes": {
+    "sentences": 76,
+    "words": 424
+  },
+  "excluded": "API keys, execution logs, decoded intermediates and the MP3 masters, which stay outside the repo.",
+  "review": "All takes unreviewed by ear. Intended delivery labels are not listening guarantees.",
   "textures": {
-    "original": "Decoded and quiet-level-matched; untouched provider MP3 is in masters.",
-    "robot-soft": "150 Hz high-pass; 8% mild saturation; 8% 12-bit/sample-hold texture; 12% 92 Hz ring modulation; 4.2 kHz low-pass.",
-    "robot-grain": "Same chain with 16% sample-hold texture and 22% ring modulation."
+    "original": "Decoded to 16-bit mono 11.025 kHz with macOS afconvert, then 8-bit.",
+    "robot-soft": "150 Hz high-pass; 8% mild saturation; 8% 12-bit/sample-hold texture; 12% 92 Hz ring modulation; 4.2 kHz low-pass."
   },
   "limits": {
     "rmsCeiling": 0.07,
     "peakCeiling": 0.55
   },
-  "sourceDictionarySha256": "e9faa369e7f20294dcf8e9c9bf7bef7063d3c45726b3f2b2c4ee85bb92ea3f11",
-  "phase1": {
-    "completedSlots": 2702,
-    "submittedNewCharacters": 44815,
-    "sourcePlanSha256": "6bca0a03665e6b688ac47766eced8083f4cba7f2b4d430107545a08b8075a7b9",
-    "publicationAuthorizedOn": "2026-09-29",
-    "listeningApproval": "Not inferred from publication consent; retain per-take review status."
-  },
   "compression": {
     "recipe": "pcm-u8-mono-11025-coreaudio-v1",
-    "date": "2026-09-29",
-    "newPaidGenerations": 0,
-    "review": "User approved the compression audition; individual take review statuses preserved.",
-    "masters": "Local verified archive; not distributed. Original hashes remain in manifest.",
-    "history": "Normal follow-up commit requested; previous large files remain in Git history."
+    "masters": "Local archive; not distributed. Their hashes are in the manifest."
   }
 }

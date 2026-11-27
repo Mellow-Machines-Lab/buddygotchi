@@ -186,9 +186,11 @@ final class SkitTests: XCTestCase {
     }
 
     /// Through the pipeline, with the rules brain: three failed checks in
-    /// a row say nothing, nothing, then a swear (a plain take with swearing
-    /// off); the check passing, a fix take; a long turn done, a win take;
-    /// each record naming its skit. Ten routine calls before say nothing.
+    /// a row say an oops sentence, nothing (the rules brain's deadpan,
+    /// which has no voice), then the upset skit's take or
+    /// sentence, a swear only with swearing on; the check passing, a fix
+    /// take or sentence; a long turn done, a win one; each record naming
+    /// its skit. Ten routine calls before say nothing.
     func testSkitsThroughThePipeline() async throws {
         try requireVoice()
         let calls = (0..<10).map { i in i % 2 == 0 ? #"{"event": "edit", "at": "\#(i * 5)s"}"# : #"{"event": "command", "at": "\#(i * 5)s"}"# }
@@ -202,28 +204,32 @@ final class SkitTests: XCTestCase {
              "steps": [{"event": "turn started", "at": "0s", "workspace": "skits"},
             """ + calls.joined(separator: ",") + """
             ,
-              {"event": "command", "at": "1m", "topic": "tests", "failed": true, "expect": {"said": "none"}},
+              {"event": "command", "at": "1m", "topic": "tests", "failed": true, "expect": {"said": "some"}},
               {"event": "command", "at": "2m", "topic": "tests", "failed": true, "expect": {"said": "none"}},
               {"event": "command", "at": "3m", "topic": "tests", "failed": true, "expect": {"said": "some"}},
               {"event": "command", "at": "4m", "topic": "tests", "failed": false, "expect": {"said": "some"}},
               {"event": "turn finished", "at": "10m", "expect": {"said": "some"}}]}
             """).utf8).write(to: file)
         let scenario = try Scenario(file: file)
-        let texts = { (meaning: String) in Set(Take.all.filter { $0.part == .skit && $0.meaning == meaning }.map(\.text)) }
+        // A skit's own takes, or the sentences of its moment's asides.
+        let texts = { (meaning: String) in
+            Set(Take.all.filter { $0.part == .skit ? $0.meaning == meaning : $0.meaning.hasPrefix(meaning + ".") }.map(\.text))
+        }
         for swears in [true, false] {
             let records = try await Self.records(scenario, swears: swears, steering: RuntimeTests.steering)
             // Each record: its line, its message, its skit, what it said and
             // the skit's takes' kinds.
             let all = records.map { $0.components(separatedBy: " | ") }
             let shown = all.map { $0.joined(separator: " | ") }.joined(separator: "\n")
-            // What spoke: only the skits, each naming itself; the rest,
-            // the two failed checks before the third included, nothing.
+            // What spoke: the first failed check, an oops sentence, then
+            // the skits, each naming itself; the rest nothing.
             let spoke = all.filter { !$0[3].isEmpty }
-            XCTAssertEqual(spoke.map { $0[2] }, ["upset", "fix", "win"], shown)
-            XCTAssertTrue(all.filter { $0[2] == "-" }.allSatisfy { $0[3].isEmpty }, shown)
+            XCTAssertEqual(spoke.map { $0[2] }, ["-", "upset", "fix", "win"], shown)
+            XCTAssertTrue(spoke[0][0].contains("tests failed") && texts("oops").contains(spoke[0][3]), shown)
+            XCTAssertEqual(all.filter { $0[2] == "-" && !$0[0].contains("tests failed") }.filter { !$0[3].isEmpty }.count, 0, shown)
             XCTAssertEqual(all.filter { $0[0].contains("tests failed") }.count, 3, "each failed check a Moment: \(shown)")
-            guard spoke.count == 3 else { continue }
-            let (upset, fix, win) = (spoke[0], spoke[1], spoke[2])
+            guard spoke.count == 4 else { continue }
+            let (upset, fix, win) = (spoke[1], spoke[2], spoke[3])
             XCTAssertTrue(upset[0].contains("failed"), upset[0])
             XCTAssertTrue(texts("upset").contains(upset[3]), upset[3])
             XCTAssertEqual(upset[4] == Take.Kind.swear.rawValue, swears, "the 3rd in a row swears only with swearing on: \(upset)")
@@ -235,8 +241,8 @@ final class SkitTests: XCTestCase {
     }
 
     /// Each Moment a run of `scenario` played, with the rules brain: its
-    /// line, its message, its skit (or -), what it said, and the skit's
-    /// takes' kinds, " | " between.
+    /// line, its message, its skit (or -), what it said, and the kinds of
+    /// its skit's takes or sentences, " | " between.
     nonisolated static func records(_ scenario: Scenario, swears: Bool, steering: Steering) async throws -> [String] {
         let records = Lines()
         var eval = Eval(brain: ScriptedBrain { _, _ in [:] }, steering: steering)
@@ -246,7 +252,7 @@ final class SkitTests: XCTestCase {
             for out in pass.outputs where out.name == MomentOutput.outputName {
                 let said = (out.result.facts["takes"]?.array ?? []).compactMap(\.string)
                 let texts = said.compactMap { id in Take.all.first { $0.id == id }?.text }
-                let kinds = said.compactMap { id in Take.all.first { $0.id == id && $0.part == .skit }?.kind.rawValue }
+                let kinds = said.compactMap { id in Take.all.first { $0.id == id && $0.part != .reply }?.kind.rawValue }
                 records.add([pass.line ?? "", out.result.message, out.result.facts["skit"]?.string ?? "-",
                              texts.joined(separator: "+"), kinds.joined(separator: "+")].joined(separator: " | "))
             }

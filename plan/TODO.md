@@ -76,8 +76,8 @@ session, Bluetooth and the boards can show.
       cut to the model before then makes it smaller: 7 moods against 16,
       18 emotions against 42, no `move` or `size` question (§8.3).
 - [ ] **The voice.** One register across the voice, the signs and the code's
-      strings; the 437 espeak placeholder takes; the label words ("Verify",
-      "Probe"); the `say` kinds nothing picks; and whether takes are
+      strings; the label words ("Verify", "Probe"); the `say` kinds
+      nothing picks; and whether takes are
       recorded or made (`product-review.md` (removed, in git history) §4.3, §8.2,
       idea X6). It waits for the same
       reason: the words to record follow from what Boop does.

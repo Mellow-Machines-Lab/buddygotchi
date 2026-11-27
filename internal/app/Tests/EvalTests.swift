@@ -69,10 +69,10 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(result.passed, result.checks.filter { !$0.passed }.map(\.summary).joined(separator: "\n"))
         XCTAssertEqual(result.checks[0].mood, "cross", "a failed check: cross")
         // The third failed check in a row: the upset skit, which says its
-        // plain words in a face that has no swear.
+        // plain words or an upset sentence in a face that has no swear.
         let said = try XCTUnwrap(result.checks[2].said)
-        XCTAssertTrue(Take.all.contains { $0.text == said && $0.part == .skit && $0.meaning == "upset" && $0.kind != .swear
-            && $0.moods.contains("determined") }, "determined's: \(said)")
+        XCTAssertTrue(Take.all.contains { $0.text == said && ($0.part == .skit ? $0.meaning == "upset" : $0.meaning.hasPrefix("upset."))
+            && $0.kind != .swear && $0.moods.contains("determined") }, "determined's: \(said)")
         XCTAssertEqual(result.checks[2].mood, "focused")
         XCTAssertEqual(result.checks[3].mood, "proud", "2 minutes after the last failure: no rule holds a mood")
         let last = try XCTUnwrap(states.all.last)

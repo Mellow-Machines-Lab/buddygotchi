@@ -202,7 +202,7 @@ CLIPS = {
     # A finish (task_complete's success, the cheer), then a `say` on its own
     # over the working face, each played `now` as a tool plays it.
     "cheer": [(0.0, _WORKING), (1.5, do("task_complete", outcome="success")),
-              (4.0, do("react", say={"take": "previous.done"})),
+              (4.0, do("react", say={"take": "word.success.done__calm"})),
               (5.0, _WORKING)],
     "tap": [(0.0, {"t": "state", "base": "idle"}), (1.0, {"t": "dbg.press", "ms": 100}),
             (3.0, {"t": "dbg.touch", "x": 160, "y": 100, "ms": 100}), (5.0, {"t": "dbg.press", "ms": 100})],

@@ -10,118 +10,118 @@
       "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
     },
     {
-      "at": 1.01,
+      "at": 1.007,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
     },
     {
-      "at": 1.013,
+      "at": 1.01,
       "cause": {
         "kind": "prompt",
         "text": "You ask Claude: “Rewrite the search index so it updates as you type”"
       }
     },
     {
-      "at": 1.34,
+      "at": 1.335,
       "effect": "Boop makes a curious face",
-      "line": "{\"t\":\"do\",\"id\":1744511147,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"reason\":\"you asked claude\",\"say\":{},\"mood\":\"curious\",\"loops\":1}}"
+      "line": "{\"t\":\"do\",\"id\":97615386,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"reason\":\"you asked claude\",\"say\":{},\"mood\":\"curious\",\"loops\":1}}"
     },
     {
-      "at": 2.412,
+      "at": 2.404,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"editing +1\"]]}"
     },
     {
-      "at": 4.489,
+      "at": 4.499,
       "cause": {
         "kind": "tool",
         "text": "Claude edits src/search/index.js"
       }
     },
     {
-      "at": 5.503,
+      "at": 5.508,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,2,\"running the tests\"]],\"wact\":[\"tests\",\"running tests\"]}"
     },
     {
-      "at": 8.703,
+      "at": 8.711,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,2,\"running the tests\"]],\"wact\":[\"tests\",\"running tests\",\"p\"]}"
     },
     {
-      "at": 8.704,
+      "at": 8.712,
       "cause": {
         "kind": "tool",
         "text": "Claude: run the search tests"
       }
     },
     {
-      "at": 9.022,
+      "at": 9.032,
       "effect": "Boop makes a determined face",
-      "line": "{\"t\":\"do\",\"id\":1744511148,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{},\"mood\":\"determined\",\"loops\":1}}"
+      "line": "{\"t\":\"do\",\"id\":97615387,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{},\"mood\":\"determined\",\"loops\":1}}"
     },
     {
-      "at": 9.024,
+      "at": 9.034,
       "effect": "Boop's mood is now focused",
       "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"focused\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,2,\"running the tests\"]],\"wact\":[\"tests\",\"running tests\",\"p\"]}"
     },
     {
-      "at": 10.088,
+      "at": 10.079,
       "cause": {
         "kind": "wait",
         "text": "Sixteen minutes in: the third tier"
       }
     },
     {
-      "at": 10.107,
+      "at": 10.093,
       "effect": "Boop makes a focused face",
-      "line": "{\"t\":\"do\",\"id\":1744511149,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"scritches?\",\"reason\":\"Boop wants a pet\",\"say\":{},\"mood\":\"focused\",\"loops\":1}}"
+      "line": "{\"t\":\"do\",\"id\":97615388,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"scritches?\",\"reason\":\"Boop wants a pet\",\"say\":{},\"mood\":\"focused\",\"loops\":1}}"
     },
     {
-      "at": 10.115,
+      "at": 10.101,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"focused\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier3\"],\"wish\":\"pet\",\"energy\":\"tired\",\"calls\":[[0,2,\"running the · 16 min\"]]}"
     },
     {
-      "at": 10.115,
+      "at": 10.102,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"focused\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier3\"],\"energy\":\"tired\",\"calls\":[[0,2,\"running the · 16 min\"]]}"
     },
     {
-      "at": 10.115,
+      "at": 10.102,
       "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"focused\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier3\"],\"wish\":\"pet\",\"energy\":\"tired\",\"calls\":[[0,2,\"running the · 16 min\"]]}"
     },
     {
-      "at": 12.853,
+      "at": 12.749,
       "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"focused\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"],\"wish\":\"pet\"}"
     },
     {
-      "at": 12.853,
-      "line": "{\"t\":\"do\",\"id\":1744511150,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+      "at": 12.749,
+      "line": "{\"t\":\"do\",\"id\":97615389,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
     },
     {
-      "at": 12.855,
+      "at": 12.753,
       "cause": {
         "kind": "done",
         "text": "Claude finishes"
       }
     },
     {
-      "at": 13.176,
-      "effect": "Boop celebrates and says “Ta-da-da”",
-      "line": "{\"t\":\"do\",\"id\":1744511151,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":15000,\"args\":{\"outcome\":\"success\",\"turn\":3,\"xp\":5,\"who\":{\"agent\":\"claude\",\"thread\":\"the-new-search-index\"},\"say\":{\"take\":\"phase1.phrase.celebrate.ta-da-da__excited__contained\"},\"mood\":\"excited\",\"loops\":3}}"
+      "at": 13.078,
+      "effect": "Boop celebrates and says “Long haul. But done!”",
+      "line": "{\"t\":\"do\",\"id\":97615390,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":15000,\"args\":{\"outcome\":\"success\",\"turn\":3,\"xp\":5,\"who\":{\"agent\":\"claude\",\"thread\":\"the-new-search-index\"},\"say\":{\"take\":\"sentence.win.long-haul__happy\"},\"mood\":\"excited\",\"loops\":3}}"
     },
     {
-      "at": 13.176,
+      "at": 13.078,
       "effect": "Boop makes an excited face",
-      "line": "{\"t\":\"do\",\"id\":1744511152,\"name\":\"react\",\"play\":\"next\",\"ttl\":25000,\"args\":{\"sign\":\"Phew. The tests, done at last!\",\"invite\":{\"skit\":\"win\",\"pose\":\"palm\",\"touch\":\"tap\",\"payoff\":\"highfive\",\"label\":\"tap\",\"ms\":12000},\"low\":true,\"say\":{},\"mood\":\"excited\",\"loops\":1}}"
+      "line": "{\"t\":\"do\",\"id\":97615391,\"name\":\"react\",\"play\":\"next\",\"ttl\":25000,\"args\":{\"sign\":\"Long haul. The tests, done!\",\"invite\":{\"skit\":\"win\",\"pose\":\"palm\",\"touch\":\"tap\",\"payoff\":\"highfive\",\"label\":\"tap\",\"ms\":12000},\"low\":true,\"say\":{},\"mood\":\"excited\",\"loops\":1}}"
     },
     {
-      "at": 13.18,
+      "at": 13.081,
       "effect": "Boop's mood is now happy",
       "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"],\"wish\":\"pet\"}"
     }
   ],
   "face": "gel",
-  "length": 19.23,
+  "length": 19.25,
   "name": "Boop",
   "script": "b7e3d7626262ecdc612dce3bc38c1a6b260296fdcd15dce0a516c1431452880e",
   "takes": [
-    "phase1.phrase.celebrate.ta-da-da__excited__contained"
+    "sentence.win.long-haul__happy"
   ],
   "version": 1
 }

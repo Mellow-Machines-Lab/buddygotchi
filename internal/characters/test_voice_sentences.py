@@ -1,7 +1,7 @@
-"""Boop's recorded sentences (characters/CHARACTER.md §8): voicegen files a
-sentence's recordings in the voice and its table with no other change, and
-record.py builds its requests and picks its takes as the plan says. On a
-small fake bank and a stub, never the real files or the API."""
+"""Boop's recorded voice (characters/CHARACTER.md §8): voicegen files a
+sentence's recordings in the voice and its table with no other change, a
+word's in every face, and record.py builds its requests and picks its takes
+as the plan says. On a small fake bank and a stub, never the API."""
 import io
 import json
 import os
@@ -21,6 +21,7 @@ PLAN = {
     "voiceId": "voice-x", "modelId": "model-y",
     "deliveries": {
         "B": {"name": "bright", "mood": "happy", "tag": "[cheerfully]", "faces": ["happy", "proud"], "direction": "Bright."},
+        "F": {"name": "flat", "mood": "calm", "tag": "[calmly]", "faces": ["calm"], "direction": "Flat."},
         "G": {"name": "glum", "mood": "sad", "tag": "[tiredly]", "faces": ["sad", "grumpy"], "direction": "Glum."},
     },
     "sentences": [
@@ -65,7 +66,7 @@ class VoicegenTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             bank, pack = self.bank(root), root / "pack"
-            ver, takes, clips, said = voicegen.build(bank, pack, {"plays": {}, "borrows": {}}, complete=False)
+            ver, takes, clips, said = voicegen.build(bank, pack, complete=False)
             rows = [line.split("\t") for line in (pack / voicegen.TABLE).read_text().splitlines() if "\t" in line]
             self.assertEqual(sorted((r[0], r[1], r[2], r[3], r[4], r[5]) for r in rows), [
                 ("sentence.upset.it-broke__sad", "Aw. It broke", "sentence", "upset.it-broke", "phrase", "sad grumpy"),
@@ -80,7 +81,7 @@ class VoicegenTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             with self.assertRaises(SystemExit) as stop:
-                voicegen.build(self.bank(root, files=False), root / "pack", {"plays": {}, "borrows": {}}, complete=False)
+                voicegen.build(self.bank(root, files=False), root / "pack", complete=False)
             self.assertIn("robot-soft", str(stop.exception))
 
     def test_the_real_plan_is_tiers_one_and_two(self):
@@ -96,12 +97,51 @@ class VoicegenTests(unittest.TestCase):
         named = {part[len("take="):].rstrip("]") for line in signs.splitlines() if line.startswith("- ") for part in line.split() if part.startswith("take=")}
         self.assertEqual(named, set(ids))
         faces = {m["id"] for m in json.loads((voicegen.PACK_DIR / "character.json").read_text())["moods"]}
-        for d in plan["deliveries"].values():
-            self.assertIn(d["mood"], voicegen.MOODS)
+        self.assertEqual(sorted(d["mood"] for d in plan["deliveries"].values()), ["calm", "happy", "sad"], "the takes' ids end in these")
         covered = set().union(*(d["faces"] for d in plan["deliveries"].values()))
         self.assertTrue(faces <= covered, f"faces no delivery plays in: {faces - covered}")
         for s in plan["sentences"]:
             self.assertLessEqual(len(s["spoken"].encode()), voicegen.TEXT_BYTES - 1, s["id"])
+
+
+class WordTests(unittest.TestCase):
+    """A word a reply or a skit says is recorded flat and in the delivery
+    its first meaning leans to; its flat take fills in for the delivery it
+    lacks. A sentence plays only as recorded."""
+
+    DELIVERIES = {"B": {"faces": ["happy", "proud"]}, "F": {"faces": ["calm"]}, "G": {"faces": ["sad", "grumpy"]}}
+
+    def test_a_word_is_recorded_flat_and_as_it_leans(self):
+        dictionary = {"entries": [
+            {"id": "word.talk-yes.yes", "text": "Yes", "category": "word", "intent": "talk.yes", "explicit": False},
+            {"id": "nonverbal.frustration.tsk", "text": "Tsk...", "category": "nonverbal", "intent": "frustration", "explicit": False},
+            {"id": "word.idle.zzz", "text": "Zzz", "category": "word", "intent": "idle", "explicit": False},
+        ]}
+        self.assertEqual(voicegen.words(dictionary), [
+            {"id": "word.talk-yes.yes", "spoken": "Yes", "deliveries": ["F", "B"]},
+            {"id": "nonverbal.frustration.tsk", "spoken": "Tsk...", "deliveries": ["F", "G"]},
+        ], "a yes leans bright, a no glum; a word nothing says isn't recorded")
+
+    def test_a_words_flat_take_fills_in_where_a_sentences_does_not(self):
+        word, sentence = {"entryId": "word.talk-yes.yes"}, {"entryId": "sentence.win.all-yours"}
+        self.assertEqual(voicegen.faces({**word, "delivery": "F"}, self.DELIVERIES, {"F", "B"}), ["calm", "sad", "grumpy"])
+        self.assertEqual(voicegen.faces({**word, "delivery": "B"}, self.DELIVERIES, {"F", "B"}), ["happy", "proud"])
+        self.assertEqual(voicegen.faces({**sentence, "delivery": "F"}, self.DELIVERIES, {"F", "B"}), ["calm"])
+
+    def test_the_bank_has_every_word_as_planned(self):
+        """The real manifest: each word's takes are the deliveries `words`
+        gives it, the rest the plan's sentences, 500 in all."""
+        bank = voicegen.BANK
+        recs = json.loads((bank / "manifest.json").read_text())["recordings"]
+        words = {w["id"]: sorted(w["deliveries"]) for w in voicegen.words(json.loads((bank / "dictionary.json").read_text()))}
+        recorded = {}
+        for r in recs:
+            recorded.setdefault(r["entryId"], []).append(r["delivery"])
+        self.assertEqual({e: sorted(d) for e, d in recorded.items() if not e.startswith(voicegen.SENTENCE)}, words)
+        plan = json.loads((bank / "plans" / "sentences.json").read_text())
+        self.assertEqual({e: sorted(d) for e, d in recorded.items() if e.startswith(voicegen.SENTENCE)},
+                         {voicegen.SENTENCE + s["id"]: sorted(s["deliveries"]) for s in plan["sentences"]})
+        self.assertEqual(len(recs), 500)
 
 
 class RecordTests(unittest.TestCase):

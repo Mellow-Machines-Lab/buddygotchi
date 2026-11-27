@@ -336,7 +336,7 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "fix-nav" (landing).
 2 min ago: claude's tests failed on "fix-nav" (landing).
   Boop's mood changed: calm → cross.
-  Boop had an annoyed moment (small).
+  Boop had an annoyed moment (small), and said "Uh oh. The tests failed".
 Boop has been cross for 2 min.
 
 NOW (14:03)
@@ -512,10 +512,10 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "fix-nav" (landing).
 4 min ago: claude's tests failed on "fix-nav" (landing).
   Boop's mood changed: calm → cross.
-  Boop had an annoyed moment (small).
+  Boop had an annoyed moment (small), and said "Uh oh. The tests failed".
 2 min ago: claude's tests failed on "fix-nav" (landing), the 2nd in a row.
   Boop is more cross: grumpy now.
-  Boop had an annoyed moment (medium).
+  Boop had an annoyed moment (medium), and said "The tests failed again".
 Boop has been cross for 4 min.
 
 NOW (14:05)
@@ -531,13 +531,13 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "fix-nav" (landing).
 6 min ago: claude's tests failed on "fix-nav" (landing).
   Boop's mood changed: calm → cross.
-  Boop had an annoyed moment (small).
+  Boop had an annoyed moment (small), and said "Uh oh. The tests failed".
 4 min ago: claude's tests failed on "fix-nav" (landing), the 2nd in a row.
   Boop is more cross: grumpy now.
-  Boop had an annoyed moment (medium).
+  Boop had an annoyed moment (medium), and said "The tests failed again".
 2 min ago: claude's tests failed on "fix-nav" (landing), the 3rd in a row.
   Boop is more cross: angry now.
-  Boop had an annoyed moment (medium), and said "Shit".
+  Boop had an annoyed moment (medium), and said "Oh, shit. It broke".
 Boop has been cross for 6 min.
 
 NOW (14:07)
