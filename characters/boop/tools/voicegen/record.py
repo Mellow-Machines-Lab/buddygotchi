@@ -211,6 +211,16 @@ def write_u8(samples: list, target: Path) -> None:
         w.writeframes(bytes(max(0, min(255, round(v * 128) + 128)) for v in samples))
 
 
+PACE = 1.15  # how much faster the pitched voice also talks
+
+
+def pitched(raw: Path, target: Path, pitch: float) -> None:
+    """The plan's `pitch`: a stock voice played `pitch` times higher and a
+    little faster, which is what makes it Boop's (ffmpeg)."""
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw), "-af",
+                    f"asetrate=44100*{pitch},aresample=44100,atempo={PACE / pitch:.3f}", str(target)], check=True)
+
+
 def record(todo: list[dict], plan: dict, key: str, archive: Path, bank: Path = BANK, opener=urllib.request.urlopen,
            listen: Path | None = None) -> int:
     """Records each take, files it in the manifest as it comes (a retake in
@@ -225,6 +235,12 @@ def record(todo: list[dict], plan: dict, key: str, archive: Path, bank: Path = B
         master = archive / "masters" / f"{t['id']}.mp3"
         master.parent.mkdir(parents=True, exist_ok=True)
         master.write_bytes(audio)
+        if plan.get("pitch"):
+            raw = archive / "raw" / master.name
+            raw.parent.mkdir(parents=True, exist_ok=True)
+            raw.write_bytes(audio)
+            pitched(raw, master, plan["pitch"])
+            audio = master.read_bytes()
         relative = f"audio-pcm8/original/{t['id']}.wav"
         soft = f"audio-pcm8/robot-soft/{t['id']}.wav"
         decoded = pcm8(master, bank / relative)
@@ -240,7 +256,7 @@ def record(todo: list[dict], plan: dict, key: str, archive: Path, bank: Path = B
             "moodStatus": "intended; listening review pending", "variant": "contained", "script": t["script"],
             "seconds": decoded["seconds"], "routineDurationEligible": True, "reviewStatus": "unreviewed-by-ear",
             "performanceId": t["id"][len("sentence."):], "sourceBatch": "sentences",
-            "generation": {"voiceId": plan["voiceId"], "modelId": plan["modelId"], "seed": SEED, "language": "auto"},
+            "generation": {"voiceId": plan["voiceId"], "modelId": plan["modelId"], "seed": SEED, "language": "auto", "pitch": plan.get("pitch", 1)},
             "master": {"sha256": hashlib.sha256(audio).hexdigest()},
             "files": {texture: {"path": path, "bytes": (bank / path).stat().st_size, "sha256": sha(bank / path), "recipe": recipe}
                       for texture, path, recipe in (("original", relative, RECIPE), ("robot-soft", soft, SOFT_RECIPE))},

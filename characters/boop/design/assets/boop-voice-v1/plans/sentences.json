@@ -1,6 +1,7 @@
 {
  "note": "Boop's recorded sentences, tiers 1 and 2: each one of the pack's lines said whole (signs.md's rows that name it, take=<id>, show its text on the low sign). record.py records each sentence once in each of its deliveries, as `sentence.<id>__<mood>`, and files it in the manifest; voicegen then puts it in voice.bin and takes.tsv (part sentence, meaning the id), playing in its delivery's faces. Tier 3 is drafts, not here yet.",
- "voiceId": "rErOatUrNIU3vfNcLl6Z",
+ "voiceId": "N2lVS1w4EtoT3dr4eOWO",
+ "pitch": 1.55,
  "modelId": "eleven_v4",
  "deliveries": {
   "B": {
