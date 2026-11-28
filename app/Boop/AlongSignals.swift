@@ -53,7 +53,6 @@ final class AlongSignals: @unchecked Sendable {
         var f = slow
         f.scrollIdleMs = Self.idleMs(.scrollWheel)
         f.scrollDown = scrollDown
-        f.clickIdleMs = min(Self.idleMs(.leftMouseDown), Self.idleMs(.rightMouseDown))
         // CoreGraphics' global coordinates, y down, as the anchor keeps them.
         if let p = CGEvent(source: nil)?.location {
             f.pointerX = p.x

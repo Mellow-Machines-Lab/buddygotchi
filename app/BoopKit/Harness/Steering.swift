@@ -14,11 +14,10 @@ extension Steering {
         public var text: String
     }
 
-    /// Reads a steering folder, and throws if the guide or any personality
-    /// its character pack has is missing (the active pack's, unless another
-    /// is given). A mood's file is optional: a mood without one reads as
-    /// the resting mood's (`mood(_:)`).
-    public init(directory: URL, pack: CharacterPack = .active) throws {
+    /// Reads a steering folder, and throws if its guide or personality is
+    /// missing. A mood's file is optional: a mood without one reads as the
+    /// resting mood's (`mood(_:)`).
+    public init(directory: URL) throws {
         // Its files' paths are read from where they are: through a link (a
         // pack fetched into characters/), the folder's resolved path.
         try self.init(folder: directory.resolvingSymlinksInPath())

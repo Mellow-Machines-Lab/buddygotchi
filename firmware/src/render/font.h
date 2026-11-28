@@ -28,9 +28,6 @@ extern const Font& kSign;   // 17 × 38 cells, for a reaction's sign, the needs-
 int drawString(Canvas& c, const Font& f, int x, int y, const char* text, int ink);
 // Width in pixels; glyphs are counted, not bytes.
 int stringWidth(const Font& f, const char* text);
-// Draws at most `maxWidth` pixels of text, cut as cutAt cuts it if it
-// doesn't fit.
-int drawStringFit(Canvas& c, const Font& f, int x, int y, const char* text, int ink, int maxWidth);
 // Characters (glyphs, not bytes) in `text`.
 int glyphCount(const char* text);
 // The glyph index of the character at `p` (UTF-8: "·" and accented Latin

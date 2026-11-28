@@ -172,7 +172,7 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
   Raster r{surface};
   const Font& big = bubbleFont();
   const CallMove move = callMove(c.style);
-  const int flight = int(callFlightMs(c.style)), after = age - flight, end = int(Stream::kCallMs);
+  const int flight = int(callFlightMs(c.style)), after = age - flight;
   const uint16_t ink = callInk(c);
   switch (move) {
     case CallMove::kGather:

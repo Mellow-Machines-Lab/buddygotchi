@@ -84,6 +84,18 @@ class VoicegenTests(unittest.TestCase):
                 voicegen.build(self.bank(root, files=False), root / "pack", complete=False)
             self.assertIn("robot-soft", str(stop.exception))
 
+    def test_a_take_longer_than_the_board_plays_stops_the_build(self):
+        """The board loads a take of at most MAX_FRAMES mouth frames and
+        says nothing for a longer one, so voicegen refuses it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bank = self.bank(root)
+            tone(bank / "audio-pcm8/robot-soft/sentence.win.all-yours__happy.wav",
+                 seconds=(voicegen.MAX_FRAMES + 20) * voicegen.MOUTH_MS / 1000)
+            with self.assertRaises(SystemExit) as stop:
+                voicegen.build(bank, root / "pack", complete=False)
+            self.assertIn("sentence.win.all-yours__happy", str(stop.exception))
+
     def test_the_real_plan_is_tiers_one_and_two(self):
         """The bank's plan: 50 sentences, each delivery one of the three,
         every face it plays in one of Boop's, every sentence named by a

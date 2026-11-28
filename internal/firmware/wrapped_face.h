@@ -49,7 +49,6 @@ struct WrappedFace : render::Face {
   void swipe(int dx) override { f->swipe(dx); }
   void finger(bool down, int x, int y) override { f->finger(down, x, y); }
   void letGo(int vx, int vy) override { f->letGo(vx, vy); }
-  bool playsSwipe() const override { return f->playsSwipe(); }
   bool drawsInvites() const override { return invites || f->drawsInvites(); }
 
   bool hasDrawer() const override { return drawers; }

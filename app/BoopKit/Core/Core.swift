@@ -96,7 +96,6 @@ public final class Core {
     public var along = Along.Now() {
         didSet { if along.music, !oldValue.music { napping = false } }
     }
-    public var hands: Hands? { along.hands }
     public var macSide: Anchor.Side?
     /// The cards the agents handed Boop, and the one it holds (`Cards`).
     var cards = Cards()
@@ -265,7 +264,7 @@ public final class Core {
             turnEndedElsewhere(agentEvent.key, chat: chat, at: now)
             boardShowsTurnEnded(agentEvent.key, at: now)
         }
-        let actEnded = actEnded || streamAct(agentEvent, for: event.seq, now, &fx)
+        let actEnded = actEnded || streamAct(agentEvent, now, &fx)
         let forward = actEnded ? nil : streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
         if let forward { call(forward, session: agentEvent.key, for: event.seq, now, &fx) }
@@ -274,7 +273,7 @@ public final class Core {
 
     /// A call beginning or ending a work act, recorded so Jev hears of it.
     /// Whether it ended one, as then its word comes forward no further.
-    func streamAct(_ e: AgentEvent, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) -> Bool {
+    func streamAct(_ e: AgentEvent, _ now: Int64, _ fx: inout [CoreEffect]) -> Bool {
         guard config.workStream, e.kind == .tool, e.tool != nil else { return false }
         let changed: WorkStream.Act?
         switch e.phase {

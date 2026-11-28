@@ -116,13 +116,6 @@ int sinT(int t) { return cosT(t - 250); }
 // out (render::ease's smoothstep).
 int span(int age, int from, int to) { return age <= from ? 0 : age >= to ? 1024 : (age - from) * 1024 / (to - from); }
 int eased(int age, int from, int to) { return age <= from ? 0 : age >= to ? 1024 : ease(age - from, to - from); }
-int mix(int a, int b, int k) { return a + (b - a) * k / 1024; }
-// 0 … 255: rising over `in` ms from `from`, falling over the `out` ms
-// before `to`.
-int window(int age, int from, int to, int in = 150, int out = 250) {
-  if (age < from || age >= to) return 0;
-  return std::min({255, (age - from) * 255 / std::max(1, in), (to - age) * 255 / std::max(1, out)});
-}
 
 // Where things are this frame, in the surface's px: the layout's (a
 // 502 × 410 surface, scaled to the one drawn on) and the body's anchors'.
@@ -136,16 +129,8 @@ struct Stage {
   int eyesY() const { return (at.eyeL.y + at.eyeR.y) / 32; }
   int mouthX() const { return eyesX(); }
   int mouthY() const { return eyesY() + Y(36); }
-  int crownX() const { return at.crown.x / 16; }
-  int crownY() const { return at.crown.y / 16; }
-  int handX() const { return at.handF.x / 16; }
-  int handY() const { return at.handF.y / 16; }
-  int leftX() const { return at.brimL.x / 16; }
   int rightX() const { return at.brimR.x / 16; }
   int sideY() const { return (at.brimL.y + at.brimR.y) / 32; }
-  // The desk's top, and the floor beside it.
-  int deskY() const { return Y(307) - sceneLift(h); }
-  int floorY() const { return Y(318) - sceneLift(h); }
 };
 
 // Zs drifting up and right from (x, y), a new one every 900 ms, each for

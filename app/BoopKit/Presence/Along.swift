@@ -127,7 +127,6 @@ public struct Along: Sendable {
         /// Which way the last scroll went: toward the end of the page
         /// (down) or the top. Nil when not known.
         public var scrollDown: Bool?
-        public var clickIdleMs: Int64?
         /// The pointer, in the anchor's coordinates (`Anchor`).
         public var pointerX: Double?
         public var pointerY: Double?

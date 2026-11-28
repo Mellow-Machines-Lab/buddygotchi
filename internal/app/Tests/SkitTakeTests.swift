@@ -1,7 +1,6 @@
 import Foundation
 import MellowHarness
 import XCTest
-@testable import BoopDevKit
 @testable import BoopKit
 
 /// Which take a skit says (`skit.take`, a seat of `SeatedBrain`): the texts

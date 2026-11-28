@@ -94,15 +94,6 @@ int drawString(Canvas& c, const Font& f, int x, int y, const char* text, int ink
 
 int stringWidth(const Font& f, const char* text) { return glyphCount(text) * f.w; }
 
-int drawStringFit(Canvas& c, const Font& f, int x, int y, const char* text, int ink, int maxWidth) {
-  if (stringWidth(f, text) <= maxWidth) return drawString(c, f, x, y, text, ink);
-  const Inked inked(ink);
-  for (int keep = cutAt(text, maxWidth / f.w - 2), g; keep > 0 && (g = nextGlyph(text)) >= 0; --keep, x += f.w)
-    drawGlyph(c, f, x, y, g, inked);
-  for (int i = 0; i < 2; ++i, x += f.w) drawGlyph(c, f, x, y, '.' - 0x20, inked);
-  return x;
-}
-
 int glyphCount(const char* text) {
   int n = 0;
   while (nextGlyph(text) >= 0) ++n;

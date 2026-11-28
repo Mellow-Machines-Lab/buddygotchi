@@ -91,9 +91,9 @@ final class RemarksTests: XCTestCase {
         XCTAssertNil(pick(win(), usual(days: [2, 1, 2, 0, 2], today: 4)), "past it already")
         XCTAssertNil(pick(win(), usual(days: [2, 2, 2, 2], today: 3)), "4 days kept")
         XCTAssertNil(pick(win(tools: 0), usual(days: [], today: 5)), "a turn that isn't counted reached nothing")
-        XCTAssertEqual(Remarks.number("count", facts: win(), usual: usual(today: 5)), 5)
-        XCTAssertEqual(Remarks.number("run", facts: win(), usual: usual(run: 3)), 3)
-        XCTAssertNil(Remarks.number("fast", facts: win(), usual: usual()))
+        XCTAssertEqual(Remarks.number("count", usual: usual(today: 5)), 5)
+        XCTAssertEqual(Remarks.number("run", usual: usual(run: 3)), 3)
+        XCTAssertNil(Remarks.number("fast", usual: usual()))
     }
 
     /// Pins `early` and `late`: the first time you show up today, 45

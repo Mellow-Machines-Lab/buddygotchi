@@ -55,10 +55,9 @@ struct Blender {
     }
   }
 };
-// Shapes kept instead of drawn (Raster::recording), to blend again where
-// they were or a whole number of pixels away (Raster::replay), as they'd
-// have blended there: each row's span, its ink, and each pixel's opacity
-// as the shape would have blended it, run-length coded, into the owner's
+// Shapes kept instead of drawn (Raster::recording), to blend later
+// (Raster::blend): each row's span, its ink, and each pixel's opacity as
+// the shape would have blended it, run-length coded, into the owner's
 // `data`. It holds at most `room` bytes; a shape past that is lost, and the
 // recording is `full`.
 struct Recording {
@@ -126,7 +125,7 @@ struct Raster {
   int alpha = 255;  // the shape's opacity, 0–255, times each pixel's coverage
   // How much of everything drawn on the surface shows, 0–255: a layer's
   // opacity (render/rig/layers.h), times each shape's. A recording keeps
-  // its shapes whole, and a replay blends them at it.
+  // its shapes whole, and a blend lays them on at it.
   int fade = 255;
   // The first row not drawn: 0 for the face and its props, which stop
   // above the host's lane, the bottom fifth; the lane's own drawing sets
@@ -151,20 +150,10 @@ struct Raster {
   // Whether a shape drawn at opacity `a` paints a pixel it covers whole
   // with its ink alone, whatever was there.
   bool opaqueAt(int a) const { return !recording && shown(a) >= 253; }
-  // What `r` kept, blended into the surface `dx`, `dy` pixels from where
-  // it was kept, inside the bounds: pixel for pixel what its shapes would
-  // have drawn there, had they been drawn that far over.
-  void replay(const Recording& r, int dx, int dy);
   // What `f` kept, blended into the surface once, at the fade: each pixel
   // becomes the sum of each look's shapes laid over it, by the look's
   // weight, and of itself by what's left of the weight.
   void blend(const CrossFade& f);
-  // The same, `dx16`, `dy16` sixteenths of a pixel away, so what's kept
-  // glides with what it rides: on a whole pixel it's replay(); between,
-  // each shape's opacities (its spans of one ink, a row apiece down it)
-  // are sampled between its four nearest kept pixels, weighted by how near
-  // (bilinear), and blended once a pixel.
-  void replay16(const Recording& r, int dx16, int dy16);
 
   void touch(int x0, int y0, int x1, int y1) {
     if (!recording) s.touch(x0, y0, x1, std::min(y1, bottom()));

@@ -1110,12 +1110,12 @@ tracks.lift[2]: …`). Staging writes the files as `rig_tables.h` in the
 staged `firmware/include/`: `render::rig::kRig`, with a lookup by clip
 and look. The app doesn't bundle `rig/`.
 
-**How it plays.** The mixer holds a damped spring on each channel, at rest.
-The look's clip loops over the springs, and Moments' clips over that, a few
-at once, each easing in and out over 150 ms (a quarter of a shorter clip);
-a look's clip may ask for longer as it changes.
+**How it plays.** The mixer starts each channel at rest. The look's clip
+loops over that, and Moments' clips over it, a few at once, each easing in
+and out over 150 ms (a quarter of a shorter clip); a look's clip may ask for
+longer as it changes.
 With the mixer full, the oldest gives way, but the look's own. A poke or a
-stroke kicks a spring. The face reports where the body is each frame
+stroke moves the gel's own springs (its `Motion`), not the mixer's. The face reports where the body is each frame
 (`rig::Anchors`: the crown, a ring for a brim, the front lower down for the
 hands, the eyes), so what's worn or held rides it.
 

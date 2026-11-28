@@ -1,7 +1,6 @@
 import Foundation
 import MellowHarness
 import XCTest
-@testable import BoopDevKit
 @testable import BoopKit
 
 /// Recorded sentences: a line of the pack that names its take

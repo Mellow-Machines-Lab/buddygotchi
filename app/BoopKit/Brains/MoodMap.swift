@@ -1,5 +1,4 @@
 import Foundation
-import MellowHarness
 
 /// The mood map as rules: for each lasting mood, which cues move it, and to
 /// which mood. It is transcribed from the pack's mood files

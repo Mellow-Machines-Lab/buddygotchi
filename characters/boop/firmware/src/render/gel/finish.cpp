@@ -151,27 +151,6 @@ void convex16(Raster& r, const Point* v, int n, uint16_t ink) {
   }
 }
 void quad16(Raster& r, const Point (&v)[4], uint16_t ink) { convex16(r, v, 4, ink); }
-// A dot `radius16` round: full inside half a pixel of its edge, nothing
-// half a pixel out, and between by the square of its distance.
-void dot16(Raster& r, int x16, int y16, int radius16, uint16_t ink) {
-  if (r.alpha <= 2 || !r.s.pixels || radius16 <= 0) return;
-  const int x0 = std::max(0, (x16 - radius16 - 8) >> 4), x1 = std::min(r.s.width - 1, (x16 + radius16 + 8) >> 4);
-  const int y0 = std::max(0, (y16 - radius16 - 8) >> 4),
-            y1 = std::min(r.s.height * 4 / 5 - 1, (y16 + radius16 + 8) >> 4);
-  const int inner = std::max(0, radius16 - 8), outer = radius16 + 8;
-  const int in2 = inner * inner, out2 = outer * outer;
-  for (int y = y0; y <= y1; ++y) {
-    int lo = 1 << 30, hi = -1;
-    const int dy = y * 16 + 8 - y16;
-    for (int x = x0; x <= x1; ++x) {
-      const int dx = x * 16 + 8 - x16, d2 = dx * dx + dy * dy;
-      if (d2 >= out2) continue;
-      plot(r, x, y, d2 <= in2 ? 256 : (out2 - d2) * 256 / (out2 - in2), ink);
-      lo = std::min(lo, x), hi = x;
-    }
-    if (hi >= lo) r.touch(lo, y, hi + 1, y + 1);
-  }
-}
 // A sparkle: a four-pointed star `radius16` from its middle, two thin
 // diamonds across each other.
 void sparkle(Raster& r, int x16, int y16, int radius16, int alpha, uint16_t ink) {

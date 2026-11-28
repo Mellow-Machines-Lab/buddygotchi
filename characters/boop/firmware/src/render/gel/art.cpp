@@ -130,7 +130,6 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
   };
   auto drawn = [&](int i, int k) {
     const auto& path = slime::kArtPaths[placed[i].range->first + k];
-    const int g = path.group;
     return pairs.oldest[i][k] && path.count <= kMaxPoints && path.clipCount <= kMaxPoints &&
            classWeight(i, k) > 0;
   };

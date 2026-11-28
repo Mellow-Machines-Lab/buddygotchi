@@ -84,7 +84,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   lean_ = Lean::kNone, breathTake_ = 0;
   pendingCount_ = 0;
   revision_ = cueRevision_ = 0;
-  mixer_.reset(0, 0, nullptr);
+  mixer_.reset(nullptr);
   lively_.reset();
   layers_ = {};
   clip_ = cueing_ = base_ = idleMove_ = nullptr;

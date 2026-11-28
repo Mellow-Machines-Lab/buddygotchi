@@ -1,7 +1,6 @@
 import Foundation
 import MellowHarness
 import XCTest
-@testable import BoopDevKit
 @testable import BoopKit
 
 /// The idle beat (`IdleBeat`): the one thing Boop may hold up at an idle

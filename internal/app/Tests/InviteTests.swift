@@ -15,7 +15,6 @@ final class InviteTests: XCTestCase {
     static let upset = Skit(id: "upset", slots: [.failed, .failedVeryLong, .gaveUp, .checkFailing],
                             invite: .init(pose: .back, touch: .stroke, payoff: .sigh))
     static let back = Skit(id: "back", slots: [.back, .backDays, .backAfterADay], invite: .init(pose: .lean, touch: .stroke, payoff: .purr))
-    nonisolated static let day: Int64 = 86_400_000
 
     // MARK: The pack
 

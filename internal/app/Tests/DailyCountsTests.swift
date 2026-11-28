@@ -264,7 +264,7 @@ final class DailyCountsTests: XCTestCase {
     /// break, whatever explains it, and shorter isn't. Reading on past it
     /// saves nothing new.
     func testALongGapBreaksYourTimeAtTheMac() throws {
-        let counts = CountsReader(time: LocalTime()) { _ in }, memory = MemoryReader(store: try KeyValueStore(directory: nil), time: time)
+        let counts = CountsReader(time: LocalTime()) { _ in }, memory = MemoryReader(time: time)
         var s = counts.open(day: "2026-11-04", carry: nil), t = memory.open(day: "2026-11-04", carry: nil)
         func read(_ e: Event) -> [Bool] { [counts.read(e, line: nil, into: &s), memory.read(e, line: nil, into: &t)] }
         let checkIn = { (at: Int64) in Event(at: at, source: .boop, type: .checkIn, specificType: "idle") }

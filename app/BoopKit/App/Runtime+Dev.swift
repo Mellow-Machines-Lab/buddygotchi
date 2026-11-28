@@ -179,7 +179,7 @@ extension Runtime {
     }
 
     /// `{"dev":"along",…}`: `scroll_idle_ms`, `scroll` (the way: "up" or
-    /// "down"), `click_idle_ms`, `pointer`
+    /// "down"), `pointer`
     /// ([x, y]) and its `display` ([x, y, w, h]), and `sound` (an app plays
     /// sound), `camera` and `mic` (another app records): true or false.
     /// Each stays as set until the next says otherwise.
@@ -187,7 +187,6 @@ extension Runtime {
         var r = devAlong
         if let ms = (object["scroll_idle_ms"] as? NSNumber)?.int64Value { r.scrollIdleMs = max(0, ms) }
         if let way = object["scroll"] as? String { r.scrollDown = way == "down" }
-        if let ms = (object["click_idle_ms"] as? NSNumber)?.int64Value { r.clickIdleMs = max(0, ms) }
         if let p = object["pointer"] as? [NSNumber], p.count == 2 {
             r.pointerX = p[0].doubleValue
             r.pointerY = p[1].doubleValue

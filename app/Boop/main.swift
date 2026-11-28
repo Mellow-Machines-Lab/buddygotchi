@@ -54,7 +54,7 @@ let usage = """
                {"dev":"listen","on":true}) and "said" (what the mic heard, {"dev":"said","words":"…"});
                and for the world, "world": {"dev":"world","shown":true} (onboarding's world screen),
                "on":false (the switch), "tab":true (the World tab) and "to":ID,"gesture":"boop";
-               and headless, for you at the Mac, "along": {"dev":"along","scroll_idle_ms":0}, "scroll" ("up"|"down"), "click_idle_ms",
+               and headless, for you at the Mac, "along": {"dev":"along","scroll_idle_ms":0}, "scroll" ("up"|"down"),
                "pointer":[x,y] (and "display":[x,y,w,h]), "sound", "camera" and "mic"
                (true or false); and "anchor": {"dev":"anchor","place":true} (the next "tap" is where Boop
                sits), "at":[x,y] or "clear":true.
@@ -97,7 +97,7 @@ let bundledPacks = AboutThisMac.isApp()
 /// The steering folder of a character pack, the app's by default.
 func bundledSteering(_ pack: CharacterPack = .active) -> Steering {
     let url = pack.directory.appendingPathComponent("steering")
-    do { return try Steering(directory: url, pack: pack) } catch { fail("\(pack.id)'s steering folder is broken: \(error)") }
+    do { return try Steering(directory: url) } catch { fail("\(pack.id)'s steering folder is broken: \(error)") }
 }
 
 /// The transport for `link`: over Bluetooth, the first board it finds, or

@@ -17,7 +17,7 @@ constexpr uint32_t kJoinGapMs = 180;   // between a `say`'s two takes
 constexpr uint32_t kGapSamples = kRate * kJoinGapMs / 1000;
 constexpr int kIdMax = 72;             // voicegen's ID_BYTES and TEXT_BYTES, with the NUL
 constexpr int kTextMax = 36;
-constexpr int kMaxFrames = 160;        // mouth frames: a take of up to 3.2 s
+constexpr int kMaxFrames = 160;        // mouth frames: a take of up to 3.2 s (voicegen's MAX_FRAMES)
 
 // Where the voice file's bytes come from: the card, or a file on the Mac.
 struct Source {

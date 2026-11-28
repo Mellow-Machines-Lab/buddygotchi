@@ -1,7 +1,6 @@
 import Foundation
 import MellowHarness
 import XCTest
-@testable import BoopDevKit
 @testable import BoopKit
 
 /// Boop's line (`Lines`): one short sentence about what just happened,

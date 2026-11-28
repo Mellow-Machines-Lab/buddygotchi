@@ -43,7 +43,7 @@ final class MemoryReaderTests: XCTestCase {
     /// (a prompt is yours, but it's to an agent); coming back is kept; a
     /// mood leaving lonely is kept; all of it carried across 5:00.
     func testTheCompanyCountsOnlyYoursAndCarries() throws {
-        let reader = MemoryReader(store: try KeyValueStore(directory: nil), time: utc)
+        let reader = MemoryReader(time: utc)
         var t = reader.open(day: "2026-10-27", carry: nil)
         let morning = at(2026, 10, 27, 9)
         _ = reader.read(Event(seq: 1, at: morning, source: .mac, type: .presence, phase: .end, specificType: "unlocked"), line: nil, into: &t)
@@ -103,7 +103,7 @@ final class MemoryReaderTests: XCTestCase {
     /// agent's turn or BOOT's hand-off is never you; the care gestures are
     /// the allow-list's. An away counts from when it began.
     func testTheTalliesCountWhatsYours() throws {
-        let reader = MemoryReader(store: try KeyValueStore(directory: nil), time: utc)
+        let reader = MemoryReader(time: utc)
         var t = reader.open(day: "2026-10-26", carry: nil)
         let nine = at(2026, 10, 26, 9)
         let read = { (e: Event) in _ = reader.read(e, line: nil, into: &t) }

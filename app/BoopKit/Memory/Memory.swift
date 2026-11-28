@@ -90,7 +90,7 @@ public final class Memory: @unchecked Sendable {
         self.writer = writer
         self.files = files
         self.queue = queue
-        reader = MemoryReader(store: store, time: time)
+        reader = MemoryReader(time: time)
         runner = Checkpointed(reader, store: store, time: time, note: note)
         dreamReader = DreamReader(time: time)
         dreams = Checkpointed(dreamReader, store: store, time: time, note: note)

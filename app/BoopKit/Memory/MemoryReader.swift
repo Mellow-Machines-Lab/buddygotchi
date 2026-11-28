@@ -95,11 +95,9 @@ public final class MemoryReader: TranscriptReader {
     /// for itself when you left.
     public static let breakGapMs = Notices.stretchMs
 
-    let store: KeyValueStore
     let time: LocalTime
     let place: (String) -> Place
-    public init(store: KeyValueStore, time: LocalTime, place: @escaping (String) -> Place = { Place.at(cwd: $0) }) {
-        self.store = store
+    public init(time: LocalTime, place: @escaping (String) -> Place = { Place.at(cwd: $0) }) {
         self.time = time
         self.place = place
     }

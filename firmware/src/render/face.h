@@ -346,9 +346,6 @@ class Face {
   // The board's steady tilt, in milli-g across the screen (app::Tilt), on
   // every reading of a board with a motion sensor: a face may slosh that way.
   virtual void tilt(int mg, uint32_t t) { (void)mg, (void)t; }
-  // No longer asked: a quick stroke on the body plays its stroke on every
-  // face (bodyAt). It goes once the gel's override of it goes with it.
-  virtual bool playsSwipe() const { return true; }
   // Whether it holds up the finished turn's name itself (DoneShow::signMs):
   // from then on the strip doesn't repeat it.
   virtual bool holdsUpFinish() const { return false; }

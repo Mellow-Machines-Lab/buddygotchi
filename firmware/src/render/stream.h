@@ -139,8 +139,6 @@ struct Stream {
   void clear();
   // A slot's column, from 0, among the lanes showing; -1 for none.
   int column(uint8_t slot) const;
-  // Whether anything moves at t, so the face draws again.
-  bool moving(uint32_t t) const;
 };
 
 // Where lane `column` of `columns` sits across a 502-wide screen, the

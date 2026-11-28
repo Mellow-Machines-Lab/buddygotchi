@@ -27,7 +27,6 @@ extension Core {
         case .status: cards.status(card, for: session.key, at: now)
         case .result: cards.result(card, for: session.key, at: now)
         }
-        cards.held[session.key]?.slot = slot(of: session.key)
         var data: [String: JSONValue] = ["agent": .string(session.agent.rawValue), "text": .string(card.text)]
         if let step = card.step, let of = card.of { data["step"] = .int(Int64(step)); data["of"] = .int(Int64(of)) }
         if let minutes = card.minutes { data["minutes"] = .int(Int64(minutes)) }

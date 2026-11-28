@@ -78,7 +78,6 @@ enum class Gesture : uint8_t {
   kCount
 };
 const char* gestureName(Gesture g);  // "handoff", "stroke", ...
-SceneState reactionFromName(const char* name);  // kNone for any other name
 
 // The host fact a variation is for, when it's for one: task_complete's
 // outcome. kNone on a design is for any; as a filter, it takes any.

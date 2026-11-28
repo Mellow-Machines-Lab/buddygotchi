@@ -34,8 +34,6 @@ struct Lane {
   int y(int canvasRow) const { return h * canvasRow / kHeight; }
 };
 
-uint16_t inkRgb565(int ink) { return paletteAt(inkAt(ink, kLevels)); }
-
 // How far the body ducks under the needs-you card, at its whole: its crown
 // a little under where it stands at rest, before the scene's lift.
 constexpr int kAlertDuckPx = 6 + kSceneLift;

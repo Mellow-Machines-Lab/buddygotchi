@@ -1943,7 +1943,7 @@ static void test_a_rig_clip_plays_on_the_gel() {
   applyRig(rest, rig::kRest);
   TEST_ASSERT_EQUAL_MEMORY(&moved, &rest, sizeof rest);
   rig::Mixer m;
-  m.reset(0, 0, nullptr);
+  m.reset(nullptr);
   m.play(*stretch);
   m.advance(1000);
   applyRig(moved, m.channels());
@@ -2168,7 +2168,7 @@ static void test_tracked_clear_matches_full_clear() {
     f.attention.on = SceneState(state) == SceneState::kNeedsYou;
     e->setFacts(f);
     Request r;
-    r.anim = reactionFromName(stateName(SceneState(state)));
+    r.anim = isMoment(SceneState(state)) ? SceneState(state) : SceneState::kNone;
     if (r.anim != SceneState::kNone) e->play(r);
     e->setMood(state % slime::kProfiles);
     e->step(state * 1600 + 1504);
@@ -2360,46 +2360,9 @@ static void test_the_layers_come_and_go_through_the_stack() {
       TEST_ASSERT_EQUAL_HEX16(px[size_t(y) * s.width + x], moved[size_t(y) * s.width + x + 20]);
 }
 
-// A recording (render/gel/raster.h) blends again exactly what its shapes
-// would have drawn, and as they'd have drawn a whole number of pixels
-// over: the pixels and the rows marked changed, over the body and black,
-// cut at the surface's edges.
-static void test_a_recording_replays_as_drawn() {
-  constexpr int kW = 120, kH = 100;
-  std::vector<uint16_t> a(kW * kH), b(kW * kH);
-  auto shapes = [](Raster& r, int dx, int dy) {
-    const Point cap[] = {{dx + 200, dy + 900}, {dx + 1500, dy + 260}, {dx + 1700, dy + 1300}, {dx + 400, dy + 1500}};
-    r.polygon16(cap, 4, rgb565(58, 62, 150));
-    const Point band[] = {{dx + 100, dy + 1200}, {dx + 900, dy + 1450}, {dx + 1800, dy + 1150}};
-    r.stroke16(band, 3, 150, rgb565(246, 240, 226));
-    r.alpha = 140;
-    r.disk16(dx + 1650, dy + 300, 120, rgb565(246, 240, 226));
-    r.alpha = 255;
-  };
-  for (const auto& shift : {std::array<int, 2>{0, 0}, {3, 2}, {-2, -14}, {40, 30}}) {
-    for (int i = 0; i < kW * kH; ++i) a[i] = b[i] = i % 7 ? rgb565(89, 169, 224) : 0;  // the body, and black
-    Surface sa{kW, kH, a.data()}, sb{kW, kH, b.data()};
-    Raster direct{sa};
-    shapes(direct, shift[0] * 16, shift[1] * 16);
-    static uint8_t bytes[8 * 1024];
-    Recording kept{bytes, int(sizeof bytes)};
-    kept.clear();
-    Surface frame{512, 400, nullptr};
-    Raster record{frame};
-    record.limit = frame.height;
-    record.recording = &kept;
-    shapes(record, 200 * 16, 150 * 16);  // kept 200, 150 px over: on no pixels, and uncut
-    TEST_ASSERT_FALSE(kept.full);
-    TEST_ASSERT_TRUE(kept.box.x0 > 195 && kept.box.y0 > 150 && kept.box.x1 < 320 && kept.box.y1 < 250);
-    Raster replayed{sb};
-    replayed.replay(kept, shift[0] - 200, shift[1] - 150);
-    TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), a.size() * 2);
-    for (int y = 0; y < kH; ++y) {
-      TEST_ASSERT_EQUAL_INT(sa.written[y].first, sb.written[y].first);
-      TEST_ASSERT_EQUAL_INT(sa.written[y].last, sb.written[y].last);
-    }
-  }
-  // Past its room it keeps nothing more, and says so.
+// A recording (render/gel/raster.h) past its room keeps nothing more, and
+// says so. What it keeps blends as CrossFade's test shows.
+static void test_a_recording_past_its_room_says_so() {
   static uint8_t room[2000];
   Recording small{room, int(sizeof room)};
   small.clear();
@@ -2410,43 +2373,6 @@ static void test_a_recording_replays_as_drawn() {
   for (int i = 0; i < 1000 && !small.full; ++i) record.round(0, i % 38 * 10, 500, 10, 0, rgb565(1, 2, 3));
   TEST_ASSERT_TRUE(small.full);
   TEST_ASSERT_TRUE(small.used <= small.room);
-}
-
-// A recording replayed between pixels (Raster::replay16) is, for one shape
-// over black, the mean of it replayed on the four whole pixels around, to
-// within rounding; on a whole pixel it's replay() exactly.
-static void test_a_recording_replays_between_pixels() {
-  constexpr int kW = 120, kH = 100;
-  const uint16_t ink = rgb565(246, 240, 226);
-  static uint8_t bytes[4 * 1024];
-  Recording kept{bytes, int(sizeof bytes)};
-  kept.clear();
-  Surface frame{kW, kH, nullptr};
-  Raster record{frame};
-  record.limit = kH;
-  record.recording = &kept;
-  const Point cap[] = {{600, 900}, {1500, 260}, {1700, 1300}, {400, 1500}};
-  record.polygon16(cap, 4, ink);
-  std::vector<uint16_t> whole[4], between(kW * kH, 0);
-  for (int i = 0; i < 4; ++i) {
-    whole[i].assign(kW * kH, 0);
-    Surface s{kW, kH, whole[i].data()};
-    Raster r{s};
-    r.replay(kept, 10 + i % 2, 6 + i / 2);
-  }
-  Surface s{kW, kH, between.data()};
-  Raster r{s};
-  r.replay16(kept, 10 * 16 + 8, 6 * 16 + 8);
-  for (int p = 0; p < kW * kH; ++p) {
-    int mean = 0;
-    for (const auto& w : whole) mean += w[p] >> 5 & 63;
-    TEST_ASSERT_INT_WITHIN(2, mean / 4, between[p] >> 5 & 63);
-  }
-  std::vector<uint16_t> again(kW * kH, 0);
-  Surface sa{kW, kH, again.data()};
-  Raster ra{sa};
-  ra.replay16(kept, 10 * 16, 6 * 16);
-  TEST_ASSERT_EQUAL_MEMORY(whole[0].data(), again.data(), again.size() * 2);
 }
 
 // Text placed in sixteenths (text16) is Raster::text's on a whole pixel,
@@ -3645,8 +3571,7 @@ int main() {
   RUN_TEST(test_the_materials_copy_draws_the_same_body);
   RUN_TEST(test_layers_follow_the_bodys_anchors);
   RUN_TEST(test_nothing_hangs_in_the_sky_or_the_air);
-  RUN_TEST(test_a_recording_replays_as_drawn);
-  RUN_TEST(test_a_recording_replays_between_pixels);
+  RUN_TEST(test_a_recording_past_its_room_says_so);
   RUN_TEST(test_text_glides_between_pixels);
   // test_cells.cpp
   RUN_TEST(test_every_cell_plays_truthfully);

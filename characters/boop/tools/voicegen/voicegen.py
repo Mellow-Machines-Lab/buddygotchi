@@ -79,6 +79,10 @@ MOUTH_OPEN = 0.2    # open while a frame is this loud, of the take's loudest fra
 MAGIC = b"BOOPVOX1"
 HEADER = struct.Struct("<8s16sIIIII20x")  # magic, version, count, record size, index at, rate, mouth ms
 ID_BYTES, TEXT_BYTES = 72, 36
+# The longest take the board plays: its mouth holds this many frames
+# (firmware voice::kMaxFrames, 3.2 s). A longer one it can't load, and says
+# nothing, so the build stops at one.
+MAX_FRAMES = 160
 RECORD = struct.Struct(f"<{ID_BYTES}s{TEXT_BYTES}sIIII4x")  # id, text, samples at, len, mouth at, frames
 
 # The replies that merged into another (their recorded words go with
@@ -268,6 +272,9 @@ def write_pack(path: Path, ver: str, takes: list[dict], clips: list[bytes], mout
         t = takes[i]
         if len(t["id"].encode()) >= ID_BYTES or len(t["text"].encode()) >= TEXT_BYTES:
             raise SystemExit(f"voicegen: {t['id']}'s id or text is too long for the pack")
+        if len(mouths[i]) > MAX_FRAMES:
+            raise SystemExit(f"voicegen: {t['id']} is {len(mouths[i]) * MOUTH_MS} ms, longer than the board plays "
+                             f"({MAX_FRAMES * MOUTH_MS} ms): trim or re-record it")
         records.append(RECORD.pack(t["id"].encode(), t["text"].encode(), at + len(mouths[i]), len(clips[i]), at, len(mouths[i])))
         data += [mouths[i], clips[i]]
         at += len(mouths[i]) + len(clips[i])

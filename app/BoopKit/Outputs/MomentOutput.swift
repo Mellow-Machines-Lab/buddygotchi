@@ -196,7 +196,7 @@ public final class MomentOutput: Output {
         guard !recalled else { return }
         recalled = true
         let mine = log.events.filter { $0.kind == Event.did && $0.action == Self.outputName }
-        let texts = Dictionary(Take.all(in: pack).map { ($0.id, $0.text) }, uniquingKeysWith: { first, _ in first })
+        let texts = Voice.textsByID(in: pack)
         recentWords = mine.compactMap { d in
             let said = d["takes"]?.array?.compactMap(\.string).compactMap { texts[$0] } ?? []
             return said.isEmpty ? nil : said
@@ -498,15 +498,12 @@ public final class MomentOutput: Output {
     static func pushed(_ e: Event) -> Bool { e.type == .act && e.specificType == "push" && e["passed"]?.bool == true }
 
     /// The texts the voice's takes of the sentence `id` say, in any face.
-    func sentences(of id: String) -> [String] {
-        Take.all(in: pack).filter { $0.part == .sentence && $0.meaning == id }.map(\.text)
-    }
+    func sentences(of id: String) -> [String] { Voice.texts(of: .sentence, meaning: id, in: pack) }
 
     /// Whether the board can say the sentence `id` whole in `face`: a
     /// board that speaks, with a take of it in that face. Nil `face`: in any.
     func voices(_ id: String, face: String?) -> Bool {
-        speaks()
-            && Take.all(in: pack).contains { $0.part == .sentence && $0.meaning == id && (face.map($0.moods.contains) ?? true) }
+        speaks() && Voice.has(.sentence, meaning: id, face: face, in: pack)
     }
 
     /// What the turn `about` finished was, as its agent put it
@@ -540,7 +537,7 @@ public final class MomentOutput: Output {
         let usual = normals.usual(before: about.seq, minutes: remarking.minutes)
         guard let id = Remarks.pick(skit: skit.id, facts: facts, usual: usual, minutes: remarking.minutes(about.at), quiet: talk() == .quiet)
         else { return nil }
-        let rows = Signs.remarkRows(signs, id, n: Remarks.number(id, facts: facts, usual: usual))
+        let rows = Signs.remarkRows(signs, id, n: Remarks.number(id, usual: usual))
         let said = rows.filter { $0.take.map(voiced) ?? false }
         let pool = said.isEmpty ? rows.map { ($0.text, nil as String?) } : said.map { ($0.text, $0.take) }
         let fresh = pool.count > 1 ? pool.filter { $0.0 != lastSign } : pool
@@ -710,7 +707,7 @@ public final class MomentOutput: Output {
         guard let about = Self.about(now, log) else { return [] }
         // The line that tells the dream: a sign the dream's tags fit.
         recall(log)
-        return Self.unrepeated(offering(about, log), last: lastSign)
+        return Self.unrepeated(offering(about), last: lastSign)
     }
 
     /// `captions` without the last sign held up, while another fits.
@@ -718,7 +715,7 @@ public final class MomentOutput: Output {
         captions.count > 1 ? captions.filter { $0 != last } : captions
     }
 
-    func offering(_ about: Event, _ log: LogView) -> [String] {
+    func offering(_ about: Event) -> [String] {
         if let tags = told(about) { return Signs.dreams(dreams, tags: tags + calendar(about)) }
         // An ask answered: what it holds up after that answer.
         if about.type == .ask, let q = about["q"]?.string, let answer = about["answer"]?.string {

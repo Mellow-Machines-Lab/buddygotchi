@@ -1,5 +1,4 @@
 import Foundation
-import MellowHarness
 
 /// What the buddy may ask you, from its pack's `asks.md`: a question
 /// with two answers you tap, and what it holds up after you answer. Boop

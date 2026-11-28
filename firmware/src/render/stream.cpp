@@ -156,6 +156,4 @@ void Stream::prune(uint32_t t) {
   }
 }
 
-bool Stream::moving(uint32_t t) const { return call.live && int32_t(t - call.at) < int32_t(kCallMs); }
-
 }  // namespace render

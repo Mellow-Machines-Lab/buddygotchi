@@ -82,7 +82,7 @@ public enum Remarks {
 
     /// The number a remark's words say as `{n}`, or nil for none: the run
     /// for `run`, today's wins for `count`.
-    public static func number(_ remark: String, facts: [String: JSONValue], usual: Normals.Usual) -> Int? {
+    public static func number(_ remark: String, usual: Normals.Usual) -> Int? {
         switch remark {
         case "run": return usual.run > 0 ? Int(usual.run) : nil
         case "count": return usual.winsToday

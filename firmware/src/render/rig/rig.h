@@ -95,8 +95,6 @@ constexpr ChannelInfo kChannelInfo[kChannelCount] = {{"squash", -1000, 1000, 0},
                                                      {"handRY", -240, 240, 0},       {"handRSize", 0, 2000, 0},
                                                      {"handRShape", -1000, 1000, 0}, {"handRGlass", 0, 1000, 0},
                                                      {"turn", -2000, 2000, 0}};
-// The body's channels, whose springs are slower than the face's.
-constexpr bool body(Channel c) { return c <= Channel::kMelt; }
 // The hands' channels: a hand's, `side` 0 the left and 1 the right, by
 // its first (x) and how far past it (HandPart).
 enum class HandPart : uint8_t { kX, kY, kSize, kShape, kGlass, kCount };
@@ -118,14 +116,6 @@ inline constexpr Channels kRest = [] {
   for (int i = 0; i < kChannelCount; ++i) c.v[i] = kChannelInfo[i].rest;
   return c;
 }();
-
-// A style slot, the eyes' or the mouth's: the art drawn, the face's own
-// number for it, and while it cross-fades to another, that one and how far
-// toward it it is (0 … 1000).
-struct Style {
-  uint8_t index = 0, next = 0;
-  int16_t mix = 0;
-};
 
 // A run of a table's rows.
 template <class T>

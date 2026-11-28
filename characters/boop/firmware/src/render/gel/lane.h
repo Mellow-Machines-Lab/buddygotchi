@@ -16,8 +16,8 @@ namespace render::gel {
 
 struct Raster;
 // Text in the fonts' glyphs (render::nextGlyph), its cells' top left at
-// (x, y): at most `room` px of it, cut as render::cutAt cuts it, as the
-// canvas's drawStringFit, but ending in one cell's "…". Returns the x after
+// (x, y): at most `room` px of it, cut as render::cutAt cuts it, ending in
+// one cell's "…". Returns the x after
 // it.
 int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room = 1 << 20);
 // The same text, its cells' top left at (x16, y16), sixteenths of a pixel,

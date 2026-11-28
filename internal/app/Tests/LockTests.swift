@@ -9,7 +9,6 @@ private let minute: Int64 = 60_000
 /// Every lock and unlock of the Mac: the detector makes the events, the view
 /// their lines, and the rule picks a wave, a snub or the nap (`MomentRule.bye`, `hello`).
 final class LockTests: XCTestCase {
-    static func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 1]) }
 
     /// Every lock and unlock is an event, once however many of the Mac's
     /// notifications say so, and a lock too short to be an away is one too.

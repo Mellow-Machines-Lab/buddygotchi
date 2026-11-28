@@ -66,6 +66,22 @@ public enum Voice {
         return pool.filter { avoiding.firstIndex(of: $0.text) == oldest }
     }
 
+    /// Every text `part`'s `meaning` is said in, in any face.
+    public static func texts(of part: Take.Part, meaning: String, in pack: CharacterPack = .active) -> [String] {
+        Take.all(in: pack).filter { $0.part == part && $0.meaning == meaning }.map(\.text)
+    }
+
+    /// Whether `part`'s `meaning` has a take that plays in `face`; nil
+    /// `face`: in any.
+    public static func has(_ part: Take.Part, meaning: String, face: String?, in pack: CharacterPack = .active) -> Bool {
+        Take.all(in: pack).contains { $0.part == part && $0.meaning == meaning && (face.map($0.moods.contains) ?? true) }
+    }
+
+    /// Each take's text, by its id: what a logged `say` said.
+    public static func textsByID(in pack: CharacterPack = .active) -> [String: String] {
+        Dictionary(Take.all(in: pack).map { ($0.id, $0.text) }, uniquingKeysWith: { first, _ in first })
+    }
+
     /// The pause between a `say`'s two takes, in milliseconds, as the board
     /// plays it (firmware `kJoinGapMs`), and the longest `say` of two, the
     /// gap included.

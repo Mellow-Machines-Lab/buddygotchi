@@ -1,4 +1,3 @@
-import AgentHooks
 import Foundation
 
 /// The cards the agents have handed Boop (`Card`), and which one it holds.
@@ -26,9 +25,6 @@ public struct Cards: Sendable {
     struct Held: Sendable {
         var status: Card?
         var result: Card?
-        /// Its lane's slot in the work stream as the card came, whose colour
-        /// the card keeps once the turn is over and the lane gone.
-        var slot: Int?
         /// The agent's first guess of the minutes left this turn, and its
         /// newest: how many, and when it said so. The first is for the
         /// finish ("said 5 min, took 12"); the newest is counted down as it

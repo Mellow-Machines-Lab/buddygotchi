@@ -1,51 +1,17 @@
 #include "render/rig/mixer.h"
 
 #include <algorithm>
-#include <cstdlib>
 #include <initializer_list>
 
 namespace render::rig {
 
-namespace {
-// The springs' step: at most this many ms, so the stiffest stays stable.
-constexpr uint32_t kStepMs = 4;
-// A spring's velocity in 256ths a second, held within 100000 units a second.
-constexpr int32_t held(int64_t v) { return int32_t(std::clamp<int64_t>(v, -100000 * 256, 100000 * 256)); }
-// A 256ths value, rounded to whole units.
-constexpr int32_t whole(int32_t q) { return q >= 0 ? (q + 128) / 256 : -((128 - q) / 256); }
-}  // namespace
-
-Mixer::Mixer() {
-  for (int c = 0; c < kChannelCount; ++c) springs_[c].x = kRest.v[c] * 256;
-}
-
-void Mixer::Fader::advance(uint32_t dt) {
-  if (style.next == style.index) {
-    if (want == style.index) return;
-    style.next = want;
-    age = 0;
-  }
-  age = age + dt < kFadeMs ? age + dt : kFadeMs;
-  style.mix = int16_t(ease1000(int(age), int(kFadeMs)));
-  // Whole: the next style is the one drawn. A newer one fades in after.
-  if (age == kFadeMs) style = {style.next, style.next, 0};
-}
-
-void Mixer::reset(uint8_t eyes, uint8_t mouth, const Clip* look) {
-  for (int c = 0; c < kChannelCount; ++c) springs_[c] = {kRest.v[c] * 256, 0};
-  eyes_ = {{eyes, eyes, 0}, eyes, 0};
-  mouth_ = {{mouth, mouth, 0}, mouth, 0};
+void Mixer::reset(const Clip* look) {
   playing_ = 0;
   if (look) {
     start(*look, true);
     plays_[0].in = kWeightMs;
   }
   mix();
-}
-
-void Mixer::setStyles(uint8_t eyes, uint8_t mouth) {
-  eyes_.want = eyes;
-  mouth_.want = mouth;
 }
 
 void Mixer::setLook(const Clip* clip, uint32_t fadeMs) {
@@ -65,11 +31,6 @@ void Mixer::play(const Clip& clip, uint32_t fadeMs, uint32_t from) { start(clip,
 void Mixer::stop(const Clip& clip) {
   for (int i = 0; i < playing_; ++i)
     if (plays_[i].clip == &clip && !plays_[i].base && !plays_[i].cut) fadeOut(plays_[i]);
-}
-
-void Mixer::impulse(Channel channel, int velocity) {
-  Spring& s = springs_[int(channel)];
-  s.v = held(s.v + int64_t(velocity) * 256);
 }
 
 void Mixer::start(const Clip& clip, bool base, uint32_t fadeMs, uint32_t from) {
@@ -112,29 +73,12 @@ void Mixer::advance(uint32_t dt) {
     if (!over) plays_[kept++] = p;
   }
   playing_ = kept;
-  for (int c = 0; c < kChannelCount; ++c) {
-    Spring& s = springs_[c];
-    const int32_t rest = kRest.v[c] * 256;
-    const int64_t rate = body(Channel(c)) ? kBodyRate : kFaceRate;
-    if (dt >= kSettledMs) s = {rest, 0};
-    // A step at a time while it moves; within half a unit of rest and all
-    // but still, it's at rest. |v| · h fits: v is held.
-    for (uint32_t left = dt; left && (s.v || s.x != rest);) {
-      const uint32_t h = std::min(left, kStepMs);
-      s.v = held(s.v + (rate * rate * (rest - s.x) - 2 * rate * s.v) * int64_t(h) / 1000);
-      s.x += s.v * int32_t(h) / 1000;
-      if (std::abs(s.x - rest) < 128 && std::abs(s.v) < 128) s = {rest, 0};
-      left -= h;
-    }
-  }
-  eyes_.advance(dt);
-  mouth_.advance(dt);
   mix();
 }
 
 void Mixer::mix() {
   int v[kChannelCount];
-  for (int c = 0; c < kChannelCount; ++c) v[c] = whole(springs_[c].x);
+  for (int c = 0; c < kChannelCount; ++c) v[c] = kRest.v[c];
   // The looks' clips under the reactions', each in the order it started.
   for (const bool base : {true, false}) {
     for (int i = 0; i < playing_; ++i) {

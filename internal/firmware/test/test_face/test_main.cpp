@@ -47,34 +47,23 @@ static void test_palette_ramps_run_from_black_to_the_ink() {
   TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), paletteAt(kRed));  // the bring-up pattern's colours stay
 }
 
-// The animations, each by its design's state's name, and
-// nothing else: the brain's finish (task_complete, reply_ready), wake_up
-// and notice, a tap's (poked, tap_spam), the board's own to a gesture
-// (gesture) and listening. The older names ("cheer", "wiggle") are gone
-// with the reaction message, and "starting" with the start card the Mac no
-// longer sends. Each plays its own design.
+// The animations, each by its design's state's name: the brain's finish
+// (task_complete, reply_ready), wake_up and notice, a tap's (poked,
+// tap_spam), the board's own to a gesture (gesture) and listening. Each
+// plays its own design. The older names ("cheer", "starting") are gone.
 static void test_every_anim_has_a_name() {
   const char* names[] = {"task_complete", "reply_ready", "poked",   "tap_spam",
                          "wake_up",       "listening",   "gesture", "notice"};
-  int reactions = 0;
-  for (int i = 0; i < int(SceneState::kCount); ++i) reactions += isMoment(SceneState(i));
-  TEST_ASSERT_EQUAL_INT(8, reactions);
+  int moments = 0;
+  for (int i = 0; i < int(SceneState::kCount); ++i) moments += isMoment(SceneState(i));
+  TEST_ASSERT_EQUAL_INT(8, moments);
   for (const char* name : names) {
-    const SceneState a = reactionFromName(name);
-    TEST_ASSERT_TRUE_MESSAGE(isMoment(a), name);
-    TEST_ASSERT_EQUAL_STRING(name, stateName(a));  // its own design
+    TEST_ASSERT_TRUE_MESSAGE(isMoment(stateFromName(name)), name);
+    TEST_ASSERT_EQUAL_STRING(name, stateName(stateFromName(name)));  // its own design
   }
-  TEST_ASSERT_FALSE(isMoment(SceneState::kNone));
   TEST_ASSERT_EQUAL_STRING("none", stateName(SceneState::kNone));
-  TEST_ASSERT_TRUE(reactionFromName("cheer") == SceneState::kNone);
-  TEST_ASSERT_TRUE(reactionFromName("wiggle") == SceneState::kNone);
-  TEST_ASSERT_TRUE(reactionFromName(nullptr) == SceneState::kNone);
-  for (const char* gone :
-       {"dance",    "oops",  "side_eye", "stretch", "yawn",     "zip",       "gobble", "rumble", "levelup",
-        "happy",    "proud", "smug",     "curious", "sleepy",   "worried",   "sulky",  "love",   "nod",
-        "thinking", "shrug", "idle",     "working", "terminal", "needs_you", "no_app", "none",   "starting"}) {
-    TEST_ASSERT_TRUE_MESSAGE(reactionFromName(gone) == SceneState::kNone, gone);
-  }
+  for (const char* gone : {"cheer", "wiggle", "dance", "starting"})
+    TEST_ASSERT_TRUE_MESSAGE(stateFromName(gone) == SceneState::kIdle, gone);
 }
 
 // characters/CHARACTER.md §9: the pack's moods, by the
@@ -114,9 +103,6 @@ static void test_fonts_are_monospaced_and_utf8_aware() {
   int end = drawString(b.c, kSmall, 10, 10, "Hi", kInkAmber);
   TEST_ASSERT_EQUAL_INT(10 + 2 * kSmall.w, end);
   TEST_ASSERT_TRUE(b.count(inkAt(kInkAmber, kLevels)) > 10);
-  Buf fit;
-  int w = drawStringFit(fit.c, kSmall, 0, 0, "a-very-long-project-name", kInkAmber, 10 * kSmall.w);
-  TEST_ASSERT_TRUE(w <= 10 * kSmall.w);
   // Accented letters show plain, anything else outside the font
   // as one "?" per character.
   Buf accented, plain, other, marks;
@@ -142,11 +128,6 @@ void test_text_is_cut_at_a_word_where_one_fits() {
   TEST_ASSERT_EQUAL_INT(17, cutAt("claude \xC2\xB7 Make the device answer", 17));
   TEST_ASSERT_EQUAL_INT(5, cutAt("hello \xC2\xB7 world", 7));  // not "hello ·.."
   TEST_ASSERT_EQUAL_INT(0, cutAt("anything", 0));
-  // The canvas draws the cut as the rule has it.
-  Buf cut, whole;
-  drawStringFit(cut.c, kSmall, 0, 0, "still broken after all", kInkAmber, 16 * kSmall.w);
-  drawString(whole.c, kSmall, 0, 0, "still broken..", kInkAmber);
-  TEST_ASSERT_TRUE(cut.px == whole.px);
 }
 
 // A long thread or project wraps at spaces, and after a hyphen where a

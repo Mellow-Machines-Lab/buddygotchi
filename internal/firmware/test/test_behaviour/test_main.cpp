@@ -2654,10 +2654,10 @@ static void test_the_work_streams_newest_word() {
   TEST_ASSERT_TRUE(s.call.live && s.call.style == render::CallStyle::kBonk);
   TEST_ASSERT_EQUAL_STRING("bonk", render::callStyleName(s.call.style));
   TEST_ASSERT_TRUE(render::callStyleFromName("nonsense") == render::CallStyle::kLand);
-  TEST_ASSERT_TRUE(s.moving(5000 + render::Stream::kCallMs - 1));
+  s.prune(5000 + render::Stream::kCallMs - 1);
+  TEST_ASSERT_TRUE(s.call.live);
   s.prune(5000 + render::Stream::kCallMs);
   TEST_ASSERT_FALSE(s.call.live);
-  TEST_ASSERT_FALSE(s.moving(5000 + render::Stream::kCallMs));
   for (const char* gone : {"compact", "buried", "freeze"})
     TEST_ASSERT_TRUE(render::callStyleFromName(gone) == render::CallStyle::kLand);
 

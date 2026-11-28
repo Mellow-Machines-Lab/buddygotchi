@@ -66,8 +66,6 @@ class GelFace final : public Face {
   // The work stream it draws, and whose word forward it answers as it
   // lands.
   void watch(const Stream* stream) override { stream_ = stream; }
-  // A swipe flings the dome on, and plays nothing else.
-  bool playsSwipe() const override { return false; }
   bool holdsUpFinish() const override { return true; }
   int noseDrop() const override;
   // The agents' drawer, up from the strip (render/gel/drawer.h).

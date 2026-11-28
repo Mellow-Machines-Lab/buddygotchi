@@ -49,11 +49,6 @@ bool isMoment(SceneState s) {
   }
 }
 
-SceneState reactionFromName(const char* name) {
-  const SceneState s = stateFromName(name);
-  return name && isMoment(s) ? s : SceneState::kNone;
-}
-
 SceneState stateFromName(const char* name) {
   if (!name) return SceneState::kIdle;
   for (int i = 0; i < int(SceneState::kCount); ++i) {

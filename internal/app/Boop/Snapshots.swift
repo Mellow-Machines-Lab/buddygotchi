@@ -106,12 +106,11 @@ enum Snapshots {
                 past.todayBy = [.turns: .init(n: 36, xp: 180), .ships: .init(n: 3, xp: 30), .care: .init(n: 10, xp: 30)]
                 shot("boop-past-the-ring", model(installer, status: past), pane: .overview, tab: .boop)
                 var newborn = status(growth: Growth())
-                (newborn.notes, newborn.week, newborn.daysOld) = ([], [.init(day: "2026-11-08", xp: 0, today: "2026-11-08")], 0)
+                (newborn.notes, newborn.week) = ([], [.init(day: "2026-11-08", xp: 0, today: "2026-11-08")])
                 shot("boop-first-day", model(installer, status: newborn), pane: .overview, tab: .boop)
                 shot("boop-long", model(installer, status: longOverview(installer).status), pane: .overview, tab: .boop)
                 // The third day: four dashed days before the first ring, the first one full.
                 var young = status(growth: Growth(xp: 160, today: 12))
-                young.daysOld = 2
                 young.week = [("2026-11-06", 100), ("2026-11-07", 48), ("2026-11-08", 12)].map { .init(day: $0, xp: $1, today: "2026-11-08") }
                 shot("boop-third-day", model(installer, status: young), pane: .overview, tab: .boop)
                 // The World tab: the league; a buddy's card open, sent, sending
@@ -858,7 +857,6 @@ enum Snapshots {
         // Its age and its memory's recent days, read the day after.
         status.talk = talk
         if snapshot.doing == "asleep" { status.doingReason = Narration.sleeping(noAgents: false, napping: false, dozeMs: 3_600_000, name: name) }
-        status.daysOld = 47
         status.week = zip(["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-08"],
                           [100, 64, 100, 100, 0, 100, growth?.today ?? 0]).map { .init(day: $0, xp: $1, today: "2026-11-08") }
         status.world = world(name: name)
@@ -1125,7 +1123,6 @@ enum Snapshots {
         s.doingReason = Long.act
         s.celebrating = [Narration.Celebrating(why: "\(Long.name) became a Buddy today, and it's its birthday")]
         s.growth = Growth(xp: 123_456)
-        s.daysOld = 1_041
         s.notes = longNotes
         s.recently = longDays
         return model(installer, status: s)
@@ -1151,7 +1148,7 @@ enum Snapshots {
         }
         func bare(_ sessions: [[String]] = [["claude", "jetpack", "work"]], name: String = "Mochi") -> Runtime.Status {
             var s = status(sessions: sessions, name: name, growth: nil)
-            (s.notes, s.recently, s.daysOld) = ([], [], nil)
+            (s.notes, s.recently) = ([], [])
             return s
         }
         let values: [(String, (Int) -> Runtime.Status)] = [

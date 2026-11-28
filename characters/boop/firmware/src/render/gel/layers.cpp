@@ -24,7 +24,7 @@ namespace {
 // The props' colours (render/gel/props.cpp): a card's ink and rim, its
 // words, and the helpers' gel for the hands.
 constexpr uint16_t kCardInk = rgb565(27, 55, 78), kCardRim = rgb565(0x78, 0xa4, 0xc8);
-constexpr uint16_t kWords = rgb565(184, 233, 245), kGel = rgb565(89, 169, 224), kShine = rgb565(184, 233, 245);
+constexpr uint16_t kWords = rgb565(184, 233, 245), kShine = rgb565(184, 233, 245);
 constexpr uint16_t kCream = rgb565(246, 240, 226), kInk = rgb565(28, 24, 36);
 // The pale gold of a wish's sparks.
 constexpr uint16_t kMoonlight = rgb565(250, 230, 160);

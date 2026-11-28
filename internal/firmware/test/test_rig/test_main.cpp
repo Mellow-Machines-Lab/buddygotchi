@@ -81,7 +81,7 @@ int steepest(const std::vector<int>& v) {
 // At rest in styles 0, with nothing playing.
 Mixer still() {
   Mixer m;
-  m.reset(0, 0, nullptr);
+  m.reset(nullptr);
   return m;
 }
 }  // namespace
@@ -201,7 +201,7 @@ static void test_a_reactions_weight_eases_in_and_out() {
 // not playing stops nothing.
 static void test_a_stopped_clip_fades_out() {
   Mixer m;
-  m.reset(0, 0, &kLeanMore);
+  m.reset(&kLeanMore);
   m.play(kLean);
   m.advance(400);
   TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
@@ -240,7 +240,7 @@ static void test_a_short_clip_fades_over_a_quarter_of_itself() {
 // the order they started; the look's clip is under every reaction.
 static void test_additive_and_absolute_clips_blend_by_weight() {
   Mixer m;
-  m.reset(0, 0, &kLeanLoop);  // a look leaning 500
+  m.reset(&kLeanLoop);  // a look leaning 500
   m.play(kLeanMore);
   m.advance(200);
   TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
@@ -250,7 +250,7 @@ static void test_additive_and_absolute_clips_blend_by_weight() {
   m.advance(75);
   TEST_ASSERT_EQUAL_INT(-300, m.channels()[Channel::kLean]);
 
-  m.reset(0, 0, &kShutLoop);  // a look with its eyes shut
+  m.reset(&kShutLoop);  // a look with its eyes shut
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kEyeOpenL]);
   TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kEyeOpenR]);
   m.play(kWider);
@@ -262,7 +262,7 @@ static void test_additive_and_absolute_clips_blend_by_weight() {
 // same look again plays on; no look lets the old one go.
 static void test_a_new_look_fades_over_the_old_and_the_same_plays_on() {
   Mixer m;
-  m.reset(0, 0, &kLeanLoop);
+  m.reset(&kLeanLoop);
   TEST_ASSERT_EQUAL_INT(500, m.channels()[Channel::kLean]);
   m.setLook(&kLeanBackLoop);
   const std::vector<int> v = record(m, Channel::kLean, 20);
@@ -283,7 +283,7 @@ static void test_a_new_look_fades_over_the_old_and_the_same_plays_on() {
 // a base clip for an activity by its state, none for one it doesn't name.
 static void test_a_look_fades_as_long_as_asked_and_names_its_activities() {
   Mixer m;
-  m.reset(0, 0, &kLeanLoop);
+  m.reset(&kLeanLoop);
   m.setLook(&kLeanBackLoop, 240);  // of these clips' 250 at most, a quarter of their second
   m.advance(120);
   TEST_ASSERT_INT_WITHIN(2, 100, m.channels()[Channel::kLean]);  // half of each: 250 - 150
@@ -297,81 +297,12 @@ static void test_a_look_fades_as_long_as_asked_and_names_its_activities() {
   TEST_ASSERT_NULL(kLook.acted(SceneState::kTerminal));
 }
 
-// A style cross-fades over kFadeMs, eased: half way at 100 ms; one asked for
-// mid-way waits for that fade to finish.
-static void test_a_style_cross_fades_and_a_newer_one_waits_its_turn() {
-  static_assert(kFadeMs == 200, "a style cross-fades over the rig's 200 ms fade");
-  Mixer m;
-  m.reset(0, 1, nullptr);
-  TEST_ASSERT_EQUAL_INT(1, m.mouth().index);
-  TEST_ASSERT_EQUAL_INT(1, m.mouth().next);
-  m.setStyles(0, 0);
-  m.advance(100);
-  TEST_ASSERT_EQUAL_INT(1, m.mouth().index);
-  TEST_ASSERT_EQUAL_INT(0, m.mouth().next);
-  TEST_ASSERT_EQUAL_INT(500, m.mouth().mix);
-  m.setStyles(0, 2);  // mid-way: it finishes this fade first
-  m.advance(100);
-  TEST_ASSERT_EQUAL_INT(0, m.mouth().index);
-  TEST_ASSERT_EQUAL_INT(0, m.mouth().mix);
-  m.advance(100);
-  TEST_ASSERT_EQUAL_INT(2, m.mouth().next);
-  TEST_ASSERT_EQUAL_INT(500, m.mouth().mix);
-  m.advance(100);
-  TEST_ASSERT_EQUAL_INT(2, m.mouth().index);
-  TEST_ASSERT_EQUAL_INT(2, m.mouth().next);
-  TEST_ASSERT_EQUAL_INT(0, m.eyes().index);  // the eyes never changed
-  TEST_ASSERT_EQUAL_INT(0, m.eyes().mix);
-}
-
-// An impulse kicks a spring, which settles back to rest without overshoot,
-// the face's quicker than the body's (kFaceRate, kBodyRate).
-static void test_an_impulse_kicks_a_spring_and_it_settles() {
-  Mixer m = still();
-  m.impulse(Channel::kSquash, 6000);
-  m.impulse(Channel::kGazeX, 6000);
-  std::vector<int> squash, gaze;
-  for (int i = 0; i < 100; ++i) {
-    m.advance(16);
-    squash.push_back(m.channels()[Channel::kSquash]);
-    gaze.push_back(m.channels()[Channel::kGazeX]);
-  }
-  for (size_t i = 0; i < squash.size(); ++i) TEST_ASSERT_TRUE(squash[i] >= 0 && gaze[i] >= 0);
-  TEST_ASSERT_TRUE(*std::max_element(squash.begin(), squash.end()) > 150);
-  TEST_ASSERT_TRUE(gaze[30] < squash[30]);  // back sooner
-  TEST_ASSERT_EQUAL_INT(0, squash.back());
-}
-
-// At rest a spring is exactly at rest: once within half a unit of it and
-// all but still (under half a unit a second), it stops there, so a still
-// face's channels never creep. A step of kSettledMs or more sets every
-// spring at rest at once rather than stepping through it.
-static void test_a_spring_comes_to_rest_exactly() {
-  static_assert(Mixer::kSettledMs == 1000, "a step of a second or more settles the springs");
-  Mixer m = still();
-  m.impulse(Channel::kLean, 3000);
-  m.advance(16);
-  TEST_ASSERT_TRUE(m.channels()[Channel::kLean] > 0);
-  m.advance(Mixer::kSettledMs);
-  for (int c = 0; c < kChannelCount; ++c) TEST_ASSERT_EQUAL_INT16(kRest.v[c], m.channels().v[c]);
-  Mixer stepped = still(), once = still();
-  for (Mixer* x : {&stepped, &once}) x->impulse(Channel::kLift, 4000);
-  for (int i = 0; i < 60; ++i) stepped.advance(16);
-  once.advance(960);
-  TEST_ASSERT_EQUAL_INT(kRest[Channel::kLift], stepped.channels()[Channel::kLift]);  // settled by stepping too
-  TEST_ASSERT_EQUAL_MEMORY(once.channels().v, stepped.channels().v, sizeof once.channels().v);
-  for (int i = 0; i < 100; ++i) stepped.advance(16);
-  TEST_ASSERT_EQUAL_MEMORY(kRest.v, stepped.channels().v, sizeof kRest.v);
-}
-
 static void test_the_mixer_is_deterministic_and_bounded() {
   Mixer one, two;
-  for (Mixer* m : {&one, &two}) m->reset(1, 1, &kLeanLoop);
+  for (Mixer* m : {&one, &two}) m->reset(&kLeanLoop);
   for (int f = 0; f < 400; ++f) {
     for (Mixer* m : {&one, &two}) {
-      if (f % 50 == 10) m->setStyles(uint8_t(f % 3), uint8_t(f % 5));
       if (f % 7 == 3) m->play(f % 2 ? kLean : kLeanBackNow);  // more than kPlays at once
-      if (f % 31 == 5) m->impulse(Channel::kLift, 90000);
       if (f % 120 == 60) m->setLook(f % 240 == 60 ? &kLeanBackLoop : &kShutLoop);
       m->advance(uint32_t(5 + f % 23));
     }
@@ -386,7 +317,7 @@ static void test_the_mixer_is_deterministic_and_bounded() {
 // is back from the glass with no patch and both hands are hidden in it
 // (size 0), each hand's five channels in HandPart's order; a clip moves
 // them, a palm pressed on the glass and held, and the mixer keeps each in
-// its range however far a clip and an impulse carry it.
+// its range however far a clip carries it.
 static void test_the_glass_and_the_hands_are_channels() {
   for (Channel c : {Channel::kGlass, Channel::kPatch, Channel::kHandLSize, Channel::kHandRSize, Channel::kHandLGlass,
                     Channel::kHandRGlass, Channel::kHandLShape, Channel::kHandRShape})
@@ -406,7 +337,7 @@ static void test_the_glass_and_the_hands_are_channels() {
                                           {Channel::kGlass, {kUp, 2}},      {Channel::kHandLSize, {kFar, 2}}};
   static constexpr Clip kPalm = {"palm", 400, true, true, {kPalmTracks, 6}};
   Mixer m;
-  m.reset(0, 0, nullptr);
+  m.reset(nullptr);
   m.play(kPalm);
   m.advance(200);
   TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kHandRSize]);
@@ -416,25 +347,21 @@ static void test_the_glass_and_the_hands_are_channels() {
   TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kGlass]);
   TEST_ASSERT_EQUAL_INT(2000, m.channels()[Channel::kHandLSize]);  // held at its range's end
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kHandLX]);         // the other hand stays where it was
-  m.impulse(Channel::kHandRGlass, 90000);
-  m.advance(16);
-  TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kHandRGlass]);
   m.stop(kPalm);
-  m.advance(Mixer::kSettledMs);
+  m.advance(1000);
   for (int c = 0; c < kChannelCount; ++c) TEST_ASSERT_EQUAL_INT(kRest.v[c], m.channels().v[c]);
 }
 
 // The turn is a channel like the others: at rest the body faces you (0);
 // it reaches two whole turns either way, in thousandths of a turn, so a
 // clip can spin all the way round (1000) and on, and the mixer holds it
-// in that range however far a clip and an impulse carry it.
+// in that range however far a clip carries it.
 static void test_the_turn_is_a_channel() {
   TEST_ASSERT_EQUAL_INT(kChannelCount, int(Channel::kTurn) + 1);  // the last
   TEST_ASSERT_EQUAL_STRING("turn", kChannelInfo[int(Channel::kTurn)].name);
   TEST_ASSERT_EQUAL_INT(0, kRest[Channel::kTurn]);
   TEST_ASSERT_EQUAL_INT(-2000, kChannelInfo[int(Channel::kTurn)].lo);
   TEST_ASSERT_EQUAL_INT(2000, kChannelInfo[int(Channel::kTurn)].hi);
-  TEST_ASSERT_FALSE(body(Channel::kTurn));
   static constexpr Key kRound[] = {{0, 0, Ease::kLinear}, {400, 1000, Ease::kOut}};
   static constexpr Key kFar[] = {{0, 0, Ease::kLinear}, {100, 3000, Ease::kOut}};
   static constexpr Track kSpinTracks[] = {{Channel::kTurn, {kRound, 2}}};
@@ -442,7 +369,7 @@ static void test_the_turn_is_a_channel() {
   static constexpr Clip kSpin = {"spin", 800, true, true, {kSpinTracks, 1}};
   static constexpr Clip kTooFar = {"far", 200, true, true, {kFarTracks, 1}};
   Mixer m;
-  m.reset(0, 0, nullptr);
+  m.reset(nullptr);
   m.play(kSpin);
   m.advance(200);
   const int half = m.channels()[Channel::kTurn];
@@ -453,11 +380,8 @@ static void test_the_turn_is_a_channel() {
   m.play(kTooFar);
   m.advance(150);
   TEST_ASSERT_TRUE(m.channels()[Channel::kTurn] <= 2000);
-  m.impulse(Channel::kTurn, -900000);
-  m.advance(16);
-  TEST_ASSERT_TRUE(m.channels()[Channel::kTurn] >= -2000 && m.channels()[Channel::kTurn] <= 2000);
   m.stop(kTooFar);
-  m.advance(Mixer::kSettledMs);
+  m.advance(1000);
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kTurn]);
 }
 
@@ -465,7 +389,7 @@ static void test_the_turn_is_a_channel() {
 // burst of reactions never stops the look, and the newest of them plays.
 static void test_a_full_mixer_keeps_its_look() {
   Mixer m;
-  m.reset(0, 0, &kLeanLoop);
+  m.reset(&kLeanLoop);
   for (int i = 0; i < Mixer::kPlays * 2; ++i) {
     m.play(kWider);
     m.advance(10);
@@ -574,9 +498,6 @@ int main() {
   RUN_TEST(test_additive_and_absolute_clips_blend_by_weight);
   RUN_TEST(test_a_new_look_fades_over_the_old_and_the_same_plays_on);
   RUN_TEST(test_a_look_fades_as_long_as_asked_and_names_its_activities);
-  RUN_TEST(test_a_style_cross_fades_and_a_newer_one_waits_its_turn);
-  RUN_TEST(test_an_impulse_kicks_a_spring_and_it_settles);
-  RUN_TEST(test_a_spring_comes_to_rest_exactly);
   RUN_TEST(test_the_mixer_is_deterministic_and_bounded);
   RUN_TEST(test_a_full_mixer_keeps_its_look);
   RUN_TEST(test_the_glass_and_the_hands_are_channels);

@@ -42,9 +42,8 @@ extension Runtime {
         public var week: [DayRing] = []
         /// The world of buddies; nil with no world server (tests).
         public var world: WorldStatus?
-        /// How many days since Boop hatched, and its memory's recent days,
-        /// a line each, newest first (`memory.md`'s Recently).
-        public var daysOld: Int?
+        /// Its memory's recent days, a line each, newest first
+        /// (`memory.md`'s Recently).
         public var recently: [DayLine] = []
         /// The written memory's notes, for "What Boop remembers".
         public var notes: [WrittenMemory.Note] = []
@@ -109,11 +108,10 @@ extension Runtime {
         /// The one board Boop takes over Bluetooth, by its `hello.id`.
         public var board: String?
         /// Whether Boop notices what you do at the Mac; whether it knows
-        /// where it sits (`Anchor`), and the side the Mac is on from it; and
-        /// whether it waits for the tap that shows it.
+        /// where it sits (`Anchor`); and whether it waits for the tap that
+        /// shows it.
         public var noticesYou = true
         public var anchored = false
-        public var macSide: Anchor.Side?
         public var placing = false
         /// The display Boop was shown it sits by is gone or moved: it wants
         /// showing again.
@@ -179,7 +177,6 @@ extension Runtime {
                             brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.pushToTalk.trouble, growth: growthNow)
         let wall = options.wallClock()
-        status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         let written = memory.written(), today = options.time.boopDay(wall)
         status.todayBy = growth.todayBy(on: today)
         status.daysInARow = growth.daysInARow(on: today)
@@ -201,7 +198,6 @@ extension Runtime {
         status.board = settings.board
         status.noticesYou = settings.noticesYou
         status.anchored = settings.anchor != nil
-        status.macSide = anchor?.side
         status.placing = placing != nil
         status.anchorGone = anchorGone
         status.swearing = options.swearing ?? settings.swearing
